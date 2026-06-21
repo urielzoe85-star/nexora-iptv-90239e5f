@@ -1,6 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { useRouter } from "@tanstack/react-router";
 import {
   Check, CreditCard, Lock, ShieldCheck, ChevronLeft, Mail, User,
   Loader2, Tv,
@@ -32,7 +31,6 @@ export const Route = createFileRoute("/checkout")({
 });
 
 function CheckoutPage() {
-  const router = useRouter();
   const t = useT();
   const { plan: planParam } = Route.useSearch();
   const initial = useMemo(() => {
