@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiPublicSebpayWebhookRouteImport } from './routes/api/public/sebpay/webhook'
 
 const CheckoutRoute = CheckoutRouteImport.update({
   id: '/checkout',
@@ -22,31 +23,40 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicSebpayWebhookRoute = ApiPublicSebpayWebhookRouteImport.update({
+  id: '/api/public/sebpay/webhook',
+  path: '/api/public/sebpay/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/checkout': typeof CheckoutRoute
+  '/api/public/sebpay/webhook': typeof ApiPublicSebpayWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/checkout': typeof CheckoutRoute
+  '/api/public/sebpay/webhook': typeof ApiPublicSebpayWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/checkout': typeof CheckoutRoute
+  '/api/public/sebpay/webhook': typeof ApiPublicSebpayWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/checkout'
+  fullPaths: '/' | '/checkout' | '/api/public/sebpay/webhook'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/checkout'
-  id: '__root__' | '/' | '/checkout'
+  to: '/' | '/checkout' | '/api/public/sebpay/webhook'
+  id: '__root__' | '/' | '/checkout' | '/api/public/sebpay/webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CheckoutRoute: typeof CheckoutRoute
+  ApiPublicSebpayWebhookRoute: typeof ApiPublicSebpayWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -65,12 +75,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/sebpay/webhook': {
+      id: '/api/public/sebpay/webhook'
+      path: '/api/public/sebpay/webhook'
+      fullPath: '/api/public/sebpay/webhook'
+      preLoaderRoute: typeof ApiPublicSebpayWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CheckoutRoute: CheckoutRoute,
+  ApiPublicSebpayWebhookRoute: ApiPublicSebpayWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
