@@ -18,15 +18,6 @@ const PLANS: Plan[] = [
   { id: "12m", name: "12 Months", price: 95, period: "/year",      save: "Save 34%", popular: true },
 ];
 
-const PLAN_INCLUDES = [
-  "20,000+ live channels worldwide",
-  "120,000+ movies & series (VOD)",
-  "Full HD, FHD & 4K streaming",
-  "Anti-freeze, anti-buffering servers",
-  "Compatible with all devices",
-  "Instant activation by email",
-];
-
 export const Route = createFileRoute("/checkout")({
   head: () => ({
     meta: [
