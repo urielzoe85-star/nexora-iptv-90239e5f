@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { XCircle, Tv, RefreshCw } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getOrderByRef } from "@/lib/orders.functions";
+import { useT } from "@/i18n/context";
 
 export const Route = createFileRoute("/payment/failed")({
   head: () => ({
@@ -16,6 +17,7 @@ export const Route = createFileRoute("/payment/failed")({
 });
 
 function FailedPage() {
+  const t = useT();
   const { ref } = Route.useSearch();
   const [order, setOrder] = useState<any>(null);
 
@@ -42,33 +44,31 @@ function FailedPage() {
           <div className="mx-auto h-16 w-16 rounded-full bg-red-500/15 border border-red-500/40 grid place-items-center mb-5">
             <XCircle className="h-8 w-8 text-red-400" />
           </div>
-          <h1 className="text-3xl font-bold mb-2">Payment failed</h1>
-          <p className="text-muted-foreground mb-6">
-            We couldn't process your payment. You haven't been charged. Please try again or use a different payment method.
-          </p>
+          <h1 className="text-3xl font-bold mb-2">{t("fail.title")}</h1>
+          <p className="text-muted-foreground mb-6">{t("fail.sub")}</p>
 
           {order && (
             <div className="mx-auto max-w-md text-left rounded-xl border border-white/10 divide-y divide-white/5 mb-6">
               <div className="flex justify-between items-center px-4 py-3 text-sm">
-                <span className="text-muted-foreground">Order ID</span>
+                <span className="text-muted-foreground">{t("ok.row.id")}</span>
                 <span className="font-mono">{order.order_ref}</span>
               </div>
               <div className="flex justify-between items-center px-4 py-3 text-sm">
-                <span className="text-muted-foreground">Plan</span>
+                <span className="text-muted-foreground">{t("ok.row.plan")}</span>
                 <span>{order.plan_name}</span>
               </div>
               <div className="flex justify-between items-center px-4 py-3 text-sm">
-                <span className="text-muted-foreground">Status</span>
-                <span className="text-red-400 capitalize">{order.status}</span>
+                <span className="text-muted-foreground">{t("ok.row.status")}</span>
+                <span className="text-red-400">{t(`status.${order.status}`)}</span>
               </div>
             </div>
           )}
 
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link to="/checkout" className="btn-gold btn-gold-hover px-6 py-3 rounded-full text-sm font-semibold inline-flex items-center justify-center gap-2">
-              <RefreshCw className="h-4 w-4" /> Try again
+              <RefreshCw className="h-4 w-4" /> {t("fail.retry")}
             </Link>
-            <Link to="/" className="px-6 py-3 rounded-full glass hover:border-[color:var(--gold)]/40 transition text-sm font-medium">Back to home</Link>
+            <Link to="/" className="px-6 py-3 rounded-full glass hover:border-[color:var(--gold)]/40 transition text-sm font-medium">{t("fail.home")}</Link>
           </div>
         </section>
       </div>
