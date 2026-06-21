@@ -1,7 +1,8 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { PartyPopper, Tv, Mail } from "lucide-react";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { PartyPopper, Tv, Mail, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getOrderByRef } from "@/lib/orders.functions";
+import { verifyPayment } from "@/lib/payments.functions";
 import { useT } from "@/i18n/context";
 
 export const Route = createFileRoute("/payment/success")({
@@ -18,14 +19,53 @@ export const Route = createFileRoute("/payment/success")({
 
 function SuccessPage() {
   const t = useT();
+  const router = useRouter();
   const { ref } = Route.useSearch();
   const [order, setOrder] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [verifying, setVerifying] = useState(true);
 
   useEffect(() => {
-    if (!ref) { setLoading(false); return; }
-    getOrderByRef({ data: { ref } }).then((o) => { setOrder(o); setLoading(false); });
-  }, [ref]);
+    let cancelled = false;
+    async function run() {
+      if (!ref) {
+        // No ref → nothing to verify → never show success.
+        router.navigate({ to: "/payment/failed", search: { ref: "" } });
+        return;
+      }
+      console.log("[success] verifying payment", ref);
+      // Ask the backend to re-verify with SebPay. Source of truth.
+      const v = await verifyPayment({ data: { ref } }).catch((e) => {
+        console.error("[success] verify error", e);
+        return { status: "unknown" as const };
+      });
+      if (cancelled) return;
+      console.log("[success] verify result", v);
+
+      if (v.status === "paid") {
+        const o = await getOrderByRef({ data: { ref } });
+        if (cancelled) return;
+        setOrder(o);
+        setVerifying(false);
+        return;
+      }
+      // Not paid → never display the success page.
+      router.navigate({ to: "/payment/failed", search: { ref } });
+    }
+    run();
+    return () => { cancelled = true; };
+  }, [ref, router]);
+
+  if (verifying) {
+    return (
+      <main className="min-h-screen bg-background text-foreground">
+        <Header />
+        <div className="max-w-2xl mx-auto px-6 py-24 text-center">
+          <Loader2 className="mx-auto h-8 w-8 animate-spin text-[color:var(--gold)] mb-4" />
+          <p className="text-muted-foreground">{t("ok.loading")}</p>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-background text-foreground">
@@ -38,9 +78,7 @@ function SuccessPage() {
           <h1 className="text-3xl font-bold mb-2">{t("ok.title")}</h1>
           <p className="text-muted-foreground mb-6">{t("ok.sub")}</p>
 
-          {loading ? (
-            <p className="text-sm text-muted-foreground">{t("ok.loading")}</p>
-          ) : order ? (
+          {order ? (
             <div className="mx-auto max-w-md text-left rounded-xl border border-white/10 divide-y divide-white/5">
               <Row label={t("ok.row.id")} value={<span className="font-mono">{order.order_ref}</span>} />
               <Row label={t("ok.row.plan")} value={order.plan_name} />
