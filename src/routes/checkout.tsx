@@ -1,0 +1,437 @@
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
+import {
+  Check, CreditCard, Lock, ShieldCheck, ChevronLeft, Mail, User,
+  Loader2, PartyPopper, Tv,
+} from "lucide-react";
+
+// Publishable (public) key — safe to ship in client code.
+const STRIPE_PUBLISHABLE_KEY = "pk_live_LXqrgXeD7grJRHhIG4FBBnDdN3jZriNDqeO4VkDY";
+
+type Plan = { id: string; name: string; price: number; period: string; save?: string; popular?: boolean };
+
+const PLANS: Plan[] = [
+  { id: "1m",  name: "1 Month",   price: 12, period: "/month" },
+  { id: "3m",  name: "3 Months",  price: 30, period: "/quarter",   save: "Save 17%" },
+  { id: "6m",  name: "6 Months",  price: 55, period: "/6 months",  save: "Save 24%" },
+  { id: "12m", name: "12 Months", price: 95, period: "/year",      save: "Save 34%", popular: true },
+];
+
+const PLAN_INCLUDES = [
+  "20,000+ live channels worldwide",
+  "120,000+ movies & series (VOD)",
+  "Full HD, FHD & 4K streaming",
+  "Anti-freeze, anti-buffering servers",
+  "Compatible with all devices",
+  "Instant activation by email",
+];
+
+export const Route = createFileRoute("/checkout")({
+  head: () => ({
+    meta: [
+      { title: "Checkout — Nexora IPTV" },
+      { name: "description", content: "Secure checkout for your Nexora IPTV subscription. Encrypted payments, instant activation." },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
+  validateSearch: (s: Record<string, unknown>) => ({ plan: typeof s.plan === "string" ? s.plan : undefined }),
+  component: CheckoutPage,
+});
+
+function CheckoutPage() {
+  const { plan: planParam } = Route.useSearch();
+  const initial = useMemo(() => {
+    const match = PLANS.find(p => p.name.toLowerCase() === (planParam ?? "").toLowerCase());
+    return match ?? PLANS[3];
+  }, [planParam]);
+
+  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [selected, setSelected] = useState<Plan>(initial);
+  const [email, setEmail] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [method, setMethod] = useState<"card" | "crypto" | "momo">("card");
+  const [card, setCard] = useState({ number: "", exp: "", cvc: "", name: "" });
+  const [processing, setProcessing] = useState(false);
+  const [orderId, setOrderId] = useState<string>("");
+
+  const taxes = +(selected.price * 0.0).toFixed(2);
+  const total = +(selected.price + taxes).toFixed(2);
+
+  const canPay =
+    email.includes("@") &&
+    fullName.trim().length > 1 &&
+    (method !== "card" ||
+      (card.number.replace(/\s/g, "").length >= 13 && card.exp.length >= 4 && card.cvc.length >= 3));
+
+  function handlePay(e: React.FormEvent) {
+    e.preventDefault();
+    if (!canPay) return;
+    setProcessing(true);
+    // Simulated tokenization with publishable key — replace with real Stripe Elements when backend is ready.
+    setTimeout(() => {
+      const id = "NX-" + Math.random().toString(36).slice(2, 8).toUpperCase();
+      setOrderId(id);
+      setProcessing(false);
+      setStep(3);
+    }, 1400);
+  }
+
+  return (
+    <main className="min-h-screen bg-background text-foreground">
+      <header className="sticky top-0 z-40 backdrop-blur-xl bg-background/70 border-b border-white/5">
+        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+          <Link to="/" className="flex items-center gap-2">
+            <div className="h-8 w-8 rounded-lg bg-[image:var(--gradient-gold)] grid place-items-center">
+              <Tv className="h-4 w-4 text-black" />
+            </div>
+            <span className="font-bold tracking-wide">NEXORA <span className="text-[color:var(--gold)]">IPTV</span></span>
+          </Link>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Lock className="h-3.5 w-3.5 text-[color:var(--gold)]" />
+            Secure checkout · 256-bit SSL
+          </div>
+        </div>
+      </header>
+
+      <div className="max-w-6xl mx-auto px-6 py-10">
+        <Stepper step={step} />
+
+        <div className="mt-10 grid lg:grid-cols-[1fr_380px] gap-8">
+          <div className="space-y-6">
+            {step === 1 && (
+              <PlanStep
+                selected={selected}
+                onSelect={setSelected}
+                onNext={() => setStep(2)}
+              />
+            )}
+            {step === 2 && (
+              <PaymentStep
+                email={email} setEmail={setEmail}
+                fullName={fullName} setFullName={setFullName}
+                method={method} setMethod={setMethod}
+                card={card} setCard={setCard}
+                processing={processing}
+                canPay={canPay}
+                total={total}
+                onBack={() => setStep(1)}
+                onSubmit={handlePay}
+              />
+            )}
+            {step === 3 && (
+              <ConfirmationStep
+                orderId={orderId}
+                email={email}
+                plan={selected}
+                total={total}
+              />
+            )}
+          </div>
+
+          <OrderSummary plan={selected} taxes={taxes} total={total} />
+        </div>
+      </div>
+    </main>
+  );
+}
+
+function Stepper({ step }: { step: 1 | 2 | 3 }) {
+  const items = ["Choose Plan", "Payment", "Confirmation"];
+  return (
+    <ol className="flex items-center gap-3 text-sm">
+      {items.map((label, i) => {
+        const idx = (i + 1) as 1 | 2 | 3;
+        const active = idx === step;
+        const done = idx < step;
+        return (
+          <li key={label} className="flex items-center gap-3">
+            <div className={`h-8 w-8 rounded-full grid place-items-center font-semibold text-xs transition
+              ${done ? "bg-[image:var(--gradient-gold)] text-black"
+                    : active ? "border border-[color:var(--gold)] text-[color:var(--gold)]"
+                             : "border border-white/10 text-muted-foreground"}`}>
+              {done ? <Check className="h-4 w-4" /> : idx}
+            </div>
+            <span className={active ? "text-foreground" : "text-muted-foreground"}>{label}</span>
+            {i < items.length - 1 && <span className="w-10 h-px bg-white/10 mx-1" />}
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+function PlanStep({ selected, onSelect, onNext }: { selected: Plan; onSelect: (p: Plan) => void; onNext: () => void }) {
+  return (
+    <section className="glass rounded-2xl p-6 md:p-8">
+      <h2 className="text-2xl font-bold mb-1">Select your subscription</h2>
+      <p className="text-sm text-muted-foreground mb-6">Pick the plan that fits you. Cancel or change anytime.</p>
+      <div className="grid sm:grid-cols-2 gap-3">
+        {PLANS.map(p => {
+          const active = p.id === selected.id;
+          return (
+            <button
+              key={p.id}
+              type="button"
+              onClick={() => onSelect(p)}
+              className={`relative text-left rounded-xl p-5 transition border ${active
+                ? "border-[color:var(--gold)] bg-white/[0.04] shadow-[var(--shadow-gold)]"
+                : "border-white/10 hover:border-white/20 bg-white/[0.02]"}`}
+            >
+              {p.popular && (
+                <span className="absolute -top-2 right-4 bg-[image:var(--gradient-gold)] text-black text-[10px] font-bold px-2 py-0.5 rounded-full">
+                  POPULAR
+                </span>
+              )}
+              <div className="flex items-center justify-between mb-2">
+                <span className="font-semibold">{p.name}</span>
+                <span className={`h-5 w-5 rounded-full border grid place-items-center ${active ? "border-[color:var(--gold)]" : "border-white/20"}`}>
+                  {active && <span className="h-2.5 w-2.5 rounded-full bg-[color:var(--gold)]" />}
+                </span>
+              </div>
+              <div className="flex items-baseline gap-1">
+                <span className="text-3xl font-bold text-gradient-gold">${p.price}</span>
+                <span className="text-xs text-muted-foreground">{p.period}</span>
+              </div>
+              {p.save && <p className="text-xs text-[color:var(--gold)] mt-1">{p.save}</p>}
+            </button>
+          );
+        })}
+      </div>
+
+      <ul className="grid sm:grid-cols-2 gap-2 mt-6 text-sm">
+        {PLAN_INCLUDES.map(f => (
+          <li key={f} className="flex items-start gap-2 text-muted-foreground">
+            <Check className="h-4 w-4 text-[color:var(--gold)] mt-0.5 shrink-0" /> {f}
+          </li>
+        ))}
+      </ul>
+
+      <button onClick={onNext} className="btn-gold btn-gold-hover mt-8 w-full sm:w-auto px-8 py-3 rounded-full font-semibold">
+        Continue to payment
+      </button>
+    </section>
+  );
+}
+
+function PaymentStep(props: {
+  email: string; setEmail: (v: string) => void;
+  fullName: string; setFullName: (v: string) => void;
+  method: "card" | "crypto" | "momo"; setMethod: (v: "card" | "crypto" | "momo") => void;
+  card: { number: string; exp: string; cvc: string; name: string };
+  setCard: (v: { number: string; exp: string; cvc: string; name: string }) => void;
+  processing: boolean; canPay: boolean; total: number;
+  onBack: () => void; onSubmit: (e: React.FormEvent) => void;
+}) {
+  const { email, setEmail, fullName, setFullName, method, setMethod, card, setCard, processing, canPay, total, onBack, onSubmit } = props;
+
+  return (
+    <form onSubmit={onSubmit} className="space-y-6">
+      <section className="glass rounded-2xl p-6 md:p-8">
+        <h2 className="text-xl font-bold mb-4">Your details</h2>
+        <div className="grid sm:grid-cols-2 gap-4">
+          <Field icon={<User className="h-4 w-4" />} label="Full name">
+            <input
+              required value={fullName} onChange={e => setFullName(e.target.value)}
+              placeholder="John Doe"
+              className="w-full bg-transparent outline-none text-sm placeholder:text-muted-foreground/60"
+            />
+          </Field>
+          <Field icon={<Mail className="h-4 w-4" />} label="Email (for delivery)">
+            <input
+              required type="email" value={email} onChange={e => setEmail(e.target.value)}
+              placeholder="you@email.com"
+              className="w-full bg-transparent outline-none text-sm placeholder:text-muted-foreground/60"
+            />
+          </Field>
+        </div>
+      </section>
+
+      <section className="glass rounded-2xl p-6 md:p-8">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-bold">Payment method</h2>
+          <span className="text-xs text-muted-foreground flex items-center gap-1">
+            <ShieldCheck className="h-4 w-4 text-[color:var(--gold)]" /> PCI-DSS encrypted
+          </span>
+        </div>
+
+        <div className="grid grid-cols-3 gap-2 mb-6">
+          <MethodTab active={method === "card"}   onClick={() => setMethod("card")}   label="Card" />
+          <MethodTab active={method === "crypto"} onClick={() => setMethod("crypto")} label="Crypto" />
+          <MethodTab active={method === "momo"}   onClick={() => setMethod("momo")}   label="Mobile Money" />
+        </div>
+
+        {method === "card" && (
+          <div className="space-y-4">
+            <Field icon={<CreditCard className="h-4 w-4" />} label="Card number">
+              <input
+                inputMode="numeric" required value={card.number}
+                onChange={e => setCard({ ...card, number: formatCard(e.target.value) })}
+                placeholder="1234 5678 9012 3456" maxLength={23}
+                className="w-full bg-transparent outline-none text-sm tracking-wider placeholder:text-muted-foreground/60"
+              />
+            </Field>
+            <div className="grid grid-cols-2 gap-4">
+              <Field label="Expiry (MM/YY)">
+                <input
+                  required value={card.exp}
+                  onChange={e => setCard({ ...card, exp: formatExp(e.target.value) })}
+                  placeholder="12/28" maxLength={5}
+                  className="w-full bg-transparent outline-none text-sm placeholder:text-muted-foreground/60"
+                />
+              </Field>
+              <Field label="CVC">
+                <input
+                  required value={card.cvc}
+                  onChange={e => setCard({ ...card, cvc: e.target.value.replace(/\D/g, "").slice(0, 4) })}
+                  placeholder="123" maxLength={4}
+                  className="w-full bg-transparent outline-none text-sm placeholder:text-muted-foreground/60"
+                />
+              </Field>
+            </div>
+            <Field label="Cardholder name">
+              <input
+                value={card.name} onChange={e => setCard({ ...card, name: e.target.value })}
+                placeholder="As written on card"
+                className="w-full bg-transparent outline-none text-sm placeholder:text-muted-foreground/60"
+              />
+            </Field>
+          </div>
+        )}
+
+        {method === "crypto" && (
+          <div className="rounded-xl border border-white/10 p-5 text-sm text-muted-foreground">
+            Pay with <span className="text-foreground">BTC, ETH, USDT (TRC-20)</span>. After clicking pay, you'll receive a wallet address and a QR code. Your subscription activates as soon as the transaction is confirmed on-chain.
+          </div>
+        )}
+
+        {method === "momo" && (
+          <div className="rounded-xl border border-white/10 p-5 text-sm text-muted-foreground">
+            Pay with <span className="text-foreground">Orange Money</span> or <span className="text-foreground">MTN Mobile Money</span>. We'll send the payment instructions to your phone after you confirm.
+          </div>
+        )}
+
+        <p className="text-[11px] text-muted-foreground/70 mt-4">
+          Payments are processed securely. Key ref: <span className="font-mono">{STRIPE_PUBLISHABLE_KEY.slice(0, 12)}…</span>
+        </p>
+      </section>
+
+      <div className="flex flex-col-reverse sm:flex-row gap-3 sm:justify-between sm:items-center">
+        <button type="button" onClick={onBack} className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+          <ChevronLeft className="h-4 w-4" /> Back to plans
+        </button>
+        <button
+          type="submit"
+          disabled={!canPay || processing}
+          className="btn-gold btn-gold-hover px-8 py-3 rounded-full font-semibold inline-flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {processing ? (<><Loader2 className="h-4 w-4 animate-spin" /> Processing…</>)
+                      : (<><Lock className="h-4 w-4" /> Pay ${total.toFixed(2)}</>)}
+        </button>
+      </div>
+    </form>
+  );
+}
+
+function ConfirmationStep({ orderId, email, plan, total }: { orderId: string; email: string; plan: Plan; total: number }) {
+  return (
+    <section className="glass rounded-2xl p-8 md:p-12 text-center">
+      <div className="mx-auto h-16 w-16 rounded-full bg-[image:var(--gradient-gold)] grid place-items-center mb-5">
+        <PartyPopper className="h-7 w-7 text-black" />
+      </div>
+      <h2 className="text-3xl font-bold mb-2">Payment successful</h2>
+      <p className="text-muted-foreground mb-6">
+        Thank you. Your <span className="text-foreground">{plan.name}</span> subscription is being activated.
+      </p>
+
+      <div className="mx-auto max-w-md text-left rounded-xl border border-white/10 divide-y divide-white/5">
+        <Row label="Order ID" value={orderId} />
+        <Row label="Plan" value={plan.name} />
+        <Row label="Amount" value={`$${total.toFixed(2)} USD`} />
+        <Row label="Delivery email" value={email} />
+        <Row label="Status" value={<span className="text-[color:var(--gold)]">Activating</span>} />
+      </div>
+
+      <p className="text-sm text-muted-foreground mt-6">
+        Your credentials (M3U URL, Xtream codes & setup guide) will arrive at <span className="text-foreground">{email}</span> within a few minutes.
+      </p>
+
+      <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
+        <Link to="/" className="px-6 py-3 rounded-full glass hover:border-[color:var(--gold)]/40 transition text-sm font-medium">
+          Back to home
+        </Link>
+        <a href="https://wa.me/" target="_blank" rel="noreferrer"
+           className="btn-gold btn-gold-hover px-6 py-3 rounded-full text-sm font-semibold">
+          Contact support
+        </a>
+      </div>
+    </section>
+  );
+}
+
+function OrderSummary({ plan, taxes, total }: { plan: Plan; taxes: number; total: number }) {
+  return (
+    <aside className="glass rounded-2xl p-6 h-fit lg:sticky lg:top-24">
+      <h3 className="text-sm uppercase tracking-[0.18em] text-[color:var(--gold)] mb-4">Order summary</h3>
+      <div className="flex items-start justify-between gap-4 pb-4 border-b border-white/10">
+        <div>
+          <p className="font-semibold">Nexora IPTV — {plan.name}</p>
+          <p className="text-xs text-muted-foreground">Premium subscription</p>
+        </div>
+        <p className="font-semibold">${plan.price.toFixed(2)}</p>
+      </div>
+      <dl className="space-y-2 py-4 text-sm">
+        <div className="flex justify-between text-muted-foreground"><dt>Subtotal</dt><dd>${plan.price.toFixed(2)}</dd></div>
+        <div className="flex justify-between text-muted-foreground"><dt>Taxes</dt><dd>${taxes.toFixed(2)}</dd></div>
+      </dl>
+      <div className="flex justify-between items-baseline pt-4 border-t border-white/10">
+        <span className="text-sm text-muted-foreground">Total</span>
+        <span className="text-2xl font-bold text-gradient-gold">${total.toFixed(2)}</span>
+      </div>
+      <div className="mt-6 space-y-2 text-xs text-muted-foreground">
+        <p className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-[color:var(--gold)]" /> 7-day satisfaction guarantee</p>
+        <p className="flex items-center gap-2"><Lock className="h-4 w-4 text-[color:var(--gold)]" /> Encrypted, PCI-DSS checkout</p>
+        <p className="flex items-center gap-2"><Check className="h-4 w-4 text-[color:var(--gold)]" /> Instant email delivery</p>
+      </div>
+    </aside>
+  );
+}
+
+function Field({ icon, label, children }: { icon?: React.ReactNode; label: string; children: React.ReactNode }) {
+  return (
+    <label className="block">
+      <span className="text-xs uppercase tracking-wider text-muted-foreground">{label}</span>
+      <div className="mt-1 flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.02] px-3 py-3 focus-within:border-[color:var(--gold)]/60 transition">
+        {icon && <span className="text-muted-foreground">{icon}</span>}
+        {children}
+      </div>
+    </label>
+  );
+}
+
+function MethodTab({ active, onClick, label }: { active: boolean; onClick: () => void; label: string }) {
+  return (
+    <button type="button" onClick={onClick}
+      className={`px-3 py-2 rounded-xl text-sm font-medium border transition ${active
+        ? "border-[color:var(--gold)] bg-white/[0.04] text-foreground"
+        : "border-white/10 text-muted-foreground hover:border-white/20"}`}>
+      {label}
+    </button>
+  );
+}
+
+function Row({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="flex justify-between items-center px-4 py-3 text-sm">
+      <span className="text-muted-foreground">{label}</span>
+      <span className="font-medium">{value}</span>
+    </div>
+  );
+}
+
+function formatCard(v: string) {
+  return v.replace(/\D/g, "").slice(0, 19).replace(/(.{4})/g, "$1 ").trim();
+}
+function formatExp(v: string) {
+  const digits = v.replace(/\D/g, "").slice(0, 4);
+  return digits.length <= 2 ? digits : digits.slice(0, 2) + "/" + digits.slice(2);
+}
