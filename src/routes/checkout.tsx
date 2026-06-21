@@ -1,12 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
+import { useRouter } from "@tanstack/react-router";
 import {
   Check, CreditCard, Lock, ShieldCheck, ChevronLeft, Mail, User,
-  Loader2, PartyPopper, Tv,
+  Loader2, Tv,
 } from "lucide-react";
-
-// Publishable (public) key — safe to ship in client code.
-const STRIPE_PUBLISHABLE_KEY = "pk_live_LXqrgXeD7grJRHhIG4FBBnDdN3jZriNDqeO4VkDY";
+import { createOrder, finalizeOrder } from "@/lib/orders.functions";
+import { initSebPayPayment, SEBPAY_PUBLIC_KEY } from "@/lib/sebpay";
 
 type Plan = { id: string; name: string; price: number; period: string; save?: string; popular?: boolean };
 
@@ -39,20 +39,21 @@ export const Route = createFileRoute("/checkout")({
 });
 
 function CheckoutPage() {
+  const router = useRouter();
   const { plan: planParam } = Route.useSearch();
   const initial = useMemo(() => {
     const match = PLANS.find(p => p.name.toLowerCase() === (planParam ?? "").toLowerCase());
     return match ?? PLANS[3];
   }, [planParam]);
 
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [step, setStep] = useState<1 | 2>(1);
   const [selected, setSelected] = useState<Plan>(initial);
   const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");
   const [method, setMethod] = useState<"card" | "crypto" | "momo">("card");
   const [card, setCard] = useState({ number: "", exp: "", cvc: "", name: "" });
   const [processing, setProcessing] = useState(false);
-  const [orderId, setOrderId] = useState<string>("");
+  const [errorMsg, setErrorMsg] = useState<string>("");
 
   const taxes = +(selected.price * 0.0).toFixed(2);
   const total = +(selected.price + taxes).toFixed(2);
@@ -63,17 +64,53 @@ function CheckoutPage() {
     (method !== "card" ||
       (card.number.replace(/\s/g, "").length >= 13 && card.exp.length >= 4 && card.cvc.length >= 3));
 
-  function handlePay(e: React.FormEvent) {
+  async function handlePay(e: React.FormEvent) {
     e.preventDefault();
     if (!canPay) return;
+    setErrorMsg("");
     setProcessing(true);
-    // Simulated tokenization with publishable key — replace with real Stripe Elements when backend is ready.
-    setTimeout(() => {
-      const id = "NX-" + Math.random().toString(36).slice(2, 8).toUpperCase();
-      setOrderId(id);
+    try {
+      const order = await createOrder({
+        data: {
+          email: email.toLowerCase(),
+          fullName,
+          planId: selected.id,
+          planName: selected.name,
+          amount: total,
+          currency: "USD",
+          method,
+        },
+      });
+      if (!order?.order_ref) throw new Error("Could not create order");
+
+      const origin = typeof window !== "undefined" ? window.location.origin : "";
+      const result = await initSebPayPayment({
+        orderRef: order.order_ref,
+        amount: total,
+        currency: "USD",
+        email: email.toLowerCase(),
+        fullName,
+        method,
+        card: method === "card" ? card : undefined,
+        successUrl: `${origin}/payment/success?ref=${order.order_ref}`,
+        failureUrl: `${origin}/payment/failed?ref=${order.order_ref}`,
+      });
+
+      if (result.status === "paid") {
+        await finalizeOrder({
+          data: { ref: order.order_ref, status: "paid", sebpayReference: result.transactionId },
+        });
+        router.navigate({ to: "/payment/success", search: { ref: order.order_ref } });
+      } else {
+        await finalizeOrder({
+          data: { ref: order.order_ref, status: result.status === "cancelled" ? "cancelled" : "failed" },
+        });
+        router.navigate({ to: "/payment/failed", search: { ref: order.order_ref } });
+      }
+    } catch (err: any) {
+      setErrorMsg(err?.message ?? "Payment failed. Please try again.");
       setProcessing(false);
-      setStep(3);
-    }, 1400);
+    }
   }
 
   return (
@@ -114,16 +151,9 @@ function CheckoutPage() {
                 processing={processing}
                 canPay={canPay}
                 total={total}
+                errorMsg={errorMsg}
                 onBack={() => setStep(1)}
                 onSubmit={handlePay}
-              />
-            )}
-            {step === 3 && (
-              <ConfirmationStep
-                orderId={orderId}
-                email={email}
-                plan={selected}
-                total={total}
               />
             )}
           </div>
