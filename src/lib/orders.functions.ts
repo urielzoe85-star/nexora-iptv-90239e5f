@@ -69,27 +69,27 @@ export const getOrdersByEmail = createServerFn({ method: "GET" })
     return rows ?? [];
   });
 
-// Public mark-status. SebPay redirect lands on success/failed page; the page calls this
-// to flip status. A signed webhook (api/public/sebpay/webhook) is the source of truth.
-export const finalizeOrder = createServerFn({ method: "POST" })
+// Client-callable status update. CRITICAL: the client can ONLY signal a
+// failed/cancelled outcome (e.g. user closed the SebPay tab, or SebPay
+// redirected to the failure URL). It can NEVER mark an order as "paid" — that
+// is reserved for the signed webhook and the server-side verifyPayment call,
+// both of which speak to SebPay directly.
+export const markOrderFailed = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) =>
-    z.object({
-      ref: z.string().min(4).max(40),
-      status: z.enum(["paid", "failed", "cancelled"]),
-      sebpayReference: z.string().max(120).optional(),
-    }).parse(data),
+    z
+      .object({
+        ref: z.string().min(4).max(40),
+        status: z.enum(["failed", "cancelled"]),
+      })
+      .parse(data),
   )
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    // Only allow transitioning from "pending" to prevent client tampering of already-final orders.
     const { data: row, error } = await supabaseAdmin
       .from("orders")
-      .update({
-        status: data.status,
-        sebpay_reference: data.sebpayReference ?? null,
-      })
+      .update({ status: data.status })
       .eq("order_ref", data.ref)
-      .eq("status", "pending")
+      .in("status", ["pending", "processing"])
       .select("order_ref, status")
       .maybeSingle();
     if (error) throw new Error(error.message);
