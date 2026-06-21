@@ -239,6 +239,7 @@ export const MESSAGES: Record<Locale, Dict> = {
 
     "status.paid": "Payée",
     "status.pending": "En attente",
+    "status.processing": "En cours",
     "status.failed": "Échouée",
     "status.cancelled": "Annulée",
 
@@ -459,6 +460,7 @@ export const MESSAGES: Record<Locale, Dict> = {
 
     "status.paid": "Paid",
     "status.pending": "Pending",
+    "status.processing": "Processing",
     "status.failed": "Failed",
     "status.cancelled": "Cancelled",
 
@@ -679,6 +681,7 @@ export const MESSAGES: Record<Locale, Dict> = {
 
     "status.paid": "Bezahlt",
     "status.pending": "Ausstehend",
+    "status.processing": "In Bearbeitung",
     "status.failed": "Fehlgeschlagen",
     "status.cancelled": "Storniert",
 
