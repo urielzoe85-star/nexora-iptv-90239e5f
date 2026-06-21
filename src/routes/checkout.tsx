@@ -249,10 +249,10 @@ function PaymentStep(props: {
   method: "card" | "crypto" | "momo"; setMethod: (v: "card" | "crypto" | "momo") => void;
   card: { number: string; exp: string; cvc: string; name: string };
   setCard: (v: { number: string; exp: string; cvc: string; name: string }) => void;
-  processing: boolean; canPay: boolean; total: number;
+  processing: boolean; canPay: boolean; total: number; errorMsg?: string;
   onBack: () => void; onSubmit: (e: React.FormEvent) => void;
 }) {
-  const { email, setEmail, fullName, setFullName, method, setMethod, card, setCard, processing, canPay, total, onBack, onSubmit } = props;
+  const { email, setEmail, fullName, setFullName, method, setMethod, card, setCard, processing, canPay, total, errorMsg, onBack, onSubmit } = props;
 
   return (
     <form onSubmit={onSubmit} className="space-y-6">
@@ -341,9 +341,15 @@ function PaymentStep(props: {
         )}
 
         <p className="text-[11px] text-muted-foreground/70 mt-4">
-          Payments are processed securely. Key ref: <span className="font-mono">{STRIPE_PUBLISHABLE_KEY.slice(0, 12)}…</span>
+          Payments processed securely by <span className="text-foreground">SebPay</span>. Key ref: <span className="font-mono">{SEBPAY_PUBLIC_KEY.slice(0, 12)}…</span>
         </p>
       </section>
+
+      {errorMsg && (
+        <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+          {errorMsg}
+        </div>
+      )}
 
       <div className="flex flex-col-reverse sm:flex-row gap-3 sm:justify-between sm:items-center">
         <button type="button" onClick={onBack} className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
@@ -359,42 +365,6 @@ function PaymentStep(props: {
         </button>
       </div>
     </form>
-  );
-}
-
-function ConfirmationStep({ orderId, email, plan, total }: { orderId: string; email: string; plan: Plan; total: number }) {
-  return (
-    <section className="glass rounded-2xl p-8 md:p-12 text-center">
-      <div className="mx-auto h-16 w-16 rounded-full bg-[image:var(--gradient-gold)] grid place-items-center mb-5">
-        <PartyPopper className="h-7 w-7 text-black" />
-      </div>
-      <h2 className="text-3xl font-bold mb-2">Payment successful</h2>
-      <p className="text-muted-foreground mb-6">
-        Thank you. Your <span className="text-foreground">{plan.name}</span> subscription is being activated.
-      </p>
-
-      <div className="mx-auto max-w-md text-left rounded-xl border border-white/10 divide-y divide-white/5">
-        <Row label="Order ID" value={orderId} />
-        <Row label="Plan" value={plan.name} />
-        <Row label="Amount" value={`$${total.toFixed(2)} USD`} />
-        <Row label="Delivery email" value={email} />
-        <Row label="Status" value={<span className="text-[color:var(--gold)]">Activating</span>} />
-      </div>
-
-      <p className="text-sm text-muted-foreground mt-6">
-        Your credentials (M3U URL, Xtream codes & setup guide) will arrive at <span className="text-foreground">{email}</span> within a few minutes.
-      </p>
-
-      <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
-        <Link to="/" className="px-6 py-3 rounded-full glass hover:border-[color:var(--gold)]/40 transition text-sm font-medium">
-          Back to home
-        </Link>
-        <a href="https://wa.me/" target="_blank" rel="noreferrer"
-           className="btn-gold btn-gold-hover px-6 py-3 rounded-full text-sm font-semibold">
-          Contact support
-        </a>
-      </div>
-    </section>
   );
 }
 
