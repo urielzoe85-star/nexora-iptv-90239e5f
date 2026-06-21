@@ -216,7 +216,7 @@ function Pricing() {
                   <li key={f} className="flex items-start gap-2"><Check className="h-4 w-4 text-[color:var(--gold)] mt-0.5 shrink-0" /><span className="text-muted-foreground">{f}</span></li>
                 ))}
               </ul>
-              <a href="#support" className={`block text-center px-5 py-3 rounded-full font-semibold transition ${p.badge ? "btn-gold btn-gold-hover" : "glass hover:border-[color:var(--gold)]/40"}`}>Get Started</a>
+              <a href={`/checkout?plan=${encodeURIComponent(p.name)}`} className={`block text-center px-5 py-3 rounded-full font-semibold transition ${p.badge ? "btn-gold btn-gold-hover" : "glass hover:border-[color:var(--gold)]/40"}`}>Get Started</a>
             </div>
           ))}
         </div>
