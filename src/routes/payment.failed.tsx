@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { XCircle, Tv, RefreshCw } from "lucide-react";
 import { useEffect, useState } from "react";
-import { getOrderByRef } from "@/lib/orders.functions";
+import { getOrderByRef, markOrderFailed } from "@/lib/orders.functions";
 import { useT } from "@/i18n/context";
 
 export const Route = createFileRoute("/payment/failed")({
@@ -23,7 +23,13 @@ function FailedPage() {
 
   useEffect(() => {
     if (!ref) return;
-    getOrderByRef({ data: { ref } }).then(setOrder);
+    (async () => {
+      // Best-effort: flip pending/processing to "failed" when the user lands
+      // here. Already-final orders are untouched (no-op).
+      await markOrderFailed({ data: { ref, status: "failed" } }).catch(() => {});
+      const o = await getOrderByRef({ data: { ref } });
+      setOrder(o);
+    })();
   }, [ref]);
 
   return (
