@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { PartyPopper, Tv, Mail } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getOrderByRef } from "@/lib/orders.functions";
+import { useT } from "@/i18n/context";
 
 export const Route = createFileRoute("/payment/success")({
   head: () => ({
@@ -16,6 +17,7 @@ export const Route = createFileRoute("/payment/success")({
 });
 
 function SuccessPage() {
+  const t = useT();
   const { ref } = Route.useSearch();
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -33,35 +35,33 @@ function SuccessPage() {
           <div className="mx-auto h-16 w-16 rounded-full bg-[image:var(--gradient-gold)] grid place-items-center mb-5">
             <PartyPopper className="h-7 w-7 text-black" />
           </div>
-          <h1 className="text-3xl font-bold mb-2">Payment successful</h1>
-          <p className="text-muted-foreground mb-6">
-            Thank you. Your subscription is being activated.
-          </p>
+          <h1 className="text-3xl font-bold mb-2">{t("ok.title")}</h1>
+          <p className="text-muted-foreground mb-6">{t("ok.sub")}</p>
 
           {loading ? (
-            <p className="text-sm text-muted-foreground">Loading order…</p>
+            <p className="text-sm text-muted-foreground">{t("ok.loading")}</p>
           ) : order ? (
             <div className="mx-auto max-w-md text-left rounded-xl border border-white/10 divide-y divide-white/5">
-              <Row label="Order ID" value={<span className="font-mono">{order.order_ref}</span>} />
-              <Row label="Plan" value={order.plan_name} />
-              <Row label="Amount" value={`$${Number(order.amount).toFixed(2)} ${order.currency}`} />
-              <Row label="Method" value={order.method.toUpperCase()} />
-              <Row label="Delivery email" value={order.email} />
-              <Row label="Status" value={<span className="text-[color:var(--gold)] capitalize">{order.status}</span>} />
-              {order.sebpay_reference && <Row label="SebPay ref" value={<span className="font-mono text-xs">{order.sebpay_reference}</span>} />}
+              <Row label={t("ok.row.id")} value={<span className="font-mono">{order.order_ref}</span>} />
+              <Row label={t("ok.row.plan")} value={order.plan_name} />
+              <Row label={t("ok.row.amount")} value={`$${Number(order.amount).toFixed(2)} ${order.currency}`} />
+              <Row label={t("ok.row.method")} value={order.method.toUpperCase()} />
+              <Row label={t("ok.row.email")} value={order.email} />
+              <Row label={t("ok.row.status")} value={<span className="text-[color:var(--gold)]">{t(`status.${order.status}`)}</span>} />
+              {order.sebpay_reference && <Row label={t("ok.row.ref")} value={<span className="font-mono text-xs">{order.sebpay_reference}</span>} />}
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground">Order not found.</p>
+            <p className="text-sm text-muted-foreground">{t("ok.notFound")}</p>
           )}
 
           <p className="text-sm text-muted-foreground mt-6 inline-flex items-center gap-2">
             <Mail className="h-4 w-4 text-[color:var(--gold)]" />
-            Your credentials will arrive by email within a few minutes.
+            {t("ok.creds")}
           </p>
 
           <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
-            <Link to="/" className="px-6 py-3 rounded-full glass hover:border-[color:var(--gold)]/40 transition text-sm font-medium">Back to home</Link>
-            <Link to="/dashboard" search={{ email: order?.email ?? "" }} className="btn-gold btn-gold-hover px-6 py-3 rounded-full text-sm font-semibold">View my orders</Link>
+            <Link to="/" className="px-6 py-3 rounded-full glass hover:border-[color:var(--gold)]/40 transition text-sm font-medium">{t("ok.home")}</Link>
+            <Link to="/dashboard" search={{ email: order?.email ?? "" }} className="btn-gold btn-gold-hover px-6 py-3 rounded-full text-sm font-semibold">{t("ok.orders")}</Link>
           </div>
         </section>
       </div>
