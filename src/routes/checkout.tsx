@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { createOrder, finalizeOrder } from "@/lib/orders.functions";
 import { initSebPayPayment, SEBPAY_PUBLIC_KEY } from "@/lib/sebpay";
+import { useT, LanguageSwitcher } from "@/i18n/context";
 
 type Plan = { id: string; name: string; price: number; period: string; save?: string; popular?: boolean };
 
@@ -40,6 +41,7 @@ export const Route = createFileRoute("/checkout")({
 
 function CheckoutPage() {
   const router = useRouter();
+  const t = useT();
   const { plan: planParam } = Route.useSearch();
   const initial = useMemo(() => {
     const match = PLANS.find(p => p.name.toLowerCase() === (planParam ?? "").toLowerCase());
@@ -108,7 +110,7 @@ function CheckoutPage() {
         router.navigate({ to: "/payment/failed", search: { ref: order.order_ref } });
       }
     } catch (err: any) {
-      setErrorMsg(err?.message ?? "Payment failed. Please try again.");
+      setErrorMsg(err?.message ?? t("co.err.generic"));
       setProcessing(false);
     }
   }
@@ -125,8 +127,9 @@ function CheckoutPage() {
           </Link>
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <Lock className="h-3.5 w-3.5 text-[color:var(--gold)]" />
-            Secure checkout · 256-bit SSL
+            {t("co.secure")}
           </div>
+          <LanguageSwitcher />
         </div>
       </header>
 
