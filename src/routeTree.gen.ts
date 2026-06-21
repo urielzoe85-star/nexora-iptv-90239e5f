@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as CheckoutRouteImport } from './routes/checkout'
+import { Route as IndexRouteImport } from './routes/index'
 import { Route as PaymentSuccessRouteImport } from './routes/payment.success'
 import { Route as PaymentFailedRouteImport } from './routes/payment.failed'
 import { Route as ApiPublicSebpayWebhookRouteImport } from './routes/api/public/sebpay/webhook'
@@ -23,6 +24,11 @@ const DashboardRoute = DashboardRouteImport.update({
 const CheckoutRoute = CheckoutRouteImport.update({
   id: '/checkout',
   path: '/checkout',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PaymentSuccessRoute = PaymentSuccessRouteImport.update({
@@ -42,6 +48,7 @@ const ApiPublicSebpayWebhookRoute = ApiPublicSebpayWebhookRouteImport.update({
 } as any)
 
 export interface FileRoutesByFullPath {
+  '/': typeof IndexRoute
   '/checkout': typeof CheckoutRoute
   '/dashboard': typeof DashboardRoute
   '/payment/failed': typeof PaymentFailedRoute
@@ -49,6 +56,7 @@ export interface FileRoutesByFullPath {
   '/api/public/sebpay/webhook': typeof ApiPublicSebpayWebhookRoute
 }
 export interface FileRoutesByTo {
+  '/': typeof IndexRoute
   '/checkout': typeof CheckoutRoute
   '/dashboard': typeof DashboardRoute
   '/payment/failed': typeof PaymentFailedRoute
@@ -57,6 +65,7 @@ export interface FileRoutesByTo {
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  '/': typeof IndexRoute
   '/checkout': typeof CheckoutRoute
   '/dashboard': typeof DashboardRoute
   '/payment/failed': typeof PaymentFailedRoute
@@ -66,6 +75,7 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
+    | '/'
     | '/checkout'
     | '/dashboard'
     | '/payment/failed'
@@ -73,6 +83,7 @@ export interface FileRouteTypes {
     | '/api/public/sebpay/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/'
     | '/checkout'
     | '/dashboard'
     | '/payment/failed'
@@ -80,6 +91,7 @@ export interface FileRouteTypes {
     | '/api/public/sebpay/webhook'
   id:
     | '__root__'
+    | '/'
     | '/checkout'
     | '/dashboard'
     | '/payment/failed'
@@ -88,6 +100,7 @@ export interface FileRouteTypes {
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
+  IndexRoute: typeof IndexRoute
   CheckoutRoute: typeof CheckoutRoute
   DashboardRoute: typeof DashboardRoute
   PaymentFailedRoute: typeof PaymentFailedRoute
@@ -109,6 +122,13 @@ declare module '@tanstack/react-router' {
       path: '/checkout'
       fullPath: '/checkout'
       preLoaderRoute: typeof CheckoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/payment/success': {
@@ -136,6 +156,7 @@ declare module '@tanstack/react-router' {
 }
 
 const rootRouteChildren: RootRouteChildren = {
+  IndexRoute: IndexRoute,
   CheckoutRoute: CheckoutRoute,
   DashboardRoute: DashboardRoute,
   PaymentFailedRoute: PaymentFailedRoute,
