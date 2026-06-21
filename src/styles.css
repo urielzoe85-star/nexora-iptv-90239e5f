@@ -62,39 +62,46 @@
 }
 
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.129 0.042 264.695);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.129 0.042 264.695);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.129 0.042 264.695);
-  --primary: oklch(0.208 0.042 265.755);
-  --primary-foreground: oklch(0.984 0.003 247.858);
-  --secondary: oklch(0.968 0.007 247.896);
-  --secondary-foreground: oklch(0.208 0.042 265.755);
-  --muted: oklch(0.968 0.007 247.896);
-  --muted-foreground: oklch(0.554 0.046 257.417);
-  --accent: oklch(0.968 0.007 247.896);
-  --accent-foreground: oklch(0.208 0.042 265.755);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.984 0.003 247.858);
-  --border: oklch(0.929 0.013 255.508);
-  --input: oklch(0.929 0.013 255.508);
-  --ring: oklch(0.704 0.04 256.788);
+  --radius: 0.75rem;
+  /* Nexora Dark Luxury */
+  --background: oklch(0.04 0 0);                /* #0B0B0B */
+  --foreground: oklch(0.98 0 0);
+  --card: oklch(0.08 0.005 60);
+  --card-foreground: oklch(0.98 0 0);
+  --popover: oklch(0.07 0.005 60);
+  --popover-foreground: oklch(0.98 0 0);
+  --primary: oklch(0.78 0.13 85);               /* gold #D4AF37 */
+  --primary-foreground: oklch(0.08 0 0);
+  --secondary: oklch(0.14 0.01 60);
+  --secondary-foreground: oklch(0.98 0 0);
+  --muted: oklch(0.12 0.005 60);
+  --muted-foreground: oklch(0.7 0.01 60);
+  --accent: oklch(0.78 0.13 85);
+  --accent-foreground: oklch(0.08 0 0);
+  --destructive: oklch(0.6 0.22 27);
+  --destructive-foreground: oklch(0.98 0 0);
+  --border: oklch(0.22 0.02 80 / 40%);
+  --input: oklch(0.22 0.02 80 / 50%);
+  --ring: oklch(0.78 0.13 85);
+  --gold: oklch(0.78 0.13 85);
+  --gold-bright: oklch(0.88 0.15 90);
+  --gradient-gold: linear-gradient(135deg, oklch(0.88 0.15 90), oklch(0.65 0.14 75));
+  --gradient-radial: radial-gradient(ellipse at top, oklch(0.78 0.13 85 / 0.18), transparent 60%);
+  --shadow-gold: 0 10px 40px -10px oklch(0.78 0.13 85 / 0.5);
+  --shadow-glass: 0 8px 32px 0 oklch(0 0 0 / 0.4);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.984 0.003 247.858);
-  --sidebar-foreground: oklch(0.129 0.042 264.695);
-  --sidebar-primary: oklch(0.208 0.042 265.755);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.968 0.007 247.896);
-  --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
-  --sidebar-border: oklch(0.929 0.013 255.508);
-  --sidebar-ring: oklch(0.704 0.04 256.788);
+  --sidebar: oklch(0.06 0 0);
+  --sidebar-foreground: oklch(0.98 0 0);
+  --sidebar-primary: oklch(0.78 0.13 85);
+  --sidebar-primary-foreground: oklch(0.08 0 0);
+  --sidebar-accent: oklch(0.14 0.01 60);
+  --sidebar-accent-foreground: oklch(0.98 0 0);
+  --sidebar-border: oklch(0.22 0.02 80 / 40%);
+  --sidebar-ring: oklch(0.78 0.13 85);
 }
 
 .dark {
@@ -140,5 +147,43 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
   }
+  h1, h2, h3, h4 {
+    font-family: 'Playfair Display', serif;
+    letter-spacing: -0.02em;
+  }
+}
+
+@utility glass {
+  background: oklch(0.1 0.005 60 / 0.5);
+  backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid oklch(0.78 0.13 85 / 0.15);
+}
+
+@utility text-gradient-gold {
+  background: var(--gradient-gold);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+@utility btn-gold {
+  background: var(--gradient-gold);
+  color: var(--primary-foreground);
+  box-shadow: var(--shadow-gold);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+@utility btn-gold-hover {
+  &:hover { transform: translateY(-2px); box-shadow: 0 14px 50px -8px oklch(0.78 0.13 85 / 0.65); }
+}
+
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
 }
