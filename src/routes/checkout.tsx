@@ -5,8 +5,9 @@ import {
   Check, CreditCard, Lock, ShieldCheck, ChevronLeft, Mail, User,
   Loader2, Tv,
 } from "lucide-react";
-import { createOrder, finalizeOrder } from "@/lib/orders.functions";
-import { initSebPayPayment, SEBPAY_PUBLIC_KEY } from "@/lib/sebpay";
+import { createOrder } from "@/lib/orders.functions";
+import { initSebPayCheckout } from "@/lib/payments.functions";
+import { SEBPAY_PUBLIC_KEY } from "@/lib/sebpay";
 import { useT, LanguageSwitcher } from "@/i18n/context";
 
 type Plan = { id: string; name: string; price: number; period: string; save?: string; popular?: boolean };
@@ -63,6 +64,7 @@ function CheckoutPage() {
     setErrorMsg("");
     setProcessing(true);
     try {
+      // STEP 1-2: create the order in "pending" state.
       const order = await createOrder({
         data: {
           email: email.toLowerCase(),
@@ -75,32 +77,24 @@ function CheckoutPage() {
         },
       });
       if (!order?.order_ref) throw new Error("Could not create order");
+      console.log("[checkout] order created", order.order_ref);
 
+      // STEP 3-4: ask the server to create a SebPay checkout session and
+      // redirect the user there. The browser NEVER decides if a payment
+      // succeeded — SebPay's hosted checkout does, and reports back via the
+      // webhook + redirect URLs.
       const origin = typeof window !== "undefined" ? window.location.origin : "";
-      const result = await initSebPayPayment({
-        orderRef: order.order_ref,
-        amount: total,
-        currency: "USD",
-        email: email.toLowerCase(),
-        fullName,
-        method,
-        card: method === "card" ? card : undefined,
-        successUrl: `${origin}/payment/success?ref=${order.order_ref}`,
-        failureUrl: `${origin}/payment/failed?ref=${order.order_ref}`,
+      const { checkoutUrl } = await initSebPayCheckout({
+        data: {
+          ref: order.order_ref,
+          successUrl: `${origin}/payment/success?ref=${order.order_ref}`,
+          failureUrl: `${origin}/payment/failed?ref=${order.order_ref}`,
+        },
       });
-
-      if (result.status === "paid") {
-        await finalizeOrder({
-          data: { ref: order.order_ref, status: "paid", sebpayReference: result.transactionId },
-        });
-        router.navigate({ to: "/payment/success", search: { ref: order.order_ref } });
-      } else {
-        await finalizeOrder({
-          data: { ref: order.order_ref, status: result.status === "cancelled" ? "cancelled" : "failed" },
-        });
-        router.navigate({ to: "/payment/failed", search: { ref: order.order_ref } });
-      }
+      console.log("[checkout] redirecting to SebPay", checkoutUrl);
+      window.location.href = checkoutUrl;
     } catch (err: any) {
+      console.error("[checkout] payment init failed", err);
       setErrorMsg(err?.message ?? t("co.err.generic"));
       setProcessing(false);
     }
