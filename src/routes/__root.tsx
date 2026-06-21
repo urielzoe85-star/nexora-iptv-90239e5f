@@ -79,11 +79,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { title: "Nexora IPTV — Unlimited Entertainment. One Subscription." },
       { name: "description", content: "Premium IPTV service. Access thousands of channels, movies and series in HD/FHD/4K on Smart TV, mobile, tablet and PC." },
       { name: "author", content: "Nexora IPTV" },
-      { property: "og:title", content: "Nexora IPTV — Premium Streaming Subscription" },
-      { property: "og:description", content: "Thousands of live channels, movies and series. Instant activation. Multi-device. 24/7 support." },
+      { property: "og:title", content: "Nexora IPTV — Unlimited Entertainment. One Subscription." },
+      { property: "og:description", content: "Premium IPTV service. Access thousands of channels, movies and series in HD/FHD/4K on Smart TV, mobile, tablet and PC." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "Nexora IPTV — Unlimited Entertainment. One Subscription." },
+      { name: "twitter:description", content: "Premium IPTV service. Access thousands of channels, movies and series in HD/FHD/4K on Smart TV, mobile, tablet and PC." },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/b1359b81-4887-44f9-9541-ad129fe2eacf" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/b1359b81-4887-44f9-9541-ad129fe2eacf" },
     ],
     links: [
       {
