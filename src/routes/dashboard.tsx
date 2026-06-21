@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Tv, Search, Package } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getOrdersByEmail } from "@/lib/orders.functions";
+import { useT, LanguageSwitcher } from "@/i18n/context";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
@@ -21,6 +22,7 @@ type Order = {
 };
 
 function Dashboard() {
+  const t = useT();
   const { email: initial } = Route.useSearch();
   const [email, setEmail] = useState(initial ?? "");
   const [orders, setOrders] = useState<Order[] | null>(null);
@@ -47,13 +49,16 @@ function Dashboard() {
             </div>
             <span className="font-bold tracking-wide">NEXORA <span className="text-[color:var(--gold)]">IPTV</span></span>
           </Link>
-          <Link to="/checkout" className="btn-gold btn-gold-hover px-4 py-2 rounded-full text-xs font-semibold">New subscription</Link>
+          <div className="flex items-center gap-3">
+            <LanguageSwitcher />
+            <Link to="/checkout" className="btn-gold btn-gold-hover px-4 py-2 rounded-full text-xs font-semibold">{t("dash.new")}</Link>
+          </div>
         </div>
       </header>
 
       <div className="max-w-4xl mx-auto px-6 py-12">
-        <h1 className="text-3xl font-bold mb-2">My orders</h1>
-        <p className="text-sm text-muted-foreground mb-8">Enter the email you used at checkout to view your payment history.</p>
+        <h1 className="text-3xl font-bold mb-2">{t("dash.title")}</h1>
+        <p className="text-sm text-muted-foreground mb-8">{t("dash.sub")}</p>
 
         <form
           onSubmit={(e) => { e.preventDefault(); load(email); }}
@@ -68,16 +73,16 @@ function Dashboard() {
             />
           </div>
           <button type="submit" className="btn-gold btn-gold-hover px-6 py-2 rounded-full text-sm font-semibold">
-            Look up orders
+            {t("dash.lookup")}
           </button>
         </form>
 
-        {loading && <p className="text-sm text-muted-foreground">Loading…</p>}
+        {loading && <p className="text-sm text-muted-foreground">{t("dash.loading")}</p>}
 
         {orders && orders.length === 0 && (
           <div className="glass rounded-2xl p-10 text-center">
             <Package className="h-8 w-8 mx-auto text-muted-foreground mb-3" />
-            <p className="text-sm text-muted-foreground">No orders found for this email.</p>
+            <p className="text-sm text-muted-foreground">{t("dash.none")}</p>
           </div>
         )}
 
@@ -86,12 +91,12 @@ function Dashboard() {
             <table className="w-full text-sm">
               <thead className="text-xs uppercase tracking-wider text-muted-foreground">
                 <tr className="border-b border-white/10">
-                  <th className="text-left px-4 py-3">Order</th>
-                  <th className="text-left px-4 py-3">Plan</th>
-                  <th className="text-left px-4 py-3">Amount</th>
-                  <th className="text-left px-4 py-3">Method</th>
-                  <th className="text-left px-4 py-3">Status</th>
-                  <th className="text-left px-4 py-3">Date</th>
+                  <th className="text-left px-4 py-3">{t("dash.col.order")}</th>
+                  <th className="text-left px-4 py-3">{t("dash.col.plan")}</th>
+                  <th className="text-left px-4 py-3">{t("dash.col.amount")}</th>
+                  <th className="text-left px-4 py-3">{t("dash.col.method")}</th>
+                  <th className="text-left px-4 py-3">{t("dash.col.status")}</th>
+                  <th className="text-left px-4 py-3">{t("dash.col.date")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -115,6 +120,7 @@ function Dashboard() {
 }
 
 function StatusPill({ status }: { status: string }) {
+  const t = useT();
   const map: Record<string, string> = {
     paid: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
     pending: "bg-amber-500/15 text-amber-300 border-amber-500/30",
@@ -122,5 +128,6 @@ function StatusPill({ status }: { status: string }) {
     cancelled: "bg-zinc-500/15 text-zinc-300 border-zinc-500/30",
   };
   const cls = map[status] ?? map.pending;
-  return <span className={`inline-flex items-center px-2 py-0.5 rounded-full border text-[11px] font-medium capitalize ${cls}`}>{status}</span>;
+  const label = t(`status.${status}`);
+  return <span className={`inline-flex items-center px-2 py-0.5 rounded-full border text-[11px] font-medium ${cls}`}>{label}</span>;
 }

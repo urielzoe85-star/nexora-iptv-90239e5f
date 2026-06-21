@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { createOrder, finalizeOrder } from "@/lib/orders.functions";
 import { initSebPayPayment, SEBPAY_PUBLIC_KEY } from "@/lib/sebpay";
+import { useT, LanguageSwitcher } from "@/i18n/context";
 
 type Plan = { id: string; name: string; price: number; period: string; save?: string; popular?: boolean };
 
@@ -15,15 +16,6 @@ const PLANS: Plan[] = [
   { id: "3m",  name: "3 Months",  price: 30, period: "/quarter",   save: "Save 17%" },
   { id: "6m",  name: "6 Months",  price: 55, period: "/6 months",  save: "Save 24%" },
   { id: "12m", name: "12 Months", price: 95, period: "/year",      save: "Save 34%", popular: true },
-];
-
-const PLAN_INCLUDES = [
-  "20,000+ live channels worldwide",
-  "120,000+ movies & series (VOD)",
-  "Full HD, FHD & 4K streaming",
-  "Anti-freeze, anti-buffering servers",
-  "Compatible with all devices",
-  "Instant activation by email",
 ];
 
 export const Route = createFileRoute("/checkout")({
@@ -40,6 +32,7 @@ export const Route = createFileRoute("/checkout")({
 
 function CheckoutPage() {
   const router = useRouter();
+  const t = useT();
   const { plan: planParam } = Route.useSearch();
   const initial = useMemo(() => {
     const match = PLANS.find(p => p.name.toLowerCase() === (planParam ?? "").toLowerCase());
@@ -108,7 +101,7 @@ function CheckoutPage() {
         router.navigate({ to: "/payment/failed", search: { ref: order.order_ref } });
       }
     } catch (err: any) {
-      setErrorMsg(err?.message ?? "Payment failed. Please try again.");
+      setErrorMsg(err?.message ?? t("co.err.generic"));
       setProcessing(false);
     }
   }
@@ -123,9 +116,12 @@ function CheckoutPage() {
             </div>
             <span className="font-bold tracking-wide">NEXORA <span className="text-[color:var(--gold)]">IPTV</span></span>
           </Link>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Lock className="h-3.5 w-3.5 text-[color:var(--gold)]" />
-            Secure checkout · 256-bit SSL
+          <div className="flex items-center gap-4">
+            <div className="hidden sm:flex items-center gap-2 text-xs text-muted-foreground">
+              <Lock className="h-3.5 w-3.5 text-[color:var(--gold)]" />
+              {t("co.secure")}
+            </div>
+            <LanguageSwitcher />
           </div>
         </div>
       </header>
@@ -166,7 +162,8 @@ function CheckoutPage() {
 }
 
 function Stepper({ step }: { step: 1 | 2 | 3 }) {
-  const items = ["Choose Plan", "Payment", "Confirmation"];
+  const t = useT();
+  const items = [t("co.step.plan"), t("co.step.payment"), t("co.step.confirm")];
   return (
     <ol className="flex items-center gap-3 text-sm">
       {items.map((label, i) => {
@@ -191,13 +188,22 @@ function Stepper({ step }: { step: 1 | 2 | 3 }) {
 }
 
 function PlanStep({ selected, onSelect, onNext }: { selected: Plan; onSelect: (p: Plan) => void; onNext: () => void }) {
+  const t = useT();
+  const planLabels: Record<string, { name: string; period: string; save?: string }> = {
+    "1m":  { name: t("pricing.month"),    period: t("pricing.per.month") },
+    "3m":  { name: t("pricing.3months"),  period: t("pricing.per.quarter"), save: t("pricing.save17") },
+    "6m":  { name: t("pricing.6months"),  period: t("pricing.per.6"),       save: t("pricing.save24") },
+    "12m": { name: t("pricing.12months"), period: t("pricing.per.year"),    save: t("pricing.save34") },
+  };
+  const includes = [1, 2, 3, 4, 5, 6].map((i) => t(`co.includes.${i}`));
   return (
     <section className="glass rounded-2xl p-6 md:p-8">
-      <h2 className="text-2xl font-bold mb-1">Select your subscription</h2>
-      <p className="text-sm text-muted-foreground mb-6">Pick the plan that fits you. Cancel or change anytime.</p>
+      <h2 className="text-2xl font-bold mb-1">{t("co.select.title")}</h2>
+      <p className="text-sm text-muted-foreground mb-6">{t("co.select.sub")}</p>
       <div className="grid sm:grid-cols-2 gap-3">
         {PLANS.map(p => {
           const active = p.id === selected.id;
+          const lbl = planLabels[p.id] ?? { name: p.name, period: p.period, save: p.save };
           return (
             <button
               key={p.id}
@@ -209,27 +215,27 @@ function PlanStep({ selected, onSelect, onNext }: { selected: Plan; onSelect: (p
             >
               {p.popular && (
                 <span className="absolute -top-2 right-4 bg-[image:var(--gradient-gold)] text-black text-[10px] font-bold px-2 py-0.5 rounded-full">
-                  POPULAR
+                  {t("pricing.popular")}
                 </span>
               )}
               <div className="flex items-center justify-between mb-2">
-                <span className="font-semibold">{p.name}</span>
+                <span className="font-semibold">{lbl.name}</span>
                 <span className={`h-5 w-5 rounded-full border grid place-items-center ${active ? "border-[color:var(--gold)]" : "border-white/20"}`}>
                   {active && <span className="h-2.5 w-2.5 rounded-full bg-[color:var(--gold)]" />}
                 </span>
               </div>
               <div className="flex items-baseline gap-1">
                 <span className="text-3xl font-bold text-gradient-gold">${p.price}</span>
-                <span className="text-xs text-muted-foreground">{p.period}</span>
+                <span className="text-xs text-muted-foreground">{lbl.period}</span>
               </div>
-              {p.save && <p className="text-xs text-[color:var(--gold)] mt-1">{p.save}</p>}
+              {lbl.save && <p className="text-xs text-[color:var(--gold)] mt-1">{lbl.save}</p>}
             </button>
           );
         })}
       </div>
 
       <ul className="grid sm:grid-cols-2 gap-2 mt-6 text-sm">
-        {PLAN_INCLUDES.map(f => (
+        {includes.map(f => (
           <li key={f} className="flex items-start gap-2 text-muted-foreground">
             <Check className="h-4 w-4 text-[color:var(--gold)] mt-0.5 shrink-0" /> {f}
           </li>
@@ -237,7 +243,7 @@ function PlanStep({ selected, onSelect, onNext }: { selected: Plan; onSelect: (p
       </ul>
 
       <button onClick={onNext} className="btn-gold btn-gold-hover mt-8 w-full sm:w-auto px-8 py-3 rounded-full font-semibold">
-        Continue to payment
+        {t("co.continue")}
       </button>
     </section>
   );
@@ -252,24 +258,25 @@ function PaymentStep(props: {
   processing: boolean; canPay: boolean; total: number; errorMsg?: string;
   onBack: () => void; onSubmit: (e: React.FormEvent) => void;
 }) {
+  const t = useT();
   const { email, setEmail, fullName, setFullName, method, setMethod, card, setCard, processing, canPay, total, errorMsg, onBack, onSubmit } = props;
 
   return (
     <form onSubmit={onSubmit} className="space-y-6">
       <section className="glass rounded-2xl p-6 md:p-8">
-        <h2 className="text-xl font-bold mb-4">Your details</h2>
+        <h2 className="text-xl font-bold mb-4">{t("co.details")}</h2>
         <div className="grid sm:grid-cols-2 gap-4">
-          <Field icon={<User className="h-4 w-4" />} label="Full name">
+          <Field icon={<User className="h-4 w-4" />} label={t("co.field.name")}>
             <input
               required value={fullName} onChange={e => setFullName(e.target.value)}
-              placeholder="John Doe"
+              placeholder={t("co.field.namePh")}
               className="w-full bg-transparent outline-none text-sm placeholder:text-muted-foreground/60"
             />
           </Field>
-          <Field icon={<Mail className="h-4 w-4" />} label="Email (for delivery)">
+          <Field icon={<Mail className="h-4 w-4" />} label={t("co.field.email")}>
             <input
               required type="email" value={email} onChange={e => setEmail(e.target.value)}
-              placeholder="you@email.com"
+              placeholder={t("co.field.emailPh")}
               className="w-full bg-transparent outline-none text-sm placeholder:text-muted-foreground/60"
             />
           </Field>
@@ -278,21 +285,21 @@ function PaymentStep(props: {
 
       <section className="glass rounded-2xl p-6 md:p-8">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold">Payment method</h2>
+          <h2 className="text-xl font-bold">{t("co.method.title")}</h2>
           <span className="text-xs text-muted-foreground flex items-center gap-1">
-            <ShieldCheck className="h-4 w-4 text-[color:var(--gold)]" /> PCI-DSS encrypted
+            <ShieldCheck className="h-4 w-4 text-[color:var(--gold)]" /> {t("co.method.pci")}
           </span>
         </div>
 
         <div className="grid grid-cols-3 gap-2 mb-6">
-          <MethodTab active={method === "card"}   onClick={() => setMethod("card")}   label="Card" />
-          <MethodTab active={method === "crypto"} onClick={() => setMethod("crypto")} label="Crypto" />
-          <MethodTab active={method === "momo"}   onClick={() => setMethod("momo")}   label="Mobile Money" />
+          <MethodTab active={method === "card"}   onClick={() => setMethod("card")}   label={t("co.method.card")} />
+          <MethodTab active={method === "crypto"} onClick={() => setMethod("crypto")} label={t("co.method.crypto")} />
+          <MethodTab active={method === "momo"}   onClick={() => setMethod("momo")}   label={t("co.method.momo")} />
         </div>
 
         {method === "card" && (
           <div className="space-y-4">
-            <Field icon={<CreditCard className="h-4 w-4" />} label="Card number">
+            <Field icon={<CreditCard className="h-4 w-4" />} label={t("co.card.number")}>
               <input
                 inputMode="numeric" required value={card.number}
                 onChange={e => setCard({ ...card, number: formatCard(e.target.value) })}
@@ -301,7 +308,7 @@ function PaymentStep(props: {
               />
             </Field>
             <div className="grid grid-cols-2 gap-4">
-              <Field label="Expiry (MM/YY)">
+              <Field label={t("co.card.exp")}>
                 <input
                   required value={card.exp}
                   onChange={e => setCard({ ...card, exp: formatExp(e.target.value) })}
@@ -309,7 +316,7 @@ function PaymentStep(props: {
                   className="w-full bg-transparent outline-none text-sm placeholder:text-muted-foreground/60"
                 />
               </Field>
-              <Field label="CVC">
+              <Field label={t("co.card.cvc")}>
                 <input
                   required value={card.cvc}
                   onChange={e => setCard({ ...card, cvc: e.target.value.replace(/\D/g, "").slice(0, 4) })}
@@ -318,10 +325,10 @@ function PaymentStep(props: {
                 />
               </Field>
             </div>
-            <Field label="Cardholder name">
+            <Field label={t("co.card.holder")}>
               <input
                 value={card.name} onChange={e => setCard({ ...card, name: e.target.value })}
-                placeholder="As written on card"
+                placeholder={t("co.card.holderPh")}
                 className="w-full bg-transparent outline-none text-sm placeholder:text-muted-foreground/60"
               />
             </Field>
@@ -330,18 +337,18 @@ function PaymentStep(props: {
 
         {method === "crypto" && (
           <div className="rounded-xl border border-white/10 p-5 text-sm text-muted-foreground">
-            Pay with <span className="text-foreground">BTC, ETH, USDT (TRC-20)</span>. After clicking pay, you'll receive a wallet address and a QR code. Your subscription activates as soon as the transaction is confirmed on-chain.
+            {t("co.crypto.text")}
           </div>
         )}
 
         {method === "momo" && (
           <div className="rounded-xl border border-white/10 p-5 text-sm text-muted-foreground">
-            Pay with <span className="text-foreground">Orange Money</span> or <span className="text-foreground">MTN Mobile Money</span>. We'll send the payment instructions to your phone after you confirm.
+            {t("co.momo.text")}
           </div>
         )}
 
         <p className="text-[11px] text-muted-foreground/70 mt-4">
-          Payments processed securely by <span className="text-foreground">SebPay</span>. Key ref: <span className="font-mono">{SEBPAY_PUBLIC_KEY.slice(0, 12)}…</span>
+          {t("co.processedBy")} <span className="text-foreground">SebPay</span>. <span className="font-mono">{SEBPAY_PUBLIC_KEY.slice(0, 12)}…</span>
         </p>
       </section>
 
@@ -353,15 +360,15 @@ function PaymentStep(props: {
 
       <div className="flex flex-col-reverse sm:flex-row gap-3 sm:justify-between sm:items-center">
         <button type="button" onClick={onBack} className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
-          <ChevronLeft className="h-4 w-4" /> Back to plans
+          <ChevronLeft className="h-4 w-4" /> {t("co.back")}
         </button>
         <button
           type="submit"
           disabled={!canPay || processing}
           className="btn-gold btn-gold-hover px-8 py-3 rounded-full font-semibold inline-flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {processing ? (<><Loader2 className="h-4 w-4 animate-spin" /> Processing…</>)
-                      : (<><Lock className="h-4 w-4" /> Pay ${total.toFixed(2)}</>)}
+          {processing ? (<><Loader2 className="h-4 w-4 animate-spin" /> {t("co.processing")}</>)
+                      : (<><Lock className="h-4 w-4" /> {t("co.pay")} ${total.toFixed(2)}</>)}
         </button>
       </div>
     </form>
@@ -369,28 +376,34 @@ function PaymentStep(props: {
 }
 
 function OrderSummary({ plan, taxes, total }: { plan: Plan; taxes: number; total: number }) {
+  const t = useT();
+  const planNameMap: Record<string, string> = {
+    "1m": t("pricing.month"), "3m": t("pricing.3months"),
+    "6m": t("pricing.6months"), "12m": t("pricing.12months"),
+  };
+  const planName = planNameMap[plan.id] ?? plan.name;
   return (
     <aside className="glass rounded-2xl p-6 h-fit lg:sticky lg:top-24">
-      <h3 className="text-sm uppercase tracking-[0.18em] text-[color:var(--gold)] mb-4">Order summary</h3>
+      <h3 className="text-sm uppercase tracking-[0.18em] text-[color:var(--gold)] mb-4">{t("co.summary")}</h3>
       <div className="flex items-start justify-between gap-4 pb-4 border-b border-white/10">
         <div>
-          <p className="font-semibold">Nexora IPTV — {plan.name}</p>
-          <p className="text-xs text-muted-foreground">Premium subscription</p>
+          <p className="font-semibold">Nexora IPTV — {planName}</p>
+          <p className="text-xs text-muted-foreground">{t("co.summary.premium")}</p>
         </div>
         <p className="font-semibold">${plan.price.toFixed(2)}</p>
       </div>
       <dl className="space-y-2 py-4 text-sm">
-        <div className="flex justify-between text-muted-foreground"><dt>Subtotal</dt><dd>${plan.price.toFixed(2)}</dd></div>
-        <div className="flex justify-between text-muted-foreground"><dt>Taxes</dt><dd>${taxes.toFixed(2)}</dd></div>
+        <div className="flex justify-between text-muted-foreground"><dt>{t("co.summary.subtotal")}</dt><dd>${plan.price.toFixed(2)}</dd></div>
+        <div className="flex justify-between text-muted-foreground"><dt>{t("co.summary.taxes")}</dt><dd>${taxes.toFixed(2)}</dd></div>
       </dl>
       <div className="flex justify-between items-baseline pt-4 border-t border-white/10">
-        <span className="text-sm text-muted-foreground">Total</span>
+        <span className="text-sm text-muted-foreground">{t("co.summary.total")}</span>
         <span className="text-2xl font-bold text-gradient-gold">${total.toFixed(2)}</span>
       </div>
       <div className="mt-6 space-y-2 text-xs text-muted-foreground">
-        <p className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-[color:var(--gold)]" /> 7-day satisfaction guarantee</p>
-        <p className="flex items-center gap-2"><Lock className="h-4 w-4 text-[color:var(--gold)]" /> Encrypted, PCI-DSS checkout</p>
-        <p className="flex items-center gap-2"><Check className="h-4 w-4 text-[color:var(--gold)]" /> Instant email delivery</p>
+        <p className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-[color:var(--gold)]" /> {t("co.guarantee")}</p>
+        <p className="flex items-center gap-2"><Lock className="h-4 w-4 text-[color:var(--gold)]" /> {t("co.encrypted")}</p>
+        <p className="flex items-center gap-2"><Check className="h-4 w-4 text-[color:var(--gold)]" /> {t("co.instant")}</p>
       </div>
     </aside>
   );
