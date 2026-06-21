@@ -125,11 +125,13 @@ function CheckoutPage() {
             </div>
             <span className="font-bold tracking-wide">NEXORA <span className="text-[color:var(--gold)]">IPTV</span></span>
           </Link>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Lock className="h-3.5 w-3.5 text-[color:var(--gold)]" />
-            {t("co.secure")}
+          <div className="flex items-center gap-4">
+            <div className="hidden sm:flex items-center gap-2 text-xs text-muted-foreground">
+              <Lock className="h-3.5 w-3.5 text-[color:var(--gold)]" />
+              {t("co.secure")}
+            </div>
+            <LanguageSwitcher />
           </div>
-          <LanguageSwitcher />
         </div>
       </header>
 
