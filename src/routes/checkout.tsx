@@ -1,12 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
+import { useRouter } from "@tanstack/react-router";
 import {
   Check, CreditCard, Lock, ShieldCheck, ChevronLeft, Mail, User,
-  Loader2, PartyPopper, Tv,
+  Loader2, Tv,
 } from "lucide-react";
-
-// Publishable (public) key — safe to ship in client code.
-const STRIPE_PUBLISHABLE_KEY = "pk_live_LXqrgXeD7grJRHhIG4FBBnDdN3jZriNDqeO4VkDY";
+import { createOrder, finalizeOrder } from "@/lib/orders.functions";
+import { initSebPayPayment, SEBPAY_PUBLIC_KEY } from "@/lib/sebpay";
 
 type Plan = { id: string; name: string; price: number; period: string; save?: string; popular?: boolean };
 
@@ -39,20 +39,21 @@ export const Route = createFileRoute("/checkout")({
 });
 
 function CheckoutPage() {
+  const router = useRouter();
   const { plan: planParam } = Route.useSearch();
   const initial = useMemo(() => {
     const match = PLANS.find(p => p.name.toLowerCase() === (planParam ?? "").toLowerCase());
     return match ?? PLANS[3];
   }, [planParam]);
 
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [step, setStep] = useState<1 | 2>(1);
   const [selected, setSelected] = useState<Plan>(initial);
   const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");
   const [method, setMethod] = useState<"card" | "crypto" | "momo">("card");
   const [card, setCard] = useState({ number: "", exp: "", cvc: "", name: "" });
   const [processing, setProcessing] = useState(false);
-  const [orderId, setOrderId] = useState<string>("");
+  const [errorMsg, setErrorMsg] = useState<string>("");
 
   const taxes = +(selected.price * 0.0).toFixed(2);
   const total = +(selected.price + taxes).toFixed(2);
@@ -63,17 +64,53 @@ function CheckoutPage() {
     (method !== "card" ||
       (card.number.replace(/\s/g, "").length >= 13 && card.exp.length >= 4 && card.cvc.length >= 3));
 
-  function handlePay(e: React.FormEvent) {
+  async function handlePay(e: React.FormEvent) {
     e.preventDefault();
     if (!canPay) return;
+    setErrorMsg("");
     setProcessing(true);
-    // Simulated tokenization with publishable key — replace with real Stripe Elements when backend is ready.
-    setTimeout(() => {
-      const id = "NX-" + Math.random().toString(36).slice(2, 8).toUpperCase();
-      setOrderId(id);
+    try {
+      const order = await createOrder({
+        data: {
+          email: email.toLowerCase(),
+          fullName,
+          planId: selected.id,
+          planName: selected.name,
+          amount: total,
+          currency: "USD",
+          method,
+        },
+      });
+      if (!order?.order_ref) throw new Error("Could not create order");
+
+      const origin = typeof window !== "undefined" ? window.location.origin : "";
+      const result = await initSebPayPayment({
+        orderRef: order.order_ref,
+        amount: total,
+        currency: "USD",
+        email: email.toLowerCase(),
+        fullName,
+        method,
+        card: method === "card" ? card : undefined,
+        successUrl: `${origin}/payment/success?ref=${order.order_ref}`,
+        failureUrl: `${origin}/payment/failed?ref=${order.order_ref}`,
+      });
+
+      if (result.status === "paid") {
+        await finalizeOrder({
+          data: { ref: order.order_ref, status: "paid", sebpayReference: result.transactionId },
+        });
+        router.navigate({ to: "/payment/success", search: { ref: order.order_ref } });
+      } else {
+        await finalizeOrder({
+          data: { ref: order.order_ref, status: result.status === "cancelled" ? "cancelled" : "failed" },
+        });
+        router.navigate({ to: "/payment/failed", search: { ref: order.order_ref } });
+      }
+    } catch (err: any) {
+      setErrorMsg(err?.message ?? "Payment failed. Please try again.");
       setProcessing(false);
-      setStep(3);
-    }, 1400);
+    }
   }
 
   return (
@@ -114,16 +151,9 @@ function CheckoutPage() {
                 processing={processing}
                 canPay={canPay}
                 total={total}
+                errorMsg={errorMsg}
                 onBack={() => setStep(1)}
                 onSubmit={handlePay}
-              />
-            )}
-            {step === 3 && (
-              <ConfirmationStep
-                orderId={orderId}
-                email={email}
-                plan={selected}
-                total={total}
               />
             )}
           </div>
@@ -219,10 +249,10 @@ function PaymentStep(props: {
   method: "card" | "crypto" | "momo"; setMethod: (v: "card" | "crypto" | "momo") => void;
   card: { number: string; exp: string; cvc: string; name: string };
   setCard: (v: { number: string; exp: string; cvc: string; name: string }) => void;
-  processing: boolean; canPay: boolean; total: number;
+  processing: boolean; canPay: boolean; total: number; errorMsg?: string;
   onBack: () => void; onSubmit: (e: React.FormEvent) => void;
 }) {
-  const { email, setEmail, fullName, setFullName, method, setMethod, card, setCard, processing, canPay, total, onBack, onSubmit } = props;
+  const { email, setEmail, fullName, setFullName, method, setMethod, card, setCard, processing, canPay, total, errorMsg, onBack, onSubmit } = props;
 
   return (
     <form onSubmit={onSubmit} className="space-y-6">
@@ -311,9 +341,15 @@ function PaymentStep(props: {
         )}
 
         <p className="text-[11px] text-muted-foreground/70 mt-4">
-          Payments are processed securely. Key ref: <span className="font-mono">{STRIPE_PUBLISHABLE_KEY.slice(0, 12)}…</span>
+          Payments processed securely by <span className="text-foreground">SebPay</span>. Key ref: <span className="font-mono">{SEBPAY_PUBLIC_KEY.slice(0, 12)}…</span>
         </p>
       </section>
+
+      {errorMsg && (
+        <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+          {errorMsg}
+        </div>
+      )}
 
       <div className="flex flex-col-reverse sm:flex-row gap-3 sm:justify-between sm:items-center">
         <button type="button" onClick={onBack} className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
@@ -329,42 +365,6 @@ function PaymentStep(props: {
         </button>
       </div>
     </form>
-  );
-}
-
-function ConfirmationStep({ orderId, email, plan, total }: { orderId: string; email: string; plan: Plan; total: number }) {
-  return (
-    <section className="glass rounded-2xl p-8 md:p-12 text-center">
-      <div className="mx-auto h-16 w-16 rounded-full bg-[image:var(--gradient-gold)] grid place-items-center mb-5">
-        <PartyPopper className="h-7 w-7 text-black" />
-      </div>
-      <h2 className="text-3xl font-bold mb-2">Payment successful</h2>
-      <p className="text-muted-foreground mb-6">
-        Thank you. Your <span className="text-foreground">{plan.name}</span> subscription is being activated.
-      </p>
-
-      <div className="mx-auto max-w-md text-left rounded-xl border border-white/10 divide-y divide-white/5">
-        <Row label="Order ID" value={orderId} />
-        <Row label="Plan" value={plan.name} />
-        <Row label="Amount" value={`$${total.toFixed(2)} USD`} />
-        <Row label="Delivery email" value={email} />
-        <Row label="Status" value={<span className="text-[color:var(--gold)]">Activating</span>} />
-      </div>
-
-      <p className="text-sm text-muted-foreground mt-6">
-        Your credentials (M3U URL, Xtream codes & setup guide) will arrive at <span className="text-foreground">{email}</span> within a few minutes.
-      </p>
-
-      <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
-        <Link to="/" className="px-6 py-3 rounded-full glass hover:border-[color:var(--gold)]/40 transition text-sm font-medium">
-          Back to home
-        </Link>
-        <a href="https://wa.me/" target="_blank" rel="noreferrer"
-           className="btn-gold btn-gold-hover px-6 py-3 rounded-full text-sm font-semibold">
-          Contact support
-        </a>
-      </div>
-    </section>
   );
 }
 

@@ -14,7 +14,57 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      orders: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          email: string
+          full_name: string
+          id: string
+          metadata: Json
+          method: string
+          order_ref: string
+          plan_id: string
+          plan_name: string
+          sebpay_reference: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string
+          email: string
+          full_name: string
+          id?: string
+          metadata?: Json
+          method?: string
+          order_ref: string
+          plan_id: string
+          plan_name: string
+          sebpay_reference?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          email?: string
+          full_name?: string
+          id?: string
+          metadata?: Json
+          method?: string
+          order_ref?: string
+          plan_id?: string
+          plan_name?: string
+          sebpay_reference?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
