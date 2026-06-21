@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as FrRouteImport } from './routes/fr'
 import { Route as EnRouteImport } from './routes/en'
 import { Route as DeRouteImport } from './routes/de'
@@ -19,6 +20,11 @@ import { Route as PaymentSuccessRouteImport } from './routes/payment.success'
 import { Route as PaymentFailedRouteImport } from './routes/payment.failed'
 import { Route as ApiPublicSebpayWebhookRouteImport } from './routes/api/public/sebpay/webhook'
 
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const FrRoute = FrRouteImport.update({
   id: '/fr',
   path: '/fr',
@@ -72,6 +78,7 @@ export interface FileRoutesByFullPath {
   '/de': typeof DeRoute
   '/en': typeof EnRoute
   '/fr': typeof FrRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/payment/failed': typeof PaymentFailedRoute
   '/payment/success': typeof PaymentSuccessRoute
   '/api/public/sebpay/webhook': typeof ApiPublicSebpayWebhookRoute
@@ -83,6 +90,7 @@ export interface FileRoutesByTo {
   '/de': typeof DeRoute
   '/en': typeof EnRoute
   '/fr': typeof FrRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/payment/failed': typeof PaymentFailedRoute
   '/payment/success': typeof PaymentSuccessRoute
   '/api/public/sebpay/webhook': typeof ApiPublicSebpayWebhookRoute
@@ -95,6 +103,7 @@ export interface FileRoutesById {
   '/de': typeof DeRoute
   '/en': typeof EnRoute
   '/fr': typeof FrRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/payment/failed': typeof PaymentFailedRoute
   '/payment/success': typeof PaymentSuccessRoute
   '/api/public/sebpay/webhook': typeof ApiPublicSebpayWebhookRoute
@@ -108,6 +117,7 @@ export interface FileRouteTypes {
     | '/de'
     | '/en'
     | '/fr'
+    | '/sitemap.xml'
     | '/payment/failed'
     | '/payment/success'
     | '/api/public/sebpay/webhook'
@@ -119,6 +129,7 @@ export interface FileRouteTypes {
     | '/de'
     | '/en'
     | '/fr'
+    | '/sitemap.xml'
     | '/payment/failed'
     | '/payment/success'
     | '/api/public/sebpay/webhook'
@@ -130,6 +141,7 @@ export interface FileRouteTypes {
     | '/de'
     | '/en'
     | '/fr'
+    | '/sitemap.xml'
     | '/payment/failed'
     | '/payment/success'
     | '/api/public/sebpay/webhook'
@@ -142,6 +154,7 @@ export interface RootRouteChildren {
   DeRoute: typeof DeRoute
   EnRoute: typeof EnRoute
   FrRoute: typeof FrRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   PaymentFailedRoute: typeof PaymentFailedRoute
   PaymentSuccessRoute: typeof PaymentSuccessRoute
   ApiPublicSebpayWebhookRoute: typeof ApiPublicSebpayWebhookRoute
@@ -149,6 +162,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/fr': {
       id: '/fr'
       path: '/fr'
@@ -222,6 +242,7 @@ const rootRouteChildren: RootRouteChildren = {
   DeRoute: DeRoute,
   EnRoute: EnRoute,
   FrRoute: FrRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
   PaymentFailedRoute: PaymentFailedRoute,
   PaymentSuccessRoute: PaymentSuccessRoute,
   ApiPublicSebpayWebhookRoute: ApiPublicSebpayWebhookRoute,
