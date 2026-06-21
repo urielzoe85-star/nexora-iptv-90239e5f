@@ -171,7 +171,8 @@ function CheckoutPage() {
 }
 
 function Stepper({ step }: { step: 1 | 2 | 3 }) {
-  const items = ["Choose Plan", "Payment", "Confirmation"];
+  const t = useT();
+  const items = [t("co.step.plan"), t("co.step.payment"), t("co.step.confirm")];
   return (
     <ol className="flex items-center gap-3 text-sm">
       {items.map((label, i) => {
@@ -196,13 +197,22 @@ function Stepper({ step }: { step: 1 | 2 | 3 }) {
 }
 
 function PlanStep({ selected, onSelect, onNext }: { selected: Plan; onSelect: (p: Plan) => void; onNext: () => void }) {
+  const t = useT();
+  const planLabels: Record<string, { name: string; period: string; save?: string }> = {
+    "1m":  { name: t("pricing.month"),    period: t("pricing.per.month") },
+    "3m":  { name: t("pricing.3months"),  period: t("pricing.per.quarter"), save: t("pricing.save17") },
+    "6m":  { name: t("pricing.6months"),  period: t("pricing.per.6"),       save: t("pricing.save24") },
+    "12m": { name: t("pricing.12months"), period: t("pricing.per.year"),    save: t("pricing.save34") },
+  };
+  const includes = [1, 2, 3, 4, 5, 6].map((i) => t(`co.includes.${i}`));
   return (
     <section className="glass rounded-2xl p-6 md:p-8">
-      <h2 className="text-2xl font-bold mb-1">Select your subscription</h2>
-      <p className="text-sm text-muted-foreground mb-6">Pick the plan that fits you. Cancel or change anytime.</p>
+      <h2 className="text-2xl font-bold mb-1">{t("co.select.title")}</h2>
+      <p className="text-sm text-muted-foreground mb-6">{t("co.select.sub")}</p>
       <div className="grid sm:grid-cols-2 gap-3">
         {PLANS.map(p => {
           const active = p.id === selected.id;
+          const lbl = planLabels[p.id] ?? { name: p.name, period: p.period, save: p.save };
           return (
             <button
               key={p.id}
@@ -214,27 +224,27 @@ function PlanStep({ selected, onSelect, onNext }: { selected: Plan; onSelect: (p
             >
               {p.popular && (
                 <span className="absolute -top-2 right-4 bg-[image:var(--gradient-gold)] text-black text-[10px] font-bold px-2 py-0.5 rounded-full">
-                  POPULAR
+                  {t("pricing.popular")}
                 </span>
               )}
               <div className="flex items-center justify-between mb-2">
-                <span className="font-semibold">{p.name}</span>
+                <span className="font-semibold">{lbl.name}</span>
                 <span className={`h-5 w-5 rounded-full border grid place-items-center ${active ? "border-[color:var(--gold)]" : "border-white/20"}`}>
                   {active && <span className="h-2.5 w-2.5 rounded-full bg-[color:var(--gold)]" />}
                 </span>
               </div>
               <div className="flex items-baseline gap-1">
                 <span className="text-3xl font-bold text-gradient-gold">${p.price}</span>
-                <span className="text-xs text-muted-foreground">{p.period}</span>
+                <span className="text-xs text-muted-foreground">{lbl.period}</span>
               </div>
-              {p.save && <p className="text-xs text-[color:var(--gold)] mt-1">{p.save}</p>}
+              {lbl.save && <p className="text-xs text-[color:var(--gold)] mt-1">{lbl.save}</p>}
             </button>
           );
         })}
       </div>
 
       <ul className="grid sm:grid-cols-2 gap-2 mt-6 text-sm">
-        {PLAN_INCLUDES.map(f => (
+        {includes.map(f => (
           <li key={f} className="flex items-start gap-2 text-muted-foreground">
             <Check className="h-4 w-4 text-[color:var(--gold)] mt-0.5 shrink-0" /> {f}
           </li>
@@ -242,7 +252,7 @@ function PlanStep({ selected, onSelect, onNext }: { selected: Plan; onSelect: (p
       </ul>
 
       <button onClick={onNext} className="btn-gold btn-gold-hover mt-8 w-full sm:w-auto px-8 py-3 rounded-full font-semibold">
-        Continue to payment
+        {t("co.continue")}
       </button>
     </section>
   );
