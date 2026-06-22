@@ -50,35 +50,72 @@ export const initSebPayCheckout = createServerFn({ method: "POST" })
 
     // Call SebPay's hosted-checkout API. The exact field names follow SebPay's
     // public documentation; adjust if your account uses a different schema.
-    const resp = await fetch("https://api.sebpay.com/v1/checkout/sessions", {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        authorization: `Bearer ${secret}`,
-      },
-      body: JSON.stringify({
-        reference: order.order_ref,
-        amount: Number(order.amount),
-        currency: order.currency,
-        payment_method: order.method,
-        customer: { email: order.email, name: order.full_name },
-        description: `Nexora IPTV — ${order.plan_name}`,
-        success_url: data.successUrl,
-        cancel_url: data.failureUrl,
-        webhook_url:
-          (process.env.PUBLIC_APP_URL ?? "") + "/api/public/sebpay/webhook",
-      }),
-    });
+    // We wrap the fetch so TLS / DNS / network failures (e.g. Cloudflare 525
+    // "SSL handshake failed" returned by an upstream gateway) become a clean,
+    // user-friendly error rather than a raw stack trace.
+    let resp: Response;
+    try {
+      resp = await fetch("https://api.sebpay.com/v1/checkout/sessions", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          authorization: `Bearer ${secret}`,
+        },
+        body: JSON.stringify({
+          reference: order.order_ref,
+          amount: Number(order.amount),
+          currency: order.currency,
+          payment_method: order.method,
+          customer: { email: order.email, name: order.full_name },
+          description: `Nexora IPTV — ${order.plan_name}`,
+          success_url: data.successUrl,
+          cancel_url: data.failureUrl,
+          webhook_url:
+            (process.env.PUBLIC_APP_URL ?? "") + "/api/public/sebpay/webhook",
+        }),
+      });
+    } catch (err: any) {
+      const reason = err?.message ?? String(err);
+      console.error("[sebpay] network/TLS error reaching gateway", reason);
+      await supabaseAdmin
+        .from("orders")
+        .update({
+          status: "failed",
+          metadata: {
+            init_error: `network_error: ${reason}`.slice(0, 1000),
+            failure_reason:
+              "La passerelle de paiement est injoignable (handshake SSL/TLS échoué). Réessayez dans quelques minutes.",
+          },
+        })
+        .eq("order_ref", order.order_ref)
+        .eq("status", "pending");
+      throw new Error(
+        "La passerelle de paiement est temporairement injoignable. Veuillez réessayer dans quelques instants.",
+      );
+    }
 
     const text = await resp.text();
     if (!resp.ok) {
       console.error("[sebpay] init failed", resp.status, text);
+      const friendly =
+        resp.status === 525 || resp.status === 526
+          ? "La passerelle de paiement a refusé la connexion sécurisée (SSL handshake failed). Réessayez dans quelques minutes."
+          : resp.status >= 500
+            ? "La passerelle de paiement rencontre une erreur temporaire. Réessayez bientôt."
+            : "La passerelle de paiement a rejeté la demande. Vérifiez vos informations et réessayez.";
       await supabaseAdmin
         .from("orders")
-        .update({ status: "failed", metadata: { init_error: text.slice(0, 1000) } })
+        .update({
+          status: "failed",
+          metadata: {
+            init_error: text.slice(0, 1000),
+            init_status: resp.status,
+            failure_reason: friendly,
+          },
+        })
         .eq("order_ref", order.order_ref)
         .eq("status", "pending");
-      throw new Error(`SebPay rejected the request (${resp.status}).`);
+      throw new Error(friendly);
     }
 
     let body: any;
