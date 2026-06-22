@@ -103,53 +103,12 @@ export async function verifyPaymentInternal(ref: string): Promise<{ status: stri
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data: order, error } = await supabaseAdmin
     .from("orders")
-    .select("order_ref, status, sebpay_reference")
+    .select("order_ref, status")
     .eq("order_ref", ref)
     .maybeSingle();
   if (error) throw new Error(error.message);
   if (!order) return { status: "not_found" };
-
-  // Already final: nothing to do.
-  if (order.status === "paid" || order.status === "failed" || order.status === "cancelled") {
-    return { status: order.status };
-  }
-
-  const secret = process.env.SEBPAY_SECRET_KEY;
-  if (!secret) {
-    console.error("[sebpay] verify skipped: SEBPAY_SECRET_KEY missing");
-    return { status: order.status };
-  }
-  if (!order.sebpay_reference) return { status: order.status };
-
-  try {
-    const resp = await fetch(
-      `https://api.sebpay.com/v1/transactions/${encodeURIComponent(order.sebpay_reference)}`,
-      { headers: { authorization: `Bearer ${secret}` } },
-    );
-    const body = await resp.json().catch(() => ({}));
-    if (!resp.ok) {
-      console.error("[sebpay] verify failed", resp.status, body);
-      return { status: order.status };
-    }
-    const raw = (body.status ?? body.payment_status ?? "").toString().toLowerCase();
-    const next =
-      ["paid", "succeeded", "success", "completed"].includes(raw) ? "paid"
-      : ["failed", "declined", "error"].includes(raw) ? "failed"
-      : ["cancelled", "canceled"].includes(raw) ? "cancelled"
-      : null;
-
-    if (next && next !== order.status) {
-      await supabaseAdmin
-        .from("orders")
-        .update({ status: next, metadata: { verify_response: body } })
-        .eq("order_ref", order.order_ref)
-        .in("status", ["pending", "processing"]);
-      console.log("[sebpay] verify updated status", { ref: order.order_ref, next });
-      return { status: next };
-    }
-    return { status: order.status };
-  } catch (err: any) {
-    console.error("[sebpay] verify error", err?.message);
-    return { status: order.status };
-  }
+  // Checkout is processed on our hosted /pay page; the persisted status is
+  // the source of truth.
+  return { status: order.status };
 }
