@@ -102,6 +102,36 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "alternate", hrefLang: "de", href: "/de" },
       { rel: "alternate", hrefLang: "x-default", href: "/" },
     ],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@graph": [
+            {
+              "@type": "Organization",
+              name: "Nexora IPTV",
+              url: "https://nexora-iptv.com",
+              logo: "https://nexora-iptv.com/favicon.ico",
+              sameAs: [],
+            },
+            {
+              "@type": "WebSite",
+              name: "Nexora IPTV",
+              url: "https://nexora-iptv.com",
+            },
+            {
+              "@type": "Service",
+              name: "Nexora IPTV Subscription",
+              provider: { "@type": "Organization", name: "Nexora IPTV" },
+              areaServed: "Worldwide",
+              serviceType: "IPTV streaming subscription",
+              description: "Premium IPTV with thousands of live channels, movies and series in HD/FHD/4K across Smart TV, mobile, tablet and PC.",
+            },
+          ],
+        }),
+      },
+    ],
   }),
   shellComponent: RootShell,
   component: RootComponent,

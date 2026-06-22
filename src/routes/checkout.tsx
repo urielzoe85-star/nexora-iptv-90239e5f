@@ -23,6 +23,8 @@ export const Route = createFileRoute("/checkout")({
     meta: [
       { title: "Checkout — Nexora IPTV" },
       { name: "description", content: "Secure checkout for your Nexora IPTV subscription. Encrypted payments, instant activation." },
+      { property: "og:title", content: "Checkout — Nexora IPTV" },
+      { property: "og:description", content: "Secure encrypted checkout for your Nexora IPTV plan. Instant activation after payment." },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -119,6 +121,7 @@ function CheckoutPage() {
       </header>
 
       <div className="max-w-6xl mx-auto px-6 py-10">
+        <h1 className="sr-only">Complete your Nexora IPTV subscription</h1>
         <Stepper step={step} />
 
         <div className="mt-10 grid lg:grid-cols-[1fr_380px] gap-8">
