@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
@@ -24,7 +24,6 @@ export const Route = createFileRoute("/pay/$ref")({
 function HostedCheckout() {
   const { ref } = Route.useParams();
   const { success, cancel } = Route.useSearch();
-  const navigate = useNavigate();
   const fetchOrder = useServerFn(getOrderByRef);
   const confirmFn = useServerFn(confirmCheckoutPayment);
   const failFn = useServerFn(markOrderFailed);
@@ -43,8 +42,7 @@ function HostedCheckout() {
     try {
       await confirmFn({ data: { ref } });
       const target = success ?? `/payment/success?ref=${encodeURIComponent(ref)}`;
-      if (/^https?:\/\//i.test(target)) window.location.href = target;
-      else navigate({ to: target });
+      window.location.href = target;
     } catch (e: any) {
       setErr(e?.message ?? "Payment failed");
       setBusy(null);
@@ -57,8 +55,7 @@ function HostedCheckout() {
       await failFn({ data: { ref, status: "cancelled" } });
     } catch {}
     const target = cancel ?? `/payment/failed?ref=${encodeURIComponent(ref)}`;
-    if (/^https?:\/\//i.test(target)) window.location.href = target;
-    else navigate({ to: target });
+    window.location.href = target;
   }
 
   if (isLoading) {
