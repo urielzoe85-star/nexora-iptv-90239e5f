@@ -24,6 +24,7 @@ import { Route as PaymentFailedRouteImport } from './routes/payment.failed'
 import { Route as AdminPlansRouteImport } from './routes/admin.plans'
 import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
+import { Route as AdminContentRouteImport } from './routes/admin.content'
 import { Route as ApiPublicSebpayWebhookRouteImport } from './routes/api/public/sebpay/webhook'
 
 const TrackRoute = TrackRouteImport.update({
@@ -101,6 +102,11 @@ const AdminLoginRoute = AdminLoginRouteImport.update({
   path: '/login',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminContentRoute = AdminContentRouteImport.update({
+  id: '/content',
+  path: '/content',
+  getParentRoute: () => AdminRoute,
+} as any)
 const ApiPublicSebpayWebhookRoute = ApiPublicSebpayWebhookRouteImport.update({
   id: '/api/public/sebpay/webhook',
   path: '/api/public/sebpay/webhook',
@@ -117,6 +123,7 @@ export interface FileRoutesByFullPath {
   '/fr': typeof FrRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/track': typeof TrackRoute
+  '/admin/content': typeof AdminContentRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/plans': typeof AdminPlansRoute
@@ -134,6 +141,7 @@ export interface FileRoutesByTo {
   '/fr': typeof FrRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/track': typeof TrackRoute
+  '/admin/content': typeof AdminContentRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/plans': typeof AdminPlansRoute
@@ -153,6 +161,7 @@ export interface FileRoutesById {
   '/fr': typeof FrRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/track': typeof TrackRoute
+  '/admin/content': typeof AdminContentRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/plans': typeof AdminPlansRoute
@@ -173,6 +182,7 @@ export interface FileRouteTypes {
     | '/fr'
     | '/sitemap.xml'
     | '/track'
+    | '/admin/content'
     | '/admin/login'
     | '/admin/orders'
     | '/admin/plans'
@@ -190,6 +200,7 @@ export interface FileRouteTypes {
     | '/fr'
     | '/sitemap.xml'
     | '/track'
+    | '/admin/content'
     | '/admin/login'
     | '/admin/orders'
     | '/admin/plans'
@@ -208,6 +219,7 @@ export interface FileRouteTypes {
     | '/fr'
     | '/sitemap.xml'
     | '/track'
+    | '/admin/content'
     | '/admin/login'
     | '/admin/orders'
     | '/admin/plans'
@@ -339,6 +351,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminLoginRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/content': {
+      id: '/admin/content'
+      path: '/content'
+      fullPath: '/admin/content'
+      preLoaderRoute: typeof AdminContentRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/api/public/sebpay/webhook': {
       id: '/api/public/sebpay/webhook'
       path: '/api/public/sebpay/webhook'
@@ -350,6 +369,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AdminRouteChildren {
+  AdminContentRoute: typeof AdminContentRoute
   AdminLoginRoute: typeof AdminLoginRoute
   AdminOrdersRoute: typeof AdminOrdersRoute
   AdminPlansRoute: typeof AdminPlansRoute
@@ -357,6 +377,7 @@ interface AdminRouteChildren {
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminContentRoute: AdminContentRoute,
   AdminLoginRoute: AdminLoginRoute,
   AdminOrdersRoute: AdminOrdersRoute,
   AdminPlansRoute: AdminPlansRoute,
