@@ -385,7 +385,10 @@ function Footer() {
       </div>
       <div className="max-w-7xl mx-auto px-6 mt-12 pt-6 border-t border-[color:var(--gold)]/10 text-xs text-muted-foreground flex flex-wrap items-center justify-between gap-3">
         <span>© {new Date().getFullYear()} Nexora IPTV. {t("footer.rights")}</span>
-        <span>nexora-iptv.com</span>
+        <div className="flex items-center gap-3">
+          <Link to="/admin/login" className="text-muted-foreground/40 hover:text-muted-foreground transition">Admin</Link>
+          <span>nexora-iptv.com</span>
+        </div>
       </div>
     </footer>
   );
