@@ -1,14 +1,64 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
+// =============================================================================
+// SebPay LIVE integration
+// -----------------------------------------------------------------------------
+// Documented base URL + endpoints (https://sebpay.bj/our-api):
+//   POST  {BASE}/v1/payments        — create a payment
+//   GET   {BASE}/v1/payments/{id}   — verify payment status
+//   POST  {BASE}/v1/payouts         — payouts (unused here)
+//   GET   {BASE}/v1/balance         — balance     (unused here)
+//
+// Auth: Bearer token = SEBPAY_SECRET_KEY (server-side secret, never exposed).
+// We log the exact URL, request payload, HTTP status and raw response body
+// for every call so issues can be diagnosed end-to-end.
+// =============================================================================
+const SEBPAY_BASE_URL = "https://newapi.sebpay.bj";
+
+function sebpaySecret(): string {
+  const k = process.env.SEBPAY_SECRET_KEY;
+  if (!k) throw new Error("SEBPAY_SECRET_KEY is not configured");
+  return k;
+}
+
+async function sebpayFetch(
+  path: string,
+  init: { method: "GET" | "POST"; body?: unknown },
+): Promise<{ status: number; raw: string; json: any }> {
+  const url = `${SEBPAY_BASE_URL}${path}`;
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${sebpaySecret()}`,
+    Accept: "application/json",
+  };
+  if (init.body !== undefined) headers["Content-Type"] = "application/json";
+
+  console.log("[sebpay] →", init.method, url, init.body ? { payload: init.body } : "");
+  const res = await fetch(url, {
+    method: init.method,
+    headers,
+    body: init.body !== undefined ? JSON.stringify(init.body) : undefined,
+  });
+  const raw = await res.text();
+  let json: any = null;
+  try { json = raw ? JSON.parse(raw) : null; } catch { /* non-JSON */ }
+  console.log("[sebpay] ←", res.status, url, raw.slice(0, 2000));
+  return { status: res.status, raw, json };
+}
+
+// Map any status string SebPay returns to one of our 4 internal states.
+function mapSebpayStatus(s: unknown): "paid" | "failed" | "cancelled" | "pending" {
+  const v = String(s ?? "").toLowerCase();
+  if (["success", "successful", "succeeded", "paid", "completed", "approved"].includes(v)) return "paid";
+  if (["failed", "failure", "error", "declined"].includes(v)) return "failed";
+  if (["cancelled", "canceled"].includes(v)) return "cancelled";
+  return "pending";
+}
+
 /**
- * Initiate a SebPay checkout session server-side.
- *
- * SECURITY: The client never charges. It calls this server fn, we hit SebPay
- * with the secret key, and return the hosted-checkout URL. The browser is then
- * redirected to SebPay. The order's status stays "processing" until the webhook
- * (and/or verifyPayment below) confirms with SebPay that the transaction
- * succeeded.
+ * Create a payment with SebPay (POST /v1/payments) and return the URL the
+ * customer must be redirected to. The order is moved to "processing"; it will
+ * only flip to "paid" after verifyPayment / the webhook confirms with SebPay.
  */
 export const initSebPayCheckout = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) =>
@@ -22,7 +72,6 @@ export const initSebPayCheckout = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    // Load the pending order. Refuse to start checkout for already-finalized orders.
     const { data: order, error: oErr } = await supabaseAdmin
       .from("orders")
       .select("order_ref, email, full_name, plan_name, amount, currency, method, status")
@@ -34,57 +83,57 @@ export const initSebPayCheckout = createServerFn({ method: "POST" })
       throw new Error(`Order is already ${order.status}; cannot start a new checkout.`);
     }
 
-    // Hosted checkout is served from this same app (internal SebPay-branded
-    // page). The browser is redirected to /pay/<ref>, the customer confirms
-    // or cancels, and the server marks the order paid/cancelled accordingly.
-    // Order stays in "processing" until that page resolves it.
-    const sessionId = `sess_${order.order_ref}_${Date.now().toString(36)}`;
-    const checkoutUrl =
-      `/pay/${encodeURIComponent(order.order_ref)}` +
-      `?success=${encodeURIComponent(data.successUrl)}` +
-      `&cancel=${encodeURIComponent(data.failureUrl)}`;
+    const payload = {
+      amount: Number(order.amount),
+      currency: order.currency,
+      reference: order.order_ref,
+      description: `Nexora IPTV — ${order.plan_name}`,
+      customer: { email: order.email, name: order.full_name },
+      method: order.method,
+      success_url: data.successUrl,
+      cancel_url: data.failureUrl,
+      callback_url: data.successUrl,
+      webhook_url: `${new URL(data.successUrl).origin}/api/public/sebpay/webhook`,
+      metadata: { order_ref: order.order_ref },
+    };
+
+    const { status, raw, json } = await sebpayFetch("/v1/payments", {
+      method: "POST",
+      body: payload,
+    });
+    if (status < 200 || status >= 300 || !json) {
+      throw new Error(
+        `SebPay ${status} on POST ${SEBPAY_BASE_URL}/v1/payments — ${raw.slice(0, 300) || "(empty body)"}`,
+      );
+    }
+
+    // SebPay may name the redirect field a few different ways depending on the
+    // product (Mobile Money vs hosted card). Accept the common variants.
+    const checkoutUrl: string | undefined =
+      json.checkout_url ?? json.payment_url ?? json.url ?? json.redirect_url ?? json.data?.checkout_url;
+    const sebpayId: string | undefined =
+      json.id ?? json.transaction_id ?? json.payment_id ?? json.data?.id;
+    if (!checkoutUrl || !sebpayId) {
+      throw new Error(
+        `SebPay did not return a checkout URL / id. Raw response: ${raw.slice(0, 500)}`,
+      );
+    }
 
     await supabaseAdmin
       .from("orders")
       .update({
         status: "processing",
-        sebpay_reference: sessionId,
-        metadata: { checkout_session_id: sessionId },
+        sebpay_reference: sebpayId,
+        metadata: { sebpay_request: payload, sebpay_response: json },
       })
       .eq("order_ref", order.order_ref);
 
-    console.log("[sebpay] checkout session created", { ref: order.order_ref, sessionId });
     return { checkoutUrl };
   });
 
 /**
- * Confirm a payment from the internal hosted checkout page. Marks the order
- * as paid. Only transitions orders that are still pending/processing.
- */
-export const confirmCheckoutPayment = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) =>
-    z.object({ ref: z.string().min(4).max(40) }).parse(data),
-  )
-  .handler(async ({ data }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: row, error } = await supabaseAdmin
-      .from("orders")
-      .update({
-        status: "paid",
-        metadata: { paid_at: new Date().toISOString() },
-      })
-      .eq("order_ref", data.ref)
-      .in("status", ["pending", "processing"])
-      .select("order_ref, status")
-      .maybeSingle();
-    if (error) throw new Error(error.message);
-    return row ?? { order_ref: data.ref, status: "unknown" };
-  });
-
-/**
- * Verify a payment with SebPay's API. Used by the success page as a second
- * source of truth in addition to the webhook. Returns the current persisted
- * order status (never "paid" unless SebPay confirms).
+ * Verify a payment with SebPay (GET /v1/payments/{id}). The order status is
+ * only updated when SebPay returns a terminal state.
  */
 export const verifyPayment = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) =>
@@ -92,23 +141,45 @@ export const verifyPayment = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => verifyPaymentInternal(data.ref));
 
-/**
- * Internal verification helper — usable from both `verifyPayment` (a server
- * function called by the success page) and the webhook handler. Always queries
- * SebPay's API with the server-side secret key; never trusts client/webhook
- * input. Only mutates an order's status from pending/processing to a final
- * state (paid / failed / cancelled) when SebPay confirms it.
- */
 export async function verifyPaymentInternal(ref: string): Promise<{ status: string }> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data: order, error } = await supabaseAdmin
     .from("orders")
-    .select("order_ref, status")
+    .select("order_ref, status, sebpay_reference")
     .eq("order_ref", ref)
     .maybeSingle();
   if (error) throw new Error(error.message);
   if (!order) return { status: "not_found" };
-  // Checkout is processed on our hosted /pay page; the persisted status is
-  // the source of truth.
-  return { status: order.status };
+
+  // Already finalized → don't re-query SebPay.
+  if (["paid", "failed", "cancelled"].includes(order.status)) {
+    return { status: order.status };
+  }
+  if (!order.sebpay_reference) {
+    return { status: order.status };
+  }
+
+  const { status: httpStatus, raw, json } = await sebpayFetch(
+    `/v1/payments/${encodeURIComponent(order.sebpay_reference)}`,
+    { method: "GET" },
+  );
+  if (httpStatus < 200 || httpStatus >= 300 || !json) {
+    console.error("[sebpay] verify failed", { ref, httpStatus, raw: raw.slice(0, 300) });
+    return { status: order.status }; // unchanged
+  }
+
+  const sebStatus = json.status ?? json.payment_status ?? json.data?.status;
+  const mapped = mapSebpayStatus(sebStatus);
+  if (mapped === "pending") return { status: "processing" };
+
+  await supabaseAdmin
+    .from("orders")
+    .update({
+      status: mapped,
+      metadata: { sebpay_verify_response: json, verified_at: new Date().toISOString() },
+    })
+    .eq("order_ref", ref)
+    .in("status", ["pending", "processing"]);
+
+  return { status: mapped };
 }
