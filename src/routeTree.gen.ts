@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TrackRouteImport } from './routes/track'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as LegalGuideRouteImport } from './routes/legal-guide'
 import { Route as FrRouteImport } from './routes/fr'
 import { Route as EnRouteImport } from './routes/en'
 import { Route as DeRouteImport } from './routes/de'
@@ -36,6 +37,11 @@ const TrackRoute = TrackRouteImport.update({
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LegalGuideRoute = LegalGuideRouteImport.update({
+  id: '/legal-guide',
+  path: '/legal-guide',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FrRoute = FrRouteImport.update({
@@ -127,6 +133,7 @@ export interface FileRoutesByFullPath {
   '/de': typeof DeRoute
   '/en': typeof EnRoute
   '/fr': typeof FrRoute
+  '/legal-guide': typeof LegalGuideRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/track': typeof TrackRoute
   '/admin/admins': typeof AdminAdminsRoute
@@ -146,6 +153,7 @@ export interface FileRoutesByTo {
   '/de': typeof DeRoute
   '/en': typeof EnRoute
   '/fr': typeof FrRoute
+  '/legal-guide': typeof LegalGuideRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/track': typeof TrackRoute
   '/admin/admins': typeof AdminAdminsRoute
@@ -167,6 +175,7 @@ export interface FileRoutesById {
   '/de': typeof DeRoute
   '/en': typeof EnRoute
   '/fr': typeof FrRoute
+  '/legal-guide': typeof LegalGuideRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/track': typeof TrackRoute
   '/admin/admins': typeof AdminAdminsRoute
@@ -189,6 +198,7 @@ export interface FileRouteTypes {
     | '/de'
     | '/en'
     | '/fr'
+    | '/legal-guide'
     | '/sitemap.xml'
     | '/track'
     | '/admin/admins'
@@ -208,6 +218,7 @@ export interface FileRouteTypes {
     | '/de'
     | '/en'
     | '/fr'
+    | '/legal-guide'
     | '/sitemap.xml'
     | '/track'
     | '/admin/admins'
@@ -228,6 +239,7 @@ export interface FileRouteTypes {
     | '/de'
     | '/en'
     | '/fr'
+    | '/legal-guide'
     | '/sitemap.xml'
     | '/track'
     | '/admin/admins'
@@ -249,6 +261,7 @@ export interface RootRouteChildren {
   DeRoute: typeof DeRoute
   EnRoute: typeof EnRoute
   FrRoute: typeof FrRoute
+  LegalGuideRoute: typeof LegalGuideRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TrackRoute: typeof TrackRoute
   PaymentFailedRoute: typeof PaymentFailedRoute
@@ -270,6 +283,13 @@ declare module '@tanstack/react-router' {
       path: '/sitemap.xml'
       fullPath: '/sitemap.xml'
       preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/legal-guide': {
+      id: '/legal-guide'
+      path: '/legal-guide'
+      fullPath: '/legal-guide'
+      preLoaderRoute: typeof LegalGuideRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/fr': {
@@ -415,6 +435,7 @@ const rootRouteChildren: RootRouteChildren = {
   DeRoute: DeRoute,
   EnRoute: EnRoute,
   FrRoute: FrRoute,
+  LegalGuideRoute: LegalGuideRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TrackRoute: TrackRoute,
   PaymentFailedRoute: PaymentFailedRoute,
