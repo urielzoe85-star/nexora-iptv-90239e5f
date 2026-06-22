@@ -9,10 +9,10 @@ export const Route = createFileRoute("/de")({
       { name: "description", content: "Premium-IPTV mit tausenden Sendern, Filmen und Serien in HD/FHD/4K. Sofortige Aktivierung, mehrere Geräte, 24/7-Support." },
       { property: "og:title", content: "Nexora IPTV — Premium-Streaming" },
       { property: "og:description", content: "Tausende Live-Sender und VOD. Sofortzugriff. Mehrere Geräte." },
-      { property: "og:url", content: "/de" },
+      { property: "og:url", content: "https://nexora-iptv.com/de" },
       { property: "og:locale", content: "de_DE" },
     ],
-    links: [{ rel: "canonical", href: "/de" }],
+    links: [{ rel: "canonical", href: "https://nexora-iptv.com/de" }],
   }),
   component: () => (
     <I18nProvider forced="de">

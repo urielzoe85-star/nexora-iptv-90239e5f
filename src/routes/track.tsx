@@ -13,6 +13,8 @@ export const Route = createFileRoute("/track")({
     meta: [
       { title: "Track Your Order — Nexora IPTV" },
       { name: "description", content: "Real-time payment and activation status for your Nexora IPTV subscription." },
+      { property: "og:title", content: "Track Your Order — Nexora IPTV" },
+      { property: "og:description", content: "Live payment and activation status for your Nexora IPTV order." },
       { name: "robots", content: "noindex" },
     ],
   }),

@@ -1,0 +1,10 @@
+# Nexora IPTV
+
+> Premium IPTV subscription service — thousands of live channels, movies and series in HD/FHD/4K across Smart TV, mobile, tablet and PC. Instant activation, multi-device, 24/7 support.
+
+## Pages
+
+- [Home](/): Overview, features, pricing, FAQs and supported devices.
+- [English edition](/en): English-language version of the landing page.
+- [French edition](/fr): French-language version of the landing page.
+- [German edition](/de): German-language version of the landing page.

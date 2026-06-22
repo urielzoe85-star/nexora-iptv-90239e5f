@@ -19,9 +19,25 @@ export const Route = createFileRoute("/")({
       { name: "description", content: "Premium IPTV with thousands of channels, movies & series in HD/FHD/4K. Instant activation, multi-device, 24/7 support." },
       { property: "og:title", content: "Nexora IPTV — Premium Streaming" },
       { property: "og:description", content: "Thousands of live channels & VOD. Instant access. Multi-device." },
-      { property: "og:url", content: "/" },
+      { property: "og:url", content: "https://nexora-iptv.com/" },
     ],
-    links: [{ rel: "canonical", href: "/" }],
+    links: [{ rel: "canonical", href: "https://nexora-iptv.com/" }],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          mainEntity: [
+            { "@type": "Question", name: "How fast is activation?", acceptedAnswer: { "@type": "Answer", text: "Most subscriptions are activated within 5–10 minutes after payment is confirmed. You receive credentials by email and on WhatsApp." } },
+            { "@type": "Question", name: "Can I use multiple devices?", acceptedAnswer: { "@type": "Answer", text: "Yes. Every plan includes multi-device support so you can stream on your TV, phone, tablet and laptop." } },
+            { "@type": "Question", name: "Do I need special equipment?", acceptedAnswer: { "@type": "Answer", text: "No. Any modern Smart TV, Android/iOS device, Fire Stick, or computer with a stable internet connection works perfectly." } },
+            { "@type": "Question", name: "Which devices are supported?", acceptedAnswer: { "@type": "Answer", text: "Smart TVs (Samsung, LG, Sony), Android TV, Fire TV Stick, Apple TV, smartphones, tablets, MAG boxes, and Windows/Mac." } },
+            { "@type": "Question", name: "How do I contact support?", acceptedAnswer: { "@type": "Answer", text: "We're available 24/7 on WhatsApp, Telegram and email. Average response time is under 5 minutes." } },
+          ],
+        }),
+      },
+    ],
   }),
   component: NexoraLanding,
 });
@@ -376,7 +392,7 @@ function Footer() {
         </div>
         {cols.map(c => (
           <div key={c.title}>
-            <h4 className="font-semibold mb-4 text-sm tracking-wide">{c.title}</h4>
+            <h3 className="font-semibold mb-4 text-sm tracking-wide">{c.title}</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
               {c.links.map(l => <li key={l}><a href="#" className="hover:text-[color:var(--gold)] transition">{l}</a></li>)}
             </ul>

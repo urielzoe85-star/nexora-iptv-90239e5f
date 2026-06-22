@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type {} from "@tanstack/react-start";
 
-const BASE_URL = ""; // TODO: set once a custom domain is configured
+const BASE_URL = "https://nexora-iptv.com";
 
 const PAGES = ["/", "/fr", "/en", "/de"];
 const LOCALES: Record<string, string> = { fr: "fr", en: "en", de: "de" };
