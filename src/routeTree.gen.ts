@@ -19,6 +19,7 @@ import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PaymentSuccessRouteImport } from './routes/payment.success'
 import { Route as PaymentFailedRouteImport } from './routes/payment.failed'
+import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as ApiPublicSebpayWebhookRouteImport } from './routes/api/public/sebpay/webhook'
 
 const TrackRoute = TrackRouteImport.update({
@@ -71,6 +72,11 @@ const PaymentFailedRoute = PaymentFailedRouteImport.update({
   path: '/payment/failed',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminLoginRoute = AdminLoginRouteImport.update({
+  id: '/admin/login',
+  path: '/admin/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicSebpayWebhookRoute = ApiPublicSebpayWebhookRouteImport.update({
   id: '/api/public/sebpay/webhook',
   path: '/api/public/sebpay/webhook',
@@ -86,6 +92,7 @@ export interface FileRoutesByFullPath {
   '/fr': typeof FrRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/track': typeof TrackRoute
+  '/admin/login': typeof AdminLoginRoute
   '/payment/failed': typeof PaymentFailedRoute
   '/payment/success': typeof PaymentSuccessRoute
   '/api/public/sebpay/webhook': typeof ApiPublicSebpayWebhookRoute
@@ -99,6 +106,7 @@ export interface FileRoutesByTo {
   '/fr': typeof FrRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/track': typeof TrackRoute
+  '/admin/login': typeof AdminLoginRoute
   '/payment/failed': typeof PaymentFailedRoute
   '/payment/success': typeof PaymentSuccessRoute
   '/api/public/sebpay/webhook': typeof ApiPublicSebpayWebhookRoute
@@ -113,6 +121,7 @@ export interface FileRoutesById {
   '/fr': typeof FrRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/track': typeof TrackRoute
+  '/admin/login': typeof AdminLoginRoute
   '/payment/failed': typeof PaymentFailedRoute
   '/payment/success': typeof PaymentSuccessRoute
   '/api/public/sebpay/webhook': typeof ApiPublicSebpayWebhookRoute
@@ -128,6 +137,7 @@ export interface FileRouteTypes {
     | '/fr'
     | '/sitemap.xml'
     | '/track'
+    | '/admin/login'
     | '/payment/failed'
     | '/payment/success'
     | '/api/public/sebpay/webhook'
@@ -141,6 +151,7 @@ export interface FileRouteTypes {
     | '/fr'
     | '/sitemap.xml'
     | '/track'
+    | '/admin/login'
     | '/payment/failed'
     | '/payment/success'
     | '/api/public/sebpay/webhook'
@@ -154,6 +165,7 @@ export interface FileRouteTypes {
     | '/fr'
     | '/sitemap.xml'
     | '/track'
+    | '/admin/login'
     | '/payment/failed'
     | '/payment/success'
     | '/api/public/sebpay/webhook'
@@ -168,6 +180,7 @@ export interface RootRouteChildren {
   FrRoute: typeof FrRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TrackRoute: typeof TrackRoute
+  AdminLoginRoute: typeof AdminLoginRoute
   PaymentFailedRoute: typeof PaymentFailedRoute
   PaymentSuccessRoute: typeof PaymentSuccessRoute
   ApiPublicSebpayWebhookRoute: typeof ApiPublicSebpayWebhookRoute
@@ -245,6 +258,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PaymentFailedRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/login': {
+      id: '/admin/login'
+      path: '/admin/login'
+      fullPath: '/admin/login'
+      preLoaderRoute: typeof AdminLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/sebpay/webhook': {
       id: '/api/public/sebpay/webhook'
       path: '/api/public/sebpay/webhook'
@@ -264,6 +284,7 @@ const rootRouteChildren: RootRouteChildren = {
   FrRoute: FrRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TrackRoute: TrackRoute,
+  AdminLoginRoute: AdminLoginRoute,
   PaymentFailedRoute: PaymentFailedRoute,
   PaymentSuccessRoute: PaymentSuccessRoute,
   ApiPublicSebpayWebhookRoute: ApiPublicSebpayWebhookRoute,
