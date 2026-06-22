@@ -48,7 +48,7 @@ export const getOrderByRef = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: row, error } = await supabaseAdmin
       .from("orders")
-      .select("order_ref, email, full_name, plan_name, amount, currency, method, status, sebpay_reference, created_at, updated_at")
+      .select("order_ref, email, full_name, plan_name, amount, currency, method, status, sebpay_reference, metadata, created_at, updated_at")
       .eq("order_ref", data.ref)
       .maybeSingle();
     if (error) throw new Error(error.message);

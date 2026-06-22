@@ -67,6 +67,12 @@ function FailedPage() {
                 <span className="text-muted-foreground">{t("ok.row.status")}</span>
                 <span className="text-red-400">{t(`status.${order.status}`)}</span>
               </div>
+              {order.metadata?.failure_reason && (
+                <div className="px-4 py-3 text-sm">
+                  <div className="text-muted-foreground mb-1">Raison</div>
+                  <div className="text-red-300">{order.metadata.failure_reason}</div>
+                </div>
+              )}
             </div>
           )}
 
