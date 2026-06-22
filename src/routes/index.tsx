@@ -362,7 +362,7 @@ function Support() {
             <h2 className="text-4xl md:text-5xl font-bold mb-4">{t("support.title.a")}<span className="text-gradient-gold">{t("support.title.b")}</span></h2>
             <p className="text-muted-foreground max-w-xl mx-auto mb-10">{t("support.sub")}</p>
             <div className="flex flex-wrap justify-center gap-4">
-              <a href="https://wa.me/" className="btn-gold btn-gold-hover px-6 py-3 rounded-full font-semibold inline-flex items-center gap-2"><MessageCircle className="h-5 w-5" />WhatsApp</a>
+              <a href="https://wa.me/message/GQTLOGZU367XJ1" className="btn-gold btn-gold-hover px-6 py-3 rounded-full font-semibold inline-flex items-center gap-2"><MessageCircle className="h-5 w-5" />WhatsApp</a>
               <a href="https://t.me/" className="glass px-6 py-3 rounded-full font-semibold inline-flex items-center gap-2 hover:border-[color:var(--gold)]/40 transition"><Send className="h-5 w-5" />Telegram</a>
               <a href="mailto:support@nexora-iptv.com" className="glass px-6 py-3 rounded-full font-semibold inline-flex items-center gap-2 hover:border-[color:var(--gold)]/40 transition"><Mail className="h-5 w-5" />Email</a>
             </div>
