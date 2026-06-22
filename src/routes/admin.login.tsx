@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
-import { bootstrapFirstAdmin, hasAnyAdmin } from "@/lib/admin.functions";
+import { bootstrapFirstAdmin, hasAnyAdmin, getMyAdminStatus } from "@/lib/admin.functions";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,6 +18,7 @@ function AdminLoginPage() {
   const navigate = useNavigate();
   const checkAdmin = useServerFn(hasAnyAdmin);
   const bootstrap = useServerFn(bootstrapFirstAdmin);
+  const getStatus = useServerFn(getMyAdminStatus);
   const [mode, setMode] = useState<"loading" | "login" | "bootstrap">("loading");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -28,13 +29,22 @@ function AdminLoginPage() {
     (async () => {
       const { data: s } = await supabase.auth.getSession();
       if (s.session) {
-        navigate({ to: "/admin" });
-        return;
+        // Ne laisse pas une session non-admin traîner sur /admin/login.
+        try {
+          const r = await getStatus();
+          if (r.isAdmin) {
+            navigate({ to: "/admin" });
+            return;
+          }
+          await supabase.auth.signOut();
+        } catch {
+          await supabase.auth.signOut();
+        }
       }
       const r = await checkAdmin();
       setMode(r.exists ? "login" : "bootstrap");
     })();
-  }, [checkAdmin, navigate]);
+  }, [checkAdmin, getStatus, navigate]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -46,6 +56,12 @@ function AdminLoginPage() {
       }
       const { error: sErr } = await supabase.auth.signInWithPassword({ email, password });
       if (sErr) throw sErr;
+      // Vérification serveur du rôle avant d'entrer dans l'espace admin.
+      const status = await getStatus();
+      if (!status.isAdmin) {
+        await supabase.auth.signOut();
+        throw new Error("Ce compte n'a pas le rôle administrateur.");
+      }
       navigate({ to: "/admin" });
     } catch (err: any) {
       setError(err?.message ?? "Échec de la connexion");
