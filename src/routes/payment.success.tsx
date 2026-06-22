@@ -99,6 +99,7 @@ function SuccessPage() {
 
           <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
             <Link to="/" className="px-6 py-3 rounded-full glass hover:border-[color:var(--gold)]/40 transition text-sm font-medium">{t("ok.home")}</Link>
+            <Link to="/track" search={{ ref: order?.order_ref ?? "" }} className="px-6 py-3 rounded-full glass hover:border-[color:var(--gold)]/40 transition text-sm font-medium">{t("ok.track")}</Link>
             <Link to="/dashboard" search={{ email: order?.email ?? "" }} className="btn-gold btn-gold-hover px-6 py-3 rounded-full text-sm font-semibold">{t("ok.orders")}</Link>
           </div>
         </section>

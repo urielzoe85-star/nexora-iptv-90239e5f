@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TrackRouteImport } from './routes/track'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as FrRouteImport } from './routes/fr'
 import { Route as EnRouteImport } from './routes/en'
@@ -20,6 +21,11 @@ import { Route as PaymentSuccessRouteImport } from './routes/payment.success'
 import { Route as PaymentFailedRouteImport } from './routes/payment.failed'
 import { Route as ApiPublicSebpayWebhookRouteImport } from './routes/api/public/sebpay/webhook'
 
+const TrackRoute = TrackRouteImport.update({
+  id: '/track',
+  path: '/track',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
@@ -79,6 +85,7 @@ export interface FileRoutesByFullPath {
   '/en': typeof EnRoute
   '/fr': typeof FrRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/track': typeof TrackRoute
   '/payment/failed': typeof PaymentFailedRoute
   '/payment/success': typeof PaymentSuccessRoute
   '/api/public/sebpay/webhook': typeof ApiPublicSebpayWebhookRoute
@@ -91,6 +98,7 @@ export interface FileRoutesByTo {
   '/en': typeof EnRoute
   '/fr': typeof FrRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/track': typeof TrackRoute
   '/payment/failed': typeof PaymentFailedRoute
   '/payment/success': typeof PaymentSuccessRoute
   '/api/public/sebpay/webhook': typeof ApiPublicSebpayWebhookRoute
@@ -104,6 +112,7 @@ export interface FileRoutesById {
   '/en': typeof EnRoute
   '/fr': typeof FrRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/track': typeof TrackRoute
   '/payment/failed': typeof PaymentFailedRoute
   '/payment/success': typeof PaymentSuccessRoute
   '/api/public/sebpay/webhook': typeof ApiPublicSebpayWebhookRoute
@@ -118,6 +127,7 @@ export interface FileRouteTypes {
     | '/en'
     | '/fr'
     | '/sitemap.xml'
+    | '/track'
     | '/payment/failed'
     | '/payment/success'
     | '/api/public/sebpay/webhook'
@@ -130,6 +140,7 @@ export interface FileRouteTypes {
     | '/en'
     | '/fr'
     | '/sitemap.xml'
+    | '/track'
     | '/payment/failed'
     | '/payment/success'
     | '/api/public/sebpay/webhook'
@@ -142,6 +153,7 @@ export interface FileRouteTypes {
     | '/en'
     | '/fr'
     | '/sitemap.xml'
+    | '/track'
     | '/payment/failed'
     | '/payment/success'
     | '/api/public/sebpay/webhook'
@@ -155,6 +167,7 @@ export interface RootRouteChildren {
   EnRoute: typeof EnRoute
   FrRoute: typeof FrRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  TrackRoute: typeof TrackRoute
   PaymentFailedRoute: typeof PaymentFailedRoute
   PaymentSuccessRoute: typeof PaymentSuccessRoute
   ApiPublicSebpayWebhookRoute: typeof ApiPublicSebpayWebhookRoute
@@ -162,6 +175,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/track': {
+      id: '/track'
+      path: '/track'
+      fullPath: '/track'
+      preLoaderRoute: typeof TrackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sitemap.xml': {
       id: '/sitemap.xml'
       path: '/sitemap.xml'
@@ -243,6 +263,7 @@ const rootRouteChildren: RootRouteChildren = {
   EnRoute: EnRoute,
   FrRoute: FrRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  TrackRoute: TrackRoute,
   PaymentFailedRoute: PaymentFailedRoute,
   PaymentSuccessRoute: PaymentSuccessRoute,
   ApiPublicSebpayWebhookRoute: ApiPublicSebpayWebhookRoute,
@@ -250,13 +271,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
