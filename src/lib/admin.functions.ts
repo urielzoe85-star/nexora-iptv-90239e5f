@@ -62,6 +62,46 @@ export const getMyAdminStatus = createServerFn({ method: "GET" })
     return { userId: context.userId, isAdmin: Boolean(data) };
   });
 
+// Server-side admin sign-in: validates credentials + admin role before
+// returning session tokens. If the account is not an admin, no session is
+// ever emitted to the browser — the credential check is performed in an
+// ephemeral server-side client and discarded.
+export const adminSignIn = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) =>
+    z.object({ email: z.string().email(), password: z.string().min(1).max(128) }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    const { createClient } = await import("@supabase/supabase-js");
+    const ephemeral = createClient(
+      process.env.SUPABASE_URL!,
+      process.env.SUPABASE_PUBLISHABLE_KEY!,
+      { auth: { persistSession: false, autoRefreshToken: false, storage: undefined } },
+    );
+    const { data: signIn, error } = await ephemeral.auth.signInWithPassword({
+      email: data.email,
+      password: data.password,
+    });
+    if (error || !signIn.session || !signIn.user) {
+      // Generic message to avoid leaking which factor failed.
+      throw new Error("Identifiants invalides ou accès refusé.");
+    }
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: isAdmin } = await supabaseAdmin.rpc("has_role", {
+      _user_id: signIn.user.id,
+      _role: "admin",
+    });
+    if (!isAdmin) {
+      // Revoke any refresh token tied to this attempt so the credential check
+      // does not leave a usable session anywhere.
+      try { await ephemeral.auth.signOut(); } catch { /* noop */ }
+      throw new Error("Identifiants invalides ou accès refusé.");
+    }
+    return {
+      access_token: signIn.session.access_token,
+      refresh_token: signIn.session.refresh_token,
+    };
+  });
+
 // ─── Stats ───────────────────────────────────────────────────────────────
 
 export const getAdminStats = createServerFn({ method: "GET" })
