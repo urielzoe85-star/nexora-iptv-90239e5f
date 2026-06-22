@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
-import { bootstrapFirstAdmin, hasAnyAdmin, getMyAdminStatus } from "@/lib/admin.functions";
+import { bootstrapFirstAdmin, hasAnyAdmin, getMyAdminStatus, adminSignIn } from "@/lib/admin.functions";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,6 +19,7 @@ function AdminLoginPage() {
   const checkAdmin = useServerFn(hasAnyAdmin);
   const bootstrap = useServerFn(bootstrapFirstAdmin);
   const getStatus = useServerFn(getMyAdminStatus);
+  const signInAdmin = useServerFn(adminSignIn);
   const [mode, setMode] = useState<"loading" | "login" | "bootstrap">("loading");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -53,14 +54,20 @@ function AdminLoginPage() {
     try {
       if (mode === "bootstrap") {
         await bootstrap({ data: { email, password } });
+        // After bootstrap, fall through to the secure admin sign-in path.
       }
-      const { error: sErr } = await supabase.auth.signInWithPassword({ email, password });
-      if (sErr) throw sErr;
-      // Vérification serveur du rôle avant d'entrer dans l'espace admin.
+      // Tokens are only issued by the server if the account has the admin role.
+      const tokens = await signInAdmin({ data: { email, password } });
+      const { error: setErr } = await supabase.auth.setSession({
+        access_token: tokens.access_token,
+        refresh_token: tokens.refresh_token,
+      });
+      if (setErr) throw setErr;
+      // Defence-in-depth: re-check via the auth-middleware'd status fn.
       const status = await getStatus();
       if (!status.isAdmin) {
         await supabase.auth.signOut();
-        throw new Error("Ce compte n'a pas le rôle administrateur.");
+        throw new Error("Accès refusé.");
       }
       navigate({ to: "/admin" });
     } catch (err: any) {
