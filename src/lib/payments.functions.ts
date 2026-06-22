@@ -113,53 +113,66 @@ export const verifyPayment = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) =>
     z.object({ ref: z.string().min(4).max(40) }).parse(data),
   )
-  .handler(async ({ data }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: order, error } = await supabaseAdmin
-      .from("orders")
-      .select("order_ref, status, sebpay_reference")
-      .eq("order_ref", data.ref)
-      .maybeSingle();
-    if (error) throw new Error(error.message);
-    if (!order) return { status: "not_found" as const };
+  .handler(async ({ data }) => verifyPaymentInternal(data.ref));
 
-    // Already final: nothing to do.
-    if (order.status === "paid" || order.status === "failed" || order.status === "cancelled") {
+/**
+ * Internal verification helper — usable from both `verifyPayment` (a server
+ * function called by the success page) and the webhook handler. Always queries
+ * SebPay's API with the server-side secret key; never trusts client/webhook
+ * input. Only mutates an order's status from pending/processing to a final
+ * state (paid / failed / cancelled) when SebPay confirms it.
+ */
+export async function verifyPaymentInternal(ref: string): Promise<{ status: string }> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data: order, error } = await supabaseAdmin
+    .from("orders")
+    .select("order_ref, status, sebpay_reference")
+    .eq("order_ref", ref)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!order) return { status: "not_found" };
+
+  // Already final: nothing to do.
+  if (order.status === "paid" || order.status === "failed" || order.status === "cancelled") {
+    return { status: order.status };
+  }
+
+  const secret = process.env.SEBPAY_SECRET_KEY;
+  if (!secret) {
+    console.error("[sebpay] verify skipped: SEBPAY_SECRET_KEY missing");
+    return { status: order.status };
+  }
+  if (!order.sebpay_reference) return { status: order.status };
+
+  try {
+    const resp = await fetch(
+      `https://api.sebpay.com/v1/transactions/${encodeURIComponent(order.sebpay_reference)}`,
+      { headers: { authorization: `Bearer ${secret}` } },
+    );
+    const body = await resp.json().catch(() => ({}));
+    if (!resp.ok) {
+      console.error("[sebpay] verify failed", resp.status, body);
       return { status: order.status };
     }
+    const raw = (body.status ?? body.payment_status ?? "").toString().toLowerCase();
+    const next =
+      ["paid", "succeeded", "success", "completed"].includes(raw) ? "paid"
+      : ["failed", "declined", "error"].includes(raw) ? "failed"
+      : ["cancelled", "canceled"].includes(raw) ? "cancelled"
+      : null;
 
-    const secret = process.env.SEBPAY_SECRET_KEY;
-    if (!secret || !order.sebpay_reference) return { status: order.status };
-
-    try {
-      const resp = await fetch(
-        `https://api.sebpay.com/v1/checkout/sessions/${encodeURIComponent(order.sebpay_reference)}`,
-        { headers: { authorization: `Bearer ${secret}` } },
-      );
-      const body = await resp.json().catch(() => ({}));
-      if (!resp.ok) {
-        console.error("[sebpay] verify failed", resp.status, body);
-        return { status: order.status };
-      }
-      const raw = (body.status ?? body.payment_status ?? "").toString().toLowerCase();
-      const next =
-        ["paid", "succeeded", "success", "completed"].includes(raw) ? "paid"
-        : ["failed", "declined", "error"].includes(raw) ? "failed"
-        : ["cancelled", "canceled"].includes(raw) ? "cancelled"
-        : null;
-
-      if (next && next !== order.status) {
-        await supabaseAdmin
-          .from("orders")
-          .update({ status: next, metadata: { verify_response: body } })
-          .eq("order_ref", order.order_ref)
-          .in("status", ["pending", "processing"]);
-        console.log("[sebpay] verify updated status", { ref: order.order_ref, next });
-        return { status: next };
-      }
-      return { status: order.status };
-    } catch (err: any) {
-      console.error("[sebpay] verify error", err?.message);
-      return { status: order.status };
+    if (next && next !== order.status) {
+      await supabaseAdmin
+        .from("orders")
+        .update({ status: next, metadata: { verify_response: body } })
+        .eq("order_ref", order.order_ref)
+        .in("status", ["pending", "processing"]);
+      console.log("[sebpay] verify updated status", { ref: order.order_ref, next });
+      return { status: next };
     }
-  });
+    return { status: order.status };
+  } catch (err: any) {
+    console.error("[sebpay] verify error", err?.message);
+    return { status: order.status };
+  }
+}
