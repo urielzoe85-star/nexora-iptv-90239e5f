@@ -147,7 +147,7 @@ export const adminUpdateOrder = createServerFn({ method: "POST" })
     const patch: Record<string, unknown> = {};
     if (data.status) patch.status = data.status;
     if (data.admin_notes !== undefined) patch.admin_notes = data.admin_notes;
-    const { data: row, error } = await supabaseAdmin
+    const { data: row, error } = await (supabaseAdmin as any)
       .from("orders").update(patch).eq("id", data.id)
       .select("id, status, admin_notes").single();
     if (error) throw new Error(error.message);
