@@ -1,51 +1,33 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 // SebPay webhook receiver.
-// Configure this URL in your SebPay dashboard. We accept either a "ref"/"order_ref"
-// field (our generated order reference) and a status from SebPay.
-// Set SEBPAY_WEBHOOK_SECRET in your project secrets to enforce signature checks.
+//
+// SebPay does NOT issue a webhook signing secret, so we treat every incoming
+// payload as untrusted. The webhook is only a "something changed, please
+// re-check" notification — we always re-verify the transaction by calling
+// SebPay's API with SEBPAY_SECRET_KEY before mutating order status. An
+// attacker that POSTs a forged payload to this URL therefore cannot mark an
+// order as paid; only SebPay's own API response can.
 export const Route = createFileRoute("/api/public/sebpay/webhook")({
   server: {
     handlers: {
       POST: async ({ request }) => {
         const raw = await request.text();
-
-        const secret = process.env.SEBPAY_WEBHOOK_SECRET;
-        if (secret) {
-          const sig = request.headers.get("x-sebpay-signature") ?? "";
-          const { createHmac, timingSafeEqual } = await import("crypto");
-          const expected = createHmac("sha256", secret).update(raw).digest("hex");
-          const a = Buffer.from(sig);
-          const b = Buffer.from(expected);
-          if (a.length !== b.length || !timingSafeEqual(a, b)) {
-            return new Response("Invalid signature", { status: 401 });
-          }
-        }
-
         let payload: any;
-        try { payload = JSON.parse(raw); } catch { return new Response("Bad JSON", { status: 400 }); }
+        try { payload = JSON.parse(raw); } catch {
+          return new Response("Bad JSON", { status: 400 });
+        }
+        console.log("[sebpay-webhook] received", payload);
 
-        const ref: string | undefined = payload.ref ?? payload.order_ref ?? payload.reference;
-        const rawStatus: string = (payload.status ?? payload.event ?? "").toString().toLowerCase();
-        const sebpayReference: string | undefined =
-          payload.transaction_id ?? payload.transactionId ?? payload.id;
+        const ref: string | undefined =
+          payload.ref ?? payload.order_ref ?? payload.reference ?? payload.metadata?.reference;
+        if (!ref) return new Response("Missing reference", { status: 400 });
 
-        if (!ref || !rawStatus) return new Response("Missing ref/status", { status: 400 });
-
-        const status =
-          ["success", "succeeded", "paid", "completed"].includes(rawStatus) ? "paid"
-          : ["failed", "declined", "error"].includes(rawStatus) ? "failed"
-          : ["cancelled", "canceled"].includes(rawStatus) ? "cancelled"
-          : null;
-        if (!status) return new Response("Unhandled status", { status: 202 });
-
-        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-        const { error } = await supabaseAdmin
-          .from("orders")
-          .update({ status, sebpay_reference: sebpayReference ?? null, metadata: payload })
-          .eq("order_ref", ref);
-        if (error) return new Response(error.message, { status: 500 });
-        return Response.json({ ok: true });
+        // Re-verify with SebPay's API; ignore status field from the payload.
+        const { verifyPaymentInternal } = await import("@/lib/payments.functions");
+        const result = await verifyPaymentInternal(ref);
+        console.log("[sebpay-webhook] verified", { ref, status: result.status });
+        return Response.json({ ok: true, status: result.status });
       },
     },
   },
