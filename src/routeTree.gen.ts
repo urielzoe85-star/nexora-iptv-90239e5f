@@ -21,7 +21,6 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as PaymentSuccessRouteImport } from './routes/payment.success'
 import { Route as PaymentFailedRouteImport } from './routes/payment.failed'
-import { Route as PayRefRouteImport } from './routes/pay.$ref'
 import { Route as AdminPlansRouteImport } from './routes/admin.plans'
 import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
@@ -89,11 +88,6 @@ const PaymentFailedRoute = PaymentFailedRouteImport.update({
   path: '/payment/failed',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PayRefRoute = PayRefRouteImport.update({
-  id: '/pay/$ref',
-  path: '/pay/$ref',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AdminPlansRoute = AdminPlansRouteImport.update({
   id: '/plans',
   path: '/plans',
@@ -140,7 +134,6 @@ export interface FileRoutesByFullPath {
   '/admin/login': typeof AdminLoginRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/plans': typeof AdminPlansRoute
-  '/pay/$ref': typeof PayRefRoute
   '/payment/failed': typeof PaymentFailedRoute
   '/payment/success': typeof PaymentSuccessRoute
   '/admin/': typeof AdminIndexRoute
@@ -160,7 +153,6 @@ export interface FileRoutesByTo {
   '/admin/login': typeof AdminLoginRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/plans': typeof AdminPlansRoute
-  '/pay/$ref': typeof PayRefRoute
   '/payment/failed': typeof PaymentFailedRoute
   '/payment/success': typeof PaymentSuccessRoute
   '/admin': typeof AdminIndexRoute
@@ -182,7 +174,6 @@ export interface FileRoutesById {
   '/admin/login': typeof AdminLoginRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/plans': typeof AdminPlansRoute
-  '/pay/$ref': typeof PayRefRoute
   '/payment/failed': typeof PaymentFailedRoute
   '/payment/success': typeof PaymentSuccessRoute
   '/admin/': typeof AdminIndexRoute
@@ -205,7 +196,6 @@ export interface FileRouteTypes {
     | '/admin/login'
     | '/admin/orders'
     | '/admin/plans'
-    | '/pay/$ref'
     | '/payment/failed'
     | '/payment/success'
     | '/admin/'
@@ -225,7 +215,6 @@ export interface FileRouteTypes {
     | '/admin/login'
     | '/admin/orders'
     | '/admin/plans'
-    | '/pay/$ref'
     | '/payment/failed'
     | '/payment/success'
     | '/admin'
@@ -246,7 +235,6 @@ export interface FileRouteTypes {
     | '/admin/login'
     | '/admin/orders'
     | '/admin/plans'
-    | '/pay/$ref'
     | '/payment/failed'
     | '/payment/success'
     | '/admin/'
@@ -263,7 +251,6 @@ export interface RootRouteChildren {
   FrRoute: typeof FrRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TrackRoute: typeof TrackRoute
-  PayRefRoute: typeof PayRefRoute
   PaymentFailedRoute: typeof PaymentFailedRoute
   PaymentSuccessRoute: typeof PaymentSuccessRoute
   ApiPublicSebpayWebhookRoute: typeof ApiPublicSebpayWebhookRoute
@@ -355,13 +342,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PaymentFailedRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/pay/$ref': {
-      id: '/pay/$ref'
-      path: '/pay/$ref'
-      fullPath: '/pay/$ref'
-      preLoaderRoute: typeof PayRefRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/admin/plans': {
       id: '/admin/plans'
       path: '/plans'
@@ -437,7 +417,6 @@ const rootRouteChildren: RootRouteChildren = {
   FrRoute: FrRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TrackRoute: TrackRoute,
-  PayRefRoute: PayRefRoute,
   PaymentFailedRoute: PaymentFailedRoute,
   PaymentSuccessRoute: PaymentSuccessRoute,
   ApiPublicSebpayWebhookRoute: ApiPublicSebpayWebhookRoute,
@@ -445,13 +424,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
