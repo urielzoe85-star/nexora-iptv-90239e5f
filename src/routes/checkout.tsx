@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Check, Lock, ShieldCheck, ChevronLeft, Mail, User,
   Loader2, Tv, Phone, Globe, Smartphone, ExternalLink, Clock,
@@ -435,7 +435,7 @@ function PendingPanel({ pending }: { pending: PendingState }) {
   // Poll SebPay (server-side, GET /api/v1/collections/{id}) every 4s for
   // up to ~3min. We never mark "paid" client-side — verifyPayment talks to
   // SebPay and updates the DB only when SebPay confirms.
-  useMemo(() => {
+  useEffect(() => {
     let cancelled = false;
     let attempts = 0;
     async function poll() {
@@ -462,7 +462,6 @@ function PendingPanel({ pending }: { pending: PendingState }) {
     }
     poll();
     return () => { cancelled = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pending.orderRef]);
 
   return (
