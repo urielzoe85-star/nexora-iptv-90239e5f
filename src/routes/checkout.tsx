@@ -22,9 +22,6 @@ const COUNTRIES: { code: string; label: string }[] = [
   { code: "NE", label: "Niger (NE)" },
   { code: "CM", label: "Cameroun (CM)" },
 ];
-const USD_TO_XOF = 600;
-const SEBPAY_ENDPOINT = "https://newapi.sebpay.bj/api/v1/collections";
-
 const PLANS: Plan[] = [
   { id: "1m",  name: "1 Month",   price: 12, period: "/month" },
   { id: "3m",  name: "3 Months",  price: 30, period: "/quarter",   save: "Save 17%" },
@@ -80,19 +77,6 @@ function CheckoutPage() {
     fullName.trim().length > 1 &&
     phone.replace(/\D/g, "").length >= 8 &&
     !!operator && !!country;
-
-  // Live preview of the SebPay payload that will be sent server-side. Mirrors
-  // exactly what src/lib/payments.functions.ts builds for the documented
-  // POST /api/v1/collections endpoint.
-  const sebpayPayloadPreview = useMemo(() => ({
-    amount: Math.round(total * USD_TO_XOF),
-    currency: "XOF",
-    phone: phone || "+229XXXXXXXX",
-    operator,
-    country,
-    external_reference: "NX-…",
-    callback_url: "{origin}/api/public/sebpay/webhook",
-  }), [total, phone, operator, country]);
 
   async function handlePay(e: React.FormEvent) {
     e.preventDefault();
@@ -190,7 +174,6 @@ function CheckoutPage() {
                     canPay={canPay}
                     total={total}
                     errorMsg={errorMsg}
-                    payloadPreview={sebpayPayloadPreview}
                     onBack={() => setStep(1)}
                     onSubmit={handlePay}
                   />
@@ -300,14 +283,13 @@ function PaymentStep(props: {
   operator: Operator; setOperator: (v: Operator) => void;
   country: string; setCountry: (v: string) => void;
   processing: boolean; canPay: boolean; total: number; errorMsg?: string;
-  payloadPreview: Record<string, any>;
   onBack: () => void; onSubmit: (e: React.FormEvent) => void;
 }) {
   const t = useT();
   const {
     email, setEmail, fullName, setFullName,
     phone, setPhone, operator, setOperator, country, setCountry,
-    processing, canPay, total, errorMsg, payloadPreview, onBack, onSubmit,
+    processing, canPay, total, errorMsg, onBack, onSubmit,
   } = props;
 
   return (
