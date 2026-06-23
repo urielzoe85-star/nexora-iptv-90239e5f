@@ -93,7 +93,7 @@ export const initSebPayCheckout = createServerFn({ method: "POST" })
     // for POST /v1/payments. Mobile Money requires amount/currency/operator/
     // phone/country. We always attach a reference + callback/webhook URLs so
     // we can re-verify the payment server-side.
-    const payload: Record<string, unknown> = {
+    const payload: Record<string, any> = {
       amount: Number(order.amount),
       currency: order.currency,
       reference: order.order_ref,

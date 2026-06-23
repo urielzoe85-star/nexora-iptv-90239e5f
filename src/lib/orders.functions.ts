@@ -41,7 +41,7 @@ export const createOrder = createServerFn({ method: "POST" })
     // in metadata for accounting.
     let amount = data.amount;
     let currency = data.currency;
-    const metadata: Record<string, unknown> = {};
+    const metadata: Record<string, any> = {};
     if (data.method === "momo") {
       metadata.momo = {
         phone: data.phone,
