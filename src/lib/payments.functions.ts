@@ -15,6 +15,7 @@ import { z } from "zod";
 // for every call so issues can be diagnosed end-to-end.
 // =============================================================================
 const SEBPAY_BASE_URL = "https://newapi.sebpay.bj";
+export const SEBPAY_PAYMENTS_PATH = "/v1/payments";
 
 function sebpaySecret(): string {
   const k = process.env.SEBPAY_SECRET_KEY;
@@ -74,7 +75,7 @@ export const initSebPayCheckout = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: order, error: oErr } = await supabaseAdmin
       .from("orders")
-      .select("order_ref, email, full_name, plan_name, amount, currency, method, status")
+      .select("order_ref, email, full_name, plan_name, amount, currency, method, status, metadata")
       .eq("order_ref", data.ref)
       .maybeSingle();
     if (oErr) throw new Error(oErr.message);
@@ -83,39 +84,72 @@ export const initSebPayCheckout = createServerFn({ method: "POST" })
       throw new Error(`Order is already ${order.status}; cannot start a new checkout.`);
     }
 
-    const payload = {
+    const webhookUrl = `${new URL(data.successUrl).origin}/api/public/sebpay/webhook`;
+    const momo = (order.metadata as any)?.momo as
+      | { phone?: string; operator?: string; country?: string }
+      | undefined;
+
+    // Build the exact payload SebPay documents at https://sebpay.bj/our-api
+    // for POST /v1/payments. Mobile Money requires amount/currency/operator/
+    // phone/country. We always attach a reference + callback/webhook URLs so
+    // we can re-verify the payment server-side.
+    const payload: Record<string, unknown> = {
       amount: Number(order.amount),
       currency: order.currency,
       reference: order.order_ref,
       description: `Nexora IPTV — ${order.plan_name}`,
       customer: { email: order.email, name: order.full_name },
-      method: order.method,
       success_url: data.successUrl,
       cancel_url: data.failureUrl,
       callback_url: data.successUrl,
-      webhook_url: `${new URL(data.successUrl).origin}/api/public/sebpay/webhook`,
+      webhook_url: webhookUrl,
       metadata: { order_ref: order.order_ref },
     };
+    if (order.method === "momo") {
+      if (!momo?.phone || !momo?.operator || !momo?.country) {
+        throw new Error(
+          "Mobile Money order is missing phone/operator/country — please re-enter your payment details.",
+        );
+      }
+      payload.operator = momo.operator;
+      payload.phone = momo.phone;
+      payload.country = momo.country;
+    } else {
+      payload.method = order.method;
+    }
 
-    const { status, raw, json } = await sebpayFetch("/v1/payments", {
+    const endpoint = `${SEBPAY_BASE_URL}${SEBPAY_PAYMENTS_PATH}`;
+    const { status, raw, json } = await sebpayFetch(SEBPAY_PAYMENTS_PATH, {
       method: "POST",
       body: payload,
     });
     if (status < 200 || status >= 300 || !json) {
+      // Surface the verbatim SebPay error (message + any field-level details)
+      // so the user sees exactly why their payment was rejected.
+      const detail =
+        (json && (json.message || json.error || json.detail)) ||
+        raw.slice(0, 500) ||
+        "(empty response body)";
+      const fieldErrors =
+        json && json.errors
+          ? ` — fields: ${JSON.stringify(json.errors).slice(0, 400)}`
+          : "";
       throw new Error(
-        `SebPay ${status} on POST ${SEBPAY_BASE_URL}/v1/payments — ${raw.slice(0, 300) || "(empty body)"}`,
+        `SebPay refused the payment (HTTP ${status} on POST ${endpoint}): ${detail}${fieldErrors}`,
       );
     }
 
-    // SebPay may name the redirect field a few different ways depending on the
-    // product (Mobile Money vs hosted card). Accept the common variants.
+    // SebPay may name the redirect field a few different ways depending on
+    // the product. For Mobile Money there is often no redirect at all — the
+    // customer approves on their phone (USSD push), and we poll
+    // GET /v1/payments/{id} until SebPay reports a terminal state.
     const checkoutUrl: string | undefined =
       json.checkout_url ?? json.payment_url ?? json.url ?? json.redirect_url ?? json.data?.checkout_url;
     const sebpayId: string | undefined =
       json.id ?? json.transaction_id ?? json.payment_id ?? json.data?.id;
-    if (!checkoutUrl || !sebpayId) {
+    if (!sebpayId) {
       throw new Error(
-        `SebPay did not return a checkout URL / id. Raw response: ${raw.slice(0, 500)}`,
+        `SebPay did not return a transaction id. Raw response: ${raw.slice(0, 500)}`,
       );
     }
 
@@ -124,11 +158,22 @@ export const initSebPayCheckout = createServerFn({ method: "POST" })
       .update({
         status: "processing",
         sebpay_reference: sebpayId,
-        metadata: { sebpay_request: payload, sebpay_response: json },
+        metadata: {
+          ...((order.metadata as any) ?? {}),
+          sebpay_endpoint: endpoint,
+          sebpay_request: payload,
+          sebpay_response: json,
+        },
       })
       .eq("order_ref", order.order_ref);
 
-    return { checkoutUrl };
+    return {
+      checkoutUrl: checkoutUrl ?? null,
+      sebpayId,
+      endpoint,
+      payload,
+      response: json,
+    };
   });
 
 /**

@@ -1,6 +1,12 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
+// USD → XAF conversion used when a Mobile Money customer in the CFA franc
+// (BEAC) zone pays. Plans are priced in USD on the site; SebPay's Mobile
+// Money endpoint expects local currency (XAF for CM/CG/GA/TD/CF).
+export const USD_TO_XAF = 600;
+const XAF_COUNTRIES = new Set(["CM", "CG", "GA", "TD", "CF"]);
+
 const CreateOrderSchema = z.object({
   email: z.string().trim().email().max(255),
   fullName: z.string().trim().min(2).max(120),
@@ -9,7 +15,13 @@ const CreateOrderSchema = z.object({
   amount: z.number().positive().max(100000),
   currency: z.string().trim().length(3).default("USD"),
   method: z.enum(["card", "momo", "crypto"]),
-});
+  phone: z.string().trim().min(6).max(20).optional(),
+  operator: z.enum(["MTN Mobile Money", "Orange Money"]).optional(),
+  country: z.string().trim().length(2).toUpperCase().optional(),
+}).refine(
+  (d) => d.method !== "momo" || (!!d.phone && !!d.operator && !!d.country),
+  { message: "Mobile Money requires phone, operator and country" },
+);
 
 function genOrderRef() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -23,6 +35,26 @@ export const createOrder = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const order_ref = genOrderRef();
+
+    // For Mobile Money in the XAF zone, override currency + amount to what
+    // SebPay actually charges (local CFA franc). The USD price is preserved
+    // in metadata for accounting.
+    let amount = data.amount;
+    let currency = data.currency;
+    const metadata: Record<string, unknown> = {};
+    if (data.method === "momo") {
+      metadata.momo = {
+        phone: data.phone,
+        operator: data.operator,
+        country: data.country,
+      };
+      metadata.usd_amount = data.amount;
+      if (data.country && XAF_COUNTRIES.has(data.country)) {
+        currency = "XAF";
+        amount = Math.round(data.amount * USD_TO_XAF);
+      }
+    }
+
     const { data: row, error } = await supabaseAdmin
       .from("orders")
       .insert({
@@ -31,12 +63,13 @@ export const createOrder = createServerFn({ method: "POST" })
         full_name: data.fullName,
         plan_id: data.planId,
         plan_name: data.planName,
-        amount: data.amount,
-        currency: data.currency,
+        amount,
+        currency,
         method: data.method,
         status: "pending",
+        metadata,
       })
-      .select("order_ref, status, amount, currency, plan_name, email")
+      .select("order_ref, status, amount, currency, plan_name, email, method")
       .single();
     if (error) throw new Error(error.message);
     return row;
