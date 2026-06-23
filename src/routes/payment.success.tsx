@@ -28,27 +28,38 @@ function SuccessPage() {
     let cancelled = false;
     async function run() {
       if (!ref) {
-        // No ref → nothing to verify → never show success.
         router.navigate({ to: "/payment/failed", search: { ref: "" } });
         return;
       }
-      console.log("[success] verifying payment", ref);
-      // Ask the backend to re-verify with SebPay. Source of truth.
-      const v = await verifyPayment({ data: { ref } }).catch((e) => {
-        console.error("[success] verify error", e);
-        return { status: "unknown" as const };
-      });
-      if (cancelled) return;
-      console.log("[success] verify result", v);
-
-      if (v.status === "paid") {
-        const o = await getOrderByRef({ data: { ref } });
+      // Poll SebPay (server-side, signed request to GET /v1/payments/{id})
+      // for up to ~90s. Mobile Money customers approve on their phone, so
+      // the status starts as "processing" and only flips when SebPay
+      // confirms. We NEVER mark "paid" client-side.
+      const maxAttempts = 30; // 30 × 3s = 90s
+      for (let attempt = 0; attempt < maxAttempts; attempt++) {
         if (cancelled) return;
-        setOrder(o);
-        setVerifying(false);
-        return;
+        const v = await verifyPayment({ data: { ref } }).catch((e) => {
+          console.error("[success] verify error", e);
+          return { status: "unknown" as const };
+        });
+        console.log("[success] verify attempt", attempt, v);
+        if (cancelled) return;
+
+        if (v.status === "paid") {
+          const o = await getOrderByRef({ data: { ref } });
+          if (cancelled) return;
+          setOrder(o);
+          setVerifying(false);
+          return;
+        }
+        if (v.status === "failed" || v.status === "cancelled") {
+          router.navigate({ to: "/payment/failed", search: { ref } });
+          return;
+        }
+        // pending / processing / unknown → wait and retry
+        await new Promise((r) => setTimeout(r, 3000));
       }
-      // Not paid → never display the success page.
+      // Timed out waiting for SebPay to confirm.
       router.navigate({ to: "/payment/failed", search: { ref } });
     }
     run();
