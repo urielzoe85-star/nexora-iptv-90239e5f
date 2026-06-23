@@ -1,6 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import heroBg from "@/assets/hero-bg.jpg";
 import devicesImg from "@/assets/devices.jpg";
+import downloadIos from "@/assets/download-ios.jpg";
+import downloadAndroid from "@/assets/download-android.jpg";
+import downloadWindows from "@/assets/download-windows.jpg";
 import {
   Accordion, AccordionContent, AccordionItem, AccordionTrigger,
 } from "@/components/ui/accordion";
@@ -8,6 +11,7 @@ import {
   Tv, Film, Zap, Globe2, ShieldCheck, Headphones,
   Check, Star, MessageCircle, Send, Mail, Menu,
   Smartphone, Tablet, Laptop, Monitor, Tv2,
+  Download,
 } from "lucide-react";
 import { useT } from "@/i18n/context";
 import { LanguageSwitcher } from "@/i18n/context";
@@ -52,6 +56,7 @@ export function NexoraLanding() {
         <Devices />
         <Pricing />
         <HowItWorks />
+        <Downloads />
         <Testimonials />
         <FAQ />
         <Payments />
@@ -254,6 +259,97 @@ function HowItWorks() {
               <h3 className="text-xl font-semibold mb-2">{t(`how.${n}.title`)}</h3>
               <p className="text-sm text-muted-foreground">{t(`how.${n}.desc`)}</p>
             </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Downloads() {
+  const t = useT();
+  const apps = [
+    {
+      platform: "iOS",
+      title: t("download.ios.app"),
+      device: t("download.ios.device"),
+      href: "https://apps.apple.com/fr/app/smarters-player-lite/id1628995509",
+      img: downloadIos,
+      icon: (
+        <svg viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
+          <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.8-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.84-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
+        </svg>
+      ),
+    },
+    {
+      platform: "Android",
+      title: t("download.android.app"),
+      device: t("download.android.device"),
+      href: "https://iptv-smarters-pro.fr.uptodown.com/android#",
+      img: downloadAndroid,
+      icon: (
+        <svg viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
+          <path d="M6 18c0 .55.45 1 1 1h1v3.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V19h2v3.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V19h1c.55 0 1-.45 1-1V8H6v10zM3.5 8C2.67 8 2 8.67 2 9.5v7c0 .83.67 1.5 1.5 1.5S5 17.33 5 16.5v-7C5 8.67 4.33 8 3.5 8zm17 0c-.83 0-1.5.67-1.5 1.5v7c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5v-7c0-.83-.67-1.5-1.5-1.5zm-4.44-4.19l1.13-1.97c.11-.18.05-.41-.13-.52-.18-.11-.41-.05-.52.13l-1.15 1.99c-1.45-.64-3.07-.99-4.79-.99s-3.34.35-4.79.99L6.44 2.42c-.11-.18-.34-.24-.52-.13-.18.11-.24.34-.13.52l1.13 1.97C4.14 6.16 2 9.24 2 12.76h20c0-3.52-2.14-6.6-5.44-7.95zM10 5.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5-.67 1.5-1.5 1.5S10 6.33 10 5.5z" />
+        </svg>
+      ),
+    },
+    {
+      platform: "Windows",
+      title: t("download.windows.app"),
+      device: t("download.windows.device"),
+      href: "https://iptv-smarters-pro.fr.uptodown.com/windows#",
+      img: downloadWindows,
+      icon: (
+        <svg viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
+          <path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801" />
+        </svg>
+      ),
+    },
+  ];
+  return (
+    <section id="downloads" className="py-28 relative">
+      <div className="max-w-7xl mx-auto px-6">
+        <div className="text-center max-w-2xl mx-auto mb-16">
+          <p className="text-sm uppercase tracking-[0.2em] text-[color:var(--gold)] mb-3">{t("download.kicker")}</p>
+          <h2 className="text-4xl md:text-5xl font-bold">{t("download.title.a")}<span className="text-gradient-gold">{t("download.title.b")}</span></h2>
+          <p className="text-muted-foreground mt-4">{t("download.sub")}</p>
+        </div>
+        <div className="grid md:grid-cols-3 gap-6">
+          {apps.map((app) => (
+            <a
+              key={app.platform}
+              href={app.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group relative glass rounded-3xl p-6 transition hover-scale overflow-hidden"
+              style={{ animation: "glow-pulse 3s ease-in-out infinite" }}
+            >
+              <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent z-10" />
+              <div className="relative z-0 mb-6 -mx-6 -mt-6 overflow-hidden rounded-t-3xl">
+                <img
+                  src={app.img}
+                  alt={app.title}
+                  width={768}
+                  height={768}
+                  loading="lazy"
+                  className="w-full h-48 object-cover transition duration-500 group-hover:scale-105"
+                />
+              </div>
+              <div className="relative z-20 flex items-center gap-3 mb-2">
+                <div className="h-10 w-10 rounded-xl bg-[image:var(--gradient-gold)] grid place-items-center text-black">
+                  {app.icon}
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold">{app.platform}</h3>
+                  <p className="text-xs text-muted-foreground">{app.device}</p>
+                </div>
+              </div>
+              <p className="text-sm text-muted-foreground mb-4">{app.title}</p>
+              <div className="btn-gold btn-gold-hover px-5 py-2.5 rounded-full text-sm font-semibold inline-flex items-center gap-2">
+                <Download className="h-4 w-4" />
+                {t("download.btn")}
+              </div>
+            </a>
           ))}
         </div>
       </div>
