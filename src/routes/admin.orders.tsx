@@ -25,6 +25,17 @@ export const Route = createFileRoute("/admin/orders")({ component: OrdersPage })
 
 const STATUSES = ["all", "pending", "processing", "paid", "completed", "failed", "cancelled", "refunded"] as const;
 
+const STATUS_LABELS: Record<string, string> = {
+  all: "Tous",
+  pending: "En attente",
+  processing: "En cours",
+  paid: "Confirmé",
+  completed: "Confirmé",
+  failed: "Refusé",
+  cancelled: "Annulé",
+  refunded: "Remboursé",
+};
+
 const statusColor: Record<string, string> = {
   pending: "bg-amber-500/15 text-amber-500 border-amber-500/30",
   processing: "bg-blue-500/15 text-blue-500 border-blue-500/30",
@@ -78,7 +89,7 @@ function OrdersPage() {
           <Select value={status} onValueChange={setStatus}>
             <SelectTrigger className="w-full sm:w-48"><SelectValue /></SelectTrigger>
             <SelectContent>
-              {STATUSES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+              {STATUSES.map((s) => <SelectItem key={s} value={s}>{STATUS_LABELS[s] ?? s}</SelectItem>)}
             </SelectContent>
           </Select>
         </CardContent>
@@ -97,8 +108,10 @@ function OrdersPage() {
                   <TableRow>
                     <TableHead>Réf.</TableHead>
                     <TableHead>Client</TableHead>
+                    <TableHead>Téléphone</TableHead>
                     <TableHead>Plan</TableHead>
                     <TableHead>Montant</TableHead>
+                    <TableHead>Transaction SebPay</TableHead>
                     <TableHead>Statut</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead className="text-right">Action</TableHead>
@@ -112,13 +125,30 @@ function OrdersPage() {
                         <div className="text-sm">{o.full_name}</div>
                         <div className="text-xs text-muted-foreground">{o.email}</div>
                       </TableCell>
+                      <TableCell className="text-xs">
+                        {o.metadata?.momo?.phone ?? "—"}
+                        {o.metadata?.momo?.operator && (
+                          <div className="text-[10px] text-muted-foreground">{o.metadata.momo.operator}</div>
+                        )}
+                      </TableCell>
                       <TableCell className="text-sm">{o.plan_name}</TableCell>
-                      <TableCell>${Number(o.amount).toFixed(2)} {o.currency}</TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        {Number(o.amount).toLocaleString()} {o.currency}
+                        {o.metadata?.usd_amount && (
+                          <div className="text-[10px] text-muted-foreground">${Number(o.metadata.usd_amount).toFixed(2)} USD</div>
+                        )}
+                      </TableCell>
+                      <TableCell className="font-mono text-[11px]">{o.sebpay_reference ?? "—"}</TableCell>
                       <TableCell>
-                        <Badge variant="outline" className={statusColor[o.status] ?? ""}>{o.status}</Badge>
+                        <Badge variant="outline" className={statusColor[o.status] ?? ""}>
+                          {STATUS_LABELS[o.status] ?? o.status}
+                        </Badge>
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground">
-                        {new Date(o.created_at).toLocaleString()}
+                        <div>{new Date(o.created_at).toLocaleString()}</div>
+                        {o.status === "paid" || o.status === "completed" ? (
+                          <div className="text-[10px] text-emerald-500">Confirmé : {new Date(o.updated_at).toLocaleString()}</div>
+                        ) : null}
                       </TableCell>
                       <TableCell className="text-right">
                         <Button size="sm" variant="outline" onClick={() => setEditing({ ...o })}>Gérer</Button>
