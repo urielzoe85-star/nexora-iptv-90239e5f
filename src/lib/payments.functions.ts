@@ -16,10 +16,28 @@ const SEBPAY_BASE_URL = "https://newapi.sebpay.bj";
 export const SEBPAY_COLLECTIONS_PATH = "/api/v1/collections";
 
 function sebpayHeaders(): Record<string, string> {
-  const pub = process.env.SEBPAY_PUBLIC_KEY;
-  const sec = process.env.SEBPAY_SECRET_KEY;
-  if (!pub) throw new Error("SEBPAY_PUBLIC_KEY is not configured");
-  if (!sec) throw new Error("SEBPAY_SECRET_KEY is not configured");
+  const rawPub = process.env.SEBPAY_PUBLIC_KEY ?? "";
+  const rawSec = process.env.SEBPAY_SECRET_KEY ?? "";
+  // Trim whitespace / surrounding quotes that often sneak in via copy-paste.
+  const pub = rawPub.trim().replace(/^['"]|['"]$/g, "");
+  const sec = rawSec.trim().replace(/^['"]|['"]$/g, "");
+
+  // Safe diagnostics — log presence, length, prefix only (never the full key).
+  const safe = (k: string) => ({
+    present: k.length > 0,
+    length: k.length,
+    prefix: k.slice(0, 8),
+    trimmedDiff: k.length !== rawPub.length && k.length !== rawSec.length,
+  });
+  console.log("[sebpay] auth keys check", {
+    publicKey: safe(pub),
+    secretKey: safe(sec),
+    rawPublicLength: rawPub.length,
+    rawSecretLength: rawSec.length,
+  });
+
+  if (!pub) throw new Error("SEBPAY_PUBLIC_KEY is not configured on the server");
+  if (!sec) throw new Error("SEBPAY_SECRET_KEY is not configured on the server");
   return {
     "X-Public-Key": pub,
     "X-Secret-Key": sec,
