@@ -20,6 +20,7 @@ import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as FrIndexRouteImport } from './routes/fr.index'
+import { Route as EnIndexRouteImport } from './routes/en.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as PaymentSuccessRouteImport } from './routes/payment.success'
 import { Route as PaymentFailedRouteImport } from './routes/payment.failed'
@@ -86,6 +87,11 @@ const FrIndexRoute = FrIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => FrRoute,
+} as any)
+const EnIndexRoute = EnIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => EnRoute,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
@@ -164,6 +170,7 @@ export interface FileRoutesByFullPath {
   '/payment/failed': typeof PaymentFailedRoute
   '/payment/success': typeof PaymentSuccessRoute
   '/admin/': typeof AdminIndexRoute
+  '/en/': typeof EnIndexRoute
   '/fr/': typeof FrIndexRoute
   '/api/public/sebpay/webhook': typeof ApiPublicSebpayWebhookRoute
 }
@@ -172,7 +179,6 @@ export interface FileRoutesByTo {
   '/checkout': typeof CheckoutRoute
   '/dashboard': typeof DashboardRoute
   '/de': typeof DeRoute
-  '/en': typeof EnRouteWithChildren
   '/legal-guide': typeof LegalGuideRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/track': typeof TrackRoute
@@ -186,6 +192,7 @@ export interface FileRoutesByTo {
   '/payment/failed': typeof PaymentFailedRoute
   '/payment/success': typeof PaymentSuccessRoute
   '/admin': typeof AdminIndexRoute
+  '/en': typeof EnIndexRoute
   '/fr': typeof FrIndexRoute
   '/api/public/sebpay/webhook': typeof ApiPublicSebpayWebhookRoute
 }
@@ -211,6 +218,7 @@ export interface FileRoutesById {
   '/payment/failed': typeof PaymentFailedRoute
   '/payment/success': typeof PaymentSuccessRoute
   '/admin/': typeof AdminIndexRoute
+  '/en/': typeof EnIndexRoute
   '/fr/': typeof FrIndexRoute
   '/api/public/sebpay/webhook': typeof ApiPublicSebpayWebhookRoute
 }
@@ -237,6 +245,7 @@ export interface FileRouteTypes {
     | '/payment/failed'
     | '/payment/success'
     | '/admin/'
+    | '/en/'
     | '/fr/'
     | '/api/public/sebpay/webhook'
   fileRoutesByTo: FileRoutesByTo
@@ -245,7 +254,6 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/dashboard'
     | '/de'
-    | '/en'
     | '/legal-guide'
     | '/sitemap.xml'
     | '/track'
@@ -259,6 +267,7 @@ export interface FileRouteTypes {
     | '/payment/failed'
     | '/payment/success'
     | '/admin'
+    | '/en'
     | '/fr'
     | '/api/public/sebpay/webhook'
   id:
@@ -283,6 +292,7 @@ export interface FileRouteTypes {
     | '/payment/failed'
     | '/payment/success'
     | '/admin/'
+    | '/en/'
     | '/fr/'
     | '/api/public/sebpay/webhook'
   fileRoutesById: FileRoutesById
@@ -381,6 +391,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/fr/'
       preLoaderRoute: typeof FrIndexRouteImport
       parentRoute: typeof FrRoute
+    }
+    '/en/': {
+      id: '/en/'
+      path: '/'
+      fullPath: '/en/'
+      preLoaderRoute: typeof EnIndexRouteImport
+      parentRoute: typeof EnRoute
     }
     '/admin/': {
       id: '/admin/'
@@ -484,10 +501,12 @@ const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 interface EnRouteChildren {
   EnGuideIptvRoute: typeof EnGuideIptvRoute
+  EnIndexRoute: typeof EnIndexRoute
 }
 
 const EnRouteChildren: EnRouteChildren = {
   EnGuideIptvRoute: EnGuideIptvRoute,
+  EnIndexRoute: EnIndexRoute,
 }
 
 const EnRouteWithChildren = EnRoute._addFileChildren(EnRouteChildren)
