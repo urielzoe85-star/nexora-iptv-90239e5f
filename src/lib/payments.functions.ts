@@ -8,36 +8,83 @@ import { z } from "zod";
 //   GET   {BASE}/api/v1/collections/{id_or_ref}     — verify a collection's status
 //
 // Auth: two custom headers (X-Public-Key + X-Secret-Key). Both keys are
-// server-only secrets and are never exposed to the browser. We log the URL,
-// payload, HTTP status and raw body for every call so issues can be diagnosed
-// end-to-end.
+// server-only secrets and are never exposed to the browser. Diagnostics only
+// log safe metadata (presence, length, prefix, mode), never complete keys.
 // =============================================================================
 const SEBPAY_BASE_URL = "https://newapi.sebpay.bj";
 export const SEBPAY_COLLECTIONS_PATH = "/api/v1/collections";
+const REQUIRED_SEBPAY_PUBLIC_KEY = "pk_live_ehfY3GRLcf22KQ1JYxusGMeAsoZUpIGruluJhjQM";
+
+function cleanSecretValue(value: string): string {
+  return value.trim().replace(/^['"]|['"]$/g, "");
+}
+
+function sebpayKeyMode(key: string): "live" | "test" | "unknown" {
+  if (key.startsWith("pk_live_") || key.startsWith("sk_live_")) return "live";
+  if (key.startsWith("pk_test_") || key.startsWith("sk_test_")) return "test";
+  return "unknown";
+}
+
+function safeKeyDiagnostics(key: string, raw: string, expectedPublicKey?: string) {
+  return {
+    present: key.length > 0,
+    length: key.length,
+    prefix: key.slice(0, 8),
+    mode: sebpayKeyMode(key),
+    trimmed: key.length !== raw.length,
+    ...(expectedPublicKey ? { matchesExpectedPublicKey: key === expectedPublicKey } : {}),
+  };
+}
+
+function maskPhone(value: unknown) {
+  const digits = String(value ?? "").replace(/\D/g, "");
+  if (digits.length <= 4) return digits ? "****" : undefined;
+  return `${"*".repeat(Math.max(0, digits.length - 4))}${digits.slice(-4)}`;
+}
+
+function redactSebpayPayload(payload: unknown) {
+  if (!payload || typeof payload !== "object") return payload;
+  const copy = { ...(payload as Record<string, unknown>) };
+  if ("phone" in copy) copy.phone = maskPhone(copy.phone);
+  return copy;
+}
 
 function sebpayHeaders(): Record<string, string> {
   const rawPub = process.env.SEBPAY_PUBLIC_KEY ?? "";
   const rawSec = process.env.SEBPAY_SECRET_KEY ?? "";
-  // Trim whitespace / surrounding quotes that often sneak in via copy-paste.
-  const pub = rawPub.trim().replace(/^['"]|['"]$/g, "");
-  const sec = rawSec.trim().replace(/^['"]|['"]$/g, "");
+  const configuredPub = cleanSecretValue(rawPub);
+  const sec = cleanSecretValue(rawSec);
+  // Public key requested by the project owner. It is intentionally enforced
+  // server-side so no stale public key can be sent to SebPay.
+  const pub = REQUIRED_SEBPAY_PUBLIC_KEY;
 
-  // Safe diagnostics — log presence, length, prefix only (never the full key).
-  const safe = (k: string) => ({
-    present: k.length > 0,
-    length: k.length,
-    prefix: k.slice(0, 8),
-    trimmedDiff: k.length !== rawPub.length && k.length !== rawSec.length,
-  });
   console.log("[sebpay] auth keys check", {
-    publicKey: safe(pub),
-    secretKey: safe(sec),
-    rawPublicLength: rawPub.length,
-    rawSecretLength: rawSec.length,
+    configuredPublicKey: safeKeyDiagnostics(configuredPub, rawPub, REQUIRED_SEBPAY_PUBLIC_KEY),
+    effectivePublicKey: safeKeyDiagnostics(pub, pub, REQUIRED_SEBPAY_PUBLIC_KEY),
+    secretKey: safeKeyDiagnostics(sec, rawSec),
+    runtime: "server",
+    authHeaderNames: ["X-Public-Key", "X-Secret-Key"],
   });
 
-  if (!pub) throw new Error("SEBPAY_PUBLIC_KEY is not configured on the server");
-  if (!sec) throw new Error("SEBPAY_SECRET_KEY is not configured on the server");
+  if (!configuredPub) {
+    console.warn("[sebpay] SEBPAY_PUBLIC_KEY is missing from server env; using enforced live public key.");
+  } else if (configuredPub !== REQUIRED_SEBPAY_PUBLIC_KEY) {
+    console.warn("[sebpay] SEBPAY_PUBLIC_KEY differs from the required live key; using enforced live public key.");
+  }
+  if (!sec) throw new Error("Configuration de paiement indisponible: SEBPAY_SECRET_KEY est manquante côté serveur.");
+  if (sec.length < 20) throw new Error("Configuration de paiement indisponible: SEBPAY_SECRET_KEY semble tronquée.");
+
+  const publicMode = sebpayKeyMode(pub);
+  const secretMode = sebpayKeyMode(sec);
+  if (publicMode !== "live" || secretMode !== "live") {
+    console.error("[sebpay] invalid key mode", {
+      publicMode,
+      secretMode,
+      expected: "both keys must be LIVE (pk_live_ + sk_live_)",
+    });
+    throw new Error("Configuration de paiement indisponible: les clés SebPay LIVE ne sont pas correctement configurées.");
+  }
+
   return {
     "X-Public-Key": pub,
     "X-Secret-Key": sec,
@@ -53,7 +100,7 @@ async function sebpayFetch(
   const headers: Record<string, string> = sebpayHeaders();
   if (init.body !== undefined) headers["Content-Type"] = "application/json";
 
-  console.log("[sebpay] →", init.method, url, init.body ? { payload: init.body } : "");
+  console.log("[sebpay] →", init.method, url, init.body ? { payload: redactSebpayPayload(init.body) } : "");
   const res = await fetch(url, {
     method: init.method,
     headers,
@@ -77,7 +124,7 @@ function mapSebpayStatus(s: unknown): "paid" | "failed" | "cancelled" | "pending
 }
 
 /**
- * Create a payment with SebPay (POST /v1/payments) and return the URL the
+ * Create a payment with SebPay (POST /api/v1/collections) and return the URL the
  * customer must be redirected to. The order is moved to "processing"; it will
  * only flip to "paid" after verifyPayment / the webhook confirms with SebPay.
  */
@@ -137,8 +184,8 @@ export const initSebPayCheckout = createServerFn({ method: "POST" })
       body: payload,
     });
     if (status < 200 || status >= 300 || !json) {
-      // Surface the verbatim SebPay error (message + any field-level details)
-      // so the user sees exactly why their payment was rejected.
+      // Log provider details server-side, but only return a generic error to
+      // the browser so endpoints/payloads/internal diagnostics stay hidden.
       const detail =
         (json && (json.message || json.error || json.detail)) ||
         raw.slice(0, 500) ||
@@ -147,9 +194,8 @@ export const initSebPayCheckout = createServerFn({ method: "POST" })
         json && json.errors
           ? ` — fields: ${JSON.stringify(json.errors).slice(0, 400)}`
           : "";
-      throw new Error(
-        `SebPay refused the payment (HTTP ${status} on POST ${endpoint}): ${detail}${fieldErrors}`,
-      );
+      console.error("[sebpay] create collection failed", { status, endpoint, detail, fieldErrors });
+      throw new Error("Le paiement n'a pas pu être initialisé. Veuillez réessayer ou contacter le support.");
     }
 
     // Documented response fields: transaction_id, status, external_reference,
@@ -189,14 +235,11 @@ export const initSebPayCheckout = createServerFn({ method: "POST" })
       providerLink: providerLink ?? null,
       status: sebStatus ?? "pending",
       message: sebMessage ?? null,
-      endpoint,
-      payload,
-      response: json,
     };
   });
 
 /**
- * Verify a payment with SebPay (GET /v1/payments/{id}). The order status is
+ * Verify a payment with SebPay (GET /api/v1/collections/{id}). The order status is
  * only updated when SebPay returns a terminal state.
  */
 export const verifyPayment = createServerFn({ method: "POST" })
