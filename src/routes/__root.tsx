@@ -88,6 +88,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:description", content: "Premium IPTV service. Access thousands of channels, movies and series in HD/FHD/4K on Smart TV, mobile, tablet and PC." },
       { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/b1359b81-4887-44f9-9541-ad129fe2eacf" },
       { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/b1359b81-4887-44f9-9541-ad129fe2eacf" },
+      { name: "google-site-verification", content: "jSv5Ft_Y3UYQrjJ9V7wZZW0mPbS1C3CweOLs7Sa2JfY" },
     ],
     links: [
       {
