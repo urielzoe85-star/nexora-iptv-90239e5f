@@ -87,6 +87,9 @@ function Nav() {
           {locale === "fr" && (
             <Link to="/fr/guide-iptv" className="hover:text-foreground transition">Guide d'installation</Link>
           )}
+          {locale === "en" && (
+            <Link to="/en/guide-iptv" className="hover:text-foreground transition">Setup guide</Link>
+          )}
         </nav>
         <div className="flex items-center gap-3">
           <LanguageSwitcher />

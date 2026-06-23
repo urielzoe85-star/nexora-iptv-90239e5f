@@ -23,6 +23,7 @@ import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as PaymentSuccessRouteImport } from './routes/payment.success'
 import { Route as PaymentFailedRouteImport } from './routes/payment.failed'
 import { Route as FrGuideIptvRouteImport } from './routes/fr.guide-iptv'
+import { Route as EnGuideIptvRouteImport } from './routes/en.guide-iptv'
 import { Route as AdminPlansRouteImport } from './routes/admin.plans'
 import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
@@ -100,6 +101,11 @@ const FrGuideIptvRoute = FrGuideIptvRouteImport.update({
   path: '/guide-iptv',
   getParentRoute: () => FrRoute,
 } as any)
+const EnGuideIptvRoute = EnGuideIptvRouteImport.update({
+  id: '/guide-iptv',
+  path: '/guide-iptv',
+  getParentRoute: () => EnRoute,
+} as any)
 const AdminPlansRoute = AdminPlansRouteImport.update({
   id: '/plans',
   path: '/plans',
@@ -137,7 +143,7 @@ export interface FileRoutesByFullPath {
   '/checkout': typeof CheckoutRoute
   '/dashboard': typeof DashboardRoute
   '/de': typeof DeRoute
-  '/en': typeof EnRoute
+  '/en': typeof EnRouteWithChildren
   '/fr': typeof FrRouteWithChildren
   '/legal-guide': typeof LegalGuideRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -147,6 +153,7 @@ export interface FileRoutesByFullPath {
   '/admin/login': typeof AdminLoginRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/plans': typeof AdminPlansRoute
+  '/en/guide-iptv': typeof EnGuideIptvRoute
   '/fr/guide-iptv': typeof FrGuideIptvRoute
   '/payment/failed': typeof PaymentFailedRoute
   '/payment/success': typeof PaymentSuccessRoute
@@ -158,7 +165,7 @@ export interface FileRoutesByTo {
   '/checkout': typeof CheckoutRoute
   '/dashboard': typeof DashboardRoute
   '/de': typeof DeRoute
-  '/en': typeof EnRoute
+  '/en': typeof EnRouteWithChildren
   '/fr': typeof FrRouteWithChildren
   '/legal-guide': typeof LegalGuideRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -168,6 +175,7 @@ export interface FileRoutesByTo {
   '/admin/login': typeof AdminLoginRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/plans': typeof AdminPlansRoute
+  '/en/guide-iptv': typeof EnGuideIptvRoute
   '/fr/guide-iptv': typeof FrGuideIptvRoute
   '/payment/failed': typeof PaymentFailedRoute
   '/payment/success': typeof PaymentSuccessRoute
@@ -181,7 +189,7 @@ export interface FileRoutesById {
   '/checkout': typeof CheckoutRoute
   '/dashboard': typeof DashboardRoute
   '/de': typeof DeRoute
-  '/en': typeof EnRoute
+  '/en': typeof EnRouteWithChildren
   '/fr': typeof FrRouteWithChildren
   '/legal-guide': typeof LegalGuideRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -191,6 +199,7 @@ export interface FileRoutesById {
   '/admin/login': typeof AdminLoginRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/plans': typeof AdminPlansRoute
+  '/en/guide-iptv': typeof EnGuideIptvRoute
   '/fr/guide-iptv': typeof FrGuideIptvRoute
   '/payment/failed': typeof PaymentFailedRoute
   '/payment/success': typeof PaymentSuccessRoute
@@ -215,6 +224,7 @@ export interface FileRouteTypes {
     | '/admin/login'
     | '/admin/orders'
     | '/admin/plans'
+    | '/en/guide-iptv'
     | '/fr/guide-iptv'
     | '/payment/failed'
     | '/payment/success'
@@ -236,6 +246,7 @@ export interface FileRouteTypes {
     | '/admin/login'
     | '/admin/orders'
     | '/admin/plans'
+    | '/en/guide-iptv'
     | '/fr/guide-iptv'
     | '/payment/failed'
     | '/payment/success'
@@ -258,6 +269,7 @@ export interface FileRouteTypes {
     | '/admin/login'
     | '/admin/orders'
     | '/admin/plans'
+    | '/en/guide-iptv'
     | '/fr/guide-iptv'
     | '/payment/failed'
     | '/payment/success'
@@ -271,7 +283,7 @@ export interface RootRouteChildren {
   CheckoutRoute: typeof CheckoutRoute
   DashboardRoute: typeof DashboardRoute
   DeRoute: typeof DeRoute
-  EnRoute: typeof EnRoute
+  EnRoute: typeof EnRouteWithChildren
   FrRoute: typeof FrRouteWithChildren
   LegalGuideRoute: typeof LegalGuideRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
@@ -381,6 +393,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FrGuideIptvRouteImport
       parentRoute: typeof FrRoute
     }
+    '/en/guide-iptv': {
+      id: '/en/guide-iptv'
+      path: '/guide-iptv'
+      fullPath: '/en/guide-iptv'
+      preLoaderRoute: typeof EnGuideIptvRouteImport
+      parentRoute: typeof EnRoute
+    }
     '/admin/plans': {
       id: '/admin/plans'
       path: '/plans'
@@ -446,6 +465,16 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
+interface EnRouteChildren {
+  EnGuideIptvRoute: typeof EnGuideIptvRoute
+}
+
+const EnRouteChildren: EnRouteChildren = {
+  EnGuideIptvRoute: EnGuideIptvRoute,
+}
+
+const EnRouteWithChildren = EnRoute._addFileChildren(EnRouteChildren)
+
 interface FrRouteChildren {
   FrGuideIptvRoute: typeof FrGuideIptvRoute
 }
@@ -462,7 +491,7 @@ const rootRouteChildren: RootRouteChildren = {
   CheckoutRoute: CheckoutRoute,
   DashboardRoute: DashboardRoute,
   DeRoute: DeRoute,
-  EnRoute: EnRoute,
+  EnRoute: EnRouteWithChildren,
   FrRoute: FrRouteWithChildren,
   LegalGuideRoute: LegalGuideRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
