@@ -1,6 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { I18nProvider } from "@/i18n/context";
-import { NexoraLanding } from "./index";
 
 export const Route = createFileRoute("/en")({
   head: () => ({
@@ -16,7 +15,7 @@ export const Route = createFileRoute("/en")({
   }),
   component: () => (
     <I18nProvider forced="en">
-      <NexoraLanding />
+      <Outlet />
     </I18nProvider>
   ),
 });
