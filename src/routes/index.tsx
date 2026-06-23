@@ -1,6 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import heroBg from "@/assets/hero-bg.jpg";
 import devicesImg from "@/assets/devices.jpg";
+import downloadIos from "@/assets/download-ios.jpg";
+import downloadAndroid from "@/assets/download-android.jpg";
+import downloadWindows from "@/assets/download-windows.jpg";
 import {
   Accordion, AccordionContent, AccordionItem, AccordionTrigger,
 } from "@/components/ui/accordion";
@@ -8,6 +11,7 @@ import {
   Tv, Film, Zap, Globe2, ShieldCheck, Headphones,
   Check, Star, MessageCircle, Send, Mail, Menu,
   Smartphone, Tablet, Laptop, Monitor, Tv2,
+  Download,
 } from "lucide-react";
 import { useT } from "@/i18n/context";
 import { LanguageSwitcher } from "@/i18n/context";

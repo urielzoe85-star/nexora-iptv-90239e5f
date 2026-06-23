@@ -187,3 +187,13 @@
   0% { background-position: -200% 0; }
   100% { background-position: 200% 0; }
 }
+
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 20px -5px oklch(0.78 0.13 85 / 0.3); }
+  50% { box-shadow: 0 0 40px -5px oklch(0.78 0.13 85 / 0.6); }
+}
+
+@keyframes border-glow {
+  0%, 100% { border-color: oklch(0.78 0.13 85 / 0.15); }
+  50% { border-color: oklch(0.78 0.13 85 / 0.6); }
+}
