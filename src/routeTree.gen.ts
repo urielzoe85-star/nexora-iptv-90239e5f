@@ -22,6 +22,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as PaymentSuccessRouteImport } from './routes/payment.success'
 import { Route as PaymentFailedRouteImport } from './routes/payment.failed'
+import { Route as FrGuideIptvRouteImport } from './routes/fr.guide-iptv'
 import { Route as AdminPlansRouteImport } from './routes/admin.plans'
 import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
@@ -94,6 +95,11 @@ const PaymentFailedRoute = PaymentFailedRouteImport.update({
   path: '/payment/failed',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FrGuideIptvRoute = FrGuideIptvRouteImport.update({
+  id: '/guide-iptv',
+  path: '/guide-iptv',
+  getParentRoute: () => FrRoute,
+} as any)
 const AdminPlansRoute = AdminPlansRouteImport.update({
   id: '/plans',
   path: '/plans',
@@ -132,7 +138,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRoute
   '/de': typeof DeRoute
   '/en': typeof EnRoute
-  '/fr': typeof FrRoute
+  '/fr': typeof FrRouteWithChildren
   '/legal-guide': typeof LegalGuideRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/track': typeof TrackRoute
@@ -141,6 +147,7 @@ export interface FileRoutesByFullPath {
   '/admin/login': typeof AdminLoginRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/plans': typeof AdminPlansRoute
+  '/fr/guide-iptv': typeof FrGuideIptvRoute
   '/payment/failed': typeof PaymentFailedRoute
   '/payment/success': typeof PaymentSuccessRoute
   '/admin/': typeof AdminIndexRoute
@@ -152,7 +159,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardRoute
   '/de': typeof DeRoute
   '/en': typeof EnRoute
-  '/fr': typeof FrRoute
+  '/fr': typeof FrRouteWithChildren
   '/legal-guide': typeof LegalGuideRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/track': typeof TrackRoute
@@ -161,6 +168,7 @@ export interface FileRoutesByTo {
   '/admin/login': typeof AdminLoginRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/plans': typeof AdminPlansRoute
+  '/fr/guide-iptv': typeof FrGuideIptvRoute
   '/payment/failed': typeof PaymentFailedRoute
   '/payment/success': typeof PaymentSuccessRoute
   '/admin': typeof AdminIndexRoute
@@ -174,7 +182,7 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/de': typeof DeRoute
   '/en': typeof EnRoute
-  '/fr': typeof FrRoute
+  '/fr': typeof FrRouteWithChildren
   '/legal-guide': typeof LegalGuideRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/track': typeof TrackRoute
@@ -183,6 +191,7 @@ export interface FileRoutesById {
   '/admin/login': typeof AdminLoginRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/plans': typeof AdminPlansRoute
+  '/fr/guide-iptv': typeof FrGuideIptvRoute
   '/payment/failed': typeof PaymentFailedRoute
   '/payment/success': typeof PaymentSuccessRoute
   '/admin/': typeof AdminIndexRoute
@@ -206,6 +215,7 @@ export interface FileRouteTypes {
     | '/admin/login'
     | '/admin/orders'
     | '/admin/plans'
+    | '/fr/guide-iptv'
     | '/payment/failed'
     | '/payment/success'
     | '/admin/'
@@ -226,6 +236,7 @@ export interface FileRouteTypes {
     | '/admin/login'
     | '/admin/orders'
     | '/admin/plans'
+    | '/fr/guide-iptv'
     | '/payment/failed'
     | '/payment/success'
     | '/admin'
@@ -247,6 +258,7 @@ export interface FileRouteTypes {
     | '/admin/login'
     | '/admin/orders'
     | '/admin/plans'
+    | '/fr/guide-iptv'
     | '/payment/failed'
     | '/payment/success'
     | '/admin/'
@@ -260,7 +272,7 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   DeRoute: typeof DeRoute
   EnRoute: typeof EnRoute
-  FrRoute: typeof FrRoute
+  FrRoute: typeof FrRouteWithChildren
   LegalGuideRoute: typeof LegalGuideRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TrackRoute: typeof TrackRoute
@@ -362,6 +374,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PaymentFailedRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/fr/guide-iptv': {
+      id: '/fr/guide-iptv'
+      path: '/guide-iptv'
+      fullPath: '/fr/guide-iptv'
+      preLoaderRoute: typeof FrGuideIptvRouteImport
+      parentRoute: typeof FrRoute
+    }
     '/admin/plans': {
       id: '/admin/plans'
       path: '/plans'
@@ -427,6 +446,16 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
+interface FrRouteChildren {
+  FrGuideIptvRoute: typeof FrGuideIptvRoute
+}
+
+const FrRouteChildren: FrRouteChildren = {
+  FrGuideIptvRoute: FrGuideIptvRoute,
+}
+
+const FrRouteWithChildren = FrRoute._addFileChildren(FrRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
@@ -434,7 +463,7 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   DeRoute: DeRoute,
   EnRoute: EnRoute,
-  FrRoute: FrRoute,
+  FrRoute: FrRouteWithChildren,
   LegalGuideRoute: LegalGuideRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TrackRoute: TrackRoute,
