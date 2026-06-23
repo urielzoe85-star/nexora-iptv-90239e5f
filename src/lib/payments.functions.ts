@@ -100,7 +100,7 @@ async function sebpayFetch(
   const headers: Record<string, string> = sebpayHeaders();
   if (init.body !== undefined) headers["Content-Type"] = "application/json";
 
-  console.log("[sebpay] →", init.method, url, init.body ? { payload: init.body } : "");
+  console.log("[sebpay] →", init.method, url, init.body ? { payload: redactSebpayPayload(init.body) } : "");
   const res = await fetch(url, {
     method: init.method,
     headers,
@@ -124,7 +124,7 @@ function mapSebpayStatus(s: unknown): "paid" | "failed" | "cancelled" | "pending
 }
 
 /**
- * Create a payment with SebPay (POST /v1/payments) and return the URL the
+ * Create a payment with SebPay (POST /api/v1/collections) and return the URL the
  * customer must be redirected to. The order is moved to "processing"; it will
  * only flip to "paid" after verifyPayment / the webhook confirms with SebPay.
  */
@@ -184,8 +184,8 @@ export const initSebPayCheckout = createServerFn({ method: "POST" })
       body: payload,
     });
     if (status < 200 || status >= 300 || !json) {
-      // Surface the verbatim SebPay error (message + any field-level details)
-      // so the user sees exactly why their payment was rejected.
+      // Log provider details server-side, but only return a generic error to
+      // the browser so endpoints/payloads/internal diagnostics stay hidden.
       const detail =
         (json && (json.message || json.error || json.detail)) ||
         raw.slice(0, 500) ||
@@ -194,9 +194,8 @@ export const initSebPayCheckout = createServerFn({ method: "POST" })
         json && json.errors
           ? ` — fields: ${JSON.stringify(json.errors).slice(0, 400)}`
           : "";
-      throw new Error(
-        `SebPay refused the payment (HTTP ${status} on POST ${endpoint}): ${detail}${fieldErrors}`,
-      );
+      console.error("[sebpay] create collection failed", { status, endpoint, detail, fieldErrors });
+      throw new Error("Le paiement n'a pas pu être initialisé. Veuillez réessayer ou contacter le support.");
     }
 
     // Documented response fields: transaction_id, status, external_reference,
@@ -236,14 +235,11 @@ export const initSebPayCheckout = createServerFn({ method: "POST" })
       providerLink: providerLink ?? null,
       status: sebStatus ?? "pending",
       message: sebMessage ?? null,
-      endpoint,
-      payload,
-      response: json,
     };
   });
 
 /**
- * Verify a payment with SebPay (GET /v1/payments/{id}). The order status is
+ * Verify a payment with SebPay (GET /api/v1/collections/{id}). The order status is
  * only updated when SebPay returns a terminal state.
  */
 export const verifyPayment = createServerFn({ method: "POST" })
