@@ -377,24 +377,11 @@ function PaymentStep(props: {
               className="w-full bg-transparent outline-none text-sm placeholder:text-muted-foreground/60"
             />
           </Field>
-          <div className="rounded-xl border border-white/10 bg-black/30 p-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                Endpoint SebPay
-              </span>
-              <span className="text-[11px] text-[color:var(--gold)]">POST</span>
-            </div>
-            <code className="block text-xs font-mono text-foreground/90 break-all mb-3">
-              {SEBPAY_ENDPOINT}
-            </code>
-            <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
-              Payload envoyé (côté serveur)
-            </span>
-            <pre className="mt-1 text-[11px] font-mono text-foreground/80 overflow-x-auto whitespace-pre-wrap">
-{JSON.stringify(payloadPreview, null, 2)}
-            </pre>
-            <p className="text-[10px] text-muted-foreground/70 mt-2">
-              Headers: <span className="font-mono">X-Public-Key</span> + <span className="font-mono">X-Secret-Key</span> (jamais exposés au navigateur).
+          <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4 flex items-start gap-3">
+            <ShieldCheck className="h-4 w-4 text-[color:var(--gold)] mt-0.5 shrink-0" />
+            <p className="text-xs text-muted-foreground">
+              Paiement sécurisé via SebPay. Vos informations sont transmises de
+              manière chiffrée et ne sont jamais stockées sur nos serveurs.
             </p>
           </div>
         </div>
