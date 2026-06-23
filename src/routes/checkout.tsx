@@ -23,8 +23,6 @@ const COUNTRIES: { code: string; label: string }[] = [
   { code: "CM", label: "Cameroun (CM)" },
 ];
 const USD_TO_XOF = 600;
-const SEBPAY_ENDPOINT = "https://newapi.sebpay.bj/api/v1/collections";
-
 const PLANS: Plan[] = [
   { id: "1m",  name: "1 Month",   price: 12, period: "/month" },
   { id: "3m",  name: "3 Months",  price: 30, period: "/quarter",   save: "Save 17%" },
@@ -80,19 +78,6 @@ function CheckoutPage() {
     fullName.trim().length > 1 &&
     phone.replace(/\D/g, "").length >= 8 &&
     !!operator && !!country;
-
-  // Live preview of the SebPay payload that will be sent server-side. Mirrors
-  // exactly what src/lib/payments.functions.ts builds for the documented
-  // POST /api/v1/collections endpoint.
-  const sebpayPayloadPreview = useMemo(() => ({
-    amount: Math.round(total * USD_TO_XOF),
-    currency: "XOF",
-    phone: phone || "+229XXXXXXXX",
-    operator,
-    country,
-    external_reference: "NX-…",
-    callback_url: "{origin}/api/public/sebpay/webhook",
-  }), [total, phone, operator, country]);
 
   async function handlePay(e: React.FormEvent) {
     e.preventDefault();
@@ -190,7 +175,6 @@ function CheckoutPage() {
                     canPay={canPay}
                     total={total}
                     errorMsg={errorMsg}
-                    payloadPreview={sebpayPayloadPreview}
                     onBack={() => setStep(1)}
                     onSubmit={handlePay}
                   />
@@ -300,14 +284,13 @@ function PaymentStep(props: {
   operator: Operator; setOperator: (v: Operator) => void;
   country: string; setCountry: (v: string) => void;
   processing: boolean; canPay: boolean; total: number; errorMsg?: string;
-  payloadPreview: Record<string, any>;
   onBack: () => void; onSubmit: (e: React.FormEvent) => void;
 }) {
   const t = useT();
   const {
     email, setEmail, fullName, setFullName,
     phone, setPhone, operator, setOperator, country, setCountry,
-    processing, canPay, total, errorMsg, payloadPreview, onBack, onSubmit,
+    processing, canPay, total, errorMsg, onBack, onSubmit,
   } = props;
 
   return (
@@ -377,24 +360,11 @@ function PaymentStep(props: {
               className="w-full bg-transparent outline-none text-sm placeholder:text-muted-foreground/60"
             />
           </Field>
-          <div className="rounded-xl border border-white/10 bg-black/30 p-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                Endpoint SebPay
-              </span>
-              <span className="text-[11px] text-[color:var(--gold)]">POST</span>
-            </div>
-            <code className="block text-xs font-mono text-foreground/90 break-all mb-3">
-              {SEBPAY_ENDPOINT}
-            </code>
-            <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
-              Payload envoyé (côté serveur)
-            </span>
-            <pre className="mt-1 text-[11px] font-mono text-foreground/80 overflow-x-auto whitespace-pre-wrap">
-{JSON.stringify(payloadPreview, null, 2)}
-            </pre>
-            <p className="text-[10px] text-muted-foreground/70 mt-2">
-              Headers: <span className="font-mono">X-Public-Key</span> + <span className="font-mono">X-Secret-Key</span> (jamais exposés au navigateur).
+          <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4 flex items-start gap-3">
+            <ShieldCheck className="h-4 w-4 text-[color:var(--gold)] mt-0.5 shrink-0" />
+            <p className="text-xs text-muted-foreground">
+              Paiement sécurisé via SebPay. Vos informations sont transmises de
+              manière chiffrée et ne sont jamais stockées sur nos serveurs.
             </p>
           </div>
         </div>
