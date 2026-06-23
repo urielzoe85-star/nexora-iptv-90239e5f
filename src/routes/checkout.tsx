@@ -22,6 +22,7 @@ const COUNTRIES: { code: string; label: string }[] = [
   { code: "NE", label: "Niger (NE)" },
   { code: "CM", label: "Cameroun (CM)" },
 ];
+const USD_TO_XOF = 600;
 const PLANS: Plan[] = [
   { id: "1m",  name: "1 Month",   price: 12, period: "/month" },
   { id: "3m",  name: "3 Months",  price: 30, period: "/quarter",   save: "Save 17%" },
