@@ -56,6 +56,7 @@ export function NexoraLanding() {
         <Devices />
         <Pricing />
         <HowItWorks />
+        <Downloads />
         <Testimonials />
         <FAQ />
         <Payments />
