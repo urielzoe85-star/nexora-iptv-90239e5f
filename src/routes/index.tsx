@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { useT, useI18n } from "@/i18n/context";
 import { LanguageSwitcher } from "@/i18n/context";
+import { useState } from "react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -71,6 +72,8 @@ export function NexoraLanding() {
 function Nav() {
   const t = useT();
   const { locale } = useI18n();
+  const [open, setOpen] = useState(false);
+  const close = () => setOpen(false);
   return (
     <header className="fixed top-0 left-0 right-0 z-50 glass border-b border-[color:var(--gold)]/10">
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
@@ -94,9 +97,35 @@ function Nav() {
         <div className="flex items-center gap-3">
           <LanguageSwitcher />
           <a href="#pricing" className="btn-gold btn-gold-hover px-5 py-2 rounded-full text-sm font-semibold hidden sm:inline-block">{t("nav.getStarted")}</a>
-          <button className="md:hidden text-foreground" aria-label={t("nav.menu")}><Menu className="h-6 w-6" /></button>
+          <button
+            type="button"
+            onClick={() => setOpen((v) => !v)}
+            aria-label={t("nav.menu")}
+            aria-expanded={open}
+            className="md:hidden text-foreground"
+          >
+            <Menu className="h-6 w-6" />
+          </button>
         </div>
       </div>
+      {open && (
+        <div className="md:hidden border-t border-[color:var(--gold)]/10 glass">
+          <nav className="max-w-7xl mx-auto px-6 py-4 flex flex-col gap-4 text-sm text-muted-foreground">
+            <a href="#features" onClick={close} className="hover:text-foreground transition">{t("nav.features")}</a>
+            <a href="#devices" onClick={close} className="hover:text-foreground transition">{t("nav.devices")}</a>
+            <a href="#pricing" onClick={close} className="hover:text-foreground transition">{t("nav.pricing")}</a>
+            <a href="#faq" onClick={close} className="hover:text-foreground transition">{t("nav.faq")}</a>
+            <a href="#support" onClick={close} className="hover:text-foreground transition">{t("nav.support")}</a>
+            {locale === "fr" && (
+              <Link to="/fr/guide-iptv" onClick={close} className="hover:text-foreground transition">Guide d'installation</Link>
+            )}
+            {locale === "en" && (
+              <Link to="/en/guide-iptv" onClick={close} className="hover:text-foreground transition">Setup guide</Link>
+            )}
+            <a href="#pricing" onClick={close} className="btn-gold btn-gold-hover px-5 py-2 rounded-full text-sm font-semibold text-center sm:hidden">{t("nav.getStarted")}</a>
+          </nav>
+        </div>
+      )}
     </header>
   );
 }
