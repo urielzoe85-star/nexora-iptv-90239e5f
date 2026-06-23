@@ -19,9 +19,12 @@ export const Route = createFileRoute("/api/public/sebpay/webhook")({
         }
         console.log("[sebpay-webhook] received", payload);
 
+        // SebPay's documented webhook body uses external_reference (the value
+        // we sent at creation time) — we accept a few aliases just in case.
+        const d = payload.data ?? payload;
         const ref: string | undefined =
-          payload.ref ?? payload.order_ref ?? payload.reference ?? payload.metadata?.reference;
-        if (!ref) return new Response("Missing reference", { status: 400 });
+          d.external_reference ?? d.reference ?? d.order_ref ?? d.ref ?? payload.metadata?.reference;
+        if (!ref) return new Response("Missing external_reference", { status: 400 });
 
         // Re-verify with SebPay's API; ignore status field from the payload.
         const { verifyPaymentInternal } = await import("@/lib/payments.functions");
