@@ -107,10 +107,8 @@ function CheckoutPage() {
           failureUrl: `${origin}/payment/failed?ref=${order.order_ref}`,
         },
       });
-      console.log("[checkout] sebpay collection", result);
-
-      // If SebPay returns a provider_link, open it in a new tab so the
-      // customer can complete the payment on the operator's page.
+      // If the payment provider returns a confirmation page, open it in a new
+      // tab so the customer can complete the payment.
       if (result.providerLink && typeof window !== "undefined") {
         window.open(result.providerLink, "_blank", "noopener,noreferrer");
       }
@@ -319,14 +317,14 @@ function PaymentStep(props: {
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold">Paiement Mobile Money</h2>
           <span className="text-xs text-muted-foreground flex items-center gap-1">
-            <ShieldCheck className="h-4 w-4 text-[color:var(--gold)]" /> SebPay
+              <ShieldCheck className="h-4 w-4 text-[color:var(--gold)]" /> Sécurisé
           </span>
         </div>
 
         <div className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            Le paiement est traité par SebPay. Vous recevrez une demande de confirmation
-            sur votre téléphone (MTN ou Orange Money).
+            Vous recevrez une demande de confirmation sur votre téléphone
+            (MTN ou Orange Money).
           </p>
           <div className="grid sm:grid-cols-2 gap-4">
             <Field icon={<Smartphone className="h-4 w-4" />} label="Opérateur Mobile Money">
@@ -360,13 +358,6 @@ function PaymentStep(props: {
               className="w-full bg-transparent outline-none text-sm placeholder:text-muted-foreground/60"
             />
           </Field>
-          <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4 flex items-start gap-3">
-            <ShieldCheck className="h-4 w-4 text-[color:var(--gold)] mt-0.5 shrink-0" />
-            <p className="text-xs text-muted-foreground">
-              Paiement sécurisé via SebPay. Vos informations sont transmises de
-              manière chiffrée et ne sont jamais stockées sur nos serveurs.
-            </p>
-          </div>
         </div>
 
       </section>
@@ -399,9 +390,8 @@ function PendingPanel({ pending }: { pending: PendingState }) {
   const [status, setStatus] = useState<string>("processing");
   const [tries, setTries] = useState(0);
 
-  // Poll SebPay (server-side, GET /api/v1/collections/{id}) every 4s for
-  // up to ~3min. We never mark "paid" client-side — verifyPayment talks to
-  // SebPay and updates the DB only when SebPay confirms.
+  // Poll payment status server-side every 4s for up to ~3min. We never mark
+  // "paid" client-side — verifyPayment updates the DB only after confirmation.
   useEffect(() => {
     let cancelled = false;
     let attempts = 0;
