@@ -1,11 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
-// USD → XAF conversion used when a Mobile Money customer in the CFA franc
-// (BEAC) zone pays. Plans are priced in USD on the site; SebPay's Mobile
-// Money endpoint expects local currency (XAF for CM/CG/GA/TD/CF).
-export const USD_TO_XAF = 600;
-const XAF_COUNTRIES = new Set(["CM", "CG", "GA", "TD", "CF"]);
+// USD → XOF conversion. Plans are priced in USD on the site; SebPay's
+// Mobile Money endpoint expects XOF (CFA franc BCEAO) per its docs.
+export const USD_TO_XOF = 600;
 
 const CreateOrderSchema = z.object({
   email: z.string().trim().email().max(255),
@@ -14,14 +12,11 @@ const CreateOrderSchema = z.object({
   planName: z.string().trim().min(1).max(80),
   amount: z.number().positive().max(100000),
   currency: z.string().trim().length(3).default("USD"),
-  method: z.enum(["card", "momo", "crypto"]),
-  phone: z.string().trim().min(6).max(20).optional(),
-  operator: z.enum(["MTN Mobile Money", "Orange Money"]).optional(),
-  country: z.string().trim().length(2).toUpperCase().optional(),
-}).refine(
-  (d) => d.method !== "momo" || (!!d.phone && !!d.operator && !!d.country),
-  { message: "Mobile Money requires phone, operator and country" },
-);
+  method: z.literal("momo"),
+  phone: z.string().trim().min(6).max(20),
+  operator: z.enum(["MTN Mobile Money", "Orange Money"]),
+  country: z.string().trim().length(2).toUpperCase(),
+});
 
 function genOrderRef() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -39,21 +34,18 @@ export const createOrder = createServerFn({ method: "POST" })
     // For Mobile Money in the XAF zone, override currency + amount to what
     // SebPay actually charges (local CFA franc). The USD price is preserved
     // in metadata for accounting.
-    let amount = data.amount;
-    let currency = data.currency;
-    const metadata: Record<string, any> = {};
-    if (data.method === "momo") {
-      metadata.momo = {
+    // SebPay charges in XOF. Convert the USD plan price → XOF and preserve
+    // the original USD amount in metadata for accounting.
+    const amount = Math.round(data.amount * USD_TO_XOF);
+    const currency = "XOF";
+    const metadata: Record<string, any> = {
+      usd_amount: data.amount,
+      momo: {
         phone: data.phone,
         operator: data.operator,
         country: data.country,
-      };
-      metadata.usd_amount = data.amount;
-      if (data.country && XAF_COUNTRIES.has(data.country)) {
-        currency = "XAF";
-        amount = Math.round(data.amount * USD_TO_XAF);
-      }
-    }
+      },
+    };
 
     const { data: row, error } = await supabaseAdmin
       .from("orders")

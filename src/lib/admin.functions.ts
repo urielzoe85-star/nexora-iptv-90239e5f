@@ -161,7 +161,7 @@ export const adminListOrders = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     let q = supabaseAdmin
       .from("orders")
-      .select("id, order_ref, email, full_name, plan_name, amount, currency, method, status, sebpay_reference, created_at, updated_at, admin_notes")
+      .select("id, order_ref, email, full_name, plan_name, amount, currency, method, status, sebpay_reference, metadata, created_at, updated_at, admin_notes")
       .order("created_at", { ascending: false })
       .limit(data.limit);
     if (data.status && data.status !== "all") q = q.eq("status", data.status);

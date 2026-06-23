@@ -2,25 +2,29 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 // =============================================================================
-// SebPay LIVE integration
+// SebPay LIVE integration (official endpoints — https://sebpay.bj/our-api)
 // -----------------------------------------------------------------------------
-// Documented base URL + endpoints (https://sebpay.bj/our-api):
-//   POST  {BASE}/v1/payments        — create a payment
-//   GET   {BASE}/v1/payments/{id}   — verify payment status
-//   POST  {BASE}/v1/payouts         — payouts (unused here)
-//   GET   {BASE}/v1/balance         — balance     (unused here)
+//   POST  {BASE}/api/v1/collections                 — create a Mobile Money collection
+//   GET   {BASE}/api/v1/collections/{id_or_ref}     — verify a collection's status
 //
-// Auth: Bearer token = SEBPAY_SECRET_KEY (server-side secret, never exposed).
-// We log the exact URL, request payload, HTTP status and raw response body
-// for every call so issues can be diagnosed end-to-end.
+// Auth: two custom headers (X-Public-Key + X-Secret-Key). Both keys are
+// server-only secrets and are never exposed to the browser. We log the URL,
+// payload, HTTP status and raw body for every call so issues can be diagnosed
+// end-to-end.
 // =============================================================================
 const SEBPAY_BASE_URL = "https://newapi.sebpay.bj";
-export const SEBPAY_PAYMENTS_PATH = "/v1/payments";
+export const SEBPAY_COLLECTIONS_PATH = "/api/v1/collections";
 
-function sebpaySecret(): string {
-  const k = process.env.SEBPAY_SECRET_KEY;
-  if (!k) throw new Error("SEBPAY_SECRET_KEY is not configured");
-  return k;
+function sebpayHeaders(): Record<string, string> {
+  const pub = process.env.SEBPAY_PUBLIC_KEY;
+  const sec = process.env.SEBPAY_SECRET_KEY;
+  if (!pub) throw new Error("SEBPAY_PUBLIC_KEY is not configured");
+  if (!sec) throw new Error("SEBPAY_SECRET_KEY is not configured");
+  return {
+    "X-Public-Key": pub,
+    "X-Secret-Key": sec,
+    Accept: "application/json",
+  };
 }
 
 async function sebpayFetch(
@@ -28,10 +32,7 @@ async function sebpayFetch(
   init: { method: "GET" | "POST"; body?: unknown },
 ): Promise<{ status: number; raw: string; json: any }> {
   const url = `${SEBPAY_BASE_URL}${path}`;
-  const headers: Record<string, string> = {
-    Authorization: `Bearer ${sebpaySecret()}`,
-    Accept: "application/json",
-  };
+  const headers: Record<string, string> = sebpayHeaders();
   if (init.body !== undefined) headers["Content-Type"] = "application/json";
 
   console.log("[sebpay] →", init.method, url, init.body ? { payload: init.body } : "");
@@ -47,11 +48,12 @@ async function sebpayFetch(
   return { status: res.status, raw, json };
 }
 
-// Map any status string SebPay returns to one of our 4 internal states.
+// Map SebPay's documented statuses (approved | rejected | pending) to one of
+// our 4 internal states. Anything unknown is treated as "pending".
 function mapSebpayStatus(s: unknown): "paid" | "failed" | "cancelled" | "pending" {
   const v = String(s ?? "").toLowerCase();
-  if (["success", "successful", "succeeded", "paid", "completed", "approved"].includes(v)) return "paid";
-  if (["failed", "failure", "error", "declined"].includes(v)) return "failed";
+  if (["approved", "success", "successful", "succeeded", "paid", "completed"].includes(v)) return "paid";
+  if (["rejected", "failed", "failure", "error", "declined"].includes(v)) return "failed";
   if (["cancelled", "canceled"].includes(v)) return "cancelled";
   return "pending";
 }
@@ -84,42 +86,35 @@ export const initSebPayCheckout = createServerFn({ method: "POST" })
       throw new Error(`Order is already ${order.status}; cannot start a new checkout.`);
     }
 
-    const webhookUrl = `${new URL(data.successUrl).origin}/api/public/sebpay/webhook`;
+    if (order.method !== "momo") {
+      throw new Error("Only Mobile Money (MTN / Orange) is currently supported.");
+    }
     const momo = (order.metadata as any)?.momo as
       | { phone?: string; operator?: string; country?: string }
       | undefined;
-
-    // Build the exact payload SebPay documents at https://sebpay.bj/our-api
-    // for POST /v1/payments. Mobile Money requires amount/currency/operator/
-    // phone/country. We always attach a reference + callback/webhook URLs so
-    // we can re-verify the payment server-side.
-    const payload: Record<string, any> = {
-      amount: Number(order.amount),
-      currency: order.currency,
-      reference: order.order_ref,
-      description: `Nexora IPTV — ${order.plan_name}`,
-      customer: { email: order.email, name: order.full_name },
-      success_url: data.successUrl,
-      cancel_url: data.failureUrl,
-      callback_url: data.successUrl,
-      webhook_url: webhookUrl,
-      metadata: { order_ref: order.order_ref },
-    };
-    if (order.method === "momo") {
-      if (!momo?.phone || !momo?.operator || !momo?.country) {
-        throw new Error(
-          "Mobile Money order is missing phone/operator/country — please re-enter your payment details.",
-        );
-      }
-      payload.operator = momo.operator;
-      payload.phone = momo.phone;
-      payload.country = momo.country;
-    } else {
-      payload.method = order.method;
+    if (!momo?.phone || !momo?.operator || !momo?.country) {
+      throw new Error(
+        "Mobile Money order is missing phone / operator / country — please re-enter your payment details.",
+      );
     }
 
-    const endpoint = `${SEBPAY_BASE_URL}${SEBPAY_PAYMENTS_PATH}`;
-    const { status, raw, json } = await sebpayFetch(SEBPAY_PAYMENTS_PATH, {
+    // Documented webhook receiver — always the /api/public/* TSS route so
+    // SebPay's POST is not blocked by Lovable's published-site auth.
+    const callbackUrl = `${new URL(data.successUrl).origin}/api/public/sebpay/webhook`;
+
+    // Documented payload for POST /api/v1/collections.
+    const payload: Record<string, any> = {
+      amount: Number(order.amount),
+      currency: order.currency, // "XOF"
+      phone: momo.phone,
+      operator: momo.operator,
+      country: momo.country,
+      external_reference: order.order_ref,
+      callback_url: callbackUrl,
+    };
+
+    const endpoint = `${SEBPAY_BASE_URL}${SEBPAY_COLLECTIONS_PATH}`;
+    const { status, raw, json } = await sebpayFetch(SEBPAY_COLLECTIONS_PATH, {
       method: "POST",
       body: payload,
     });
@@ -139,17 +134,19 @@ export const initSebPayCheckout = createServerFn({ method: "POST" })
       );
     }
 
-    // SebPay may name the redirect field a few different ways depending on
-    // the product. For Mobile Money there is often no redirect at all — the
-    // customer approves on their phone (USSD push), and we poll
-    // GET /v1/payments/{id} until SebPay reports a terminal state.
-    const checkoutUrl: string | undefined =
-      json.checkout_url ?? json.payment_url ?? json.url ?? json.redirect_url ?? json.data?.checkout_url;
+    // Documented response fields: transaction_id, status, external_reference,
+    // provider_link, message. provider_link is the operator's payment page
+    // (when SebPay can't push USSD directly) and must be opened in a new tab.
+    const d = json.data ?? json;
     const sebpayId: string | undefined =
-      json.id ?? json.transaction_id ?? json.payment_id ?? json.data?.id;
+      d.transaction_id ?? d.id ?? d.reference;
+    const providerLink: string | undefined =
+      d.provider_link ?? d.payment_url ?? d.checkout_url ?? d.url ?? undefined;
+    const sebMessage: string | undefined = d.message ?? json.message;
+    const sebStatus: string | undefined = d.status ?? json.status;
     if (!sebpayId) {
       throw new Error(
-        `SebPay did not return a transaction id. Raw response: ${raw.slice(0, 500)}`,
+        `SebPay did not return a transaction_id. Raw response: ${raw.slice(0, 500)}`,
       );
     }
 
@@ -163,13 +160,17 @@ export const initSebPayCheckout = createServerFn({ method: "POST" })
           sebpay_endpoint: endpoint,
           sebpay_request: payload,
           sebpay_response: json,
+          sebpay_provider_link: providerLink ?? null,
+          sebpay_initial_status: sebStatus ?? null,
         },
       })
       .eq("order_ref", order.order_ref);
 
     return {
-      checkoutUrl: checkoutUrl ?? null,
-      sebpayId,
+      transactionId: sebpayId,
+      providerLink: providerLink ?? null,
+      status: sebStatus ?? "pending",
+      message: sebMessage ?? null,
       endpoint,
       payload,
       response: json,
@@ -205,7 +206,7 @@ export async function verifyPaymentInternal(ref: string): Promise<{ status: stri
   }
 
   const { status: httpStatus, raw, json } = await sebpayFetch(
-    `/v1/payments/${encodeURIComponent(order.sebpay_reference)}`,
+    `${SEBPAY_COLLECTIONS_PATH}/${encodeURIComponent(order.sebpay_reference)}`,
     { method: "GET" },
   );
   if (httpStatus < 200 || httpStatus >= 300 || !json) {
@@ -213,7 +214,8 @@ export async function verifyPaymentInternal(ref: string): Promise<{ status: stri
     return { status: order.status }; // unchanged
   }
 
-  const sebStatus = json.status ?? json.payment_status ?? json.data?.status;
+  const d = json.data ?? json;
+  const sebStatus = d.status ?? json.status ?? json.payment_status;
   const mapped = mapSebpayStatus(sebStatus);
   if (mapped === "pending") return { status: "processing" };
 
@@ -221,7 +223,11 @@ export async function verifyPaymentInternal(ref: string): Promise<{ status: stri
     .from("orders")
     .update({
       status: mapped,
-      metadata: { sebpay_verify_response: json, verified_at: new Date().toISOString() },
+      metadata: {
+        sebpay_verify_response: json,
+        sebpay_verified_status: sebStatus,
+        verified_at: new Date().toISOString(),
+      },
     })
     .eq("order_ref", ref)
     .in("status", ["pending", "processing"]);

@@ -1,12 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
-  Check, CreditCard, Lock, ShieldCheck, ChevronLeft, Mail, User,
-  Loader2, Tv, Phone, Globe, Smartphone,
+  Check, Lock, ShieldCheck, ChevronLeft, Mail, User,
+  Loader2, Tv, Phone, Globe, Smartphone, ExternalLink, Clock,
 } from "lucide-react";
 import { createOrder } from "@/lib/orders.functions";
-import { initSebPayCheckout } from "@/lib/payments.functions";
-import { SEBPAY_PUBLIC_KEY } from "@/lib/sebpay";
+import { initSebPayCheckout, verifyPayment } from "@/lib/payments.functions";
 import { useT, LanguageSwitcher } from "@/i18n/context";
 
 type Plan = { id: string; name: string; price: number; period: string; save?: string; popular?: boolean };
@@ -14,14 +13,17 @@ type Plan = { id: string; name: string; price: number; period: string; save?: st
 type Operator = "MTN Mobile Money" | "Orange Money";
 const OPERATORS: Operator[] = ["MTN Mobile Money", "Orange Money"];
 const COUNTRIES: { code: string; label: string }[] = [
+  { code: "BJ", label: "Bénin (BJ)" },
+  { code: "CI", label: "Côte d'Ivoire (CI)" },
+  { code: "SN", label: "Sénégal (SN)" },
+  { code: "TG", label: "Togo (TG)" },
+  { code: "BF", label: "Burkina Faso (BF)" },
+  { code: "ML", label: "Mali (ML)" },
+  { code: "NE", label: "Niger (NE)" },
   { code: "CM", label: "Cameroun (CM)" },
-  { code: "CG", label: "Congo (CG)" },
-  { code: "GA", label: "Gabon (GA)" },
-  { code: "TD", label: "Tchad (TD)" },
-  { code: "CF", label: "Centrafrique (CF)" },
 ];
-const USD_TO_XAF = 600;
-const SEBPAY_ENDPOINT = "https://newapi.sebpay.bj/v1/payments";
+const USD_TO_XOF = 600;
+const SEBPAY_ENDPOINT = "https://newapi.sebpay.bj/api/v1/collections";
 
 const PLANS: Plan[] = [
   { id: "1m",  name: "1 Month",   price: 12, period: "/month" },
@@ -34,15 +36,22 @@ export const Route = createFileRoute("/checkout")({
   head: () => ({
     meta: [
       { title: "Checkout — Nexora IPTV" },
-      { name: "description", content: "Secure checkout for your Nexora IPTV subscription. Encrypted payments, instant activation." },
+      { name: "description", content: "Paiement Mobile Money sécurisé via SebPay (MTN / Orange) pour votre abonnement Nexora IPTV." },
       { property: "og:title", content: "Checkout — Nexora IPTV" },
-      { property: "og:description", content: "Secure encrypted checkout for your Nexora IPTV plan. Instant activation after payment." },
+      { property: "og:description", content: "Paiement Mobile Money sécurisé via SebPay (MTN / Orange) pour votre abonnement Nexora IPTV." },
       { name: "robots", content: "noindex" },
     ],
   }),
   validateSearch: (s: Record<string, unknown>) => ({ plan: typeof s.plan === "string" ? s.plan : undefined }),
   component: CheckoutPage,
 });
+
+type PendingState = {
+  orderRef: string;
+  transactionId: string;
+  providerLink: string | null;
+  message: string | null;
+};
 
 function CheckoutPage() {
   const t = useT();
@@ -56,47 +65,34 @@ function CheckoutPage() {
   const [selected, setSelected] = useState<Plan>(initial);
   const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");
-  const [method, setMethod] = useState<"card" | "crypto" | "momo">("card");
-  const [card, setCard] = useState({ number: "", exp: "", cvc: "", name: "" });
   const [phone, setPhone] = useState("");
   const [operator, setOperator] = useState<Operator>("MTN Mobile Money");
-  const [country, setCountry] = useState("CM");
+  const [country, setCountry] = useState("BJ");
   const [processing, setProcessing] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string>("");
+  const [pending, setPending] = useState<PendingState | null>(null);
 
-  const taxes = +(selected.price * 0.0).toFixed(2);
+  const taxes = 0;
   const total = +(selected.price + taxes).toFixed(2);
 
   const canPay =
     email.includes("@") &&
     fullName.trim().length > 1 &&
-    (method !== "card" ||
-      (card.number.replace(/\s/g, "").length >= 13 && card.exp.length >= 4 && card.cvc.length >= 3)) &&
-    (method !== "momo" || (phone.replace(/\D/g, "").length >= 8 && !!operator && !!country));
+    phone.replace(/\D/g, "").length >= 8 &&
+    !!operator && !!country;
 
   // Live preview of the SebPay payload that will be sent server-side. Mirrors
-  // exactly what src/lib/payments.functions.ts builds, so the user can see
-  // the documented amount / currency / operator / phone / country fields.
-  const sebpayPayloadPreview = useMemo(() => {
-    const isXaf = ["CM", "CG", "GA", "TD", "CF"].includes(country);
-    const base: Record<string, any> = {
-      amount: method === "momo" && isXaf ? Math.round(total * USD_TO_XAF) : total,
-      currency: method === "momo" && isXaf ? "XAF" : "USD",
-      reference: "NX-…",
-      description: `Nexora IPTV — ${selected.name}`,
-      customer: { email: email || "you@email.com", name: fullName || "John Doe" },
-      success_url: "…/payment/success",
-      cancel_url: "…/payment/failed",
-    };
-    if (method === "momo") {
-      base.operator = operator;
-      base.phone = phone || "+2376XXXXXXXX";
-      base.country = country;
-    } else {
-      base.method = method;
-    }
-    return base;
-  }, [method, total, selected.name, email, fullName, operator, phone, country]);
+  // exactly what src/lib/payments.functions.ts builds for the documented
+  // POST /api/v1/collections endpoint.
+  const sebpayPayloadPreview = useMemo(() => ({
+    amount: Math.round(total * USD_TO_XOF),
+    currency: "XOF",
+    phone: phone || "+229XXXXXXXX",
+    operator,
+    country,
+    external_reference: "NX-…",
+    callback_url: "{origin}/api/public/sebpay/webhook",
+  }), [total, phone, operator, country]);
 
   async function handlePay(e: React.FormEvent) {
     e.preventDefault();
@@ -104,7 +100,6 @@ function CheckoutPage() {
     setErrorMsg("");
     setProcessing(true);
     try {
-      // STEP 1-2: create the order in "pending" state.
       const order = await createOrder({
         data: {
           email: email.toLowerCase(),
@@ -113,12 +108,11 @@ function CheckoutPage() {
           planName: selected.name,
           amount: total,
           currency: "USD",
-          method,
-          ...(method === "momo" ? { phone, operator, country } : {}),
+          method: "momo",
+          phone, operator, country,
         },
       });
       if (!order?.order_ref) throw new Error("Could not create order");
-      console.log("[checkout] order created", order.order_ref);
 
       const origin = typeof window !== "undefined" ? window.location.origin : "";
       const result = await initSebPayCheckout({
@@ -128,20 +122,24 @@ function CheckoutPage() {
           failureUrl: `${origin}/payment/failed?ref=${order.order_ref}`,
         },
       });
-      console.log("[checkout] sebpay result", result);
-      if (result.checkoutUrl) {
-        // Hosted-checkout flow (card / crypto): redirect to SebPay.
-        window.location.href = result.checkoutUrl;
-        return;
+      console.log("[checkout] sebpay collection", result);
+
+      // If SebPay returns a provider_link, open it in a new tab so the
+      // customer can complete the payment on the operator's page.
+      if (result.providerLink && typeof window !== "undefined") {
+        window.open(result.providerLink, "_blank", "noopener,noreferrer");
       }
-      // Mobile Money: SebPay pushed a USSD prompt to the customer's phone.
-      // Send them to the success page, which polls GET /v1/payments/{id}
-      // until SebPay reports a terminal state. The page only displays
-      // success if the verified status is "paid".
-      window.location.href = `${origin}/payment/success?ref=${order.order_ref}`;
+
+      setPending({
+        orderRef: order.order_ref,
+        transactionId: result.transactionId,
+        providerLink: result.providerLink,
+        message: result.message,
+      });
     } catch (err: any) {
       console.error("[checkout] payment init failed", err);
       setErrorMsg(err?.message ?? t("co.err.generic"));
+    } finally {
       setProcessing(false);
     }
   }
@@ -167,40 +165,41 @@ function CheckoutPage() {
       </header>
 
       <div className="max-w-6xl mx-auto px-6 py-10">
-        <h1 className="sr-only">Complete your Nexora IPTV subscription</h1>
-        <Stepper step={step} />
-
-        <div className="mt-10 grid lg:grid-cols-[1fr_380px] gap-8">
-          <div className="space-y-6">
-            {step === 1 && (
-              <PlanStep
-                selected={selected}
-                onSelect={setSelected}
-                onNext={() => setStep(2)}
-              />
-            )}
-            {step === 2 && (
-              <PaymentStep
-                email={email} setEmail={setEmail}
-                fullName={fullName} setFullName={setFullName}
-                method={method} setMethod={setMethod}
-                card={card} setCard={setCard}
-                phone={phone} setPhone={setPhone}
-                operator={operator} setOperator={setOperator}
-                country={country} setCountry={setCountry}
-                processing={processing}
-                canPay={canPay}
-                total={total}
-                errorMsg={errorMsg}
-                payloadPreview={sebpayPayloadPreview}
-                onBack={() => setStep(1)}
-                onSubmit={handlePay}
-              />
-            )}
-          </div>
-
-          <OrderSummary plan={selected} taxes={taxes} total={total} />
-        </div>
+        {pending ? (
+          <PendingPanel pending={pending} />
+        ) : (
+          <>
+            <Stepper step={step} />
+            <div className="mt-10 grid lg:grid-cols-[1fr_380px] gap-8">
+              <div className="space-y-6">
+                {step === 1 && (
+                  <PlanStep
+                    selected={selected}
+                    onSelect={setSelected}
+                    onNext={() => setStep(2)}
+                  />
+                )}
+                {step === 2 && (
+                  <PaymentStep
+                    email={email} setEmail={setEmail}
+                    fullName={fullName} setFullName={setFullName}
+                    phone={phone} setPhone={setPhone}
+                    operator={operator} setOperator={setOperator}
+                    country={country} setCountry={setCountry}
+                    processing={processing}
+                    canPay={canPay}
+                    total={total}
+                    errorMsg={errorMsg}
+                    payloadPreview={sebpayPayloadPreview}
+                    onBack={() => setStep(1)}
+                    onSubmit={handlePay}
+                  />
+                )}
+              </div>
+              <OrderSummary plan={selected} taxes={taxes} total={total} />
+            </div>
+          </>
+        )}
       </div>
     </main>
   );
@@ -297,9 +296,6 @@ function PlanStep({ selected, onSelect, onNext }: { selected: Plan; onSelect: (p
 function PaymentStep(props: {
   email: string; setEmail: (v: string) => void;
   fullName: string; setFullName: (v: string) => void;
-  method: "card" | "crypto" | "momo"; setMethod: (v: "card" | "crypto" | "momo") => void;
-  card: { number: string; exp: string; cvc: string; name: string };
-  setCard: (v: { number: string; exp: string; cvc: string; name: string }) => void;
   phone: string; setPhone: (v: string) => void;
   operator: Operator; setOperator: (v: Operator) => void;
   country: string; setCountry: (v: string) => void;
@@ -309,7 +305,7 @@ function PaymentStep(props: {
 }) {
   const t = useT();
   const {
-    email, setEmail, fullName, setFullName, method, setMethod, card, setCard,
+    email, setEmail, fullName, setFullName,
     phone, setPhone, operator, setOperator, country, setCountry,
     processing, canPay, total, errorMsg, payloadPreview, onBack, onSubmit,
   } = props;
@@ -319,17 +315,17 @@ function PaymentStep(props: {
       <section className="glass rounded-2xl p-6 md:p-8">
         <h2 className="text-xl font-bold mb-4">{t("co.details")}</h2>
         <div className="grid sm:grid-cols-2 gap-4">
-          <Field icon={<User className="h-4 w-4" />} label={t("co.field.name")}>
+          <Field icon={<User className="h-4 w-4" />} label="Nom complet">
             <input
               required value={fullName} onChange={e => setFullName(e.target.value)}
-              placeholder={t("co.field.namePh")}
+              placeholder="John Doe"
               className="w-full bg-transparent outline-none text-sm placeholder:text-muted-foreground/60"
             />
           </Field>
-          <Field icon={<Mail className="h-4 w-4" />} label={t("co.field.email")}>
+          <Field icon={<Mail className="h-4 w-4" />} label="Adresse email">
             <input
               required type="email" value={email} onChange={e => setEmail(e.target.value)}
-              placeholder={t("co.field.emailPh")}
+              placeholder="you@email.com"
               className="w-full bg-transparent outline-none text-sm placeholder:text-muted-foreground/60"
             />
           </Field>
@@ -338,119 +334,73 @@ function PaymentStep(props: {
 
       <section className="glass rounded-2xl p-6 md:p-8">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold">{t("co.method.title")}</h2>
+          <h2 className="text-xl font-bold">Paiement Mobile Money</h2>
           <span className="text-xs text-muted-foreground flex items-center gap-1">
-            <ShieldCheck className="h-4 w-4 text-[color:var(--gold)]" /> {t("co.method.pci")}
+            <ShieldCheck className="h-4 w-4 text-[color:var(--gold)]" /> SebPay
           </span>
         </div>
 
-        <div className="grid grid-cols-3 gap-2 mb-6">
-          <MethodTab active={method === "card"}   onClick={() => setMethod("card")}   label={t("co.method.card")} />
-          <MethodTab active={method === "crypto"} onClick={() => setMethod("crypto")} label={t("co.method.crypto")} />
-          <MethodTab active={method === "momo"}   onClick={() => setMethod("momo")}   label={t("co.method.momo")} />
+        <div className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Le paiement est traité par SebPay. Vous recevrez une demande de confirmation
+            sur votre téléphone (MTN ou Orange Money).
+          </p>
+          <div className="grid sm:grid-cols-2 gap-4">
+            <Field icon={<Smartphone className="h-4 w-4" />} label="Opérateur Mobile Money">
+              <select
+                required value={operator}
+                onChange={(e) => setOperator(e.target.value as Operator)}
+                className="w-full bg-transparent outline-none text-sm"
+              >
+                {OPERATORS.map((o) => (
+                  <option key={o} value={o} className="bg-background">{o}</option>
+                ))}
+              </select>
+            </Field>
+            <Field icon={<Globe className="h-4 w-4" />} label="Pays">
+              <select
+                required value={country}
+                onChange={(e) => setCountry(e.target.value)}
+                className="w-full bg-transparent outline-none text-sm"
+              >
+                {COUNTRIES.map((c) => (
+                  <option key={c.code} value={c.code} className="bg-background">{c.label}</option>
+                ))}
+              </select>
+            </Field>
+          </div>
+          <Field icon={<Phone className="h-4 w-4" />} label="Numéro Mobile Money">
+            <input
+              required type="tel" value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="+22996XXXXXXX"
+              className="w-full bg-transparent outline-none text-sm placeholder:text-muted-foreground/60"
+            />
+          </Field>
+          <div className="rounded-xl border border-white/10 bg-black/30 p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                Endpoint SebPay
+              </span>
+              <span className="text-[11px] text-[color:var(--gold)]">POST</span>
+            </div>
+            <code className="block text-xs font-mono text-foreground/90 break-all mb-3">
+              {SEBPAY_ENDPOINT}
+            </code>
+            <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
+              Payload envoyé (côté serveur)
+            </span>
+            <pre className="mt-1 text-[11px] font-mono text-foreground/80 overflow-x-auto whitespace-pre-wrap">
+{JSON.stringify(payloadPreview, null, 2)}
+            </pre>
+            <p className="text-[10px] text-muted-foreground/70 mt-2">
+              Headers: <span className="font-mono">X-Public-Key</span> + <span className="font-mono">X-Secret-Key</span> (jamais exposés au navigateur).
+            </p>
+          </div>
         </div>
 
-        {method === "card" && (
-          <div className="space-y-4">
-            <Field icon={<CreditCard className="h-4 w-4" />} label={t("co.card.number")}>
-              <input
-                inputMode="numeric" required value={card.number}
-                onChange={e => setCard({ ...card, number: formatCard(e.target.value) })}
-                placeholder="1234 5678 9012 3456" maxLength={23}
-                className="w-full bg-transparent outline-none text-sm tracking-wider placeholder:text-muted-foreground/60"
-              />
-            </Field>
-            <div className="grid grid-cols-2 gap-4">
-              <Field label={t("co.card.exp")}>
-                <input
-                  required value={card.exp}
-                  onChange={e => setCard({ ...card, exp: formatExp(e.target.value) })}
-                  placeholder="12/28" maxLength={5}
-                  className="w-full bg-transparent outline-none text-sm placeholder:text-muted-foreground/60"
-                />
-              </Field>
-              <Field label={t("co.card.cvc")}>
-                <input
-                  required value={card.cvc}
-                  onChange={e => setCard({ ...card, cvc: e.target.value.replace(/\D/g, "").slice(0, 4) })}
-                  placeholder="123" maxLength={4}
-                  className="w-full bg-transparent outline-none text-sm placeholder:text-muted-foreground/60"
-                />
-              </Field>
-            </div>
-            <Field label={t("co.card.holder")}>
-              <input
-                value={card.name} onChange={e => setCard({ ...card, name: e.target.value })}
-                placeholder={t("co.card.holderPh")}
-                className="w-full bg-transparent outline-none text-sm placeholder:text-muted-foreground/60"
-              />
-            </Field>
-          </div>
-        )}
-
-        {method === "crypto" && (
-          <div className="rounded-xl border border-white/10 p-5 text-sm text-muted-foreground">
-            {t("co.crypto.text")}
-          </div>
-        )}
-
-        {method === "momo" && (
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">{t("co.momo.text")}</p>
-            <div className="grid sm:grid-cols-2 gap-4">
-              <Field icon={<Smartphone className="h-4 w-4" />} label="Opérateur / Operator">
-                <select
-                  required value={operator}
-                  onChange={(e) => setOperator(e.target.value as Operator)}
-                  className="w-full bg-transparent outline-none text-sm"
-                >
-                  {OPERATORS.map((o) => (
-                    <option key={o} value={o} className="bg-background">{o}</option>
-                  ))}
-                </select>
-              </Field>
-              <Field icon={<Globe className="h-4 w-4" />} label="Pays / Country">
-                <select
-                  required value={country}
-                  onChange={(e) => setCountry(e.target.value)}
-                  className="w-full bg-transparent outline-none text-sm"
-                >
-                  {COUNTRIES.map((c) => (
-                    <option key={c.code} value={c.code} className="bg-background">{c.label}</option>
-                  ))}
-                </select>
-              </Field>
-            </div>
-            <Field icon={<Phone className="h-4 w-4" />} label="Numéro Mobile Money / Phone">
-              <input
-                required type="tel" value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="+2376XXXXXXXX"
-                className="w-full bg-transparent outline-none text-sm placeholder:text-muted-foreground/60"
-              />
-            </Field>
-            <div className="rounded-xl border border-white/10 bg-black/30 p-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                  Endpoint SebPay
-                </span>
-                <span className="text-[11px] text-[color:var(--gold)]">POST</span>
-              </div>
-              <code className="block text-xs font-mono text-foreground/90 break-all mb-3">
-                {SEBPAY_ENDPOINT}
-              </code>
-              <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                Payload envoyé
-              </span>
-              <pre className="mt-1 text-[11px] font-mono text-foreground/80 overflow-x-auto whitespace-pre-wrap">
-{JSON.stringify(payloadPreview, null, 2)}
-              </pre>
-            </div>
-          </div>
-        )}
-
         <p className="text-[11px] text-muted-foreground/70 mt-4">
-          {t("co.processedBy")} <span className="text-foreground">SebPay</span>. <span className="font-mono">{SEBPAY_PUBLIC_KEY.slice(0, 12)}…</span>
+          Paiement traité par <span className="text-foreground">SebPay</span>. Aucune validation automatique — la commande passe en « Paiement confirmé » uniquement après confirmation SebPay.
         </p>
       </section>
 
@@ -471,10 +421,84 @@ function PaymentStep(props: {
           className="btn-gold btn-gold-hover px-8 py-3 rounded-full font-semibold inline-flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {processing ? (<><Loader2 className="h-4 w-4 animate-spin" /> {t("co.processing")}</>)
-                      : (<><Lock className="h-4 w-4" /> {t("co.pay")} ${total.toFixed(2)}</>)}
+                      : (<><Lock className="h-4 w-4" /> Payer ${total.toFixed(2)}</>)}
         </button>
       </div>
     </form>
+  );
+}
+
+function PendingPanel({ pending }: { pending: PendingState }) {
+  const [status, setStatus] = useState<string>("processing");
+  const [tries, setTries] = useState(0);
+
+  // Poll SebPay (server-side, GET /api/v1/collections/{id}) every 4s for
+  // up to ~3min. We never mark "paid" client-side — verifyPayment talks to
+  // SebPay and updates the DB only when SebPay confirms.
+  useEffect(() => {
+    let cancelled = false;
+    let attempts = 0;
+    async function poll() {
+      while (!cancelled && attempts < 45) {
+        attempts++;
+        setTries(attempts);
+        try {
+          const v = await verifyPayment({ data: { ref: pending.orderRef } });
+          if (cancelled) return;
+          setStatus(v.status);
+          if (v.status === "paid") {
+            window.location.href = `/payment/success?ref=${pending.orderRef}`;
+            return;
+          }
+          if (v.status === "failed" || v.status === "cancelled") {
+            window.location.href = `/payment/failed?ref=${pending.orderRef}`;
+            return;
+          }
+        } catch (e) {
+          console.error("[checkout] verify error", e);
+        }
+        await new Promise((r) => setTimeout(r, 4000));
+      }
+    }
+    poll();
+    return () => { cancelled = true; };
+  }, [pending.orderRef]);
+
+  return (
+    <section className="max-w-2xl mx-auto glass rounded-2xl p-8 md:p-12 text-center">
+      <div className="mx-auto h-16 w-16 rounded-full bg-amber-500/15 border border-amber-500/40 grid place-items-center mb-5">
+        <Clock className="h-7 w-7 text-amber-400" />
+      </div>
+      <h1 className="text-2xl font-bold mb-2">Paiement en attente</h1>
+      <p className="text-muted-foreground mb-6">
+        Confirmez la transaction sur votre téléphone ({pending.message ?? "USSD / page opérateur"}).
+        Cette page se met à jour automatiquement.
+      </p>
+
+      <div className="text-left mx-auto max-w-md rounded-xl border border-white/10 divide-y divide-white/5 mb-6">
+        <Row label="Référence commande" value={<span className="font-mono">{pending.orderRef}</span>} />
+        <Row label="Transaction SebPay" value={<span className="font-mono text-xs">{pending.transactionId}</span>} />
+        <Row label="Statut" value={<span className="text-amber-400">{status}</span>} />
+        <Row label="Vérifications" value={`${tries} / 45`} />
+      </div>
+
+      {pending.providerLink && (
+        <a
+          href={pending.providerLink}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 px-6 py-3 rounded-full glass hover:border-[color:var(--gold)]/40 transition text-sm font-medium"
+        >
+          <ExternalLink className="h-4 w-4 text-[color:var(--gold)]" />
+          Ouvrir la page opérateur
+        </a>
+      )}
+
+      <p className="text-xs text-muted-foreground mt-6">
+        Aucun paiement n'est validé tant que SebPay n'a pas confirmé via webhook
+        ou via <span className="font-mono">GET /api/v1/collections/{"{id}"}</span>.
+      </p>
+    </section>
   );
 }
 
@@ -485,6 +509,7 @@ function OrderSummary({ plan, taxes, total }: { plan: Plan; taxes: number; total
     "6m": t("pricing.6months"), "12m": t("pricing.12months"),
   };
   const planName = planNameMap[plan.id] ?? plan.name;
+  const xof = Math.round(total * USD_TO_XOF);
   return (
     <aside className="glass rounded-2xl p-6 h-fit lg:sticky lg:top-24">
       <h3 className="text-sm uppercase tracking-[0.18em] text-[color:var(--gold)] mb-4">{t("co.summary")}</h3>
@@ -503,6 +528,9 @@ function OrderSummary({ plan, taxes, total }: { plan: Plan; taxes: number; total
         <span className="text-sm text-muted-foreground">{t("co.summary.total")}</span>
         <span className="text-2xl font-bold text-gradient-gold">${total.toFixed(2)}</span>
       </div>
+      <p className="text-xs text-muted-foreground mt-1 text-right">
+        Débité : <span className="font-mono">{xof.toLocaleString()} XOF</span>
+      </p>
       <div className="mt-6 space-y-2 text-xs text-muted-foreground">
         <p className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-[color:var(--gold)]" /> {t("co.guarantee")}</p>
         <p className="flex items-center gap-2"><Lock className="h-4 w-4 text-[color:var(--gold)]" /> {t("co.encrypted")}</p>
@@ -524,17 +552,6 @@ function Field({ icon, label, children }: { icon?: React.ReactNode; label: strin
   );
 }
 
-function MethodTab({ active, onClick, label }: { active: boolean; onClick: () => void; label: string }) {
-  return (
-    <button type="button" onClick={onClick}
-      className={`px-3 py-2 rounded-xl text-sm font-medium border transition ${active
-        ? "border-[color:var(--gold)] bg-white/[0.04] text-foreground"
-        : "border-white/10 text-muted-foreground hover:border-white/20"}`}>
-      {label}
-    </button>
-  );
-}
-
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex justify-between items-center px-4 py-3 text-sm">
@@ -542,12 +559,4 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
       <span className="font-medium">{value}</span>
     </div>
   );
-}
-
-function formatCard(v: string) {
-  return v.replace(/\D/g, "").slice(0, 19).replace(/(.{4})/g, "$1 ").trim();
-}
-function formatExp(v: string) {
-  const digits = v.replace(/\D/g, "").slice(0, 4);
-  return digits.length <= 2 ? digits : digits.slice(0, 2) + "/" + digits.slice(2);
 }
