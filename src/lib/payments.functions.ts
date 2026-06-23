@@ -13,7 +13,6 @@ import { z } from "zod";
 // =============================================================================
 const SEBPAY_BASE_URL = "https://newapi.sebpay.bj";
 export const SEBPAY_COLLECTIONS_PATH = "/api/v1/collections";
-const REQUIRED_SEBPAY_PUBLIC_KEY = "pk_live_ehfY3GRLcf22KQ1JYxusGMeAsoZUpIGruluJhjQM";
 
 function cleanSecretValue(value: string): string {
   return value.trim().replace(/^['"]|['"]$/g, "");
@@ -25,14 +24,13 @@ function sebpayKeyMode(key: string): "live" | "test" | "unknown" {
   return "unknown";
 }
 
-function safeKeyDiagnostics(key: string, raw: string, expectedPublicKey?: string) {
+function safeKeyDiagnostics(key: string, raw: string) {
   return {
     present: key.length > 0,
     length: key.length,
     prefix: key.slice(0, 8),
     mode: sebpayKeyMode(key),
     trimmed: key.length !== raw.length,
-    ...(expectedPublicKey ? { matchesExpectedPublicKey: key === expectedPublicKey } : {}),
   };
 }
 
@@ -49,40 +47,47 @@ function redactSebpayPayload(payload: unknown) {
   return copy;
 }
 
+function normalizePhone(value: string): string {
+  // SebPay expects international format without "+" (e.g. 22990000000)
+  return String(value ?? "").replace(/[^\d]/g, "");
+}
+
+function operatorSlug(value: string): string {
+  const v = String(value ?? "").toLowerCase();
+  if (v.includes("mtn")) return "mtn";
+  if (v.includes("orange")) return "orange";
+  if (v.includes("moov")) return "moov";
+  if (v.includes("wav") || v.includes("wave")) return "wav";
+  return v.trim();
+}
+
 function sebpayHeaders(): Record<string, string> {
   const rawPub = process.env.SEBPAY_PUBLIC_KEY ?? "";
   const rawSec = process.env.SEBPAY_SECRET_KEY ?? "";
-  const configuredPub = cleanSecretValue(rawPub);
+  const pub = cleanSecretValue(rawPub);
   const sec = cleanSecretValue(rawSec);
-  // Public key requested by the project owner. It is intentionally enforced
-  // server-side so no stale public key can be sent to SebPay.
-  const pub = REQUIRED_SEBPAY_PUBLIC_KEY;
 
   console.log("[sebpay] auth keys check", {
-    configuredPublicKey: safeKeyDiagnostics(configuredPub, rawPub, REQUIRED_SEBPAY_PUBLIC_KEY),
-    effectivePublicKey: safeKeyDiagnostics(pub, pub, REQUIRED_SEBPAY_PUBLIC_KEY),
+    publicKey: safeKeyDiagnostics(pub, rawPub),
     secretKey: safeKeyDiagnostics(sec, rawSec),
     runtime: "server",
     authHeaderNames: ["X-Public-Key", "X-Secret-Key"],
   });
 
-  if (!configuredPub) {
-    console.warn("[sebpay] SEBPAY_PUBLIC_KEY is missing from server env; using enforced live public key.");
-  } else if (configuredPub !== REQUIRED_SEBPAY_PUBLIC_KEY) {
-    console.warn("[sebpay] SEBPAY_PUBLIC_KEY differs from the required live key; using enforced live public key.");
-  }
+  if (!pub) throw new Error("Configuration de paiement indisponible: SEBPAY_PUBLIC_KEY est manquante côté serveur.");
   if (!sec) throw new Error("Configuration de paiement indisponible: SEBPAY_SECRET_KEY est manquante côté serveur.");
   if (sec.length < 20) throw new Error("Configuration de paiement indisponible: SEBPAY_SECRET_KEY semble tronquée.");
+  if (pub.length < 20) throw new Error("Configuration de paiement indisponible: SEBPAY_PUBLIC_KEY semble tronquée.");
 
   const publicMode = sebpayKeyMode(pub);
   const secretMode = sebpayKeyMode(sec);
-  if (publicMode !== "live" || secretMode !== "live") {
-    console.error("[sebpay] invalid key mode", {
-      publicMode,
-      secretMode,
-      expected: "both keys must be LIVE (pk_live_ + sk_live_)",
-    });
-    throw new Error("Configuration de paiement indisponible: les clés SebPay LIVE ne sont pas correctement configurées.");
+  if (publicMode === "unknown" || secretMode === "unknown") {
+    console.error("[sebpay] unknown key mode", { publicMode, secretMode });
+    throw new Error("Configuration de paiement indisponible: format de clé SebPay invalide (attendu pk_live_/sk_live_ ou pk_test_/sk_test_).");
+  }
+  if (publicMode !== secretMode) {
+    console.error("[sebpay] mismatched key modes", { publicMode, secretMode });
+    throw new Error("Configuration de paiement indisponible: SEBPAY_PUBLIC_KEY et SEBPAY_SECRET_KEY ne sont pas dans le même mode (live/test).");
   }
 
   return {
@@ -171,8 +176,8 @@ export const initSebPayCheckout = createServerFn({ method: "POST" })
     const payload: Record<string, any> = {
       amount: Number(order.amount),
       currency: order.currency, // "XOF"
-      phone: momo.phone,
-      operator: momo.operator,
+      phone: normalizePhone(momo.phone),
+      operator: operatorSlug(momo.operator),
       country: momo.country,
       external_reference: order.order_ref,
       callback_url: callbackUrl,

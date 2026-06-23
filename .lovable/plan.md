@@ -1,55 +1,38 @@
-## Admin Dashboard — Plan
+## Cause du problème de paiement (résumé)
 
-Espace privé `/admin` protégé par authentification email + mot de passe, avec rôle `admin` stocké en base (table dédiée, pas sur le profil — sécurité anti-escalade).
+Le message "**Configuration de paiement indisponible: les clés SebPay LIVE ne sont pas correctement configurées**" vient de notre propre code, pas de SebPay. Il est déclenché par deux choses :
 
-### 1. Authentification & sécurité
-- Activation de l'auth email/mot de passe (Lovable Cloud).
-- Table `user_roles` + enum `app_role` (`admin`, `user`) + fonction `has_role()` security definer.
-- Route `/admin/login` publique (formulaire email + mot de passe).
-- Layout protégé `_authenticated/admin` : vérifie session + rôle admin via server function. Redirige vers `/admin/login` sinon.
-- Déconnexion propre (clear cache + signOut + redirect).
+1. **Notre code force une clé publique en dur** (`pk_live_ehfY3G...`) et rejette toute paire qui n'est pas strictement `pk_live_` + `sk_live_`. Si la vraie paire active sur ton compte SebPay est différente (autre clé live, ou paire test), SebPay répond **401 Invalid or inactive API keys** → notre code transforme ça en l'erreur que tu vois.
 
-### 2. Structure du dashboard
-Sidebar responsive (shadcn `Sidebar`) avec navigation :
-- **Vue d'ensemble** — KPIs (commandes du jour, CA, taux de conversion, commandes en attente) + graphique CA 30 jours.
-- **Commandes** — Table paginée, filtres (statut, date, plan), recherche (email/ref), détail commande, actions : marquer payée / activée / échouée / remboursée, copier credentials, renvoyer email.
-- **Clients** — Liste des emails clients agrégés depuis `orders`, historique des commandes par client.
-- **Plans & tarifs** — CRUD complet sur les plans IPTV (nom, prix, devise, durée, features, actif/inactif, ordre d'affichage). Nouvelle table `plans`.
-- **Contenu du site (CMS)** — CRUD sur les sections éditables de la home (hero title/subtitle/CTA, features, FAQ, témoignages). Nouvelle table `site_content` (key/value JSON par section + locale fr/en/de).
-- **Administrateurs** — Liste des admins, ajout/retrait du rôle admin par email.
-- **Paramètres** — Coordonnées contact, liens sociaux, infos légales, langue par défaut.
+2. **Le slug `operator` envoyé est invalide.** La doc SebPay (que tu viens de coller) attend `mtn | moov | orange | wav` (minuscules). Notre formulaire envoie `"MTN Mobile Money"` / `"Orange Money"`. Même si l'auth passait, SebPay rejetterait la requête.
 
-### 3. Backend (server functions, RLS strictes)
-Toutes les écritures admin passent par `createServerFn` + middleware `requireSupabaseAuth` + vérification `has_role(userId, 'admin')`. Sinon `403 Forbidden`.
+## Ce dont j'ai besoin de toi
 
-Nouvelles tables (toutes avec RLS + GRANTs) :
-- `user_roles` (auth-only, lecture via `has_role`).
-- `plans` (lecture publique anon, écriture admin uniquement).
-- `site_content` (lecture publique anon, écriture admin uniquement).
-- `site_settings` (lecture publique anon, écriture admin uniquement).
+**Oui, il me faut les deux clés SebPay**, mais une **paire cohérente** (les deux LIVE ou les deux TEST), copiées telles quelles depuis ton dashboard SebPay → API Keys :
 
-Mise à jour de la home pour lire `plans` et `site_content` depuis la DB (au lieu de hardcoder) — fallback sur les valeurs actuelles si vide.
+- `SEBPAY_PUBLIC_KEY` → `pk_live_...` (ou `pk_test_...`)
+- `SEBPAY_SECRET_KEY` → `sk_live_...` (ou `sk_test_...`) **de la même paire**
 
-### 4. UX
-- Design cohérent avec le site (mêmes tokens, mode sombre).
-- Toasts pour chaque action (succès/erreur).
-- Confirmations destructives (modal) avant suppression.
-- Loading states & skeletons.
-- Empty states clairs.
-- i18n FR (langue principale de l'admin).
+Je les demanderai via un formulaire sécurisé (jamais à coller dans le chat).
 
-### 5. Premier admin
-Création du premier compte admin : page `/admin/login` propose un onboarding "Créer le premier admin" tant qu'aucun admin n'existe (vérifié côté serveur). Au-delà, signup désactivé sur l'admin — seuls les admins existants peuvent en ajouter d'autres.
+## Correctifs code (appliqués une fois en build mode)
 
-### Détails techniques
-- Stack : TanStack Start + Lovable Cloud (Supabase).
-- Routes : `src/routes/admin.login.tsx`, `src/routes/_authenticated/admin/*` (overview, orders, clients, plans, content, admins, settings).
-- Composants : `src/components/admin/AdminSidebar.tsx`, tables avec `@tanstack/react-table` (déjà dispo via shadcn), formulaires `react-hook-form` + `zod`.
-- Server fns : `src/lib/admin.functions.ts` (CRUD orders/plans/content/settings/admins), toutes gated par `requireSupabaseAuth` + check `has_role`.
-- Graphiques : `recharts` (déjà inclus avec shadcn).
+### `src/lib/payments.functions.ts`
+- Supprimer la clé publique codée en dur ; utiliser uniquement `process.env.SEBPAY_PUBLIC_KEY`.
+- Supprimer le rejet "doit être LIVE". Rejeter uniquement si les deux clés ne sont **pas dans le même mode** (live+live ou test+test).
+- Ajouter `operatorSlug()` : `"MTN Mobile Money" → "mtn"`, `"Orange Money" → "orange"` (+ `moov`, `wav` prêts).
+- Normaliser `phone` : retirer `+`, espaces, tirets (format international sans `+`, conforme à la doc).
+- Garder les diagnostics sûrs (longueur/prefix/mode, jamais la valeur complète) et le message générique côté client.
 
-### Hors scope (sauf demande)
-- Multi-tenant / multi-sites.
-- Workflow d'approbation / brouillons CMS.
-- Logs d'audit détaillés (peut être ajouté ensuite).
-- Import/export CSV en masse.
+### `src/routes/checkout.tsx`, `src/lib/orders.functions.ts`, webhook
+- Aucun changement nécessaire (UI inchangée, conversion XOF déjà OK, HMAC déjà en place).
+
+### Secrets
+- Ouverture du formulaire `update_secret` pour `SEBPAY_PUBLIC_KEY` et `SEBPAY_SECRET_KEY`.
+
+## Test après correctifs
+1. Tu saisis la paire de clés dans le formulaire sécurisé.
+2. Tu refais un checkout (1 mois) avec ton numéro MoMo.
+3. Je vérifie les logs serveur : la réponse SebPay doit contenir `transaction_id` + `provider_link` et tu reçois le prompt USSD.
+
+Confirme pour passer en build : j'applique les correctifs puis j'ouvre le formulaire de saisie des clés.
