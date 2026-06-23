@@ -369,14 +369,11 @@ function PaymentStep(props: {
           </div>
         </div>
 
-        <p className="text-[11px] text-muted-foreground/70 mt-4">
-          Paiement traité par <span className="text-foreground">SebPay</span>. Aucune validation automatique — la commande passe en « Paiement confirmé » uniquement après confirmation SebPay.
-        </p>
       </section>
 
       {errorMsg && (
         <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200 whitespace-pre-wrap break-words">
-          <div className="font-semibold mb-1">SebPay error</div>
+          <div className="font-semibold mb-1">Erreur de paiement</div>
           {errorMsg}
         </div>
       )}
@@ -447,7 +444,7 @@ function PendingPanel({ pending }: { pending: PendingState }) {
 
       <div className="text-left mx-auto max-w-md rounded-xl border border-white/10 divide-y divide-white/5 mb-6">
         <Row label="Référence commande" value={<span className="font-mono">{pending.orderRef}</span>} />
-        <Row label="Transaction SebPay" value={<span className="font-mono text-xs">{pending.transactionId}</span>} />
+        <Row label="Référence transaction" value={<span className="font-mono text-xs">{pending.transactionId}</span>} />
         <Row label="Statut" value={<span className="text-amber-400">{status}</span>} />
         <Row label="Vérifications" value={`${tries} / 45`} />
       </div>
@@ -465,8 +462,7 @@ function PendingPanel({ pending }: { pending: PendingState }) {
       )}
 
       <p className="text-xs text-muted-foreground mt-6">
-        Aucun paiement n'est validé tant que SebPay n'a pas confirmé via webhook
-        ou via <span className="font-mono">GET /api/v1/collections/{"{id}"}</span>.
+        Aucun paiement n'est validé tant que la confirmation n'a pas été reçue.
       </p>
     </section>
   );
@@ -499,7 +495,7 @@ function OrderSummary({ plan, taxes, total }: { plan: Plan; taxes: number; total
         <span className="text-2xl font-bold text-gradient-gold">${total.toFixed(2)}</span>
       </div>
       <p className="text-xs text-muted-foreground mt-1 text-right">
-        Débité : <span className="font-mono">{xof.toLocaleString()} XOF</span>
+        Débité : <span className="font-mono">{xof.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ")} XOF</span>
       </p>
       <div className="mt-6 space-y-2 text-xs text-muted-foreground">
         <p className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-[color:var(--gold)]" /> {t("co.guarantee")}</p>
