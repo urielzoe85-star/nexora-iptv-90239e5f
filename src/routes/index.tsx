@@ -13,7 +13,7 @@ import {
   Smartphone, Tablet, Laptop, Monitor, Tv2,
   Download,
 } from "lucide-react";
-import { useT } from "@/i18n/context";
+import { useT, useI18n } from "@/i18n/context";
 import { LanguageSwitcher } from "@/i18n/context";
 
 export const Route = createFileRoute("/")({
@@ -70,6 +70,7 @@ export function NexoraLanding() {
 
 function Nav() {
   const t = useT();
+  const { locale } = useI18n();
   return (
     <header className="fixed top-0 left-0 right-0 z-50 glass border-b border-[color:var(--gold)]/10">
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
@@ -83,6 +84,9 @@ function Nav() {
           <a href="#pricing" className="hover:text-foreground transition">{t("nav.pricing")}</a>
           <a href="#faq" className="hover:text-foreground transition">{t("nav.faq")}</a>
           <a href="#support" className="hover:text-foreground transition">{t("nav.support")}</a>
+          {locale === "fr" && (
+            <Link to="/fr/guide-iptv" className="hover:text-foreground transition">Guide d'installation</Link>
+          )}
         </nav>
         <div className="flex items-center gap-3">
           <LanguageSwitcher />
