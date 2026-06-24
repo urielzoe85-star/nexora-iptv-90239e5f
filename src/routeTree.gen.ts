@@ -26,11 +26,15 @@ import { Route as PaymentSuccessRouteImport } from './routes/payment.success'
 import { Route as PaymentFailedRouteImport } from './routes/payment.failed'
 import { Route as FrGuideIptvRouteImport } from './routes/fr.guide-iptv'
 import { Route as EnGuideIptvRouteImport } from './routes/en.guide-iptv'
+import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as AdminPlansRouteImport } from './routes/admin.plans'
 import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as AdminContentRouteImport } from './routes/admin.content'
 import { Route as AdminAdminsRouteImport } from './routes/admin.admins'
+import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
+import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
+import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as ApiPublicSebpayWebhookRouteImport } from './routes/api/public/sebpay/webhook'
 
@@ -119,6 +123,11 @@ const EnGuideIptvRoute = EnGuideIptvRouteImport.update({
   path: '/guide-iptv',
   getParentRoute: () => EnRoute,
 } as any)
+const EmailUnsubscribeRoute = EmailUnsubscribeRouteImport.update({
+  id: '/email/unsubscribe',
+  path: '/email/unsubscribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminPlansRoute = AdminPlansRouteImport.update({
   id: '/plans',
   path: '/plans',
@@ -144,6 +153,23 @@ const AdminAdminsRoute = AdminAdminsRouteImport.update({
   path: '/admins',
   getParentRoute: () => AdminRoute,
 } as any)
+const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
+  id: '/lovable/email/suppression',
+  path: '/lovable/email/suppression',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LovableEmailTransactionalSendRoute =
+  LovableEmailTransactionalSendRouteImport.update({
+    id: '/lovable/email/transactional/send',
+    path: '/lovable/email/transactional/send',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const LovableEmailTransactionalPreviewRoute =
+  LovableEmailTransactionalPreviewRouteImport.update({
+    id: '/lovable/email/transactional/preview',
+    path: '/lovable/email/transactional/preview',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const LovableEmailQueueProcessRoute =
   LovableEmailQueueProcessRouteImport.update({
     id: '/lovable/email/queue/process',
@@ -172,6 +198,7 @@ export interface FileRoutesByFullPath {
   '/admin/login': typeof AdminLoginRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/plans': typeof AdminPlansRoute
+  '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/en/guide-iptv': typeof EnGuideIptvRoute
   '/fr/guide-iptv': typeof FrGuideIptvRoute
   '/payment/failed': typeof PaymentFailedRoute
@@ -179,8 +206,11 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AdminIndexRoute
   '/en/': typeof EnIndexRoute
   '/fr/': typeof FrIndexRoute
+  '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/api/public/sebpay/webhook': typeof ApiPublicSebpayWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
+  '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
+  '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -195,6 +225,7 @@ export interface FileRoutesByTo {
   '/admin/login': typeof AdminLoginRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/plans': typeof AdminPlansRoute
+  '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/en/guide-iptv': typeof EnGuideIptvRoute
   '/fr/guide-iptv': typeof FrGuideIptvRoute
   '/payment/failed': typeof PaymentFailedRoute
@@ -202,8 +233,11 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminIndexRoute
   '/en': typeof EnIndexRoute
   '/fr': typeof FrIndexRoute
+  '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/api/public/sebpay/webhook': typeof ApiPublicSebpayWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
+  '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
+  '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -222,6 +256,7 @@ export interface FileRoutesById {
   '/admin/login': typeof AdminLoginRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/plans': typeof AdminPlansRoute
+  '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/en/guide-iptv': typeof EnGuideIptvRoute
   '/fr/guide-iptv': typeof FrGuideIptvRoute
   '/payment/failed': typeof PaymentFailedRoute
@@ -229,8 +264,11 @@ export interface FileRoutesById {
   '/admin/': typeof AdminIndexRoute
   '/en/': typeof EnIndexRoute
   '/fr/': typeof FrIndexRoute
+  '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/api/public/sebpay/webhook': typeof ApiPublicSebpayWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
+  '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
+  '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -250,6 +288,7 @@ export interface FileRouteTypes {
     | '/admin/login'
     | '/admin/orders'
     | '/admin/plans'
+    | '/email/unsubscribe'
     | '/en/guide-iptv'
     | '/fr/guide-iptv'
     | '/payment/failed'
@@ -257,8 +296,11 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/en/'
     | '/fr/'
+    | '/lovable/email/suppression'
     | '/api/public/sebpay/webhook'
     | '/lovable/email/queue/process'
+    | '/lovable/email/transactional/preview'
+    | '/lovable/email/transactional/send'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -273,6 +315,7 @@ export interface FileRouteTypes {
     | '/admin/login'
     | '/admin/orders'
     | '/admin/plans'
+    | '/email/unsubscribe'
     | '/en/guide-iptv'
     | '/fr/guide-iptv'
     | '/payment/failed'
@@ -280,8 +323,11 @@ export interface FileRouteTypes {
     | '/admin'
     | '/en'
     | '/fr'
+    | '/lovable/email/suppression'
     | '/api/public/sebpay/webhook'
     | '/lovable/email/queue/process'
+    | '/lovable/email/transactional/preview'
+    | '/lovable/email/transactional/send'
   id:
     | '__root__'
     | '/'
@@ -299,6 +345,7 @@ export interface FileRouteTypes {
     | '/admin/login'
     | '/admin/orders'
     | '/admin/plans'
+    | '/email/unsubscribe'
     | '/en/guide-iptv'
     | '/fr/guide-iptv'
     | '/payment/failed'
@@ -306,8 +353,11 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/en/'
     | '/fr/'
+    | '/lovable/email/suppression'
     | '/api/public/sebpay/webhook'
     | '/lovable/email/queue/process'
+    | '/lovable/email/transactional/preview'
+    | '/lovable/email/transactional/send'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -321,10 +371,14 @@ export interface RootRouteChildren {
   LegalGuideRoute: typeof LegalGuideRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TrackRoute: typeof TrackRoute
+  EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   PaymentFailedRoute: typeof PaymentFailedRoute
   PaymentSuccessRoute: typeof PaymentSuccessRoute
+  LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ApiPublicSebpayWebhookRoute: typeof ApiPublicSebpayWebhookRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
+  LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
+  LovableEmailTransactionalSendRoute: typeof LovableEmailTransactionalSendRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -448,6 +502,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EnGuideIptvRouteImport
       parentRoute: typeof EnRoute
     }
+    '/email/unsubscribe': {
+      id: '/email/unsubscribe'
+      path: '/email/unsubscribe'
+      fullPath: '/email/unsubscribe'
+      preLoaderRoute: typeof EmailUnsubscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/plans': {
       id: '/admin/plans'
       path: '/plans'
@@ -482,6 +543,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/admins'
       preLoaderRoute: typeof AdminAdminsRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/lovable/email/suppression': {
+      id: '/lovable/email/suppression'
+      path: '/lovable/email/suppression'
+      fullPath: '/lovable/email/suppression'
+      preLoaderRoute: typeof LovableEmailSuppressionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/email/transactional/send': {
+      id: '/lovable/email/transactional/send'
+      path: '/lovable/email/transactional/send'
+      fullPath: '/lovable/email/transactional/send'
+      preLoaderRoute: typeof LovableEmailTransactionalSendRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/email/transactional/preview': {
+      id: '/lovable/email/transactional/preview'
+      path: '/lovable/email/transactional/preview'
+      fullPath: '/lovable/email/transactional/preview'
+      preLoaderRoute: typeof LovableEmailTransactionalPreviewRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/lovable/email/queue/process': {
       id: '/lovable/email/queue/process'
@@ -555,10 +637,14 @@ const rootRouteChildren: RootRouteChildren = {
   LegalGuideRoute: LegalGuideRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TrackRoute: TrackRoute,
+  EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   PaymentFailedRoute: PaymentFailedRoute,
   PaymentSuccessRoute: PaymentSuccessRoute,
+  LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ApiPublicSebpayWebhookRoute: ApiPublicSebpayWebhookRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
+  LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
+  LovableEmailTransactionalSendRoute: LovableEmailTransactionalSendRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
