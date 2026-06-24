@@ -7,8 +7,11 @@ import {
 import { createOrder } from "@/lib/orders.functions";
 import { initSebPayCheckout, verifyPayment } from "@/lib/payments.functions";
 import { useT, LanguageSwitcher } from "@/i18n/context";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { getPublicPlans, type PublicPlan } from "@/lib/plans.functions";
 
-type Plan = { id: string; name: string; price: number; period: string; save?: string; popular?: boolean };
+type Plan = { id: string; slug: string; name: string; price: number; period: string; save?: string; popular?: boolean };
 
 type Operator = "MTN Mobile Money" | "Orange Money";
 const OPERATORS: Operator[] = ["MTN Mobile Money", "Orange Money"];
@@ -23,12 +26,17 @@ const COUNTRIES: { code: string; label: string }[] = [
   { code: "CM", label: "Cameroun (CM)" },
 ];
 const USD_TO_XOF = 600;
-const PLANS: Plan[] = [
-  { id: "1m",  name: "1 Month",   price: 12, period: "/month" },
-  { id: "3m",  name: "3 Months",  price: 30, period: "/quarter",   save: "Save 17%" },
-  { id: "6m",  name: "6 Months",  price: 55, period: "/6 months",  save: "Save 24%" },
-  { id: "12m", name: "12 Months", price: 95, period: "/year",      save: "Save 34%", popular: true },
-];
+function toPlan(p: PublicPlan): Plan {
+  return {
+    id: p.slug,
+    slug: p.slug,
+    name: p.name,
+    price: p.price,
+    period: p.period_label,
+    save: p.save_label ?? undefined,
+    popular: p.popular,
+  };
+}
 
 export const Route = createFileRoute("/checkout")({
   head: () => ({
@@ -54,13 +62,28 @@ type PendingState = {
 function CheckoutPage() {
   const t = useT();
   const { plan: planParam } = Route.useSearch();
-  const initial = useMemo(() => {
-    const match = PLANS.find(p => p.name.toLowerCase() === (planParam ?? "").toLowerCase());
-    return match ?? PLANS[3];
-  }, [planParam]);
+  const fetchPlans = useServerFn(getPublicPlans);
+  const { data: rawPlans = [] } = useQuery<PublicPlan[]>({
+    queryKey: ["public-plans"],
+    queryFn: () => fetchPlans(),
+    staleTime: 30_000,
+  });
+  const plans = useMemo(() => rawPlans.map(toPlan), [rawPlans]);
 
   const [step, setStep] = useState<1 | 2>(1);
-  const [selected, setSelected] = useState<Plan>(initial);
+  const [selected, setSelected] = useState<Plan | null>(null);
+  useEffect(() => {
+    if (plans.length === 0) return;
+    setSelected((cur) => {
+      if (cur && plans.find((p) => p.slug === cur.slug)) return cur;
+      const match = plans.find(
+        (p) =>
+          p.slug.toLowerCase() === (planParam ?? "").toLowerCase() ||
+          p.name.toLowerCase() === (planParam ?? "").toLowerCase(),
+      );
+      return match ?? plans.find((p) => p.popular) ?? plans[0];
+    });
+  }, [plans, planParam]);
   const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
@@ -71,9 +94,10 @@ function CheckoutPage() {
   const [pending, setPending] = useState<PendingState | null>(null);
 
   const taxes = 0;
-  const total = +(selected.price + taxes).toFixed(2);
+  const total = +(((selected?.price ?? 0) + taxes)).toFixed(2);
 
   const canPay =
+    !!selected &&
     email.includes("@") &&
     fullName.trim().length > 1 &&
     phone.replace(/\D/g, "").length >= 8 &&
@@ -81,7 +105,7 @@ function CheckoutPage() {
 
   async function handlePay(e: React.FormEvent) {
     e.preventDefault();
-    if (!canPay) return;
+    if (!canPay || !selected) return;
     setErrorMsg("");
     setProcessing(true);
     try {
@@ -150,6 +174,8 @@ function CheckoutPage() {
       <div className="max-w-6xl mx-auto px-6 py-10">
         {pending ? (
           <PendingPanel pending={pending} />
+        ) : !selected ? (
+          <div className="flex justify-center py-20"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
         ) : (
           <>
             <Stepper step={step} />
@@ -157,6 +183,7 @@ function CheckoutPage() {
               <div className="space-y-6">
                 {step === 1 && (
                   <PlanStep
+                    plans={plans}
                     selected={selected}
                     onSelect={setSelected}
                     onNext={() => setStep(2)}
