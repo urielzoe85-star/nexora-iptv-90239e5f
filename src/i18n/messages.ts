@@ -167,6 +167,11 @@ export const MESSAGES: Record<Locale, Dict> = {
     "share.email": "Email",
     "share.native": "Partager…",
     "share.emailSubject": "Nexora IPTV — Offres & tarifs",
+    "share.plan.cta": "Partager",
+    "share.plan.title": "Partager cette offre",
+    "share.plan.message": "Je te recommande l'offre {plan} de Nexora IPTV à {price}{period} — milliers de chaînes, films & séries en HD/4K. Voir l'offre :",
+    "share.plan.emailSubject": "Nexora IPTV — Offre {plan}",
+    "share.plan.copied": "Lien copié !",
 
     "catalog.kicker": "Catalogue",
     "catalog.title.a": "Aperçu de notre ",
