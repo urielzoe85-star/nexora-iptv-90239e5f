@@ -554,3 +554,127 @@ function FloatingWhatsApp() {
     </a>
   );
 }
+
+function Share() {
+  const t = useT();
+  const { locale } = useI18n();
+  const [copied, setCopied] = useState(false);
+  const base = "https://nexora-iptv.com";
+  const path = locale === "en" ? "/en/" : locale === "de" ? "/de/" : locale === "fr" ? "/fr/" : "/";
+  const shareUrl = `${base}${path}#pricing`;
+  const message = `${t("share.message")} ${shareUrl}`;
+  const enc = encodeURIComponent;
+  const links = [
+    {
+      key: "whatsapp",
+      label: t("share.whatsapp"),
+      href: `https://api.whatsapp.com/send?text=${enc(message)}`,
+      Icon: MessageCircle,
+    },
+    {
+      key: "telegram",
+      label: t("share.telegram"),
+      href: `https://t.me/share/url?url=${enc(shareUrl)}&text=${enc(t("share.message"))}`,
+      Icon: Send,
+    },
+    {
+      key: "facebook",
+      label: t("share.facebook"),
+      href: `https://www.facebook.com/sharer/sharer.php?u=${enc(shareUrl)}&quote=${enc(t("share.message"))}`,
+      Icon: Facebook,
+    },
+    {
+      key: "x",
+      label: t("share.x"),
+      href: `https://twitter.com/intent/tweet?url=${enc(shareUrl)}&text=${enc(t("share.message"))}`,
+      Icon: Twitter,
+    },
+    {
+      key: "email",
+      label: t("share.email"),
+      href: `mailto:?subject=${enc(t("share.emailSubject"))}&body=${enc(message)}`,
+      Icon: Mail,
+    },
+  ];
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // noop
+    }
+  };
+
+  const nativeShare = async () => {
+    if (typeof navigator !== "undefined" && (navigator as any).share) {
+      try {
+        await (navigator as any).share({
+          title: "Nexora IPTV",
+          text: t("share.message"),
+          url: shareUrl,
+        });
+      } catch {
+        // user cancelled
+      }
+    } else {
+      copy();
+    }
+  };
+
+  return (
+    <section id="share" className="py-20">
+      <div className="max-w-5xl mx-auto px-6">
+        <div className="glass rounded-3xl p-8 md:p-12">
+          <div className="text-center max-w-2xl mx-auto mb-8">
+            <p className="text-sm uppercase tracking-[0.2em] text-[color:var(--gold)] mb-3">{t("share.kicker")}</p>
+            <h2 className="text-3xl md:text-4xl font-bold">
+              {t("share.title.a")}<span className="text-gradient-gold">{t("share.title.b")}</span>
+            </h2>
+            <p className="text-muted-foreground mt-3 text-sm">{t("share.sub")}</p>
+          </div>
+
+          <div className="flex flex-wrap justify-center gap-3 mb-6">
+            {links.map(({ key, label, href, Icon }) => (
+              <a
+                key={key}
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={label}
+                className="glass px-4 py-2.5 rounded-full text-sm font-medium inline-flex items-center gap-2 hover:border-[color:var(--gold)]/40 transition"
+              >
+                <Icon className="h-4 w-4 text-[color:var(--gold)]" />
+                {label}
+              </a>
+            ))}
+          </div>
+
+          <div className="flex flex-wrap justify-center gap-3">
+            <button
+              type="button"
+              onClick={copy}
+              className="glass px-4 py-2.5 rounded-full text-sm font-medium inline-flex items-center gap-2 hover:border-[color:var(--gold)]/40 transition"
+            >
+              <Link2 className="h-4 w-4 text-[color:var(--gold)]" />
+              {copied ? t("share.copied") : t("share.copy")}
+            </button>
+            <button
+              type="button"
+              onClick={nativeShare}
+              className="btn-gold btn-gold-hover px-5 py-2.5 rounded-full text-sm font-semibold inline-flex items-center gap-2"
+            >
+              <Share2 className="h-4 w-4" />
+              {t("share.native")}
+            </button>
+          </div>
+
+          <p className="mt-6 text-center text-xs text-muted-foreground break-all">
+            {shareUrl}
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
