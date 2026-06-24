@@ -199,8 +199,8 @@ export const adminUpdateOrder = createServerFn({ method: "POST" })
 
 // Confirme manuellement le paiement d'une commande après réception des fonds
 // sur le compte Mobile Money de l'admin. Met la commande en "completed",
-// prépare le message WhatsApp (lien wa.me ouvert côté navigateur admin) et
-// renvoie aussi les infos pour notifier le client.
+// prépare le message WhatsApp (lien WhatsApp Web ouvert côté navigateur admin)
+// et renvoie aussi les infos pour notifier le client.
 export const adminConfirmPayment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
@@ -217,7 +217,7 @@ export const adminConfirmPayment = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
 
     // Construit le lien WhatsApp pré-rempli vers le numéro du client.
-    // wa.me exige un numéro international SANS "+" ni espaces. Si le
+    // WhatsApp exige un numéro international SANS "+" ni espaces. Si le
     // numéro local ne contient pas l'indicatif pays, on le préfixe à
     // partir du champ metadata.momo.country (ISO alpha-2).
     const rawPhone: string | undefined = row?.metadata?.momo?.phone;
@@ -232,7 +232,12 @@ export const adminConfirmPayment = createServerFn({ method: "POST" })
       `transmis dans les minutes qui suivent par email et WhatsApp.\n\n` +
       `Merci pour votre confiance.\n— L'équipe Nexora IPTV`;
     const waLink = e164
-      ? `https://wa.me/${e164}?text=${encodeURIComponent(message)}`
+      ? `https://web.whatsapp.com/send?${new URLSearchParams({
+          phone: e164,
+          text: message,
+          type: "phone_number",
+          app_absent: "0",
+        }).toString()}`
       : null;
 
     // Envoi email best-effort. Si l'infrastructure email n'est pas encore
@@ -276,7 +281,6 @@ export const adminConfirmPayment = createServerFn({ method: "POST" })
       orderRef: row.order_ref,
       waLink,
       phone: rawPhone ?? null,
-      message,
       emailSent,
       emailError,
     };
