@@ -281,6 +281,7 @@ export const MESSAGES: Record<Locale, Dict> = {
     "dash.col.date": "Date",
 
     "status.paid": "Payée",
+    "status.completed": "Confirmée",
     "status.pending": "En attente",
     "status.processing": "En cours",
     "status.failed": "Échouée",
@@ -545,6 +546,7 @@ export const MESSAGES: Record<Locale, Dict> = {
     "dash.col.date": "Date",
 
     "status.paid": "Paid",
+    "status.completed": "Confirmed",
     "status.pending": "Pending",
     "status.processing": "Processing",
     "status.failed": "Failed",
@@ -809,6 +811,7 @@ export const MESSAGES: Record<Locale, Dict> = {
     "dash.col.date": "Datum",
 
     "status.paid": "Bezahlt",
+    "status.completed": "Bestätigt",
     "status.pending": "Ausstehend",
     "status.processing": "In Bearbeitung",
     "status.failed": "Fehlgeschlagen",
