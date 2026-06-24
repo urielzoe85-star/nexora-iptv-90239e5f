@@ -349,6 +349,7 @@ export const MESSAGES: Record<Locale, Dict> = {
     "nav.support": "Support",
     "nav.getStarted": "Get Started",
     "nav.menu": "Menu",
+    "nav.catalog": "Catalog",
 
     "hero.badge": "Trusted by 25,000+ subscribers worldwide",
     "hero.title.a": "Access Thousands of ",
