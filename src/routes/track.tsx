@@ -32,14 +32,21 @@ type Order = {
   amount: number;
   currency: string;
   method: string;
-  status: "pending" | "processing" | "paid" | "failed" | "cancelled" | string;
+  status: "pending" | "processing" | "paid" | "completed" | "failed" | "cancelled" | string;
   sebpay_reference: string | null;
   created_at: string;
   updated_at: string;
 };
 
-// Estimated activation window after payment is confirmed (ms).
-const ACTIVATION_MS = 10 * 60 * 1000;
+// Fenêtre d'activation visuelle après confirmation du paiement (ms).
+// L'admin valide manuellement, puis 1 min plus tard l'étape « identifiants
+// envoyés » se valide côté client.
+const ACTIVATION_MS = 60 * 1000;
+
+// Statuts considérés comme "paiement confirmé" pour le timeline.
+function isConfirmed(s: string) {
+  return s === "paid" || s === "completed";
+}
 
 function TrackPage() {
   const t = useT();
@@ -81,10 +88,10 @@ function TrackPage() {
     const id = setInterval(() => {
       const status = order?.status;
       const inActivation =
-        status === "paid" &&
+        !!status && isConfirmed(status) &&
         Date.now() - new Date(order!.updated_at).getTime() < ACTIVATION_MS;
       if (status === "failed" || status === "cancelled") return; // terminal
-      if (status === "paid" && !inActivation) return; // fully activated
+      if (status && isConfirmed(status) && !inActivation) return; // fully activated
       fetchOnce();
     }, 4000);
 
@@ -152,7 +159,7 @@ function TrackPage() {
 
 function TrackView({ order, now, lastChecked }: { order: Order; now: number; lastChecked: number | null }) {
   const t = useT();
-  const paidAt = order.status === "paid" ? new Date(order.updated_at).getTime() : null;
+  const paidAt = isConfirmed(order.status) ? new Date(order.updated_at).getTime() : null;
   const elapsedSincePaid = paidAt ? Math.max(0, now - paidAt) : 0;
   const activationPct = paidAt ? Math.min(100, Math.round((elapsedSincePaid / ACTIVATION_MS) * 100)) : 0;
   const activated = paidAt ? elapsedSincePaid >= ACTIVATION_MS : false;
@@ -184,7 +191,7 @@ function TrackView({ order, now, lastChecked }: { order: Order; now: number; las
       label: t("track.step.confirmed"),
       desc: t("track.step.confirmed.desc"),
       state:
-        s === "paid" ? "done" :
+        isConfirmed(s) ? "done" :
         s === "processing" ? "active" :
         s === "failed" || s === "cancelled" ? "failed" :
         "pending",
@@ -195,8 +202,8 @@ function TrackView({ order, now, lastChecked }: { order: Order; now: number; las
       label: t("track.step.provision"),
       desc: t("track.step.provision.desc"),
       state:
-        s === "paid" && activated ? "done" :
-        s === "paid" ? "active" :
+        isConfirmed(s) && activated ? "done" :
+        isConfirmed(s) ? "active" :
         s === "failed" || s === "cancelled" ? "pending" :
         "pending",
     },
@@ -205,12 +212,12 @@ function TrackView({ order, now, lastChecked }: { order: Order; now: number; las
       icon: <Mail className="h-4 w-4" />,
       label: t("track.step.delivered"),
       desc: t("track.step.delivered.desc"),
-      state: s === "paid" && activated ? "done" : "pending",
+      state: isConfirmed(s) && activated ? "done" : "pending",
     },
   ];
 
   const terminal = s === "failed" || s === "cancelled";
-  const polling = !terminal && !(s === "paid" && activated);
+  const polling = !terminal && !(isConfirmed(s) && activated);
 
   return (
     <div className="space-y-6">
@@ -255,8 +262,8 @@ function TrackView({ order, now, lastChecked }: { order: Order; now: number; las
           )}
         </div>
 
-        {/* Activation progress bar (only meaningful when paid) */}
-        {s === "paid" && (
+        {/* Activation progress bar (only meaningful when paid/completed) */}
+        {isConfirmed(s) && (
           <div className="mt-5">
             <div className="flex items-center justify-between text-xs mb-2">
               <span className="text-muted-foreground">{t("track.activation")}</span>
@@ -349,6 +356,7 @@ function StatusBadge({ status }: { status: string }) {
   const t = useT();
   const map: Record<string, string> = {
     paid: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
+    completed: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
     processing: "bg-sky-500/15 text-sky-300 border-sky-500/30",
     pending: "bg-amber-500/15 text-amber-300 border-amber-500/30",
     failed: "bg-red-500/15 text-red-300 border-red-500/30",
