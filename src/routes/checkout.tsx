@@ -10,22 +10,10 @@ import { useT, LanguageSwitcher } from "@/i18n/context";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getPublicPlans, type PublicPlan } from "@/lib/plans.functions";
+import { COUNTRIES, getCountry, convertUsdToLocal, type Operator } from "@/lib/countries";
 
 type Plan = { id: string; slug: string; name: string; price: number; period: string; save?: string; popular?: boolean };
 
-type Operator = "MTN Mobile Money" | "Orange Money";
-const OPERATORS: Operator[] = ["MTN Mobile Money", "Orange Money"];
-const COUNTRIES: { code: string; label: string }[] = [
-  { code: "BJ", label: "Bénin (BJ)" },
-  { code: "CI", label: "Côte d'Ivoire (CI)" },
-  { code: "SN", label: "Sénégal (SN)" },
-  { code: "TG", label: "Togo (TG)" },
-  { code: "BF", label: "Burkina Faso (BF)" },
-  { code: "ML", label: "Mali (ML)" },
-  { code: "NE", label: "Niger (NE)" },
-  { code: "CM", label: "Cameroun (CM)" },
-];
-const USD_TO_XOF = 600;
 function toPlan(p: PublicPlan): Plan {
   return {
     id: p.slug,
@@ -86,12 +74,33 @@ function CheckoutPage() {
   }, [plans, planParam]);
   const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [operator, setOperator] = useState<Operator>("MTN Mobile Money");
   const [country, setCountry] = useState("BJ");
+  const initialCountry = getCountry("BJ")!;
+  const [phone, setPhone] = useState(`+${initialCountry.dial} `);
+  const [operator, setOperator] = useState<Operator>(initialCountry.operators[0]);
   const [processing, setProcessing] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string>("");
   const [pending, setPending] = useState<PendingState | null>(null);
+
+  // When the country changes: re-prefix the phone with the new dial code
+  // and reset the operator if the previous one isn't offered there.
+  function handleCountryChange(next: string) {
+    const cur = getCountry(country);
+    const nx = getCountry(next);
+    if (!nx) { setCountry(next); return; }
+    setCountry(next);
+    // Replace any existing dial-code prefix; keep the locally-typed digits.
+    setPhone((prev) => {
+      const onlyDigits = String(prev ?? "").replace(/\D/g, "");
+      const withoutOld = cur && onlyDigits.startsWith(cur.dial)
+        ? onlyDigits.slice(cur.dial.length)
+        : onlyDigits;
+      return `+${nx.dial} ${withoutOld}`.trimEnd();
+    });
+    if (!nx.operators.includes(operator)) {
+      setOperator(nx.operators[0]);
+    }
+  }
 
   const taxes = 0;
   const total = +(((selected?.price ?? 0) + taxes)).toFixed(2);
@@ -195,7 +204,7 @@ function CheckoutPage() {
                     fullName={fullName} setFullName={setFullName}
                     phone={phone} setPhone={setPhone}
                     operator={operator} setOperator={setOperator}
-                    country={country} setCountry={setCountry}
+                    country={country} setCountry={handleCountryChange}
                     processing={processing}
                     canPay={canPay}
                     total={total}
@@ -317,6 +326,10 @@ function PaymentStep(props: {
     phone, setPhone, operator, setOperator, country, setCountry,
     processing, canPay, total, errorMsg, onBack, onSubmit,
   } = props;
+  const countryConf = getCountry(country);
+  const operators = countryConf?.operators ?? [];
+  const local = convertUsdToLocal(total, country);
+  const localFormatted = local.amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 
   return (
     <form onSubmit={onSubmit} className="space-y-6">
@@ -354,17 +367,6 @@ function PaymentStep(props: {
             (MTN ou Orange Money).
           </p>
           <div className="grid sm:grid-cols-2 gap-4">
-            <Field icon={<Smartphone className="h-4 w-4" />} label="Opérateur Mobile Money">
-              <select
-                required value={operator}
-                onChange={(e) => setOperator(e.target.value as Operator)}
-                className="w-full bg-transparent outline-none text-sm"
-              >
-                {OPERATORS.map((o) => (
-                  <option key={o} value={o} className="bg-background">{o}</option>
-                ))}
-              </select>
-            </Field>
             <Field icon={<Globe className="h-4 w-4" />} label="Pays">
               <select
                 required value={country}
@@ -376,15 +378,29 @@ function PaymentStep(props: {
                 ))}
               </select>
             </Field>
+            <Field icon={<Smartphone className="h-4 w-4" />} label="Opérateur Mobile Money">
+              <select
+                required value={operator}
+                onChange={(e) => setOperator(e.target.value as Operator)}
+                className="w-full bg-transparent outline-none text-sm"
+              >
+                {operators.map((o) => (
+                  <option key={o} value={o} className="bg-background">{o}</option>
+                ))}
+              </select>
+            </Field>
           </div>
           <Field icon={<Phone className="h-4 w-4" />} label="Numéro Mobile Money">
             <input
               required type="tel" value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              placeholder="+22996XXXXXXX"
+              placeholder={countryConf ? `+${countryConf.dial} 96XXXXXXX` : "+22996XXXXXXX"}
               className="w-full bg-transparent outline-none text-sm placeholder:text-muted-foreground/60"
             />
           </Field>
+          <p className="text-xs text-muted-foreground">
+            Vous serez débité <span className="font-mono text-foreground">{localFormatted} {local.currency}</span> via {operator}.
+          </p>
         </div>
 
       </section>
@@ -492,7 +508,11 @@ function OrderSummary({ plan, taxes, total }: { plan: Plan; taxes: number; total
     "6m": t("pricing.6months"), "12m": t("pricing.12months"),
   };
   const planName = planNameMap[plan.id] ?? plan.name;
-  const xof = Math.round(total * USD_TO_XOF);
+  // Default to XOF in the side panel until the customer picks a country
+  // in step 2; the in-form line under the phone field shows the precise
+  // local-currency amount per country.
+  const local = convertUsdToLocal(total, "BJ");
+  const localFormatted = local.amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
   return (
     <aside className="glass rounded-2xl p-6 h-fit lg:sticky lg:top-24">
       <h3 className="text-sm uppercase tracking-[0.18em] text-[color:var(--gold)] mb-4">{t("co.summary")}</h3>
@@ -512,7 +532,7 @@ function OrderSummary({ plan, taxes, total }: { plan: Plan; taxes: number; total
         <span className="text-2xl font-bold text-gradient-gold">${total.toFixed(2)}</span>
       </div>
       <p className="text-xs text-muted-foreground mt-1 text-right">
-        Débité : <span className="font-mono">{xof.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ")} XOF</span>
+        Débité (estimation) : <span className="font-mono">≈ {localFormatted} {local.currency}</span>
       </p>
       <div className="mt-6 space-y-2 text-xs text-muted-foreground">
         <p className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-[color:var(--gold)]" /> {t("co.guarantee")}</p>
