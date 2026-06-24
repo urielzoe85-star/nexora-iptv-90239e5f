@@ -59,7 +59,6 @@ function OrdersPage() {
     orderRef: string;
     waLink: string | null;
     phone: string | null;
-    message: string;
     emailSent: boolean;
     emailError: string | null;
   }>(null);
@@ -85,17 +84,23 @@ function OrdersPage() {
   async function confirmPayment() {
     if (!editing) return;
     setConfirming(true);
+    const whatsappWindow = typeof window !== "undefined"
+      ? window.open("about:blank", "_blank")
+      : null;
+    if (whatsappWindow) whatsappWindow.opener = null;
     try {
       const res = await confirm({ data: { id: editing.id } });
-      // Ouvre WhatsApp Web pré-rempli pour notifier le client.
-      if (res.waLink && typeof window !== "undefined") {
-        window.open(res.waLink, "_blank", "noopener,noreferrer");
+      // La fenêtre est créée immédiatement au clic pour éviter le blocage popup,
+      // puis redirigée vers WhatsApp Web quand le message est prêt.
+      if (res.waLink && whatsappWindow) {
+        whatsappWindow.location.replace(res.waLink);
+      } else if (whatsappWindow) {
+        whatsappWindow.close();
       }
       setConfirmed({
         orderRef: res.orderRef,
         waLink: res.waLink,
         phone: res.phone,
-        message: res.message,
         emailSent: res.emailSent,
         emailError: res.emailError,
       });
@@ -103,6 +108,7 @@ function OrdersPage() {
       qc.invalidateQueries({ queryKey: ["admin", "orders"] });
       qc.invalidateQueries({ queryKey: ["admin", "stats"] });
     } catch (e: any) {
+      whatsappWindow?.close();
       toast.error(e?.message ?? "Erreur lors de la confirmation");
     } finally {
       setConfirming(false);
