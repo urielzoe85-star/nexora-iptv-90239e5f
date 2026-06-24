@@ -11,7 +11,7 @@ import {
   Tv, Film, Zap, Globe2, ShieldCheck, Headphones,
   Check, Star, MessageCircle, Send, Mail, Menu,
   Smartphone, Tablet, Laptop, Monitor, Tv2,
-  Download,
+  Download, Share2, Facebook, Twitter, Link2,
 } from "lucide-react";
 import { useT, useI18n } from "@/i18n/context";
 import { LanguageSwitcher } from "@/i18n/context";
@@ -64,6 +64,7 @@ export function NexoraLanding() {
         <Testimonials />
         <FAQ />
         <Payments />
+        <Share />
         <Support />
       </main>
       <Footer />
