@@ -510,7 +510,6 @@ function Support() {
 }
 
 function Footer() {
-  // placeholder anchor for patch ordering
   const t = useT();
   const cols = [
     { title: t("footer.company"), links: [t("footer.about"), t("footer.blog"), t("footer.careers"), t("footer.contact")] },
