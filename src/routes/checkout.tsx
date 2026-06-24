@@ -240,7 +240,7 @@ function Stepper({ step }: { step: 1 | 2 | 3 }) {
   );
 }
 
-function PlanStep({ selected, onSelect, onNext }: { selected: Plan; onSelect: (p: Plan) => void; onNext: () => void }) {
+function PlanStep({ plans, selected, onSelect, onNext }: { plans: Plan[]; selected: Plan; onSelect: (p: Plan) => void; onNext: () => void }) {
   const t = useT();
   const planLabels: Record<string, { name: string; period: string; save?: string }> = {
     "1m":  { name: t("pricing.month"),    period: t("pricing.per.month") },
@@ -254,7 +254,7 @@ function PlanStep({ selected, onSelect, onNext }: { selected: Plan; onSelect: (p
       <h2 className="text-2xl font-bold mb-1">{t("co.select.title")}</h2>
       <p className="text-sm text-muted-foreground mb-6">{t("co.select.sub")}</p>
       <div className="grid sm:grid-cols-2 gap-3">
-        {PLANS.map(p => {
+        {plans.map((p) => {
           const active = p.id === selected.id;
           const lbl = planLabels[p.id] ?? { name: p.name, period: p.period, save: p.save };
           return (
