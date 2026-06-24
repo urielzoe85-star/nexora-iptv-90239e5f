@@ -69,10 +69,15 @@ function TrackPage() {
   useEffect(() => {
     if (!ref) return;
     let cancelled = false;
+    let tickCount = 0;
 
-    async function fetchOnce() {
-      // Re-verify with SebPay (source of truth), then re-read the row.
-      await verifyPayment({ data: { ref } }).catch(() => null);
+    // Lecture rapide de la commande (utilisée pour le temps réel).
+    async function fetchOnce(opts: { verify?: boolean } = {}) {
+      if (opts.verify) {
+        // Re-vérifie auprès de SebPay (source de vérité). Coûteux : on ne le
+        // fait qu'à intervalles espacés, pas à chaque tick temps réel.
+        await verifyPayment({ data: { ref } }).catch(() => null);
+      }
       const o = await getOrderByRef({ data: { ref } }).catch(() => null);
       if (cancelled) return;
       setLastChecked(Date.now());
@@ -82,9 +87,11 @@ function TrackPage() {
     }
 
     setLoading(true);
-    fetchOnce().finally(() => { if (!cancelled) setLoading(false); });
+    fetchOnce({ verify: true }).finally(() => { if (!cancelled) setLoading(false); });
 
-    // Poll while not in a final state (or while activation window is open).
+    // Poll quasi temps réel toutes les 1.2 s tant que la commande n'est
+    // pas dans un état terminal et que la fenêtre d'activation est ouverte.
+    // Re-vérification SebPay une fois sur 5 (~6 s) pour limiter la charge.
     const id = setInterval(() => {
       const status = order?.status;
       const inActivation =
@@ -92,10 +99,23 @@ function TrackPage() {
         Date.now() - new Date(order!.updated_at).getTime() < ACTIVATION_MS;
       if (status === "failed" || status === "cancelled") return; // terminal
       if (status && isConfirmed(status) && !inActivation) return; // fully activated
-      fetchOnce();
-    }, 4000);
+      tickCount += 1;
+      fetchOnce({ verify: tickCount % 5 === 0 });
+    }, 1200);
 
-    return () => { cancelled = true; clearInterval(id); };
+    // Refetch immédiat quand l'onglet redevient visible / reçoit le focus.
+    function onFocus() {
+      if (document.visibilityState === "visible") fetchOnce();
+    }
+    document.addEventListener("visibilitychange", onFocus);
+    window.addEventListener("focus", onFocus);
+
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+      document.removeEventListener("visibilitychange", onFocus);
+      window.removeEventListener("focus", onFocus);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ref, order?.status, order?.updated_at]);
 
