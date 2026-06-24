@@ -1,8 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { convertUsdToLocal } from "@/lib/countries";
 
-// USD → XOF conversion. Plans are priced in USD on the site; SebPay's
-// Mobile Money endpoint expects XOF (CFA franc BCEAO) per its docs.
+// Legacy export kept for any consumer importing it. SebPay charges in the
+// country's local currency now; see `convertUsdToLocal` in `@/lib/countries`.
 export const USD_TO_XOF = 600;
 
 const CreateOrderSchema = z.object({
@@ -14,7 +15,7 @@ const CreateOrderSchema = z.object({
   currency: z.string().trim().length(3).default("USD"),
   method: z.literal("momo"),
   phone: z.string().trim().min(6).max(20),
-  operator: z.enum(["MTN Mobile Money", "Orange Money"]),
+  operator: z.string().trim().min(2).max(40),
   country: z.string().trim().length(2).toUpperCase(),
 });
 
@@ -31,15 +32,13 @@ export const createOrder = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const order_ref = genOrderRef();
 
-    // For Mobile Money in the XAF zone, override currency + amount to what
-    // SebPay actually charges (local CFA franc). The USD price is preserved
-    // in metadata for accounting.
-    // SebPay charges in XOF. Convert the USD plan price → XOF and preserve
-    // the original USD amount in metadata for accounting.
-    const amount = Math.round(data.amount * USD_TO_XOF);
-    const currency = "XOF";
+    // SebPay charges in the customer's local Mobile Money currency
+    // (XOF, XAF, GNF, CDF…). Convert the USD plan price using the country
+    // map and keep the original USD amount in metadata for accounting.
+    const { amount, currency } = convertUsdToLocal(data.amount, data.country);
     const metadata: Record<string, any> = {
       usd_amount: data.amount,
+      usd_to_local_rate: amount / data.amount,
       momo: {
         phone: data.phone,
         operator: data.operator,
