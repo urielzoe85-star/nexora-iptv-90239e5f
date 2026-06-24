@@ -16,6 +16,9 @@ import {
 import { useT, useI18n } from "@/i18n/context";
 import { LanguageSwitcher } from "@/i18n/context";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { getPublicPlans, type PublicPlan } from "@/lib/plans.functions";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -233,12 +236,12 @@ function Devices() {
 
 function Pricing() {
   const t = useT();
-  const plans = [
-    { name: t("pricing.month"),    price: 12, period: t("pricing.per.month"),    save: null,                 popular: false, slug: "1m" },
-    { name: t("pricing.3months"),  price: 30, period: t("pricing.per.quarter"),  save: t("pricing.save17"),  popular: false, slug: "3m" },
-    { name: t("pricing.6months"),  price: 55, period: t("pricing.per.6"),        save: t("pricing.save24"),  popular: false, slug: "6m" },
-    { name: t("pricing.12months"), price: 95, period: t("pricing.per.year"),     save: t("pricing.save34"),  popular: true,  slug: "12m" },
-  ];
+  const fetchPlans = useServerFn(getPublicPlans);
+  const { data: plans = [] } = useQuery<PublicPlan[]>({
+    queryKey: ["public-plans"],
+    queryFn: () => fetchPlans(),
+    staleTime: 30_000,
+  });
   const features = [1, 2, 3, 4, 5].map((i) => t(`pricing.feat.${i}`));
   return (
     <section id="pricing" className="py-28 relative">
@@ -251,17 +254,17 @@ function Pricing() {
         </div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {plans.map(p => (
-            <div key={p.slug} className={`relative glass rounded-2xl p-8 transition hover-scale ${p.popular ? "border-[color:var(--gold)]/60 shadow-[var(--shadow-gold)]" : ""}`}>
+            <div key={p.id} className={`relative glass rounded-2xl p-8 transition hover-scale ${p.popular ? "border-[color:var(--gold)]/60 shadow-[var(--shadow-gold)]" : ""}`}>
               {p.popular && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[image:var(--gradient-gold)] text-black text-xs font-bold px-3 py-1 rounded-full">
                   {t("pricing.popular")}
                 </div>
               )}
               <h3 className="text-lg font-semibold mb-1">{p.name}</h3>
-              {p.save && <p className="text-xs text-[color:var(--gold)] mb-4">{p.save}</p>}
+              {p.save_label && <p className="text-xs text-[color:var(--gold)] mb-4">{p.save_label}</p>}
               <div className="flex items-baseline gap-1 my-4">
                 <span className="text-5xl font-bold text-gradient-gold">${p.price}</span>
-                <span className="text-sm text-muted-foreground">{p.period}</span>
+                <span className="text-sm text-muted-foreground">{p.period_label}</span>
               </div>
               <ul className="space-y-3 mb-8 text-sm">
                 {features.map(f => (
