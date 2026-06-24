@@ -87,6 +87,7 @@ function OrdersPage() {
     const whatsappWindow = typeof window !== "undefined"
       ? window.open("about:blank", "_blank")
       : null;
+    if (whatsappWindow) whatsappWindow.opener = null;
     try {
       const res = await confirm({ data: { id: editing.id } });
       // La fenêtre est créée immédiatement au clic pour éviter le blocage popup,
