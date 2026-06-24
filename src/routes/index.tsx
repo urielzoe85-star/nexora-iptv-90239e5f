@@ -239,6 +239,7 @@ function Devices() {
 
 function Pricing() {
   const t = useT();
+  const { locale } = useI18n();
   const fetchPlans = useServerFn(getPublicPlans);
   const { data: plans = [] } = useQuery<PublicPlan[]>({
     queryKey: ["public-plans"],
@@ -275,11 +276,82 @@ function Pricing() {
                 ))}
               </ul>
               <a href={`/checkout?plan=${encodeURIComponent(p.slug)}`} className={`block text-center px-5 py-3 rounded-full font-semibold transition ${p.popular ? "btn-gold btn-gold-hover" : "glass hover:border-[color:var(--gold)]/40"}`}>{t("pricing.cta")}</a>
+              <PlanShare plan={p} locale={locale} />
             </div>
           ))}
         </div>
       </div>
     </section>
+  );
+}
+
+function PlanShare({ plan, locale }: { plan: PublicPlan; locale: string }) {
+  const t = useT();
+  const [copied, setCopied] = useState(false);
+  const [open, setOpen] = useState(false);
+  const base = typeof window !== "undefined" ? window.location.origin : "https://nexora-iptv.com";
+  const path = locale === "fr" ? "/fr" : locale === "de" ? "/de" : "/en";
+  const shareUrl = `${base}${path}?plan=${encodeURIComponent(plan.slug)}#pricing`;
+  const tpl = (key: string) =>
+    t(key)
+      .replace("{plan}", plan.name)
+      .replace("{price}", `$${plan.price}`)
+      .replace("{period}", plan.period_label ? ` ${plan.period_label}` : "");
+  const message = `${tpl("share.plan.message")} ${shareUrl}`;
+  const enc = encodeURIComponent;
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch {}
+  };
+
+  const nativeShare = async () => {
+    if (typeof navigator !== "undefined" && (navigator as any).share) {
+      try {
+        await (navigator as any).share({ title: `Nexora IPTV — ${plan.name}`, text: tpl("share.plan.message"), url: shareUrl });
+        return;
+      } catch {}
+    }
+    setOpen((v) => !v);
+  };
+
+  return (
+    <div className="mt-3">
+      <button
+        type="button"
+        onClick={nativeShare}
+        className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full text-xs font-semibold glass hover:border-[color:var(--gold)]/40 transition"
+        aria-label={t("share.plan.title")}
+      >
+        <Share2 className="h-3.5 w-3.5" />
+        {t("share.plan.cta")}
+      </button>
+      {open && (
+        <div className="mt-2 grid grid-cols-3 gap-1.5">
+          <a href={`https://api.whatsapp.com/send?text=${enc(message)}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded-full text-[11px] glass hover:border-[color:var(--gold)]/40">
+            <MessageCircle className="h-3 w-3" />WhatsApp
+          </a>
+          <a href={`https://t.me/share/url?url=${enc(shareUrl)}&text=${enc(tpl("share.plan.message"))}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded-full text-[11px] glass hover:border-[color:var(--gold)]/40">
+            <Send className="h-3 w-3" />Telegram
+          </a>
+          <a href={`https://www.facebook.com/sharer/sharer.php?u=${enc(shareUrl)}&quote=${enc(tpl("share.plan.message"))}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded-full text-[11px] glass hover:border-[color:var(--gold)]/40">
+            <Facebook className="h-3 w-3" />Facebook
+          </a>
+          <a href={`https://twitter.com/intent/tweet?url=${enc(shareUrl)}&text=${enc(tpl("share.plan.message"))}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded-full text-[11px] glass hover:border-[color:var(--gold)]/40">
+            <Twitter className="h-3 w-3" />X
+          </a>
+          <a href={`mailto:?subject=${enc(tpl("share.plan.emailSubject"))}&body=${enc(message)}`} className="inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded-full text-[11px] glass hover:border-[color:var(--gold)]/40">
+            <Mail className="h-3 w-3" />Email
+          </a>
+          <button type="button" onClick={copy} className="inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded-full text-[11px] glass hover:border-[color:var(--gold)]/40">
+            <Link2 className="h-3 w-3" />{copied ? t("share.plan.copied") : t("share.copy")}
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
 
