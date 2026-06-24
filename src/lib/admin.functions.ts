@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
+import { toE164 } from "@/lib/countries";
 
 async function ensureAdmin(_supabase: any, userId: string) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -221,20 +222,7 @@ export const adminConfirmPayment = createServerFn({ method: "POST" })
     // partir du champ metadata.momo.country (ISO alpha-2).
     const rawPhone: string | undefined = row?.metadata?.momo?.phone;
     const country: string | undefined = row?.metadata?.momo?.country;
-    const COUNTRY_DIAL: Record<string, string> = {
-      CM: "237", CI: "225", SN: "221", BJ: "229", TG: "228", BF: "226",
-      ML: "223", NE: "227", GA: "241", CG: "242", CD: "243", GN: "224",
-      MA: "212", DZ: "213", TN: "216", FR: "33", BE: "32", CH: "41",
-    };
-    let digits = (rawPhone ?? "").replace(/\D/g, "");
-    if (digits.startsWith("00")) digits = digits.slice(2);
-    const dial = country ? COUNTRY_DIAL[country.toUpperCase()] : undefined;
-    if (dial && !digits.startsWith(dial)) {
-      // retire un éventuel 0 initial du numéro local avant de préfixer
-      const local = digits.replace(/^0+/, "");
-      digits = `${dial}${local}`;
-    }
-    const e164 = digits;
+    const e164 = rawPhone ? toE164(rawPhone, country) : "";
     const firstName = String(row.full_name ?? "").split(" ")[0] || "client";
     const message =
       `Bonjour ${firstName},\n\n` +
