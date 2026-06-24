@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { adminListOrders, adminUpdateOrder } from "@/lib/admin.functions";
+import { adminListOrders, adminUpdateOrder, adminConfirmPayment } from "@/lib/admin.functions";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Card, CardContent } from "@/components/ui/card";
@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Loader2, Search } from "lucide-react";
+import { Loader2, Search, CheckCircle2, MessageCircle, Mail } from "lucide-react";
 
 export const Route = createFileRoute("/admin/orders")({ component: OrdersPage });
 
@@ -49,10 +49,20 @@ const statusColor: Record<string, string> = {
 function OrdersPage() {
   const list = useServerFn(adminListOrders);
   const update = useServerFn(adminUpdateOrder);
+  const confirm = useServerFn(adminConfirmPayment);
   const qc = useQueryClient();
   const [status, setStatus] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<any | null>(null);
+  const [confirming, setConfirming] = useState(false);
+  const [confirmed, setConfirmed] = useState<null | {
+    orderRef: string;
+    waLink: string | null;
+    phone: string | null;
+    message: string;
+    emailSent: boolean;
+    emailError: string | null;
+  }>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["admin", "orders", status, search],
@@ -69,6 +79,33 @@ function OrdersPage() {
       qc.invalidateQueries({ queryKey: ["admin", "stats"] });
     } catch (e: any) {
       toast.error(e?.message ?? "Erreur");
+    }
+  }
+
+  async function confirmPayment() {
+    if (!editing) return;
+    setConfirming(true);
+    try {
+      const res = await confirm({ data: { id: editing.id } });
+      // Ouvre WhatsApp Web pré-rempli pour notifier le client.
+      if (res.waLink && typeof window !== "undefined") {
+        window.open(res.waLink, "_blank", "noopener,noreferrer");
+      }
+      setConfirmed({
+        orderRef: res.orderRef,
+        waLink: res.waLink,
+        phone: res.phone,
+        message: res.message,
+        emailSent: res.emailSent,
+        emailError: res.emailError,
+      });
+      setEditing(null);
+      qc.invalidateQueries({ queryKey: ["admin", "orders"] });
+      qc.invalidateQueries({ queryKey: ["admin", "stats"] });
+    } catch (e: any) {
+      toast.error(e?.message ?? "Erreur lors de la confirmation");
+    } finally {
+      setConfirming(false);
     }
   }
 
@@ -194,7 +231,94 @@ function OrdersPage() {
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditing(null)}>Annuler</Button>
-            <Button onClick={save}>Enregistrer</Button>
+            <Button variant="secondary" onClick={save}>Enregistrer</Button>
+            <Button
+              onClick={confirmPayment}
+              disabled={confirming || editing?.status === "completed"}
+              className="bg-emerald-600 hover:bg-emerald-500 text-white"
+            >
+              {confirming ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Confirmation…</>
+              ) : (
+                <><CheckCircle2 className="h-4 w-4 mr-2" /> Confirmer le paiement</>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!confirmed} onOpenChange={(o) => !o && setConfirmed(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+              Paiement confirmé
+            </DialogTitle>
+          </DialogHeader>
+          {confirmed && (
+            <div className="space-y-4 text-sm">
+              <p>
+                La commande <span className="font-mono">{confirmed.orderRef}</span> a
+                été marquée comme payée. Le client va recevoir une notification
+                de confirmation.
+              </p>
+
+              <div className="rounded-lg border border-border p-3 space-y-2">
+                <div className="flex items-center gap-2">
+                  <Mail className="h-4 w-4 text-muted-foreground" />
+                  <span className="font-medium">Email</span>
+                  {confirmed.emailSent ? (
+                    <Badge variant="outline" className="bg-emerald-500/15 text-emerald-500 border-emerald-500/30">
+                      Envoyé
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="bg-amber-500/15 text-amber-500 border-amber-500/30">
+                      En attente (configurer le domaine email)
+                    </Badge>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <MessageCircle className="h-4 w-4 text-muted-foreground" />
+                  <span className="font-medium">WhatsApp</span>
+                  {confirmed.waLink ? (
+                    <Badge variant="outline" className="bg-emerald-500/15 text-emerald-500 border-emerald-500/30">
+                      Fenêtre ouverte — cliquez « Envoyer »
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="bg-muted text-muted-foreground border-border">
+                      Numéro indisponible
+                    </Badge>
+                  )}
+                </div>
+                {confirmed.phone && (
+                  <p className="text-xs text-muted-foreground">
+                    Numéro client : <span className="font-mono">{confirmed.phone}</span>
+                  </p>
+                )}
+              </div>
+
+              {confirmed.waLink && (
+                <Button asChild variant="outline" className="w-full">
+                  <a href={confirmed.waLink} target="_blank" rel="noopener noreferrer">
+                    <MessageCircle className="h-4 w-4 mr-2 text-emerald-500" />
+                    Rouvrir le message WhatsApp
+                  </a>
+                </Button>
+              )}
+
+              <p className="text-xs text-muted-foreground">
+                Pensez à transmettre les accès (M3U / Xtream) au client dans les
+                minutes qui suivent.
+              </p>
+            </div>
+          )}
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setConfirmed(null)}>
+              Fermer
+            </Button>
+            <Button asChild>
+              <a href="/admin">Retour au menu principal</a>
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
