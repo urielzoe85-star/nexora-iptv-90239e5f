@@ -196,6 +196,87 @@ export const adminUpdateOrder = createServerFn({ method: "POST" })
     return row;
   });
 
+// Confirme manuellement le paiement d'une commande après réception des fonds
+// sur le compte Mobile Money de l'admin. Met la commande en "completed",
+// prépare le message WhatsApp (lien wa.me ouvert côté navigateur admin) et
+// renvoie aussi les infos pour notifier le client.
+export const adminConfirmPayment = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ context, data }) => {
+    await ensureAdmin(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: row, error } = await (supabaseAdmin as any)
+      .from("orders")
+      .update({ status: "completed" })
+      .eq("id", data.id)
+      .select("id, order_ref, full_name, email, plan_name, amount, currency, metadata")
+      .single();
+    if (error) throw new Error(error.message);
+
+    // Construit le lien WhatsApp pré-rempli vers le numéro du client.
+    const rawPhone: string | undefined = row?.metadata?.momo?.phone;
+    const e164 = (rawPhone ?? "").replace(/\D/g, "");
+    const firstName = String(row.full_name ?? "").split(" ")[0] || "client";
+    const message =
+      `Bonjour ${firstName},\n\n` +
+      `Nous confirmons la bonne réception de votre paiement pour l'abonnement ` +
+      `« ${row.plan_name} » (réf. ${row.order_ref}).\n\n` +
+      `Vos accès Nexora IPTV (M3U, identifiants Xtream Codes) vous seront ` +
+      `transmis dans les minutes qui suivent par email et WhatsApp.\n\n` +
+      `Merci pour votre confiance.\n— L'équipe Nexora IPTV`;
+    const waLink = e164
+      ? `https://wa.me/${e164}?text=${encodeURIComponent(message)}`
+      : null;
+
+    // Envoi email best-effort. Si l'infrastructure email n'est pas encore
+    // configurée (domaine en cours), on renvoie emailSent=false sans casser
+    // la confirmation.
+    let emailSent = false;
+    let emailError: string | null = null;
+    try {
+      const { getRequestHeader } = await import("@tanstack/react-start/server");
+      const proto = getRequestHeader("x-forwarded-proto") ?? "https";
+      const host = getRequestHeader("host");
+      if (host) {
+        const res = await fetch(`${proto}://${host}/lovable/email/transactional/send`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${process.env.LOVABLE_API_KEY ?? ""}`,
+          },
+          body: JSON.stringify({
+            templateName: "payment-confirmed",
+            recipientEmail: row.email,
+            idempotencyKey: `payment-confirmed-${row.order_ref}`,
+            templateData: {
+              firstName,
+              orderRef: row.order_ref,
+              planName: row.plan_name,
+            },
+          }),
+        });
+        emailSent = res.ok;
+        if (!res.ok) emailError = `HTTP ${res.status}`;
+      } else {
+        emailError = "email-infra-not-configured";
+      }
+    } catch (e: any) {
+      emailError = e?.message ?? "send-failed";
+    }
+
+    return {
+      ok: true,
+      orderRef: row.order_ref,
+      waLink,
+      phone: rawPhone ?? null,
+      message,
+      emailSent,
+      emailError,
+    };
+  });
+
 // ─── Plans ───────────────────────────────────────────────────────────────
 
 const PlanInput = z.object({
