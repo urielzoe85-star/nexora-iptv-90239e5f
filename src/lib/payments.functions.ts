@@ -257,7 +257,7 @@ export async function verifyPaymentInternal(ref: string): Promise<{ status: stri
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data: order, error } = await supabaseAdmin
     .from("orders")
-    .select("order_ref, status, sebpay_reference")
+    .select("order_ref, status, sebpay_reference, metadata")
     .eq("order_ref", ref)
     .maybeSingle();
   if (error) throw new Error(error.message);
@@ -290,6 +290,7 @@ export async function verifyPaymentInternal(ref: string): Promise<{ status: stri
     .update({
       status: mapped,
       metadata: {
+        ...((order.metadata as any) ?? {}),
         sebpay_verify_response: json,
         sebpay_verified_status: sebStatus,
         verified_at: new Date().toISOString(),
