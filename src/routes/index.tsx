@@ -89,6 +89,7 @@ function Nav() {
           <a href="#features" className="hover:text-foreground transition">{t("nav.features")}</a>
           <a href="#devices" className="hover:text-foreground transition">{t("nav.devices")}</a>
           <a href="#pricing" className="hover:text-foreground transition">{t("nav.pricing")}</a>
+          <Link to="/catalog" className="hover:text-foreground transition">{t("nav.catalog")}</Link>
           <a href="#faq" className="hover:text-foreground transition">{t("nav.faq")}</a>
           <a href="#support" className="hover:text-foreground transition">{t("nav.support")}</a>
           {locale === "fr" && (
@@ -118,6 +119,7 @@ function Nav() {
             <a href="#features" onClick={close} className="hover:text-foreground transition">{t("nav.features")}</a>
             <a href="#devices" onClick={close} className="hover:text-foreground transition">{t("nav.devices")}</a>
             <a href="#pricing" onClick={close} className="hover:text-foreground transition">{t("nav.pricing")}</a>
+            <Link to="/catalog" onClick={close} className="hover:text-foreground transition">{t("nav.catalog")}</Link>
             <a href="#faq" onClick={close} className="hover:text-foreground transition">{t("nav.faq")}</a>
             <a href="#support" onClick={close} className="hover:text-foreground transition">{t("nav.support")}</a>
             {locale === "fr" && (
