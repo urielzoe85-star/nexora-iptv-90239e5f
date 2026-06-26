@@ -141,7 +141,7 @@ function Hero() {
   const points = [t("hero.point.1"), t("hero.point.2"), t("hero.point.3"), t("hero.point.4")];
   return (
     <section id="top" className="relative min-h-screen flex items-center pt-24 overflow-hidden">
-      <img src={heroBg} alt="" width={1920} height={1080} className="absolute inset-0 w-full h-full object-cover opacity-50" />
+      <img src={heroBg} alt="" width={1920} height={1080} className="absolute inset-0 w-full h-full object-cover opacity-50" fetchPriority="high" loading="eager" />
       <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-background/70 to-background" />
       <div className="absolute inset-0" style={{ background: "var(--gradient-radial)" }} />
       <div className="relative max-w-7xl mx-auto px-6 py-20 grid lg:grid-cols-2 gap-12 items-center w-full">
