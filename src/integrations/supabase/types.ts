@@ -14,6 +14,80 @@ export type Database = {
   }
   public: {
     Tables: {
+      customer_events: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          customer_id: string
+          id: string
+          payload: Json
+          type: string
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          customer_id: string
+          id?: string
+          payload?: Json
+          type: string
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string
+          customer_id?: string
+          id?: string
+          payload?: Json
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_events_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customers: {
+        Row: {
+          country: string | null
+          created_at: string
+          email: string
+          full_name: string | null
+          id: string
+          metadata: Json
+          notes: string | null
+          phone: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          country?: string | null
+          created_at?: string
+          email: string
+          full_name?: string | null
+          id?: string
+          metadata?: Json
+          notes?: string | null
+          phone?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          country?: string | null
+          created_at?: string
+          email?: string
+          full_name?: string | null
+          id?: string
+          metadata?: Json
+          notes?: string | null
+          phone?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       email_send_log: {
         Row: {
           created_at: string
@@ -101,6 +175,45 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          body: string | null
+          channel: string
+          created_at: string
+          error: string | null
+          id: string
+          payload: Json
+          recipient: string
+          sent_at: string | null
+          status: string
+          subject: string | null
+        }
+        Insert: {
+          body?: string | null
+          channel: string
+          created_at?: string
+          error?: string | null
+          id?: string
+          payload?: Json
+          recipient: string
+          sent_at?: string | null
+          status?: string
+          subject?: string | null
+        }
+        Update: {
+          body?: string | null
+          channel?: string
+          created_at?: string
+          error?: string | null
+          id?: string
+          payload?: Json
+          recipient?: string
+          sent_at?: string | null
+          status?: string
+          subject?: string | null
+        }
+        Relationships: []
+      }
       orders: {
         Row: {
           admin_notes: string | null
@@ -108,6 +221,7 @@ export type Database = {
           created_at: string
           credentials: Json | null
           currency: string
+          customer_id: string | null
           email: string
           full_name: string
           id: string
@@ -126,6 +240,7 @@ export type Database = {
           created_at?: string
           credentials?: Json | null
           currency?: string
+          customer_id?: string | null
           email: string
           full_name: string
           id?: string
@@ -144,6 +259,7 @@ export type Database = {
           created_at?: string
           credentials?: Json | null
           currency?: string
+          customer_id?: string | null
           email?: string
           full_name?: string
           id?: string
@@ -156,7 +272,15 @@ export type Database = {
           status?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "orders_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       plans: {
         Row: {
@@ -206,6 +330,51 @@ export type Database = {
         }
         Relationships: []
       }
+      products: {
+        Row: {
+          category: string
+          created_at: string
+          currency: string
+          description: string | null
+          id: string
+          image_url: string | null
+          metadata: Json
+          name: string
+          price: number
+          sku: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          currency?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          metadata?: Json
+          name: string
+          price?: number
+          sku: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          currency?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          metadata?: Json
+          name?: string
+          price?: number
+          sku?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       site_settings: {
         Row: {
           key: string
@@ -223,6 +392,60 @@ export type Database = {
           value?: Json
         }
         Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          created_at: string
+          customer_id: string
+          expires_at: string | null
+          id: string
+          metadata: Json
+          product_id: string | null
+          renewed_at: string | null
+          started_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          expires_at?: string | null
+          id?: string
+          metadata?: Json
+          product_id?: string | null
+          renewed_at?: string | null
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          expires_at?: string | null
+          id?: string
+          metadata?: Json
+          product_id?: string | null
+          renewed_at?: string | null
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscriptions_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       suppressed_emails: {
         Row: {
@@ -247,6 +470,57 @@ export type Database = {
           reason?: string
         }
         Relationships: []
+      }
+      trials: {
+        Row: {
+          created_at: string
+          customer_id: string
+          expires_at: string | null
+          id: string
+          metadata: Json
+          notes: string | null
+          product_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          expires_at?: string | null
+          id?: string
+          metadata?: Json
+          notes?: string | null
+          product_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          expires_at?: string | null
+          id?: string
+          metadata?: Json
+          notes?: string | null
+          product_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trials_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trials_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {

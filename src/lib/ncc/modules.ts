@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, Users, Package, ShoppingBag, CreditCard, Tv2, Gift,
-  Bot, MessageCircle, Send, Mail, LifeBuoy, BarChart3, UserCog, Workflow,
+  Bot, MessageCircle, Send, Mail, Bell, LifeBuoy, BarChart3, UserCog, Workflow,
   ScrollText, Settings,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -32,17 +32,18 @@ export const NCC_MODULES: NccModule[] = [
   { id: "analytics", label: "Analytics", description: "Indicateurs de performance et tendances.", icon: BarChart3, to: "/ncc/analytics", group: "cockpit", status: "preparing", upcoming: ["Cohortes & rétention", "Funnel de conversion", "Sources de trafic"] },
   { id: "logs", label: "Journal système", description: "Tous les événements de la plateforme.", icon: ScrollText, to: "/ncc/logs", group: "cockpit", status: "preparing" },
 
-  { id: "clients", label: "Clients", description: "Base clients unifiée et CRM léger.", icon: Users, to: "/ncc/clients", group: "sales", status: "preparing", upcoming: ["Fiches clients enrichies", "Segmentation", "Historique multi-canal"] },
-  { id: "products", label: "Produits", description: "Catalogue, plans et bundles.", icon: Package, to: "/ncc/products", group: "sales", status: "preparing", upcoming: ["Bundles personnalisés", "Tarification dynamique", "Gestion des promos"] },
-  { id: "orders", label: "Commandes", description: "Suivi global des commandes.", icon: ShoppingBag, to: "/ncc/orders", group: "sales", status: "preparing", upcoming: ["Vue Kanban", "Annulations & remboursements", "Export comptable"] },
-  { id: "payments", label: "Paiements", description: "Transactions, réconciliations, payouts.", icon: CreditCard, to: "/ncc/payments", group: "sales", status: "preparing", upcoming: ["Multi-passerelles", "Disputes", "Rapprochement bancaire"] },
-  { id: "trials", label: "Essais gratuits", description: "Gestion des comptes de démonstration.", icon: Gift, to: "/ncc/trials", group: "sales", status: "preparing", upcoming: ["Génération automatique", "Expiration & relance", "Conversion tracking"] },
+  { id: "clients", label: "Clients", description: "Base clients unifiée et CRM léger.", icon: Users, to: "/ncc/clients", group: "sales", status: "ready" },
+  { id: "products", label: "Produits", description: "Catalogue, plans et bundles.", icon: Package, to: "/ncc/products", group: "sales", status: "ready" },
+  { id: "orders", label: "Commandes", description: "Suivi global des commandes.", icon: ShoppingBag, to: "/ncc/orders", group: "sales", status: "ready" },
+  { id: "payments", label: "Paiements", description: "Transactions, réconciliations, payouts.", icon: CreditCard, to: "/ncc/payments", group: "sales", status: "ready" },
+  { id: "trials", label: "Essais gratuits", description: "Gestion des comptes de démonstration.", icon: Gift, to: "/ncc/trials", group: "sales", status: "ready" },
 
-  { id: "iptv", label: "IPTV Manager", description: "Lignes, serveurs, MEGAOTT, Xtream.", icon: Tv2, to: "/ncc/iptv", group: "services", status: "preparing", upcoming: ["Création de ligne", "Renouvellements auto", "Multi-panel"] },
+  { id: "iptv", label: "IPTV Manager", description: "Abonnements IPTV, lignes, renouvellements.", icon: Tv2, to: "/ncc/iptv", group: "services", status: "ready" },
   { id: "bots", label: "Bots", description: "Orchestration des assistants automatisés.", icon: Bot, to: "/ncc/bots", group: "services", status: "preparing" },
-  { id: "whatsapp", label: "WhatsApp", description: "Conversations & campagnes WhatsApp.", icon: MessageCircle, to: "/ncc/whatsapp", group: "services", status: "preparing", upcoming: ["Inbox unifiée", "Templates approuvés", "Broadcasts"] },
-  { id: "telegram", label: "Telegram", description: "Bots et diffusions Telegram.", icon: Send, to: "/ncc/telegram", group: "services", status: "preparing" },
-  { id: "emails", label: "Emails", description: "Campagnes et transactionnels.", icon: Mail, to: "/ncc/emails", group: "services", status: "preparing", upcoming: ["Éditeur visuel", "Listes & segments", "Tracking d'ouverture"] },
+  { id: "notifications", label: "Notifications", description: "Centre multi-canal (email, WhatsApp, Telegram, SMS, in-app).", icon: Bell, to: "/ncc/notifications", group: "services", status: "ready" },
+  { id: "whatsapp", label: "WhatsApp", description: "Conversations & campagnes WhatsApp.", icon: MessageCircle, to: "/ncc/whatsapp", group: "services", status: "ready" },
+  { id: "telegram", label: "Telegram", description: "Bots et diffusions Telegram.", icon: Send, to: "/ncc/telegram", group: "services", status: "ready" },
+  { id: "emails", label: "Emails", description: "Historique des emails transactionnels.", icon: Mail, to: "/ncc/emails", group: "services", status: "ready" },
 
   { id: "support", label: "Support", description: "Tickets et helpdesk client.", icon: LifeBuoy, to: "/ncc/support", group: "ops", status: "preparing" },
   { id: "employees", label: "Employés", description: "Comptes internes, rôles, permissions.", icon: UserCog, to: "/ncc/employees", group: "ops", status: "preparing" },

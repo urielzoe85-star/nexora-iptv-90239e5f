@@ -1,11 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { NccModulePlaceholder } from "@/components/ncc/NccModulePlaceholder";
-import { getModule } from "@/lib/ncc/modules";
+import { Mail } from "lucide-react";
+import { NccPageHeader } from "@/components/ncc/NccPageHeader";
+import { NotificationsView } from "@/components/ncc/NotificationsView";
 
 export const Route = createFileRoute("/ncc/emails")({
-  component: () => {
-    const m = getModule("emails");
-    if (!m) return null;
-    return <NccModulePlaceholder module={m} />;
-  },
+  component: () => (
+    <div>
+      <NccPageHeader icon={Mail} title="Emails" description="Vue filtrée du centre de notifications : canal Email." />
+      <NotificationsView channel="email" />
+    </div>
+  ),
 });

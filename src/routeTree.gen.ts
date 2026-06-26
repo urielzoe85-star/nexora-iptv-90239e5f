@@ -35,6 +35,7 @@ import { Route as NccSettingsRouteImport } from './routes/ncc.settings'
 import { Route as NccProductsRouteImport } from './routes/ncc.products'
 import { Route as NccPaymentsRouteImport } from './routes/ncc.payments'
 import { Route as NccOrdersRouteImport } from './routes/ncc.orders'
+import { Route as NccNotificationsRouteImport } from './routes/ncc.notifications'
 import { Route as NccLogsRouteImport } from './routes/ncc.logs'
 import { Route as NccIptvRouteImport } from './routes/ncc.iptv'
 import { Route as NccEmployeesRouteImport } from './routes/ncc.employees'
@@ -53,6 +54,8 @@ import { Route as AdminContentRouteImport } from './routes/admin.content'
 import { Route as AdminAdminsRouteImport } from './routes/admin.admins'
 import { Route as NccSettingsIndexRouteImport } from './routes/ncc.settings.index'
 import { Route as NccSettingsSectionRouteImport } from './routes/ncc.settings.$section'
+import { Route as NccOrdersIdRouteImport } from './routes/ncc.orders.$id'
+import { Route as NccClientsIdRouteImport } from './routes/ncc.clients.$id'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
@@ -191,6 +194,11 @@ const NccOrdersRoute = NccOrdersRouteImport.update({
   path: '/orders',
   getParentRoute: () => NccRoute,
 } as any)
+const NccNotificationsRoute = NccNotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => NccRoute,
+} as any)
 const NccLogsRoute = NccLogsRouteImport.update({
   id: '/logs',
   path: '/logs',
@@ -281,6 +289,16 @@ const NccSettingsSectionRoute = NccSettingsSectionRouteImport.update({
   path: '/$section',
   getParentRoute: () => NccSettingsRoute,
 } as any)
+const NccOrdersIdRoute = NccOrdersIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => NccOrdersRoute,
+} as any)
+const NccClientsIdRoute = NccClientsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => NccClientsRoute,
+} as any)
 const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
   id: '/lovable/email/suppression',
   path: '/lovable/email/suppression',
@@ -344,12 +362,13 @@ export interface FileRoutesByFullPath {
   '/ncc/analytics': typeof NccAnalyticsRoute
   '/ncc/automation': typeof NccAutomationRoute
   '/ncc/bots': typeof NccBotsRoute
-  '/ncc/clients': typeof NccClientsRoute
+  '/ncc/clients': typeof NccClientsRouteWithChildren
   '/ncc/emails': typeof NccEmailsRoute
   '/ncc/employees': typeof NccEmployeesRoute
   '/ncc/iptv': typeof NccIptvRoute
   '/ncc/logs': typeof NccLogsRoute
-  '/ncc/orders': typeof NccOrdersRoute
+  '/ncc/notifications': typeof NccNotificationsRoute
+  '/ncc/orders': typeof NccOrdersRouteWithChildren
   '/ncc/payments': typeof NccPaymentsRoute
   '/ncc/products': typeof NccProductsRoute
   '/ncc/settings': typeof NccSettingsRouteWithChildren
@@ -364,6 +383,8 @@ export interface FileRoutesByFullPath {
   '/fr/': typeof FrIndexRoute
   '/ncc/': typeof NccIndexRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/ncc/clients/$id': typeof NccClientsIdRoute
+  '/ncc/orders/$id': typeof NccOrdersIdRoute
   '/ncc/settings/$section': typeof NccSettingsSectionRoute
   '/ncc/settings/': typeof NccSettingsIndexRoute
   '/api/public/sebpay/webhook': typeof ApiPublicSebpayWebhookRoute
@@ -393,12 +414,13 @@ export interface FileRoutesByTo {
   '/ncc/analytics': typeof NccAnalyticsRoute
   '/ncc/automation': typeof NccAutomationRoute
   '/ncc/bots': typeof NccBotsRoute
-  '/ncc/clients': typeof NccClientsRoute
+  '/ncc/clients': typeof NccClientsRouteWithChildren
   '/ncc/emails': typeof NccEmailsRoute
   '/ncc/employees': typeof NccEmployeesRoute
   '/ncc/iptv': typeof NccIptvRoute
   '/ncc/logs': typeof NccLogsRoute
-  '/ncc/orders': typeof NccOrdersRoute
+  '/ncc/notifications': typeof NccNotificationsRoute
+  '/ncc/orders': typeof NccOrdersRouteWithChildren
   '/ncc/payments': typeof NccPaymentsRoute
   '/ncc/products': typeof NccProductsRoute
   '/ncc/support': typeof NccSupportRoute
@@ -412,6 +434,8 @@ export interface FileRoutesByTo {
   '/fr': typeof FrIndexRoute
   '/ncc': typeof NccIndexRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/ncc/clients/$id': typeof NccClientsIdRoute
+  '/ncc/orders/$id': typeof NccOrdersIdRoute
   '/ncc/settings/$section': typeof NccSettingsSectionRoute
   '/ncc/settings': typeof NccSettingsIndexRoute
   '/api/public/sebpay/webhook': typeof ApiPublicSebpayWebhookRoute
@@ -446,12 +470,13 @@ export interface FileRoutesById {
   '/ncc/analytics': typeof NccAnalyticsRoute
   '/ncc/automation': typeof NccAutomationRoute
   '/ncc/bots': typeof NccBotsRoute
-  '/ncc/clients': typeof NccClientsRoute
+  '/ncc/clients': typeof NccClientsRouteWithChildren
   '/ncc/emails': typeof NccEmailsRoute
   '/ncc/employees': typeof NccEmployeesRoute
   '/ncc/iptv': typeof NccIptvRoute
   '/ncc/logs': typeof NccLogsRoute
-  '/ncc/orders': typeof NccOrdersRoute
+  '/ncc/notifications': typeof NccNotificationsRoute
+  '/ncc/orders': typeof NccOrdersRouteWithChildren
   '/ncc/payments': typeof NccPaymentsRoute
   '/ncc/products': typeof NccProductsRoute
   '/ncc/settings': typeof NccSettingsRouteWithChildren
@@ -466,6 +491,8 @@ export interface FileRoutesById {
   '/fr/': typeof FrIndexRoute
   '/ncc/': typeof NccIndexRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/ncc/clients/$id': typeof NccClientsIdRoute
+  '/ncc/orders/$id': typeof NccOrdersIdRoute
   '/ncc/settings/$section': typeof NccSettingsSectionRoute
   '/ncc/settings/': typeof NccSettingsIndexRoute
   '/api/public/sebpay/webhook': typeof ApiPublicSebpayWebhookRoute
@@ -506,6 +533,7 @@ export interface FileRouteTypes {
     | '/ncc/employees'
     | '/ncc/iptv'
     | '/ncc/logs'
+    | '/ncc/notifications'
     | '/ncc/orders'
     | '/ncc/payments'
     | '/ncc/products'
@@ -521,6 +549,8 @@ export interface FileRouteTypes {
     | '/fr/'
     | '/ncc/'
     | '/lovable/email/suppression'
+    | '/ncc/clients/$id'
+    | '/ncc/orders/$id'
     | '/ncc/settings/$section'
     | '/ncc/settings/'
     | '/api/public/sebpay/webhook'
@@ -555,6 +585,7 @@ export interface FileRouteTypes {
     | '/ncc/employees'
     | '/ncc/iptv'
     | '/ncc/logs'
+    | '/ncc/notifications'
     | '/ncc/orders'
     | '/ncc/payments'
     | '/ncc/products'
@@ -569,6 +600,8 @@ export interface FileRouteTypes {
     | '/fr'
     | '/ncc'
     | '/lovable/email/suppression'
+    | '/ncc/clients/$id'
+    | '/ncc/orders/$id'
     | '/ncc/settings/$section'
     | '/ncc/settings'
     | '/api/public/sebpay/webhook'
@@ -607,6 +640,7 @@ export interface FileRouteTypes {
     | '/ncc/employees'
     | '/ncc/iptv'
     | '/ncc/logs'
+    | '/ncc/notifications'
     | '/ncc/orders'
     | '/ncc/payments'
     | '/ncc/products'
@@ -622,6 +656,8 @@ export interface FileRouteTypes {
     | '/fr/'
     | '/ncc/'
     | '/lovable/email/suppression'
+    | '/ncc/clients/$id'
+    | '/ncc/orders/$id'
     | '/ncc/settings/$section'
     | '/ncc/settings/'
     | '/api/public/sebpay/webhook'
@@ -841,6 +877,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof NccOrdersRouteImport
       parentRoute: typeof NccRoute
     }
+    '/ncc/notifications': {
+      id: '/ncc/notifications'
+      path: '/notifications'
+      fullPath: '/ncc/notifications'
+      preLoaderRoute: typeof NccNotificationsRouteImport
+      parentRoute: typeof NccRoute
+    }
     '/ncc/logs': {
       id: '/ncc/logs'
       path: '/logs'
@@ -967,6 +1010,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof NccSettingsSectionRouteImport
       parentRoute: typeof NccSettingsRoute
     }
+    '/ncc/orders/$id': {
+      id: '/ncc/orders/$id'
+      path: '/$id'
+      fullPath: '/ncc/orders/$id'
+      preLoaderRoute: typeof NccOrdersIdRouteImport
+      parentRoute: typeof NccOrdersRoute
+    }
+    '/ncc/clients/$id': {
+      id: '/ncc/clients/$id'
+      path: '/$id'
+      fullPath: '/ncc/clients/$id'
+      preLoaderRoute: typeof NccClientsIdRouteImport
+      parentRoute: typeof NccClientsRoute
+    }
     '/lovable/email/suppression': {
       id: '/lovable/email/suppression'
       path: '/lovable/email/suppression'
@@ -1063,6 +1120,30 @@ const FrRouteChildren: FrRouteChildren = {
 
 const FrRouteWithChildren = FrRoute._addFileChildren(FrRouteChildren)
 
+interface NccClientsRouteChildren {
+  NccClientsIdRoute: typeof NccClientsIdRoute
+}
+
+const NccClientsRouteChildren: NccClientsRouteChildren = {
+  NccClientsIdRoute: NccClientsIdRoute,
+}
+
+const NccClientsRouteWithChildren = NccClientsRoute._addFileChildren(
+  NccClientsRouteChildren,
+)
+
+interface NccOrdersRouteChildren {
+  NccOrdersIdRoute: typeof NccOrdersIdRoute
+}
+
+const NccOrdersRouteChildren: NccOrdersRouteChildren = {
+  NccOrdersIdRoute: NccOrdersIdRoute,
+}
+
+const NccOrdersRouteWithChildren = NccOrdersRoute._addFileChildren(
+  NccOrdersRouteChildren,
+)
+
 interface NccSettingsRouteChildren {
   NccSettingsSectionRoute: typeof NccSettingsSectionRoute
   NccSettingsIndexRoute: typeof NccSettingsIndexRoute
@@ -1081,12 +1162,13 @@ interface NccRouteChildren {
   NccAnalyticsRoute: typeof NccAnalyticsRoute
   NccAutomationRoute: typeof NccAutomationRoute
   NccBotsRoute: typeof NccBotsRoute
-  NccClientsRoute: typeof NccClientsRoute
+  NccClientsRoute: typeof NccClientsRouteWithChildren
   NccEmailsRoute: typeof NccEmailsRoute
   NccEmployeesRoute: typeof NccEmployeesRoute
   NccIptvRoute: typeof NccIptvRoute
   NccLogsRoute: typeof NccLogsRoute
-  NccOrdersRoute: typeof NccOrdersRoute
+  NccNotificationsRoute: typeof NccNotificationsRoute
+  NccOrdersRoute: typeof NccOrdersRouteWithChildren
   NccPaymentsRoute: typeof NccPaymentsRoute
   NccProductsRoute: typeof NccProductsRoute
   NccSettingsRoute: typeof NccSettingsRouteWithChildren
@@ -1101,12 +1183,13 @@ const NccRouteChildren: NccRouteChildren = {
   NccAnalyticsRoute: NccAnalyticsRoute,
   NccAutomationRoute: NccAutomationRoute,
   NccBotsRoute: NccBotsRoute,
-  NccClientsRoute: NccClientsRoute,
+  NccClientsRoute: NccClientsRouteWithChildren,
   NccEmailsRoute: NccEmailsRoute,
   NccEmployeesRoute: NccEmployeesRoute,
   NccIptvRoute: NccIptvRoute,
   NccLogsRoute: NccLogsRoute,
-  NccOrdersRoute: NccOrdersRoute,
+  NccNotificationsRoute: NccNotificationsRoute,
+  NccOrdersRoute: NccOrdersRouteWithChildren,
   NccPaymentsRoute: NccPaymentsRoute,
   NccProductsRoute: NccProductsRoute,
   NccSettingsRoute: NccSettingsRouteWithChildren,
@@ -1146,13 +1229,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
