@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { SETTINGS_SECTIONS } from "@/lib/ncc/modules";
 import { Sparkles, Wrench } from "lucide-react";
 
-export const Route = createFileRoute("/ncc/settings/")({
+export const Route = createFileRoute("/ncc/settings/$section")({
   component: SettingsSectionPage,
   notFoundComponent: () => (
     <div className="text-sm text-muted-foreground">Section introuvable.</div>
