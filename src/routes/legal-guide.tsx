@@ -31,7 +31,7 @@ const FAQ = [
 export const Route = createFileRoute("/legal-guide")({
   head: () => ({
     meta: [
-      { title: "Is IPTV Legal? Safety & Legality Guide (USA, UK, EU) — Nexora IPTV" },
+      { title: "Is IPTV Legal? Safety Guide — Nexora IPTV" },
       { name: "description", content: "Clear guide to IPTV legality and safety in the USA, UK, EU, Canada and Australia. How to spot a trustworthy provider and stream safely." },
       { property: "og:title", content: "Is IPTV Legal? Safety & Legality Guide — Nexora IPTV" },
       { property: "og:description", content: "IPTV legality explained for the USA, UK, EU, Canada and Australia, plus a checklist to choose a safe provider." },
