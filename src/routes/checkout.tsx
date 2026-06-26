@@ -340,14 +340,14 @@ function PaymentStep(props: {
             <input
               required value={fullName} onChange={e => setFullName(e.target.value)}
               placeholder="John Doe"
-              className="w-full bg-transparent outline-none text-sm placeholder:text-muted-foreground/60"
+              className="w-full bg-transparent outline-none text-sm placeholder:text-muted-foreground"
             />
           </Field>
           <Field icon={<Mail className="h-4 w-4" />} label="Adresse email">
             <input
               required type="email" value={email} onChange={e => setEmail(e.target.value)}
               placeholder="you@email.com"
-              className="w-full bg-transparent outline-none text-sm placeholder:text-muted-foreground/60"
+              className="w-full bg-transparent outline-none text-sm placeholder:text-muted-foreground"
             />
           </Field>
         </div>
@@ -395,7 +395,7 @@ function PaymentStep(props: {
               required type="tel" value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder={countryConf ? `+${countryConf.dial} 96XXXXXXX` : "+22996XXXXXXX"}
-              className="w-full bg-transparent outline-none text-sm placeholder:text-muted-foreground/60"
+              className="w-full bg-transparent outline-none text-sm placeholder:text-muted-foreground"
             />
           </Field>
           <p className="text-xs text-muted-foreground">
