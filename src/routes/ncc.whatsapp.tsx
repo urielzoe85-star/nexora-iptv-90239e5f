@@ -1,11 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { NccModulePlaceholder } from "@/components/ncc/NccModulePlaceholder";
-import { getModule } from "@/lib/ncc/modules";
+import { MessageCircle } from "lucide-react";
+import { NccPageHeader } from "@/components/ncc/NccPageHeader";
+import { NotificationsView } from "@/components/ncc/NotificationsView";
 
 export const Route = createFileRoute("/ncc/whatsapp")({
-  component: () => {
-    const m = getModule("whatsapp");
-    if (!m) return null;
-    return <NccModulePlaceholder module={m} />;
-  },
+  component: () => (
+    <div>
+      <NccPageHeader icon={MessageCircle} title="WhatsApp" description="Vue filtrée du centre de notifications : canal WhatsApp." />
+      <NotificationsView channel="whatsapp" />
+    </div>
+  ),
 });

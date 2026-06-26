@@ -1,11 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { NccModulePlaceholder } from "@/components/ncc/NccModulePlaceholder";
-import { getModule } from "@/lib/ncc/modules";
+import { Send } from "lucide-react";
+import { NccPageHeader } from "@/components/ncc/NccPageHeader";
+import { NotificationsView } from "@/components/ncc/NotificationsView";
 
 export const Route = createFileRoute("/ncc/telegram")({
-  component: () => {
-    const m = getModule("telegram");
-    if (!m) return null;
-    return <NccModulePlaceholder module={m} />;
-  },
+  component: () => (
+    <div>
+      <NccPageHeader icon={Send} title="Telegram" description="Vue filtrée du centre de notifications : canal Telegram." />
+      <NotificationsView channel="telegram" />
+    </div>
+  ),
 });

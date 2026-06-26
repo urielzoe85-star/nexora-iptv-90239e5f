@@ -1,119 +1,156 @@
-# NEXORA ERP — Phase 1 : Socle du NCC
 
-## Objectif
+# NEXORA ERP — Phase 3 : Core Business Modules
 
-Créer le squelette du **NEXORA Control Center** (back-office privé modulaire) en parallèle de l'admin existant, sans toucher au Front Office, à SebPay, au catalogue, au tunnel de commande, au SEO, aux traductions ni aux emails.
+## ⚠️ Constat préalable
 
-## Principe de cohabitation
+Le plan parle de réutiliser « les services métier créés lors de la phase précédente ». Or, dans le code actuel, la Phase 1 a livré le **squelette NCC** (sidebar, placeholders, dashboard mock) et **aucun service métier** : pas de dossier `src/domain/`, `src/services/`, pas d'entités, pas de repositories. Seuls existent les serverFns hérités du front public (`orders.functions.ts`, `plans.functions.ts`, `payments.functions.ts`).
 
-- L'admin actuel (`/admin/*`) reste **inchangé** et 100 % fonctionnel.
-- Le NCC vit sous un nouveau préfixe **`/ncc/*`** complètement isolé.
-- Aucune route publique, aucun composant existant, aucun fichier `*.functions.ts` n'est modifié.
-- Réutilise l'auth admin déjà en place (`getMyAdminStatus` + `requireSupabaseAuth`) — mêmes comptes, même garde.
+Je propose donc d'inclure dans cette phase la **construction du Service Layer** qui aurait dû appartenir à la Phase 2, puis les modules UI par-dessus. Si tu as déjà commencé une Phase 2 ailleurs (autre branche, autre projet), dis-le moi avant que je lance l'implémentation.
 
-## Arborescence ajoutée
+## Architecture cible
 
 ```text
-src/routes/
-  ncc.tsx                      # Layout + garde admin (ssr:false)
-  ncc.index.tsx                # Dashboard (mock data)
-  ncc.clients.tsx              # "En préparation"
-  ncc.products.tsx
-  ncc.orders.tsx
-  ncc.payments.tsx
-  ncc.iptv.tsx                 # IPTV Manager
-  ncc.trials.tsx               # Essais gratuits
-  ncc.bots.tsx
-  ncc.whatsapp.tsx
-  ncc.telegram.tsx
-  ncc.emails.tsx
-  ncc.support.tsx
-  ncc.analytics.tsx
-  ncc.employees.tsx
-  ncc.automation.tsx
-  ncc.logs.tsx                 # Journal système
-  ncc.settings.tsx             # Layout paramètres + Outlet
-  ncc.settings.index.tsx       # Redirige vers /ncc/settings/company
-  ncc.settings.$section.tsx    # company | payments | iptv | whatsapp | telegram | emails | seo | security | users | api | backups
+src/
+  domain/                       # ← nouveau : couche métier pure (types + interfaces)
+    types.ts                    # ID, Money, Status enums, pagination
+    entities/
+      Customer.ts
+      Product.ts
+      Order.ts
+      Payment.ts
+      Trial.ts
+      Subscription.ts
+      Notification.ts
+    repositories/               # interfaces (ports)
+      CustomerRepository.ts
+      ProductRepository.ts
+      OrderRepository.ts
+      PaymentRepository.ts
+      TrialRepository.ts
+      SubscriptionRepository.ts
+      NotificationRepository.ts
+    services/                   # logique métier (use-cases)
+      CustomerService.ts
+      ProductService.ts
+      OrderService.ts
+      PaymentService.ts         # façade indépendante du provider
+      TrialService.ts
+      SubscriptionService.ts
+      NotificationService.ts    # façade indépendante du canal
+      DashboardService.ts       # agrège KPIs
+    providers/                  # adapters branchables
+      payments/
+        PaymentProvider.ts      # interface commune
+        SebPayProvider.ts       # réel (réutilise lib existante)
+        StripeProvider.ts       # stub
+        PayPalProvider.ts       # stub
+        OrangeMoneyProvider.ts  # stub
+        MtnMoMoProvider.ts      # stub
+        CryptoProvider.ts       # stub
+        registry.ts             # map id → provider
+      notifications/
+        NotificationChannel.ts  # interface commune
+        EmailChannel.ts         # stub (logue seulement)
+        WhatsAppChannel.ts      # stub
+        TelegramChannel.ts      # stub
+        SmsChannel.ts           # stub
+        InAppChannel.ts         # stub
+        registry.ts
 
-src/components/ncc/
-  NccShell.tsx                 # Sidebar + topbar + notifications
-  NccSidebar.tsx               # Nav groupée (Cockpit / Ventes / Comms / Système)
-  NccTopbar.tsx                # Search, notif bell, user menu
-  NccModulePlaceholder.tsx     # Composant "En préparation" réutilisable
-  NccPageHeader.tsx
-  NccStatCard.tsx
-  NccNotificationsPanel.tsx    # Sheet, mock
-  modules/
-    DashboardKpis.tsx          # 4 cards mock
-    DashboardRevenueChart.tsx  # Recharts area, mock
-    DashboardActivityFeed.tsx  # Liste mock
-    LogsTable.tsx              # Table vide + filtres (sans data)
+  infrastructure/               # ← nouveau : adapters concrets (Supabase)
+    supabase/
+      SupabaseCustomerRepository.ts
+      SupabaseProductRepository.ts
+      SupabaseOrderRepository.ts
+      SupabasePaymentRepository.ts
+      SupabaseTrialRepository.ts
+      SupabaseSubscriptionRepository.ts
+      SupabaseNotificationRepository.ts
+    container.ts                # composition root : construit les services
 
-src/lib/ncc/
-  modules.ts                   # Registre central : id, label, icon, route, group, status ('ready'|'preparing')
-  mock-dashboard.ts            # Données fictives KPIs/series/activity
+  lib/
+    ncc.functions.ts            # createServerFn protégés admin, délèguent au container
+
+  routes/ncc.*.tsx              # remplacent les placeholders, n'appellent QUE ncc.functions.ts
+  components/ncc/modules/       # composants UI par module
 ```
 
-## Système de modules
+**Règle stricte :** aucun composant React n'importe `@/integrations/supabase/*` ni un repository. Les pages appellent uniquement des serverFns qui appellent les services.
 
-Un seul fichier `src/lib/ncc/modules.ts` exporte la liste source de vérité utilisée par :
-- la sidebar (groupes, ordre, icônes)
-- les pages placeholder (titre, description, statut)
-- futurs ajouts : un nouveau module = une entrée + un fichier route.
+## Base de données (migration unique)
 
-```ts
-type ModuleStatus = 'ready' | 'preparing';
-type NccModule = { id; label; description; icon; to; group; status };
-```
+Nouvelles tables dans `public`, avec GRANTs + RLS (lecture/écriture réservées aux admins via `has_role`) :
 
-Groupes : **Cockpit** (Dashboard, Analytics, Logs) · **Ventes** (Clients, Produits, Commandes, Paiements, Essais) · **Services** (IPTV, Bots, WhatsApp, Telegram, Emails) · **Opérations** (Support, Employés, Automatisation) · **Système** (Paramètres).
+- `customers` : id, email (unique), full_name, phone, country, status (`active|disabled`), notes, created_at, updated_at.
+- `products` : id, sku (unique), name, description, price, currency, category (`iptv|digital|service|license|subscription`), status (`active|archived`), image_url, metadata jsonb, created_at, updated_at.
+- `subscriptions` : id, customer_id, product_id, status (`pending|active|suspended|expired|cancelled`), started_at, expires_at, renewed_at, metadata, created_at, updated_at.
+- `trials` : id, customer_id, product_id (nullable), status (`active|expired|converted|revoked`), expires_at, notes, created_at, updated_at.
+- `notifications` : id, channel (`email|whatsapp|telegram|sms|in_app`), recipient, subject, body, status (`queued|sent|failed`), payload jsonb, created_at, sent_at.
+- `customer_events` : id, customer_id, type, payload jsonb, created_at (audit fiche client).
 
-## Dashboard
+La table `orders` existe déjà : on ajoute juste une colonne nullable `customer_id uuid references customers(id)` (backfill optionnel via email match dans la migration) sans casser le tunnel SebPay actuel — la colonne reste optionnelle et tous les flux publics ignorent son existence.
 
-- 4 `NccStatCard` (Revenu MRR, Clients actifs, Commandes 24h, Taux conversion) — mock.
-- `DashboardRevenueChart` avec Recharts (déjà installé).
-- `DashboardActivityFeed` — 6 événements fictifs.
-- Bandeau d'alerte "Données de démonstration".
+Les tables `plans`, `orders`, `email_send_log`, `user_roles`, etc. restent intactes.
 
-## Page placeholder "En préparation"
+## Modules livrés (UI + service)
 
-`NccModulePlaceholder` : icône module, titre, description, badge "En préparation", liste à puces des sous-fonctions futures, CTA désactivé. Utilisée par tous les modules non-dashboard sauf Logs et Settings.
+### 1. Clients (`/ncc/clients`)
+Liste paginée + recherche (email/nom/téléphone) + tri (created_at, nom) + filtre statut. Drawer/page fiche `/ncc/clients/$id` avec : infos, statut (activer/désactiver), édition inline, et **onglets** Commandes / Abonnements / Paiements / Essais / Tickets (les 4 derniers lisent via les autres services ; Tickets = placeholder, module Support hors scope). Historique = `customer_events` (créé/modifié/désactivé).
 
-## Journal système
+### 2. Produits (`/ncc/products`)
+Grille + filtres catégorie/statut, création/édition (drawer), upload image via bucket Supabase Storage `product-images` (créé par migration, public-read). Architecture des catégories extensible (enum + helper `registerCategory`).
 
-`LogsTable` : header de table (Date, Niveau, Source, Message, Acteur), filtres (niveau, source, période) **non câblés**, état vide explicite. Aucune écriture, aucune lecture DB.
+### 3. Commandes (`/ncc/orders`)
+Liste filtrable (statut, méthode, client, période), détail `/ncc/orders/$id` avec : client lié, produit lié, paiement lié, timeline des changements de statut. Transitions de statut contrôlées par `OrderService.transition()` (machine d'états explicite). Statuts : pending → paid → processing → completed, plus cancelled / refunded.
 
-## Notifications
+### 4. Paiements (`/ncc/payments`)
+Liste des transactions (lecture `orders` + future `payments` séparée si besoin). Détail paiement, lien commande. Sélecteur de provider dans la page de détail (lecture seule pour l'instant) ; les 6 providers sont enregistrés dans `providers/payments/registry.ts` avec une méthode `createCharge()` qui throw `NotImplementedError` sauf SebPay (déjà fonctionnel via le webhook public existant — non modifié).
 
-`NccNotificationsPanel` ouvert via cloche dans la topbar, contenu mock (3 notifs d'exemple), bouton "Tout marquer comme lu" désactivé.
+### 5. Essais gratuits (`/ncc/trials`)
+Création manuelle (sélection client + produit + date d'expiration), liste avec statut calculé (expiré si `expires_at < now`), bouton « révoquer ». Pas d'automatisation.
 
-## Paramètres
+### 6. Abonnements IPTV (`/ncc/iptv`)
+CRUD complet via `SubscriptionService` : create, activate, renew (étend `expires_at`), suspend, expire. Aucun appel MEGAOTT — laissé comme méthode `IPTVProvider.provision()` non câblée.
 
-`ncc.settings.tsx` : layout 2 colonnes (nav verticale des 11 catégories à gauche + `<Outlet />`).
-`ncc.settings.$section.tsx` : valide `section` contre la liste blanche, affiche `NccModulePlaceholder` avec le titre de la catégorie. Aucune logique.
+### 7. Notifications (`/ncc/emails` étendu en centre multi-canal)
+Page « Centre de notifications » sous `/ncc/notifications` (nouvelle entrée sidebar dans le groupe **Services**, à côté d'Emails). Liste historique + filtre par canal. Bouton « Envoyer test » qui passe par `NotificationService.send({ channel, recipient, ... })` ; tous les canaux loguent en base avec `status='queued'` puis simulent un envoi (`status='sent'`). Les pages existantes `/ncc/emails`, `/ncc/whatsapp`, `/ncc/telegram` deviennent des vues filtrées du centre.
 
-## Garde d'accès
+### 8. Dashboard évolué (`/ncc`)
+`DashboardService.getKpis()` agrège : clients actifs, commandes (24h / total), revenus (somme `orders.amount where status in paid,completed`), produits actifs, abonnements actifs, essais en cours. Branche les vraies données ; le bandeau « mock » est supprimé. Les graphiques (revenue chart, activity feed) restent en mock tant qu'il n'y a pas assez d'historique, avec une note discrète.
 
-`ncc.tsx` réutilise exactement le pattern de `src/routes/admin.tsx` :
-- `ssr: false`
-- check `supabase.auth.getSession()` puis `getMyAdminStatus()`
-- redirection vers `/admin/login` si non connecté ou non-admin
-- aucun nouveau serverFn, aucune migration DB
+## Sécurité
 
-## Hors périmètre (à proposer en rapport séparé après cette phase)
+- Tous les serverFns NCC : `.middleware([requireSupabaseAuth])` + check `has_role(uid, 'admin')` (réutilise `getMyAdminStatus`).
+- RLS strict sur toutes les nouvelles tables : `using (public.has_role(auth.uid(), 'admin'))` pour SELECT/INSERT/UPDATE/DELETE.
+- GRANT `SELECT, INSERT, UPDATE, DELETE` à `authenticated`, `ALL` à `service_role`. Aucun `anon`.
+- Bucket Storage `product-images` : public-read, write réservé aux admins.
 
-- Migration progressive `/admin/*` → `/ncc/*` (les deux coexistent pendant la transition).
-- Table `system_logs` + helper `logEvent()` côté serverFns existants.
-- Table `notifications` + realtime.
-- Refonte du registre de modules en plugins dynamiques.
-- Rôles fins (au-delà de `admin`) via `user_roles` enum étendu.
+## Hors scope (respecté)
 
-## Vérifications avant livraison
+- Pas de modification de `/`, `/catalog`, `/checkout`, `/fr`, `/en`, `/de`, `/payment/*`, `/admin/*`, `/api/public/sebpay/webhook`, `/dashboard`, `/track`, des emails, du SEO, des traductions.
+- Pas de changement aux serverFns existants (`orders.functions.ts`, `plans.functions.ts`, `payments.functions.ts`, `admin.functions.ts`).
+- Pas d'intégration réelle de Stripe/PayPal/Orange/MTN/Crypto/WhatsApp/Telegram/SMS — uniquement interfaces et stubs.
+- Pas d'intégration MEGAOTT.
+- Pas d'automatisation (cron, triggers, expirations auto).
 
-- `bun run build` (ou typecheck) passe.
-- `/admin`, `/`, `/catalog`, `/checkout`, `/fr`, `/en`, `/de`, `/payment/success`, `/api/public/sebpay/webhook` inchangés.
-- `/ncc` redirige vers `/admin/login` si non-admin, affiche le dashboard sinon.
-- Chaque entrée de sidebar mène à une page qui s'affiche (placeholder ou réelle).
+## Documentation
 
-Confirme-moi pour que je lance l'implémentation, ou indique les modules à retirer/renommer.
+À la fin : `.lovable/phase-3.md` listant modules livrés, schéma de relations (diagramme ASCII), services et leurs méthodes, points d'extension (où brancher un nouveau provider, canal, catégorie produit, statut de commande).
+
+## Validation
+
+- `bun run build` passe.
+- Tous les flux publics existants restent fonctionnels (test manuel via preview).
+- Chaque page NCC nouvelle s'affiche et utilise la vraie DB.
+- `rg "from \"@/integrations/supabase/client\"" src/routes/ncc src/components/ncc` ne ressort **rien** (aucun import direct depuis l'UI).
+
+## Volume estimé
+
+~45 nouveaux fichiers, 1 migration SQL, 0 fichier supprimé, ~6 fichiers existants modifiés (sidebar + registre `modules.ts` pour passer les modules de `preparing` à `ready`, plus le dashboard).
+
+---
+
+**Confirme** pour que je lance l'implémentation, ou indique :
+1. Si une Phase 2 (service layer) existe déjà ailleurs qu'il faudrait importer plutôt que recréer.
+2. S'il faut retirer un module de cette phase (ex. décaler IPTV à plus tard).
+3. Si tu préfères que je livre en plusieurs sous-itérations (ex. d'abord Service Layer + Clients + Produits, puis le reste).
