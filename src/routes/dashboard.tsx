@@ -69,7 +69,7 @@ function Dashboard() {
             <input
               type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
               placeholder="you@email.com"
-              className="w-full bg-transparent outline-none text-sm placeholder:text-muted-foreground/60"
+              className="w-full bg-transparent outline-none text-sm placeholder:text-muted-foreground"
             />
           </div>
           <button type="submit" className="btn-gold btn-gold-hover px-6 py-2 rounded-full text-sm font-semibold">

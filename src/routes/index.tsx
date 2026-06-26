@@ -166,7 +166,7 @@ function Hero() {
         </div>
         <div className="hidden lg:block relative" style={{ animation: "float-slow 6s ease-in-out infinite" }}>
           <div className="absolute -inset-10 bg-[color:var(--gold)]/20 blur-3xl rounded-full" />
-          <img src={devicesImg} alt="Streaming on Smart TV, phone, tablet and laptop" width={1600} height={1024} className="relative rounded-2xl glass p-3" loading="eager" />
+          <img src={devicesImg} alt="Streaming on Smart TV, phone, tablet and laptop" width={1920} height={1080} className="relative rounded-2xl glass p-3" loading="eager" />
         </div>
       </div>
     </section>
@@ -222,7 +222,7 @@ function Devices() {
           <p className="text-muted-foreground mt-4">{t("devices.sub")}</p>
         </div>
         <div className="glass rounded-3xl p-8 md:p-12">
-          <img src={devicesImg} alt="Premium streaming on multiple devices" width={1600} height={1024} loading="lazy" className="rounded-2xl w-full mb-10" />
+          <img src={devicesImg} alt="Premium streaming on multiple devices" width={1920} height={1080} loading="lazy" className="rounded-2xl w-full mb-10" />
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
             {devices.map(({ icon: Icon, key }) => (
               <div key={key} className="flex flex-col items-center gap-2 p-4 rounded-xl glass hover:border-[color:var(--gold)]/40 transition">
@@ -612,7 +612,7 @@ function Footer() {
       <div className="max-w-7xl mx-auto px-6 mt-12 pt-6 border-t border-[color:var(--gold)]/10 text-xs text-muted-foreground flex flex-wrap items-center justify-between gap-3">
         <span>© {new Date().getFullYear()} Nexora IPTV. {t("footer.rights")}</span>
         <div className="flex items-center gap-3">
-          <Link to="/admin/login" className="text-muted-foreground/40 hover:text-muted-foreground transition">Admin</Link>
+          <Link to="/admin/login" className="text-muted-foreground hover:text-foreground transition">Admin</Link>
           <span>nexora-iptv.com</span>
         </div>
       </div>
