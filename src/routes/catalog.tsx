@@ -10,7 +10,7 @@ import { useT, useI18n, LanguageSwitcher } from "@/i18n/context";
 export const Route = createFileRoute("/catalog")({
   head: () => ({
     meta: [
-      { title: "Catalogue Nexora IPTV — Chaînes, bouquets, films, séries & VOD" },
+      { title: "Catalogue Nexora IPTV — Chaînes, films & VOD" },
       { name: "description", content: "Aperçu du catalogue Nexora IPTV : chaînes par pays, bouquets premium, films, séries et VOD. Catalogue mis à jour chaque semaine." },
       { property: "og:title", content: "Catalogue Nexora IPTV — Chaînes, films, séries & VOD" },
       { property: "og:description", content: "Découvrez en un coup d'œil ce que contient un abonnement Nexora IPTV." },
