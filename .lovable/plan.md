@@ -1,111 +1,97 @@
-# NEXORA™ ERP – Version 1.6 — Automation Engine
+# Workflow semi-automatique MEGAOTT depuis les commandes
 
-Moteur d'automatisation **générique, extensible, sans modification du code existant**. Il s'appuie sur les services métier déjà en place (orders, payments SebPay, IPTV, MEGAOTT, Integration Hub) via une **API interne** et une couche d'événements.
+## Vérification technique iframe MEGAOTT
 
-## Architecture
+J'ai testé `https://megaott.net` :
+- Aucun header `X-Frame-Options` ni `Content-Security-Policy: frame-ancestors` n'est renvoyé sur la racine.
+- **MAIS** : MEGAOTT est protégé par **Cloudflare Bot Management** (la page `/login` renvoie déjà un `403`/challenge). En iframe cross-origin, Cloudflare bloquera quasi systématiquement le rendu (challenge JS + cookies tiers refusés par le navigateur).
+- De plus, même si l'iframe affichait la page, le **login MEGAOTT serait demandé à chaque ouverture** (les cookies de session sont 3rd-party et bloqués par défaut sur Chrome/Safari/Firefox).
+
+**Conclusion** : l'iframe intégrée n'est pas une option fiable.
+
+## Alternative retenue (sans casser le workflow)
+
+Ouvrir MEGAOTT dans une **fenêtre popup à côté** (window.open, taille ~1200×800) plutôt qu'en iframe. NEXORA garde la commande affichée à gauche, MEGAOTT s'ouvre en fenêtre séparée à droite. L'administrateur travaille naturellement en double écran logique, puis revient sur NEXORA pour saisir les identifiants générés.
+
+C'est la solution utilisée par tous les ERP qui s'interfacent avec des panels protégés Cloudflare (Whapi, Smartmarketing, etc.).
+
+## Plan d'implémentation
+
+### 1. Détails commande — nouvelle section "Livraison IPTV"
+
+Dans `src/routes/ncc.orders.$id.tsx`, ajouter sous la carte existante une nouvelle carte `IptvDeliveryCard` visible uniquement si `status ∈ {processing, completed}`.
+
+États successifs (calculés depuis `orders.metadata.iptv_delivery`) :
 
 ```text
-src/automation/
-├── core/
-│   ├── events.ts          // EventBus + catalogue typé des événements métier
-│   ├── workflow.ts        // Types: Workflow, Trigger, Condition, Action, Step
-│   ├── engine.ts          // Exécuteur (run, conditions, retry, journal)
-│   ├── registry.ts        // Registre des workflows (id → définition)
-│   ├── queue.ts           // Wrapper file d'attente (réutilise integration-hub/queue)
-│   └── api.ts             // API interne: triggerEvent / runWorkflow / replay
-├── actions/
-│   ├── orders.actions.ts      // markPaid, markCompleted, generateInvoice…
-│   ├── iptv.actions.ts        // createSubscription, renew, activate, suspend (stub MEGAOTT-ready)
-│   ├── logs.actions.ts        // logStep
-│   └── notifications.actions.ts // no-op (préparé v1.7)
-└── workflows/
-    ├── order-created.workflow.ts
-    ├── payment-confirmed.workflow.ts
-    ├── payment-failed.workflow.ts
-    ├── subscription-renewal.workflow.ts
-    ├── subscription-activate.workflow.ts
-    └── subscription-suspend.workflow.ts
+[1] Aucun abonnement      → bouton "Créer abonnement MEGAOTT" (ouvre popup)
+                          → bouton "Abonnement créé — saisir les infos"
+[2] Infos saisies         → récap (username, password, dns, expiration…)
+                          → boutons "Envoyer par Email / WhatsApp / Telegram"
+[3] Envoyé au client      → badge timestamp + canal
 ```
 
-**Aucun fichier existant n'est modifié** sauf:
-- `src/routeTree.gen.ts` (auto)
-- branchements EventBus **non-intrusifs** : un seul `emit()` ajouté dans le webhook SebPay et le service orders, derrière un try/catch silencieux (zéro effet si l'engine est désactivé).
+### 2. Ouverture MEGAOTT
 
-## Base de données (1 migration)
+Bouton "Créer abonnement MEGAOTT" :
+- `window.open(megaottPanelUrl, "megaott_panel", "width=1280,height=900")`
+- L'URL provient de `iptv_providers` (champ `api_url`, nettoyé : on garde l'origine, sans `/api/v1`).
+- Un toast informe "Connectez-vous à MEGAOTT, créez l'abonnement, puis revenez ici."
 
-- `automation_workflows` : id, key (unique), name, description, enabled, trigger_event, definition (jsonb), created_at/updated_at
-- `automation_runs` : id, workflow_id, workflow_key, trigger_event, payload (jsonb), status (pending|running|success|failed|cancelled), started_at, finished_at, duration_ms, error, actor_id
-- `automation_steps` : id, run_id, step_index, name, status, started_at, finished_at, duration_ms, input (jsonb), output (jsonb), error
-- `automation_queue` : id, workflow_key, payload (jsonb), status (queued|processing|done|failed), attempts, scheduled_at, locked_at, last_error
+### 3. Saisie des informations retournées par MEGAOTT
 
-RLS : admin-only (lecture/écriture via `has_role(auth.uid(),'admin')`). GRANT authenticated + service_role.
+Nouveau composant `MegaottDeliveryForm.tsx` (modal) avec les champs :
+- `megaott_subscription_id` (texte)
+- `username` (texte)
+- `password` (texte)
+- `package` (texte)
+- `expires_at` (date)
+- `dns_link` (url)
+- `dns_link_samsung_lg` (url, optionnel)
+- `portal_link` (url, optionnel)
+- `note` (textarea, optionnel)
 
-## Server functions (admin-only)
+Server fn `saveMegaottDelivery({ orderId, ...fields })` (dans `src/lib/orders.functions.ts`, protégée par `requireSupabaseAuth` + `has_role admin`) :
+- crée une ligne dans `iptv_accounts` (status `active`, metadata complète) ;
+- met à jour `orders.metadata.iptv_delivery = { iptv_account_id, delivery_status: "ready_to_send", created_at }` ;
+- ne touche pas au statut commande tant que l'admin n'a pas envoyé au client (cf. ci-dessous).
 
-`src/lib/automation.functions.ts` :
-- `listWorkflows`, `toggleWorkflow`, `runWorkflowManually(key, payload)`
-- `listRuns({ status?, workflow?, limit })`, `getRun(id)` (avec steps)
-- `replayRun(id)` (relance depuis l'échec)
-- `getAutomationKpis()` (actifs, exécutés 24h, erreurs, file d'attente, durée moyenne)
+### 4. Statuts commande
 
-`src/lib/automation-events.functions.ts` (interne, utilisé par les modules) :
-- `emitBusinessEvent({ event, payload, actor_id? })` → résout les workflows liés, les insère en `automation_queue` ou exécute synchronement selon config.
+Pour éviter une migration sur l'enum `orders.status`, on garde l'enum existant et on ajoute deux champs dans `orders.metadata.iptv_delivery` :
+- `delivery_status`: `"pending" | "ready_to_send" | "sent"`
+- `sent_at`, `sent_channel`
 
-## API interne
+Badge affiché dans la carte : « Abonnement créé · Prêt à envoyer ».
 
-`automationApi` exporté depuis `src/automation/index.ts` :
-```ts
-automationApi.emit(event, payload)
-automationApi.run(workflowKey, payload)
-automationApi.replay(runId)
-```
-Réutilisable par Telegram/WhatsApp/mobile/IA (futur).
+### 5. Envoi client (boutons d'architecture uniquement)
 
-## Événements catalogués
+Trois boutons (Email / WhatsApp / Telegram). Chacun appelle la même server fn `markIptvDeliverySent({ orderId, channel })` qui :
+- met `metadata.iptv_delivery.delivery_status = "sent"` + `sent_at` + `sent_channel` ;
+- enregistre une ligne dans `notifications` (canal correspondant, status `sent`) — réutilise `NOTIFICATION_CHANNELS_REGISTRY` qui est déjà un stub ; aucun envoi réel pour le moment.
+- ajoute un log `iptv_logs`.
 
-`order.created`, `payment.confirmed`, `payment.failed`, `customer.created`, `subscription.created`, `subscription.renewed`, `subscription.expired`, `trial.requested`, `support.ticket.created`. Extension = ajouter une clé au catalogue.
+Aucune intégration WhatsApp/Telegram réelle (conforme à la demande "uniquement les boutons et l'architecture").
 
-## Workflows livrés
+### 6. Contraintes respectées
 
-1. **order-created** : log → enqueue payment-pending → log.
-2. **payment-confirmed** : valider commande → `iptv.createSubscription` (via service domain existant, MEGAOTT-ready) → enregistrer infos → générer facture (stub) → `orders.markCompleted` → log toutes étapes.
-3. **payment-failed** : marquer commande, journaliser.
-4. **subscription-renewal** : `iptv.renew` → update expires_at → log.
-5. **subscription-activate** / **subscription-suspend** : appels services IPTV, log.
+- ✅ Intégration API MEGAOTT existante **conservée** (`megaott.adapter.ts`, `MegaottPanel`, page debug).
+- ✅ SebPay non modifié.
+- ✅ Front Office non modifié.
+- ✅ Aucun formulaire de création MEGAOTT recréé : `MegaottSubscriptionForm.tsx` reste accessible depuis `/ncc/iptv/providers` pour les power users, mais n'est plus le chemin principal depuis la commande.
+- ✅ Aucune migration de schéma SQL (tout passe par `orders.metadata` jsonb déjà existant et `iptv_accounts`).
 
-Chaque étape : try/catch → step status persisté → si échec, run = `failed`, payload conservé pour replay.
+## Fichiers touchés
 
-## File d'attente
+- `src/components/ncc/orders/IptvDeliveryCard.tsx` *(nouveau)*
+- `src/components/ncc/orders/MegaottDeliveryForm.tsx` *(nouveau)*
+- `src/routes/ncc.orders.$id.tsx` *(intégration de la carte)*
+- `src/lib/orders.functions.ts` *(server fns `saveMegaottDelivery`, `markIptvDeliverySent`, `getMegaottPanelUrl`)*
 
-Driver SQL (table `automation_queue`) + worker exposé via route publique **sécurisée par apikey** :
-- `src/routes/api/public/automation/process-queue.ts` (POST, anon apikey) — drainage batch (10 jobs, FOR UPDATE SKIP LOCKED).
-- pg_cron toutes les minutes appelle cette route.
+## Hors scope (à confirmer)
 
-## UI NCC
+- Génération réelle d'emails / WhatsApp / Telegram (stub uniquement comme demandé).
+- Aucune modification d'`iptv_accounts` côté schéma.
+- Pas de nouvelle valeur d'enum `orders.status` (on s'appuie sur `metadata`).
 
-- **`/ncc/automation`** (remplace placeholder actuel) : 3 onglets
-  - *Workflows* : liste + toggle + bouton "Exécuter" (payload JSON).
-  - *Historique* : table des `automation_runs` (workflow, statut, durée, date, erreur, bouton replay).
-  - *Tableau de bord* : KPIs (actifs, runs 24h, erreurs, queue, durée moyenne).
-- Carte "Automation" ajoutée au dashboard NCC principal (4 KPIs).
-
-## Branchement non-intrusif
-
-- Dans `src/routes/api/public/sebpay/webhook.ts` : après le traitement actuel, `automationApi.emit('payment.confirmed', {...}).catch(()=>{})`.
-- Dans `src/lib/orders.functions.ts` création commande : idem `order.created`.
-- Aucun comportement existant changé : si l'engine n'est pas câblé, le webhook continue.
-
-## Documentation
-
-`.lovable/phase-1.6.md` : événements, workflows, actions, API interne, file d'attente, exemples d'extension, recommandations v1.7+ (notifications, IA decisioning).
-
-## Garanties
-
-- SebPay : aucun fichier touché côté logique de paiement (seul un `emit` post-succès).
-- MEGAOTT : passe par l'Integration Hub via les services `src/domain/iptv/services.ts`.
-- Aucun parcours utilisateur ni route publique modifié.
-- Engine 100 % testable manuellement via "Exécuter" sans déclencheur réel.
-
-## Livraison
-
-~20 fichiers nouveaux, 1 migration, 1 route publique cron, 2 branchements `emit()` d'une ligne chacun, 0 modification fonctionnelle.
+Validez ce plan et je l'implémente.

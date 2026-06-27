@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { getOrder, transitionOrderStatus } from "@/lib/ncc.functions";
 import { ORDER_TRANSITIONS, type OrderStatus } from "@/domain/types";
 import { fmtDate, fmtMoney, StatusBadge } from "@/components/ncc/ncc-ui";
+import { IptvDeliveryCard } from "@/components/ncc/orders/IptvDeliveryCard";
 
 export const Route = createFileRoute("/ncc/orders/$id")({
   component: OrderDetail,
@@ -61,6 +62,9 @@ function OrderDetail() {
           </div>
         </CardContent>
       </Card>
+      {["processing", "completed", "paid"].includes(o.status as string) && (
+        <IptvDeliveryCard orderId={o.id} metadata={o.metadata} />
+      )}
     </div>
   );
 }
