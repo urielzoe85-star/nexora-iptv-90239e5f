@@ -53,6 +53,7 @@ import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as AdminContentRouteImport } from './routes/admin.content'
 import { Route as AdminAdminsRouteImport } from './routes/admin.admins'
 import { Route as NccSettingsIndexRouteImport } from './routes/ncc.settings.index'
+import { Route as NccIptvIndexRouteImport } from './routes/ncc.iptv.index'
 import { Route as NccSettingsSectionRouteImport } from './routes/ncc.settings.$section'
 import { Route as NccOrdersIdRouteImport } from './routes/ncc.orders.$id'
 import { Route as NccIptvSubscriptionsRouteImport } from './routes/ncc.iptv.subscriptions'
@@ -285,6 +286,11 @@ const NccSettingsIndexRoute = NccSettingsIndexRouteImport.update({
   path: '/',
   getParentRoute: () => NccSettingsRoute,
 } as any)
+const NccIptvIndexRoute = NccIptvIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => NccIptvRoute,
+} as any)
 const NccSettingsSectionRoute = NccSettingsSectionRouteImport.update({
   id: '/$section',
   path: '/$section',
@@ -393,6 +399,7 @@ export interface FileRoutesByFullPath {
   '/ncc/iptv/subscriptions': typeof NccIptvSubscriptionsRoute
   '/ncc/orders/$id': typeof NccOrdersIdRoute
   '/ncc/settings/$section': typeof NccSettingsSectionRoute
+  '/ncc/iptv/': typeof NccIptvIndexRoute
   '/ncc/settings/': typeof NccSettingsIndexRoute
   '/api/public/sebpay/webhook': typeof ApiPublicSebpayWebhookRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -424,7 +431,6 @@ export interface FileRoutesByTo {
   '/ncc/clients': typeof NccClientsRouteWithChildren
   '/ncc/emails': typeof NccEmailsRoute
   '/ncc/employees': typeof NccEmployeesRoute
-  '/ncc/iptv': typeof NccIptvRouteWithChildren
   '/ncc/logs': typeof NccLogsRoute
   '/ncc/notifications': typeof NccNotificationsRoute
   '/ncc/orders': typeof NccOrdersRouteWithChildren
@@ -445,6 +451,7 @@ export interface FileRoutesByTo {
   '/ncc/iptv/subscriptions': typeof NccIptvSubscriptionsRoute
   '/ncc/orders/$id': typeof NccOrdersIdRoute
   '/ncc/settings/$section': typeof NccSettingsSectionRoute
+  '/ncc/iptv': typeof NccIptvIndexRoute
   '/ncc/settings': typeof NccSettingsIndexRoute
   '/api/public/sebpay/webhook': typeof ApiPublicSebpayWebhookRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -503,6 +510,7 @@ export interface FileRoutesById {
   '/ncc/iptv/subscriptions': typeof NccIptvSubscriptionsRoute
   '/ncc/orders/$id': typeof NccOrdersIdRoute
   '/ncc/settings/$section': typeof NccSettingsSectionRoute
+  '/ncc/iptv/': typeof NccIptvIndexRoute
   '/ncc/settings/': typeof NccSettingsIndexRoute
   '/api/public/sebpay/webhook': typeof ApiPublicSebpayWebhookRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -562,6 +570,7 @@ export interface FileRouteTypes {
     | '/ncc/iptv/subscriptions'
     | '/ncc/orders/$id'
     | '/ncc/settings/$section'
+    | '/ncc/iptv/'
     | '/ncc/settings/'
     | '/api/public/sebpay/webhook'
     | '/lovable/email/auth/preview'
@@ -593,7 +602,6 @@ export interface FileRouteTypes {
     | '/ncc/clients'
     | '/ncc/emails'
     | '/ncc/employees'
-    | '/ncc/iptv'
     | '/ncc/logs'
     | '/ncc/notifications'
     | '/ncc/orders'
@@ -614,6 +622,7 @@ export interface FileRouteTypes {
     | '/ncc/iptv/subscriptions'
     | '/ncc/orders/$id'
     | '/ncc/settings/$section'
+    | '/ncc/iptv'
     | '/ncc/settings'
     | '/api/public/sebpay/webhook'
     | '/lovable/email/auth/preview'
@@ -671,6 +680,7 @@ export interface FileRouteTypes {
     | '/ncc/iptv/subscriptions'
     | '/ncc/orders/$id'
     | '/ncc/settings/$section'
+    | '/ncc/iptv/'
     | '/ncc/settings/'
     | '/api/public/sebpay/webhook'
     | '/lovable/email/auth/preview'
@@ -1015,6 +1025,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof NccSettingsIndexRouteImport
       parentRoute: typeof NccSettingsRoute
     }
+    '/ncc/iptv/': {
+      id: '/ncc/iptv/'
+      path: '/'
+      fullPath: '/ncc/iptv/'
+      preLoaderRoute: typeof NccIptvIndexRouteImport
+      parentRoute: typeof NccIptvRoute
+    }
     '/ncc/settings/$section': {
       id: '/ncc/settings/$section'
       path: '/$section'
@@ -1153,10 +1170,12 @@ const NccClientsRouteWithChildren = NccClientsRoute._addFileChildren(
 
 interface NccIptvRouteChildren {
   NccIptvSubscriptionsRoute: typeof NccIptvSubscriptionsRoute
+  NccIptvIndexRoute: typeof NccIptvIndexRoute
 }
 
 const NccIptvRouteChildren: NccIptvRouteChildren = {
   NccIptvSubscriptionsRoute: NccIptvSubscriptionsRoute,
+  NccIptvIndexRoute: NccIptvIndexRoute,
 }
 
 const NccIptvRouteWithChildren =
