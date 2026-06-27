@@ -1,9 +1,16 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { getAdminStats } from "@/lib/admin.functions";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ShoppingBag, DollarSign, Clock, TrendingUp, Loader2 } from "lucide-react";
+import { getAdminStats, verifyNccAccess } from "@/lib/admin.functions";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { ShoppingBag, DollarSign, Clock, TrendingUp, Loader2, Shield, KeyRound } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
+} from "@/components/ui/dialog";
+import { useState } from "react";
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 } from "recharts";
@@ -45,6 +52,8 @@ function OverviewPage() {
           </Card>
         ))}
       </div>
+
+      <NccAccessCard />
 
       <Card>
         <CardHeader><CardTitle>Revenu quotidien</CardTitle></CardHeader>
