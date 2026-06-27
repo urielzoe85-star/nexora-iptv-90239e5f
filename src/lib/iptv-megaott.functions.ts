@@ -344,9 +344,7 @@ export const getMegaottPanelUrl = createServerFn({ method: "GET" })
     if (!cfg.ok) return { ok: false as const, error: cfg.error.message, url: null };
     try {
       const u = new URL(cfg.value.apiUrl);
-      const panel = (cfg.value.metadata as any)?.panel_url
-        ?? `${u.protocol}//${u.host}`;
-      return { ok: true as const, url: panel, error: null };
+      return { ok: true as const, url: `${u.protocol}//${u.host}`, error: null };
     } catch {
       return { ok: true as const, url: cfg.value.apiUrl, error: null };
     }
