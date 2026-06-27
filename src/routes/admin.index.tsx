@@ -89,3 +89,88 @@ function OverviewPage() {
     </div>
   );
 }
+
+function NccAccessCard() {
+  const navigate = useNavigate();
+  const verify = useServerFn(verifyNccAccess);
+  const [open, setOpen] = useState(false);
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setSubmitting(true);
+    try {
+      const r = await verify({ data: { password } });
+      if (!r.ok) {
+        setError("Mot de passe incorrect.");
+        return;
+      }
+      sessionStorage.setItem("ncc.unlocked", "1");
+      setOpen(false);
+      setPassword("");
+      navigate({ to: "/ncc" });
+    } catch (err: any) {
+      setError(err?.message ?? "Erreur de vérification.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <Card className="border-primary/30">
+      <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
+        <div className="space-y-1">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Shield className="h-4 w-4 text-primary" />
+            Nexora Control Center
+          </CardTitle>
+          <CardDescription>
+            Accès au centre de contrôle avancé (NCC). Protégé par un mot de passe dédié.
+          </CardDescription>
+        </div>
+        <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setPassword(""); setError(null); } }}>
+          <DialogTrigger asChild>
+            <Button size="sm">
+              <KeyRound className="h-4 w-4 mr-2" /> Accéder au NCC
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Vérification d'accès NCC</DialogTitle>
+              <DialogDescription>
+                Entrez le mot de passe dédié au Nexora Control Center.
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={onSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="ncc-pwd">Mot de passe NCC</Label>
+                <Input
+                  id="ncc-pwd"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoFocus
+                />
+              </div>
+              {error && (
+                <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-md">{error}</p>
+              )}
+              <DialogFooter>
+                <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Annuler</Button>
+                <Button type="submit" disabled={submitting}>
+                  {submitting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                  Déverrouiller
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </CardHeader>
+    </Card>
+  );
+}
