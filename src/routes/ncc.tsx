@@ -34,8 +34,16 @@ function NccLayout() {
       try {
         const r = await getStatus();
         if (cancelled) return;
-        if (r.isAdmin) setState({ kind: "ok", email: s.session.user.email ?? null });
-        else setState({ kind: "forbidden", email: s.session.user.email ?? null });
+        if (!r.isAdmin) {
+          setState({ kind: "forbidden", email: s.session.user.email ?? null });
+          return;
+        }
+        const unlocked = typeof window !== "undefined" && sessionStorage.getItem("ncc.unlocked") === "1";
+        if (!unlocked) {
+          navigate({ to: "/admin", replace: true });
+          return;
+        }
+        setState({ kind: "ok", email: s.session.user.email ?? null });
       } catch {
         if (!cancelled) setState({ kind: "no-auth" });
       }
