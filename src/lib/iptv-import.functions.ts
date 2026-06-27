@@ -120,10 +120,8 @@ export const parseIptvImportFile = createServerFn({ method: "POST" })
 const CommitSchema = z.object({
   filename: z.string().min(1).max(255),
   file_format: z.enum(["csv", "xls", "xlsx"]),
-  mapping: z.record(z.string(), z.string()), // { nexora_field: source_column }
   rows: z.array(z.record(z.string(), z.any())).max(20000),
   dedupe_strategy: z.enum(["skip", "update"]).default("skip"),
-  default_account_type: z.enum(["trial", "premium"]).default("premium"),
 });
 
 function pick(row: Record<string, any>, mapping: Record<string, string>, field: string): string | null {
@@ -133,6 +131,21 @@ function pick(row: Record<string, any>, mapping: Record<string, string>, field: 
   if (v === undefined || v === null) return null;
   const s = String(v).trim();
   return s.length ? s : null;
+}
+
+function pickBool(row: Record<string, any>, mapping: Record<string, string>, field: string): boolean | null {
+  const v = pick(row, mapping, field);
+  if (v == null) return null;
+  if (/^(1|true|yes|y|oui|on|paid|enabled)$/i.test(v)) return true;
+  if (/^(0|false|no|n|non|off|unpaid|disabled)$/i.test(v)) return false;
+  return null;
+}
+
+function pickInt(row: Record<string, any>, mapping: Record<string, string>, field: string): number | null {
+  const v = pick(row, mapping, field);
+  if (!v) return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? Math.trunc(n) : null;
 }
 
 function parseDate(v: string | null): string | null {
@@ -157,13 +170,18 @@ export const commitIptvImport = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const sb = await admin(context.userId);
 
+    // Auto-detect mapping from headers of first row.
+    const headers = data.rows[0] ? Object.keys(data.rows[0]) : [];
+    const mapping = detectMegaottMapping(headers);
+    if (!mapping.username) throw new Error("Colonne 'Username' introuvable dans le fichier — vérifiez que l'export provient bien de MEGAOTT.");
+
     // Create batch first.
     const { data: batch, error: bErr } = await sb.from("iptv_import_batches").insert({
       filename: data.filename,
       file_format: data.file_format,
       row_count: data.rows.length,
       imported_by: context.userId,
-      mapping_snapshot: data.mapping,
+      mapping_snapshot: mapping,
     }).select("id").single();
     if (bErr) throw new Error(bErr.message);
 
@@ -172,45 +190,49 @@ export const commitIptvImport = createServerFn({ method: "POST" })
 
     for (const row of data.rows) {
       try {
-        const username = pick(row, data.mapping, "username");
+        const username = pick(row, mapping, "username");
         if (!username) { skipped++; continue; }
 
-        const megaottId = pick(row, data.mapping, "megaott_subscription_id");
+        const trialFlag = pickBool(row, mapping, "trial");
+        const accountType: "trial" | "premium" =
+          trialFlag === true ? "trial"
+          : (() => {
+              const t = pick(row, mapping, "type");
+              if (t && /trial|essai|free/i.test(t)) return "trial" as const;
+              return "premium" as const;
+            })();
+
         const payload: Record<string, any> = {
           username,
-          password: pick(row, data.mapping, "password"),
-          package: pick(row, data.mapping, "package"),
-          expires_at: parseDate(pick(row, data.mapping, "expires_at")),
-          dns_link: pick(row, data.mapping, "dns_link"),
-          dns_link_samsung_lg: pick(row, data.mapping, "dns_link_samsung_lg"),
-          portal_link: pick(row, data.mapping, "portal_link"),
-          mac_address: pick(row, data.mapping, "mac_address"),
-          max_connections: (() => {
-            const v = pick(row, data.mapping, "max_connections");
-            const n = v ? Number(v) : null;
-            return n && Number.isFinite(n) ? Math.trunc(n) : null;
-          })(),
-          megaott_subscription_id: megaottId,
-          notes: pick(row, data.mapping, "notes"),
-          account_type: (() => {
-            const t = pick(row, data.mapping, "type");
-            if (t && /trial|essai|free/i.test(t)) return "trial";
-            return data.default_account_type;
-          })(),
+          password: pick(row, mapping, "password"),
+          package: pick(row, mapping, "package"),
+          expires_at: parseDate(pick(row, mapping, "expires_at")),
+          dns_link: pick(row, mapping, "dns"),
+          mac: pick(row, mapping, "mac"),
+          mac_address: pick(row, mapping, "mac"),
+          code: pick(row, mapping, "code"),
+          owner: pick(row, mapping, "owner"),
+          paid: pickBool(row, mapping, "paid"),
+          trial: trialFlag,
+          forced_country: pick(row, mapping, "forced_country"),
+          enabled: pickBool(row, mapping, "enabled"),
+          admin_enabled: pickBool(row, mapping, "admin_enabled"),
+          last_login: parseDate(pick(row, mapping, "last_login")),
+          last_ip: pick(row, mapping, "last_ip"),
+          reseller_notes: pick(row, mapping, "reseller_notes"),
+          admin_notes: pick(row, mapping, "admin_notes"),
+          source_created_at: parseDate(pick(row, mapping, "created_at")),
+          max_connections: pickInt(row, mapping, "max_connections"),
+          notes: pick(row, mapping, "reseller_notes"),
+          account_type: accountType,
           imported_at: new Date().toISOString(),
           import_batch_id: batch.id,
         };
 
-        // Find existing by megaott id OR by username
-        let existing: { id: string; status: string } | null = null;
-        if (megaottId) {
-          const { data: e } = await sb.from("iptv_accounts").select("id, status").eq("megaott_subscription_id", megaottId).maybeSingle();
-          if (e) existing = e;
-        }
-        if (!existing) {
-          const { data: e } = await sb.from("iptv_accounts").select("id, status").ilike("username", username).limit(1).maybeSingle();
-          if (e) existing = e;
-        }
+        // Dédup : Username est l'identifiant officiel MEGAOTT.
+        const { data: e } = await sb.from("iptv_accounts")
+          .select("id, status").ilike("username", username).limit(1).maybeSingle();
+        const existing = e as { id: string; status: string } | null;
 
         if (existing) {
           if (data.dedupe_strategy === "skip") { skipped++; continue; }
