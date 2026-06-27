@@ -16,7 +16,7 @@ import {
 // ProviderService — CRUD + activation logic (delegates to server fns)
 export const ProviderService = {
   list:          () => listProviders(),
-  upsert:        (data: Parameters<typeof upsertProvider>[0]["data"]) => upsertProvider({ data }),
+  upsert:        (data: any) => upsertProvider({ data }),
   remove:        (id: string) => deleteProvider({ data: { id } }),
   setDefault:    (id: string) => setDefaultProvider({ data: { id } }),
   setStatus:     (id: string, status: "active" | "inactive" | "error") =>
@@ -27,13 +27,13 @@ export const ProviderService = {
 
 // IPTVAccountService — pool of provisioned credentials
 export const IPTVAccountService = {
-  list:      (data?: Parameters<typeof listAccounts>[0]["data"]) => listAccounts({ data: data ?? {} }),
-  create:    (data: Parameters<typeof createAccount>[0]["data"]) => createAccount({ data }),
-  update:    (data: Parameters<typeof updateAccount>[0]["data"]) => updateAccount({ data }),
+  list:      (data?: any) => listAccounts({ data: data ?? {} }),
+  create:    (data: any) => createAccount({ data }),
+  update:    (data: any) => updateAccount({ data }),
   remove:    (id: string) => deleteAccount({ data: { id } }),
-  transition:(data: Parameters<typeof transitionAccount>[0]["data"]) => transitionAccount({ data }),
-  importCsv: (data: Parameters<typeof importAccountsCsv>[0]["data"]) => importAccountsCsv({ data }),
-  exportCsv: (data?: Parameters<typeof exportAccountsCsv>[0]["data"]) => exportAccountsCsv({ data: data ?? {} }),
+  transition:(data: any) => transitionAccount({ data }),
+  importCsv: (data: any) => importAccountsCsv({ data }),
+  exportCsv: (data?: any) => exportAccountsCsv({ data: data ?? {} }),
 };
 
 // TrialService — trial pool reservation / distribution (auto-distribution
@@ -64,7 +64,7 @@ export const ProviderHealthService = {
 
 // Logs + dashboard
 export const IPTVLogService = {
-  list: (data?: Parameters<typeof listIptvLogs>[0]["data"]) => listIptvLogs({ data: data ?? {} }),
+  list: (data?: any) => listIptvLogs({ data: data ?? {} }),
 };
 export const IPTVDashboardService = {
   kpis: () => iptvDashboard(),
