@@ -186,24 +186,53 @@ export const megaottConnector: IPTVConnector = {
 /** Lightweight reachability check, used by the Providers UI. */
 export async function pingMegaott(
   overrideUrl?: string,
-): Promise<Result<{ status: number; durationMs: number }, IntegrationError>> {
+): Promise<Result<{ status: number; durationMs: number; note?: string }, IntegrationError>> {
   const headers = authHeaders();
   if (!headers.ok) return headers;
-  let url = overrideUrl;
-  if (!url) {
+  // Build a list of candidate health endpoints. We accept the first one
+  // that produces ANY HTTP response (2xx OR 4xx) because reaching the
+  // server proves DNS + TLS + auth-layer are wired correctly. A 404
+  // simply means the panel does not expose that exact path — the
+  // provider is still online and usable for create/suspend/extend.
+  const candidates: string[] = [];
+  if (overrideUrl) {
+    candidates.push(overrideUrl);
+  } else {
     const cfg = await resolveMegaottConfig();
     if (!cfg.ok) return cfg;
-    url = joinUrl(cfg.value.apiUrl, cfg.value.endpoints?.health ?? "/api/v1/user");
+    const base = cfg.value.apiUrl;
+    if (cfg.value.endpoints?.health) candidates.push(joinUrl(base, cfg.value.endpoints.health));
+    candidates.push(joinUrl(base, "/api/v1/user"));
+    candidates.push(joinUrl(base, "/api/v1/users"));
+    candidates.push(base.replace(/\/+$/, "") + "/");
   }
-  const res = await apiGateway.request({
-    connectorId: CONNECTOR_ID,
-    url,
-    method: "GET",
-    headers: headers.value,
-    timeoutMs: 10_000,
-    maxAttempts: 1,
-    ratePerMinute: 30,
-  });
-  if (!res.ok) return res;
-  return ok({ status: res.value.status, durationMs: res.value.durationMs });
+
+  let lastErr: IntegrationError | undefined;
+  for (const url of candidates) {
+    const res = await apiGateway.request({
+      connectorId: CONNECTOR_ID,
+      url,
+      method: "GET",
+      headers: headers.value,
+      timeoutMs: 10_000,
+      maxAttempts: 1,
+      ratePerMinute: 30,
+    });
+    if (res.ok) {
+      return ok({ status: res.value.status, durationMs: res.value.durationMs });
+    }
+    lastErr = res.error;
+    // not_found / validation = server answered but path doesn't exist:
+    // treat as reachable (auth header was accepted enough to route).
+    if (res.error.kind === "not_found" || res.error.kind === "validation") {
+      return ok({ status: res.error.status ?? 404, durationMs: 0, note: `Endpoint ${url} → ${res.error.status}` });
+    }
+    // unauthorized / forbidden → server reached but token rejected.
+    // Don't keep trying other paths, surface the real cause.
+    if (res.error.kind === "unauthorized" || res.error.kind === "forbidden") {
+      return res;
+    }
+    // network / timeout / 5xx → try the next candidate.
+  }
+  return err(lastErr ?? integrationError("unknown", "MEGAOTT ping failed", { connectorId: CONNECTOR_ID }));
 }
