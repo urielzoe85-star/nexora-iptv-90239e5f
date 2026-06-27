@@ -10,7 +10,8 @@ import {
   stripeConnector, paypalConnector, orangeMoneyConnector, mtnMomoConnector, cryptoConnector,
 } from "./connectors/payment/stub.adapter";
 
-import { megaottConnector, xtreamUiConnector, xtreamCodesConnector } from "./connectors/iptv/stub.adapter";
+import { megaottConnector } from "./connectors/iptv/megaott.adapter";
+import { xtreamUiConnector, xtreamCodesConnector } from "./connectors/iptv/stub.adapter";
 import {
   whatsappBusinessConnector, telegramBotConnector, smsConnector, inAppConnector,
 } from "./connectors/messaging/stub.adapter";
