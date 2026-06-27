@@ -43,7 +43,14 @@ function ProvidersPage() {
   const mTog = useMutation({ mutationFn: (v: { id: string; status: any }) => tog({ data: v }), onSuccess: () => inv() });
   const mHc  = useMutation({
     mutationFn: (id: string) => hc({ data: { id } }),
-    onSuccess: (r) => toast.success(r.reachable ? "Provider OK" : "Pas d'API URL"),
+    onSuccess: (r: any) => {
+      if (r.reachable) {
+        const ms = r.details?.durationMs ? ` (${r.details.durationMs}ms)` : "";
+        toast.success(`Provider joignable${ms}`);
+      } else {
+        toast.error(r.details?.error ?? "Provider injoignable");
+      }
+    },
     onError: (e) => toast.error((e as Error).message),
   });
 
