@@ -60,6 +60,7 @@ import { Route as NccIptvTrialsRouteImport } from './routes/ncc.iptv.trials'
 import { Route as NccIptvSuspendedRouteImport } from './routes/ncc.iptv.suspended'
 import { Route as NccIptvSubscriptionsRouteImport } from './routes/ncc.iptv.subscriptions'
 import { Route as NccIptvRenewalsRouteImport } from './routes/ncc.iptv.renewals'
+import { Route as NccIptvProvidersRouteImport } from './routes/ncc.iptv.providers'
 import { Route as NccIptvPremiumRouteImport } from './routes/ncc.iptv.premium'
 import { Route as NccIptvExpiredRouteImport } from './routes/ncc.iptv.expired'
 import { Route as NccIptvAccountsRouteImport } from './routes/ncc.iptv.accounts'
@@ -327,6 +328,11 @@ const NccIptvRenewalsRoute = NccIptvRenewalsRouteImport.update({
   path: '/renewals',
   getParentRoute: () => NccIptvRoute,
 } as any)
+const NccIptvProvidersRoute = NccIptvProvidersRouteImport.update({
+  id: '/providers',
+  path: '/providers',
+  getParentRoute: () => NccIptvRoute,
+} as any)
 const NccIptvPremiumRoute = NccIptvPremiumRouteImport.update({
   id: '/premium',
   path: '/premium',
@@ -435,6 +441,7 @@ export interface FileRoutesByFullPath {
   '/ncc/iptv/accounts': typeof NccIptvAccountsRoute
   '/ncc/iptv/expired': typeof NccIptvExpiredRoute
   '/ncc/iptv/premium': typeof NccIptvPremiumRoute
+  '/ncc/iptv/providers': typeof NccIptvProvidersRoute
   '/ncc/iptv/renewals': typeof NccIptvRenewalsRoute
   '/ncc/iptv/subscriptions': typeof NccIptvSubscriptionsRoute
   '/ncc/iptv/suspended': typeof NccIptvSuspendedRoute
@@ -493,6 +500,7 @@ export interface FileRoutesByTo {
   '/ncc/iptv/accounts': typeof NccIptvAccountsRoute
   '/ncc/iptv/expired': typeof NccIptvExpiredRoute
   '/ncc/iptv/premium': typeof NccIptvPremiumRoute
+  '/ncc/iptv/providers': typeof NccIptvProvidersRoute
   '/ncc/iptv/renewals': typeof NccIptvRenewalsRoute
   '/ncc/iptv/subscriptions': typeof NccIptvSubscriptionsRoute
   '/ncc/iptv/suspended': typeof NccIptvSuspendedRoute
@@ -558,6 +566,7 @@ export interface FileRoutesById {
   '/ncc/iptv/accounts': typeof NccIptvAccountsRoute
   '/ncc/iptv/expired': typeof NccIptvExpiredRoute
   '/ncc/iptv/premium': typeof NccIptvPremiumRoute
+  '/ncc/iptv/providers': typeof NccIptvProvidersRoute
   '/ncc/iptv/renewals': typeof NccIptvRenewalsRoute
   '/ncc/iptv/subscriptions': typeof NccIptvSubscriptionsRoute
   '/ncc/iptv/suspended': typeof NccIptvSuspendedRoute
@@ -624,6 +633,7 @@ export interface FileRouteTypes {
     | '/ncc/iptv/accounts'
     | '/ncc/iptv/expired'
     | '/ncc/iptv/premium'
+    | '/ncc/iptv/providers'
     | '/ncc/iptv/renewals'
     | '/ncc/iptv/subscriptions'
     | '/ncc/iptv/suspended'
@@ -682,6 +692,7 @@ export interface FileRouteTypes {
     | '/ncc/iptv/accounts'
     | '/ncc/iptv/expired'
     | '/ncc/iptv/premium'
+    | '/ncc/iptv/providers'
     | '/ncc/iptv/renewals'
     | '/ncc/iptv/subscriptions'
     | '/ncc/iptv/suspended'
@@ -746,6 +757,7 @@ export interface FileRouteTypes {
     | '/ncc/iptv/accounts'
     | '/ncc/iptv/expired'
     | '/ncc/iptv/premium'
+    | '/ncc/iptv/providers'
     | '/ncc/iptv/renewals'
     | '/ncc/iptv/subscriptions'
     | '/ncc/iptv/suspended'
@@ -1146,6 +1158,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof NccIptvRenewalsRouteImport
       parentRoute: typeof NccIptvRoute
     }
+    '/ncc/iptv/providers': {
+      id: '/ncc/iptv/providers'
+      path: '/providers'
+      fullPath: '/ncc/iptv/providers'
+      preLoaderRoute: typeof NccIptvProvidersRouteImport
+      parentRoute: typeof NccIptvRoute
+    }
     '/ncc/iptv/premium': {
       id: '/ncc/iptv/premium'
       path: '/premium'
@@ -1286,6 +1305,7 @@ interface NccIptvRouteChildren {
   NccIptvAccountsRoute: typeof NccIptvAccountsRoute
   NccIptvExpiredRoute: typeof NccIptvExpiredRoute
   NccIptvPremiumRoute: typeof NccIptvPremiumRoute
+  NccIptvProvidersRoute: typeof NccIptvProvidersRoute
   NccIptvRenewalsRoute: typeof NccIptvRenewalsRoute
   NccIptvSubscriptionsRoute: typeof NccIptvSubscriptionsRoute
   NccIptvSuspendedRoute: typeof NccIptvSuspendedRoute
@@ -1297,6 +1317,7 @@ const NccIptvRouteChildren: NccIptvRouteChildren = {
   NccIptvAccountsRoute: NccIptvAccountsRoute,
   NccIptvExpiredRoute: NccIptvExpiredRoute,
   NccIptvPremiumRoute: NccIptvPremiumRoute,
+  NccIptvProvidersRoute: NccIptvProvidersRoute,
   NccIptvRenewalsRoute: NccIptvRenewalsRoute,
   NccIptvSubscriptionsRoute: NccIptvSubscriptionsRoute,
   NccIptvSuspendedRoute: NccIptvSuspendedRoute,
