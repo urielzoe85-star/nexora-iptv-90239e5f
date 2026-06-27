@@ -101,7 +101,7 @@ function ImportPage() {
     onSuccess: (p) => {
       setParsed(p);
       // Try to load default mapping; otherwise guess.
-      const def = (mappings.data ?? []).find(m => m.is_default);
+      const def = (mappings.data ?? []).find((m: any) => m.is_default);
       setMapping(def?.mapping ?? guessMapping(p.headers));
       setStep(2);
     },
@@ -212,12 +212,12 @@ function ImportPage() {
               </div>
               {(mappings.data?.length ?? 0) > 0 && (
                 <Select onValueChange={(id) => {
-                  const m = mappings.data?.find(x => x.id === id);
+                  const m = (mappings.data ?? []).find((x: any) => x.id === id);
                   if (m) setMapping(m.mapping as Record<string, string>);
                 }}>
                   <SelectTrigger className="w-[220px]"><SelectValue placeholder="Charger un mapping…" /></SelectTrigger>
                   <SelectContent>
-                    {(mappings.data ?? []).map(m => (
+                    {(mappings.data ?? []).map((m: any) => (
                       <SelectItem key={m.id} value={m.id}>{m.name}{m.is_default ? " ★" : ""}</SelectItem>
                     ))}
                   </SelectContent>
@@ -262,7 +262,7 @@ function ImportPage() {
 
             {(mappings.data?.length ?? 0) > 0 && (
               <div className="flex flex-wrap gap-2 text-xs">
-                {(mappings.data ?? []).map(m => (
+                {(mappings.data ?? []).map((m: any) => (
                   <Badge key={m.id} variant="secondary" className="gap-1">
                     {m.name}
                     <button onClick={() => mDelMap.mutate(m.id)} className="hover:text-destructive"><Trash2 className="h-3 w-3" /></button>
