@@ -114,6 +114,70 @@ async function call<T>(
   return ok({ json: res.value.json });
 }
 
+// Raw helper used by the UI / server functions when they need the full
+// request/response envelope (URL, method, sent body, status, raw response,
+// duration) for debugging or for persisting into integration_debug_logs.
+export interface MegaottRawTrace {
+  url: string;
+  method: string;
+  requestHeaders: Record<string, string>;
+  requestBody: unknown;
+  status: number | null;
+  responseBody: unknown;
+  responseRaw: string | null;
+  durationMs: number;
+  attempts: number;
+  ok: boolean;
+  error: string | null;
+  errorKind: string | null;
+}
+
+export async function megaottRawCall(opts: {
+  path: string;
+  method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
+  body?: unknown;
+  override?: MegaottProviderConfig;
+}): Promise<MegaottRawTrace> {
+  const cfg = opts.override ? ok(opts.override) : await resolveMegaottConfig();
+  const headers = authHeaders();
+  const safeHeaders = headers.ok
+    ? { ...headers.value, Authorization: "Bearer ***" }
+    : {};
+  if (!cfg.ok || !headers.ok) {
+    const e = !cfg.ok ? cfg.error : (headers as any).error;
+    return {
+      url: "", method: opts.method, requestHeaders: safeHeaders, requestBody: opts.body ?? null,
+      status: null, responseBody: null, responseRaw: null, durationMs: 0, attempts: 0,
+      ok: false, error: e.message, errorKind: e.kind,
+    };
+  }
+  const url = joinUrl(cfg.value.apiUrl, opts.path);
+  const res = await apiGateway.request({
+    connectorId: CONNECTOR_ID,
+    url, method: opts.method,
+    headers: headers.value,
+    body: opts.body,
+    apiVersion: "v1",
+    timeoutMs: 20_000,
+    maxAttempts: 1,
+    ratePerMinute: 60,
+  });
+  if (res.ok) {
+    return {
+      url, method: opts.method, requestHeaders: safeHeaders, requestBody: opts.body ?? null,
+      status: res.value.status, responseBody: res.value.json, responseRaw: res.value.raw,
+      durationMs: res.value.durationMs, attempts: res.value.attempts,
+      ok: true, error: null, errorKind: null,
+    };
+  }
+  return {
+    url, method: opts.method, requestHeaders: safeHeaders, requestBody: opts.body ?? null,
+    status: res.error.status ?? null, responseBody: null, responseRaw: null,
+    durationMs: 0, attempts: 1,
+    ok: false, error: res.error.message, errorKind: res.error.kind,
+  };
+}
+
 export const megaottConnector: IPTVConnector = {
   id: CONNECTOR_ID,
   type: "iptv",
