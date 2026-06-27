@@ -365,6 +365,63 @@ export type Database = {
         }
         Relationships: []
       }
+      integration_debug_logs: {
+        Row: {
+          actor_id: string | null
+          attempts: number | null
+          connector_id: string
+          created_at: string
+          duration_ms: number | null
+          error: string | null
+          id: string
+          method: string
+          ok: boolean
+          operation: string | null
+          request_body: Json | null
+          request_headers: Json
+          response_body: Json | null
+          response_headers: Json
+          status: number | null
+          url: string
+        }
+        Insert: {
+          actor_id?: string | null
+          attempts?: number | null
+          connector_id: string
+          created_at?: string
+          duration_ms?: number | null
+          error?: string | null
+          id?: string
+          method: string
+          ok?: boolean
+          operation?: string | null
+          request_body?: Json | null
+          request_headers?: Json
+          response_body?: Json | null
+          response_headers?: Json
+          status?: number | null
+          url: string
+        }
+        Update: {
+          actor_id?: string | null
+          attempts?: number | null
+          connector_id?: string
+          created_at?: string
+          duration_ms?: number | null
+          error?: string | null
+          id?: string
+          method?: string
+          ok?: boolean
+          operation?: string | null
+          request_body?: Json | null
+          request_headers?: Json
+          response_body?: Json | null
+          response_headers?: Json
+          status?: number | null
+          url?: string
+        }
+        Relationships: []
+      }
       iptv_accounts: {
         Row: {
           account_type: Database["public"]["Enums"]["iptv_account_type"]

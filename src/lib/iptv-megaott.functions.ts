@@ -11,7 +11,7 @@ import { z } from "zod";
 import "@/integration-hub"; // ensure connectors are registered
 import { connectorRegistry } from "@/integration-hub/core/registry";
 import type { IPTVConnector } from "@/integration-hub/connectors/iptv/types";
-import { megaottConnector, pingMegaott, resolveMegaottConfig } from "@/integration-hub/connectors/iptv/megaott.adapter";
+import { megaottConnector, megaottRawCall, pingMegaott, resolveMegaottConfig } from "@/integration-hub/connectors/iptv/megaott.adapter";
 
 // Defensive registration: in server-fn bundles the barrel side-effect
 // import above can be split into a different module instance than the
@@ -38,6 +38,31 @@ function getConnector(): IPTVConnector {
 
 async function log(sb: any, actorId: string, action: string, message: string, payload: Record<string, unknown> = {}, account_id: string | null = null) {
   try { await sb.from("iptv_logs").insert({ actor_id: actorId, action, message, payload, account_id }); } catch { /* noop */ }
+}
+
+// Persist a full HTTP trace into integration_debug_logs (admin-only).
+async function debugTrace(sb: any, actorId: string, operation: string, t: {
+  url: string; method: string; requestHeaders: Record<string, string>; requestBody: unknown;
+  status: number | null; responseBody: unknown; durationMs: number; attempts: number;
+  ok: boolean; error: string | null;
+}) {
+  try {
+    await sb.from("integration_debug_logs").insert({
+      actor_id: actorId,
+      connector_id: "iptv.megaott",
+      operation,
+      method: t.method,
+      url: t.url,
+      request_headers: t.requestHeaders ?? {},
+      request_body: t.requestBody ?? null,
+      status: t.status,
+      response_body: t.responseBody ?? null,
+      duration_ms: t.durationMs,
+      attempts: t.attempts,
+      ok: t.ok,
+      error: t.error,
+    });
+  } catch { /* never fail an op for a debug log write */ }
 }
 
 // ─── Status / Health ───────────────────────────────────────────────────
@@ -171,4 +196,136 @@ export const megaottSyncRemote = createServerFn({ method: "POST" })
     await sb.from("iptv_accounts").update(patch).eq("id", data.account_id);
     await log(sb, context.userId, "megaott.sync.ok", remoteId, { status: r.value.status }, data.account_id);
     return { ok: true as const, user: r.value };
+  });
+
+// ─── Subscriptions (POST /api/v1/subscriptions) ──────────────────────
+// Direct, 1:1 mapping to the official MEGAOTT API. The UI sends exactly
+// these field names — no approximation, no remapping.
+
+const SubscriptionSchema = z.object({
+  type: z.enum(["m3u", "mag", "enigma"]),
+  username: z.string().trim().min(1).max(120).optional(),
+  mac: z.string().trim().min(1).max(60).optional(),
+  package: z.union([z.string(), z.number()]).optional(),
+  template: z.union([z.string(), z.number()]).optional(),
+  max_connections: z.coerce.number().int().min(1).max(20).optional(),
+  forced_country: z.string().trim().max(8).optional(),
+  adult: z.coerce.boolean().optional(),
+  whatsapp_telegram: z.string().trim().max(120).optional(),
+  enable_vpn: z.coerce.boolean().optional(),
+  paid: z.coerce.boolean().optional(),
+  note: z.string().trim().max(2000).optional(),
+});
+
+export const megaottCreateSubscription = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => SubscriptionSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    const sb = await admin(context.userId);
+    // Strip undefined keys so we send exactly what the operator entered.
+    const body: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(data)) if (v !== undefined && v !== "") body[k] = v;
+
+    const cfg = await resolveMegaottConfig();
+    const path = (cfg.ok && (cfg.value.endpoints as any)?.createSubscription) || "/api/v1/subscriptions";
+
+    const trace = await megaottRawCall({ path, method: "POST", body });
+    await debugTrace(sb, context.userId, "subscriptions.create", trace);
+
+    if (!trace.ok) {
+      await log(sb, context.userId, "megaott.subscription.failed", trace.error ?? "error", { status: trace.status, response: trace.responseBody });
+      return {
+        ok: false as const,
+        error: trace.error ?? "Erreur inconnue",
+        status: trace.status,
+        response: trace.responseBody as any,
+        trace,
+      };
+    }
+
+    // The MEGAOTT response usually nests data under `data`. Be tolerant.
+    const r: any = (trace.responseBody as any)?.data ?? trace.responseBody ?? {};
+    const created = {
+      id: r.id ?? r.subscription_id ?? null,
+      username: r.username ?? data.username ?? null,
+      password: r.password ?? null,
+      package: r.package ?? r.package_name ?? data.package ?? null,
+      template: r.template ?? r.template_name ?? data.template ?? null,
+      expiration: r.expiration ?? r.exp_date ?? r.expires_at ?? null,
+      dns_link: r.dns_link ?? null,
+      dns_link_for_samsung_lg: r.dns_link_for_samsung_lg ?? null,
+      portal_link: r.portal_link ?? null,
+      mac: r.mac ?? data.mac ?? null,
+      type: data.type,
+    };
+
+    // Persist into iptv_accounts so the new subscription appears immediately
+    // in IPTV Manager. We store the full official response in metadata.
+    const insertUsername = created.username ?? created.mac ?? `megaott_${Date.now()}`;
+    const expiresIso = (() => {
+      if (!created.expiration) return null;
+      const d = new Date(created.expiration);
+      return Number.isNaN(d.getTime()) ? null : d.toISOString();
+    })();
+
+    const { data: provider } = await sb
+      .from("iptv_providers")
+      .select("id")
+      .or("metadata->>kind.eq.megaott,name.ilike.%megaott%")
+      .limit(1).maybeSingle();
+
+    const { data: row, error: insErr } = await sb.from("iptv_accounts").insert({
+      provider_id: provider?.id ?? null,
+      username: insertUsername,
+      password: created.password ?? null,
+      account_type: "premium",
+      bouquet: created.package ? String(created.package) : null,
+      status: "active",
+      expires_at: expiresIso,
+      metadata: {
+        provider: "megaott",
+        remote_user_id: created.id ? String(created.id) : null,
+        type: created.type,
+        mac: created.mac,
+        template: created.template,
+        package: created.package,
+        dns_link: created.dns_link,
+        dns_link_for_samsung_lg: created.dns_link_for_samsung_lg,
+        portal_link: created.portal_link,
+        raw_response: trace.responseBody,
+        created_at_remote: new Date().toISOString(),
+      },
+    }).select().single();
+
+    if (insErr) {
+      await log(sb, context.userId, "megaott.subscription.persist_failed", insErr.message, { created });
+    } else {
+      await log(sb, context.userId, "megaott.subscription.ok", String(created.id ?? ""), { type: created.type }, row?.id ?? null);
+    }
+
+    return {
+      ok: true as const,
+      status: trace.status,
+      durationMs: trace.durationMs,
+      created,
+      account_id: row?.id ?? null,
+      trace,
+    };
+  });
+
+// ─── Debug log reader ────────────────────────────────────────────────
+
+export const listIntegrationDebugLogs = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({
+    connector_id: z.string().max(80).optional(),
+    limit: z.number().int().min(1).max(500).default(100),
+  }).parse(d ?? {}))
+  .handler(async ({ data, context }) => {
+    const sb = await admin(context.userId);
+    let q = sb.from("integration_debug_logs").select("*").order("created_at", { ascending: false }).limit(data.limit);
+    if (data.connector_id) q = q.eq("connector_id", data.connector_id);
+    const { data: rows, error } = await q;
+    if (error) throw new Error(error.message);
+    return rows ?? [];
   });

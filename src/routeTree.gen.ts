@@ -64,6 +64,7 @@ import { Route as NccIptvProvidersRouteImport } from './routes/ncc.iptv.provider
 import { Route as NccIptvPremiumRouteImport } from './routes/ncc.iptv.premium'
 import { Route as NccIptvHistoryRouteImport } from './routes/ncc.iptv.history'
 import { Route as NccIptvExpiredRouteImport } from './routes/ncc.iptv.expired'
+import { Route as NccIptvDebugRouteImport } from './routes/ncc.iptv.debug'
 import { Route as NccIptvAccountsRouteImport } from './routes/ncc.iptv.accounts'
 import { Route as NccClientsIdRouteImport } from './routes/ncc.clients.$id'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
@@ -350,6 +351,11 @@ const NccIptvExpiredRoute = NccIptvExpiredRouteImport.update({
   path: '/expired',
   getParentRoute: () => NccIptvRoute,
 } as any)
+const NccIptvDebugRoute = NccIptvDebugRouteImport.update({
+  id: '/debug',
+  path: '/debug',
+  getParentRoute: () => NccIptvRoute,
+} as any)
 const NccIptvAccountsRoute = NccIptvAccountsRouteImport.update({
   id: '/accounts',
   path: '/accounts',
@@ -452,6 +458,7 @@ export interface FileRoutesByFullPath {
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/ncc/clients/$id': typeof NccClientsIdRoute
   '/ncc/iptv/accounts': typeof NccIptvAccountsRoute
+  '/ncc/iptv/debug': typeof NccIptvDebugRoute
   '/ncc/iptv/expired': typeof NccIptvExpiredRoute
   '/ncc/iptv/history': typeof NccIptvHistoryRoute
   '/ncc/iptv/premium': typeof NccIptvPremiumRoute
@@ -513,6 +520,7 @@ export interface FileRoutesByTo {
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/ncc/clients/$id': typeof NccClientsIdRoute
   '/ncc/iptv/accounts': typeof NccIptvAccountsRoute
+  '/ncc/iptv/debug': typeof NccIptvDebugRoute
   '/ncc/iptv/expired': typeof NccIptvExpiredRoute
   '/ncc/iptv/history': typeof NccIptvHistoryRoute
   '/ncc/iptv/premium': typeof NccIptvPremiumRoute
@@ -581,6 +589,7 @@ export interface FileRoutesById {
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/ncc/clients/$id': typeof NccClientsIdRoute
   '/ncc/iptv/accounts': typeof NccIptvAccountsRoute
+  '/ncc/iptv/debug': typeof NccIptvDebugRoute
   '/ncc/iptv/expired': typeof NccIptvExpiredRoute
   '/ncc/iptv/history': typeof NccIptvHistoryRoute
   '/ncc/iptv/premium': typeof NccIptvPremiumRoute
@@ -650,6 +659,7 @@ export interface FileRouteTypes {
     | '/lovable/email/suppression'
     | '/ncc/clients/$id'
     | '/ncc/iptv/accounts'
+    | '/ncc/iptv/debug'
     | '/ncc/iptv/expired'
     | '/ncc/iptv/history'
     | '/ncc/iptv/premium'
@@ -711,6 +721,7 @@ export interface FileRouteTypes {
     | '/lovable/email/suppression'
     | '/ncc/clients/$id'
     | '/ncc/iptv/accounts'
+    | '/ncc/iptv/debug'
     | '/ncc/iptv/expired'
     | '/ncc/iptv/history'
     | '/ncc/iptv/premium'
@@ -778,6 +789,7 @@ export interface FileRouteTypes {
     | '/lovable/email/suppression'
     | '/ncc/clients/$id'
     | '/ncc/iptv/accounts'
+    | '/ncc/iptv/debug'
     | '/ncc/iptv/expired'
     | '/ncc/iptv/history'
     | '/ncc/iptv/premium'
@@ -1212,6 +1224,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof NccIptvExpiredRouteImport
       parentRoute: typeof NccIptvRoute
     }
+    '/ncc/iptv/debug': {
+      id: '/ncc/iptv/debug'
+      path: '/debug'
+      fullPath: '/ncc/iptv/debug'
+      preLoaderRoute: typeof NccIptvDebugRouteImport
+      parentRoute: typeof NccIptvRoute
+    }
     '/ncc/iptv/accounts': {
       id: '/ncc/iptv/accounts'
       path: '/accounts'
@@ -1343,6 +1362,7 @@ const NccClientsRouteWithChildren = NccClientsRoute._addFileChildren(
 
 interface NccIptvRouteChildren {
   NccIptvAccountsRoute: typeof NccIptvAccountsRoute
+  NccIptvDebugRoute: typeof NccIptvDebugRoute
   NccIptvExpiredRoute: typeof NccIptvExpiredRoute
   NccIptvHistoryRoute: typeof NccIptvHistoryRoute
   NccIptvPremiumRoute: typeof NccIptvPremiumRoute
@@ -1356,6 +1376,7 @@ interface NccIptvRouteChildren {
 
 const NccIptvRouteChildren: NccIptvRouteChildren = {
   NccIptvAccountsRoute: NccIptvAccountsRoute,
+  NccIptvDebugRoute: NccIptvDebugRoute,
   NccIptvExpiredRoute: NccIptvExpiredRoute,
   NccIptvHistoryRoute: NccIptvHistoryRoute,
   NccIptvPremiumRoute: NccIptvPremiumRoute,
