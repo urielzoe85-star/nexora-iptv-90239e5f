@@ -6,6 +6,8 @@ export const Route = createFileRoute("/ncc/iptv")({ component: IptvLayout });
 
 const TABS = [
   { to: "/ncc/iptv",               label: "Dashboard",     exact: true },
+  { to: "/ncc/iptv/import",        label: "Import" },
+  { to: "/ncc/iptv/inventory",     label: "Inventaire" },
   { to: "/ncc/iptv/accounts",      label: "Comptes IPTV" },
   { to: "/ncc/iptv/trials",        label: "Essais gratuits" },
   { to: "/ncc/iptv/premium",       label: "Premium" },
@@ -14,7 +16,7 @@ const TABS = [
   { to: "/ncc/iptv/expired",       label: "Expirés" },
   { to: "/ncc/iptv/subscriptions", label: "Abonnements" },
   { to: "/ncc/iptv/providers",     label: "Fournisseurs" },
-  { to: "/ncc/iptv/history",       label: "Historique" },
+  { to: "/ncc/iptv/history",       label: "Historique imports" },
   { to: "/ncc/iptv/debug",         label: "API Debug" },
 ];
 
