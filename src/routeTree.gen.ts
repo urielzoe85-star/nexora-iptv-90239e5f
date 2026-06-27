@@ -73,6 +73,7 @@ import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/e
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as ApiPublicSebpayWebhookRouteImport } from './routes/api/public/sebpay/webhook'
+import { Route as ApiPublicAutomationProcessQueueRouteImport } from './routes/api/public/automation/process-queue'
 
 const TrackRoute = TrackRouteImport.update({
   id: '/track',
@@ -397,6 +398,12 @@ const ApiPublicSebpayWebhookRoute = ApiPublicSebpayWebhookRouteImport.update({
   path: '/api/public/sebpay/webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicAutomationProcessQueueRoute =
+  ApiPublicAutomationProcessQueueRouteImport.update({
+    id: '/api/public/automation/process-queue',
+    path: '/api/public/automation/process-queue',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -457,6 +464,7 @@ export interface FileRoutesByFullPath {
   '/ncc/settings/$section': typeof NccSettingsSectionRoute
   '/ncc/iptv/': typeof NccIptvIndexRoute
   '/ncc/settings/': typeof NccSettingsIndexRoute
+  '/api/public/automation/process-queue': typeof ApiPublicAutomationProcessQueueRoute
   '/api/public/sebpay/webhook': typeof ApiPublicSebpayWebhookRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -517,6 +525,7 @@ export interface FileRoutesByTo {
   '/ncc/settings/$section': typeof NccSettingsSectionRoute
   '/ncc/iptv': typeof NccIptvIndexRoute
   '/ncc/settings': typeof NccSettingsIndexRoute
+  '/api/public/automation/process-queue': typeof ApiPublicAutomationProcessQueueRoute
   '/api/public/sebpay/webhook': typeof ApiPublicSebpayWebhookRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -584,6 +593,7 @@ export interface FileRoutesById {
   '/ncc/settings/$section': typeof NccSettingsSectionRoute
   '/ncc/iptv/': typeof NccIptvIndexRoute
   '/ncc/settings/': typeof NccSettingsIndexRoute
+  '/api/public/automation/process-queue': typeof ApiPublicAutomationProcessQueueRoute
   '/api/public/sebpay/webhook': typeof ApiPublicSebpayWebhookRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -652,6 +662,7 @@ export interface FileRouteTypes {
     | '/ncc/settings/$section'
     | '/ncc/iptv/'
     | '/ncc/settings/'
+    | '/api/public/automation/process-queue'
     | '/api/public/sebpay/webhook'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -712,6 +723,7 @@ export interface FileRouteTypes {
     | '/ncc/settings/$section'
     | '/ncc/iptv'
     | '/ncc/settings'
+    | '/api/public/automation/process-queue'
     | '/api/public/sebpay/webhook'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -778,6 +790,7 @@ export interface FileRouteTypes {
     | '/ncc/settings/$section'
     | '/ncc/iptv/'
     | '/ncc/settings/'
+    | '/api/public/automation/process-queue'
     | '/api/public/sebpay/webhook'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -803,6 +816,7 @@ export interface RootRouteChildren {
   PaymentFailedRoute: typeof PaymentFailedRoute
   PaymentSuccessRoute: typeof PaymentSuccessRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
+  ApiPublicAutomationProcessQueueRoute: typeof ApiPublicAutomationProcessQueueRoute
   ApiPublicSebpayWebhookRoute: typeof ApiPublicSebpayWebhookRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
@@ -1261,6 +1275,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicSebpayWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/automation/process-queue': {
+      id: '/api/public/automation/process-queue'
+      path: '/api/public/automation/process-queue'
+      fullPath: '/api/public/automation/process-queue'
+      preLoaderRoute: typeof ApiPublicAutomationProcessQueueRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -1436,6 +1457,7 @@ const rootRouteChildren: RootRouteChildren = {
   PaymentFailedRoute: PaymentFailedRoute,
   PaymentSuccessRoute: PaymentSuccessRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
+  ApiPublicAutomationProcessQueueRoute: ApiPublicAutomationProcessQueueRoute,
   ApiPublicSebpayWebhookRoute: ApiPublicSebpayWebhookRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
