@@ -244,7 +244,7 @@ export const getOrder = createServerFn({ method: "POST" })
     if (!order) throw new Error("Order not found");
     let customer = null;
     if (order.customer_id) {
-      const { data } = await sb.from("customers").select("id,email,full_name").eq("id", order.customer_id).maybeSingle();
+      const { data } = await sb.from("customers").select("id,email,full_name,phone,metadata").eq("id", order.customer_id).maybeSingle();
       customer = data;
     }
     return { order, customer };

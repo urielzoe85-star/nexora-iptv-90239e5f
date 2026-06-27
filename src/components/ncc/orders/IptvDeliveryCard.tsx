@@ -1,15 +1,16 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Mail, MessageCircle, Send, Tv, CheckCircle2, PackageSearch } from "lucide-react";
+import { Tv, CheckCircle2, PackageSearch } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { useState, useMemo } from "react";
-import { markIptvDeliverySent } from "@/lib/iptv-megaott.functions";
 import { listInventoryAccounts, assignIptvAccountToOrder } from "@/lib/iptv-import.functions";
+import { DeliveryComposer } from "./DeliveryComposer";
+import { getOrder } from "@/lib/ncc.functions";
 
 interface Delivery {
   iptv_account_id: string;
@@ -29,12 +30,11 @@ interface Delivery {
 
 export function IptvDeliveryCard({ orderId, metadata }: { orderId: string; metadata: any }) {
   const delivery = (metadata?.iptv_delivery ?? null) as Delivery | null;
-  const qc = useQueryClient();
-  const sendFn = useServerFn(markIptvDeliverySent);
-  const mark = useMutation({
-    mutationFn: (channel: "email" | "whatsapp" | "telegram") => sendFn({ data: { order_id: orderId, channel } }),
-    onSuccess: () => { toast.success("Envoi enregistré"); qc.invalidateQueries({ queryKey: ["ncc", "order", orderId] }); },
-    onError: (e) => toast.error((e as Error).message),
+  const getOrderFn = useServerFn(getOrder);
+  const orderQ = useQuery({
+    queryKey: ["ncc", "order", orderId],
+    queryFn: () => getOrderFn({ data: { id: orderId } }),
+    enabled: !!delivery,
   });
 
   return (
@@ -72,18 +72,14 @@ export function IptvDeliveryCard({ orderId, metadata }: { orderId: string; metad
               <Field label="Max connexions">{delivery.max_connections ?? "—"}</Field>
               <Field label="DNS link" className="sm:col-span-2 truncate">{delivery.dns_link ?? "—"}</Field>
             </div>
-            <div className="flex flex-wrap gap-2 border-t pt-3">
-              <span className="text-xs text-muted-foreground self-center mr-2">Envoyer au client :</span>
-              <Button size="sm" variant="outline" disabled={mark.isPending} onClick={() => mark.mutate("email")}>
-                <Mail className="h-3 w-3 mr-1" /> Email
-              </Button>
-              <Button size="sm" variant="outline" disabled={mark.isPending} onClick={() => mark.mutate("whatsapp")}>
-                <MessageCircle className="h-3 w-3 mr-1" /> WhatsApp
-              </Button>
-              <Button size="sm" variant="outline" disabled={mark.isPending} onClick={() => mark.mutate("telegram")}>
-                <Send className="h-3 w-3 mr-1" /> Telegram
-              </Button>
-            </div>
+            {orderQ.data && (
+              <DeliveryComposer
+                orderId={orderId}
+                order={orderQ.data.order}
+                customer={orderQ.data.customer}
+                delivery={delivery}
+              />
+            )}
             {delivery.delivery_status === "sent" && delivery.sent_at && (
               <p className="text-xs text-muted-foreground">Dernier envoi : {new Date(delivery.sent_at).toLocaleString()} ({delivery.sent_channel})</p>
             )}
