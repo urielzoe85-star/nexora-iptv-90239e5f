@@ -47,7 +47,7 @@ export const NCC_MODULES: NccModule[] = [
 
   { id: "support", label: "Support", description: "Tickets et helpdesk client.", icon: LifeBuoy, to: "/ncc/support", group: "ops", status: "preparing" },
   { id: "employees", label: "Employés", description: "Comptes internes, rôles, permissions.", icon: UserCog, to: "/ncc/employees", group: "ops", status: "preparing" },
-  { id: "automation", label: "Automatisation", description: "Workflows et déclencheurs.", icon: Workflow, to: "/ncc/automation", group: "ops", status: "preparing", upcoming: ["Constructeur visuel", "Triggers DB", "Actions multi-canal"] },
+  { id: "automation", label: "Automatisation", description: "Workflows, déclencheurs, file d'attente et historique.", icon: Workflow, to: "/ncc/automation", group: "ops", status: "ready" },
 
   { id: "settings", label: "Paramètres", description: "Configuration globale de la plateforme.", icon: Settings, to: "/ncc/settings", group: "system", status: "preparing" },
 ];

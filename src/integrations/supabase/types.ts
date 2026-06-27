@@ -14,6 +14,196 @@ export type Database = {
   }
   public: {
     Tables: {
+      automation_queue: {
+        Row: {
+          attempts: number
+          created_at: string
+          id: string
+          last_error: string | null
+          locked_at: string | null
+          max_attempts: number
+          payload: Json
+          scheduled_at: string
+          status: string
+          trigger_event: string | null
+          updated_at: string
+          workflow_key: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          locked_at?: string | null
+          max_attempts?: number
+          payload?: Json
+          scheduled_at?: string
+          status?: string
+          trigger_event?: string | null
+          updated_at?: string
+          workflow_key: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          locked_at?: string | null
+          max_attempts?: number
+          payload?: Json
+          scheduled_at?: string
+          status?: string
+          trigger_event?: string | null
+          updated_at?: string
+          workflow_key?: string
+        }
+        Relationships: []
+      }
+      automation_runs: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          duration_ms: number | null
+          error: string | null
+          finished_at: string | null
+          id: string
+          payload: Json
+          started_at: string | null
+          status: string
+          trigger_event: string | null
+          updated_at: string
+          workflow_id: string | null
+          workflow_key: string
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          payload?: Json
+          started_at?: string | null
+          status?: string
+          trigger_event?: string | null
+          updated_at?: string
+          workflow_id?: string | null
+          workflow_key: string
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          payload?: Json
+          started_at?: string | null
+          status?: string
+          trigger_event?: string | null
+          updated_at?: string
+          workflow_id?: string | null
+          workflow_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "automation_runs_workflow_id_fkey"
+            columns: ["workflow_id"]
+            isOneToOne: false
+            referencedRelation: "automation_workflows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      automation_steps: {
+        Row: {
+          created_at: string
+          duration_ms: number | null
+          error: string | null
+          finished_at: string | null
+          id: string
+          input: Json | null
+          name: string
+          output: Json | null
+          run_id: string
+          started_at: string | null
+          status: string
+          step_index: number
+        }
+        Insert: {
+          created_at?: string
+          duration_ms?: number | null
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          input?: Json | null
+          name: string
+          output?: Json | null
+          run_id: string
+          started_at?: string | null
+          status?: string
+          step_index: number
+        }
+        Update: {
+          created_at?: string
+          duration_ms?: number | null
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          input?: Json | null
+          name?: string
+          output?: Json | null
+          run_id?: string
+          started_at?: string | null
+          status?: string
+          step_index?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "automation_steps_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "automation_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      automation_workflows: {
+        Row: {
+          created_at: string
+          definition: Json
+          description: string | null
+          enabled: boolean
+          id: string
+          key: string
+          name: string
+          trigger_event: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          definition?: Json
+          description?: string | null
+          enabled?: boolean
+          id?: string
+          key: string
+          name: string
+          trigger_event: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          definition?: Json
+          description?: string | null
+          enabled?: boolean
+          id?: string
+          key?: string
+          name?: string
+          trigger_event?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       customer_events: {
         Row: {
           actor_id: string | null
