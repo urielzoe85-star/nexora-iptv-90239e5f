@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { megaottStatus, megaottPing } from "@/lib/iptv-megaott.functions";
+import { MegaottSubscriptionForm } from "./MegaottSubscriptionForm";
 
 export function MegaottPanel() {
   const qc = useQueryClient();
@@ -54,6 +55,7 @@ export function MegaottPanel() {
           <Button size="sm" variant="outline" onClick={() => mPing.mutate()} disabled={!s.data?.tokenConfigured || !s.data?.providerConfigured || mPing.isPending}>
             <Activity className="h-3 w-3 mr-1" /> Tester la connexion
           </Button>
+          <MegaottSubscriptionForm disabled={!ready} />
         </div>
       </CardContent>
     </Card>

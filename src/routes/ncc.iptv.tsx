@@ -15,6 +15,7 @@ const TABS = [
   { to: "/ncc/iptv/subscriptions", label: "Abonnements" },
   { to: "/ncc/iptv/providers",     label: "Fournisseurs" },
   { to: "/ncc/iptv/history",       label: "Historique" },
+  { to: "/ncc/iptv/debug",         label: "API Debug" },
 ];
 
 function IptvLayout() {
