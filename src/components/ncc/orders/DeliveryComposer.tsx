@@ -67,7 +67,7 @@ export function DeliveryComposer({ orderId, order, customer, delivery }: Props) 
   });
 
   const log = useMutation({
-    mutationFn: (p: Parameters<typeof logFn>[0]["data"]) => logFn({ data: p }),
+    mutationFn: (p: any) => logFn({ data: p }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["delivery", "logs", orderId] }),
   });
 
