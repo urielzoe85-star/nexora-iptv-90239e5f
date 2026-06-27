@@ -175,6 +175,165 @@ export type Database = {
         }
         Relationships: []
       }
+      iptv_accounts: {
+        Row: {
+          account_type: Database["public"]["Enums"]["iptv_account_type"]
+          assigned_at: string | null
+          bouquet: string | null
+          created_at: string
+          customer_id: string | null
+          expires_at: string | null
+          id: string
+          metadata: Json
+          notes: string | null
+          password: string | null
+          provider_id: string | null
+          status: Database["public"]["Enums"]["iptv_account_status"]
+          updated_at: string
+          username: string
+        }
+        Insert: {
+          account_type?: Database["public"]["Enums"]["iptv_account_type"]
+          assigned_at?: string | null
+          bouquet?: string | null
+          created_at?: string
+          customer_id?: string | null
+          expires_at?: string | null
+          id?: string
+          metadata?: Json
+          notes?: string | null
+          password?: string | null
+          provider_id?: string | null
+          status?: Database["public"]["Enums"]["iptv_account_status"]
+          updated_at?: string
+          username: string
+        }
+        Update: {
+          account_type?: Database["public"]["Enums"]["iptv_account_type"]
+          assigned_at?: string | null
+          bouquet?: string | null
+          created_at?: string
+          customer_id?: string | null
+          expires_at?: string | null
+          id?: string
+          metadata?: Json
+          notes?: string | null
+          password?: string | null
+          provider_id?: string | null
+          status?: Database["public"]["Enums"]["iptv_account_status"]
+          updated_at?: string
+          username?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "iptv_accounts_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "iptv_accounts_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "iptv_providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      iptv_logs: {
+        Row: {
+          account_id: string | null
+          action: string
+          actor_id: string | null
+          created_at: string
+          id: string
+          message: string | null
+          payload: Json
+          provider_id: string | null
+        }
+        Insert: {
+          account_id?: string | null
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          message?: string | null
+          payload?: Json
+          provider_id?: string | null
+        }
+        Update: {
+          account_id?: string | null
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          message?: string | null
+          payload?: Json
+          provider_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "iptv_logs_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "iptv_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "iptv_logs_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "iptv_providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      iptv_providers: {
+        Row: {
+          api_key: string | null
+          api_url: string | null
+          created_at: string
+          id: string
+          is_default: boolean
+          metadata: Json
+          name: string
+          panel_url: string | null
+          password: string | null
+          status: Database["public"]["Enums"]["iptv_provider_status"]
+          updated_at: string
+          username: string | null
+        }
+        Insert: {
+          api_key?: string | null
+          api_url?: string | null
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          metadata?: Json
+          name: string
+          panel_url?: string | null
+          password?: string | null
+          status?: Database["public"]["Enums"]["iptv_provider_status"]
+          updated_at?: string
+          username?: string | null
+        }
+        Update: {
+          api_key?: string | null
+          api_url?: string | null
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          metadata?: Json
+          name?: string
+          panel_url?: string | null
+          password?: string | null
+          status?: Database["public"]["Enums"]["iptv_provider_status"]
+          updated_at?: string
+          username?: string | null
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           body: string | null
@@ -583,6 +742,14 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user"
+      iptv_account_status:
+        | "available"
+        | "assigned"
+        | "active"
+        | "expired"
+        | "suspended"
+      iptv_account_type: "trial" | "premium"
+      iptv_provider_status: "active" | "inactive" | "error"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -711,6 +878,15 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
+      iptv_account_status: [
+        "available",
+        "assigned",
+        "active",
+        "expired",
+        "suspended",
+      ],
+      iptv_account_type: ["trial", "premium"],
+      iptv_provider_status: ["active", "inactive", "error"],
     },
   },
 } as const
