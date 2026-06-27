@@ -121,9 +121,9 @@ export interface MegaottRawTrace {
   url: string;
   method: string;
   requestHeaders: Record<string, string>;
-  requestBody: unknown;
+  requestBody: any;
   status: number | null;
-  responseBody: unknown;
+  responseBody: any;
   responseRaw: string | null;
   durationMs: number;
   attempts: number;

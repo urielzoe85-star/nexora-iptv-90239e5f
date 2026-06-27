@@ -238,7 +238,7 @@ export const megaottCreateSubscription = createServerFn({ method: "POST" })
         ok: false as const,
         error: trace.error ?? "Erreur inconnue",
         status: trace.status,
-        response: trace.responseBody,
+        response: trace.responseBody as any,
         trace,
       };
     }
