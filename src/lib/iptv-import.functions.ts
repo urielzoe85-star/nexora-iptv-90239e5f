@@ -13,14 +13,55 @@ async function admin(userId: string) {
   return supabaseAdmin as any;
 }
 
-// Champs cibles NEXORA proposés dans l'assistant.
-export const NEXORA_IPTV_FIELDS = [
-  "username", "password", "package", "expires_at",
-  "dns_link", "dns_link_samsung_lg", "portal_link",
-  "mac_address", "type", "max_connections",
-  "megaott_subscription_id", "notes",
+// Format officiel MEGAOTT — colonnes attendues dans l'export.
+export const MEGAOTT_COLUMNS = [
+  "Username", "Password", "Mac", "Code", "Type", "Owner", "Package", "DNS",
+  "Paid", "Trial", "Expiration Date", "Max Connections", "Forced Country",
+  "Enabled", "Admin Enabled", "Last Login", "Last IP",
+  "Reseller Notes", "Admin Notes", "Created At",
 ] as const;
-export type NexoraIptvField = typeof NEXORA_IPTV_FIELDS[number];
+
+// Normalisation : "Max Connections" → "maxconnections"
+function norm(s: string): string {
+  return String(s ?? "").toLowerCase().replace(/[\s_\-\.]+/g, "");
+}
+
+// Aliases acceptés (clé = champ NEXORA, valeurs = variations possibles dans l'en-tête)
+const COLUMN_ALIASES: Record<string, string[]> = {
+  username:        ["username", "user", "login"],
+  password:        ["password", "pass"],
+  mac:             ["mac", "macaddress", "macaddr"],
+  code:            ["code"],
+  type:            ["type"],
+  owner:           ["owner", "reseller"],
+  package:         ["package", "bouquet", "plan"],
+  dns:             ["dns", "dnslink", "url", "m3u"],
+  paid:            ["paid"],
+  trial:           ["trial"],
+  expires_at:      ["expirationdate", "expiration", "expiresat", "expirydate", "expdate"],
+  max_connections: ["maxconnections", "connections", "maxconn"],
+  forced_country:  ["forcedcountry", "country"],
+  enabled:         ["enabled"],
+  admin_enabled:   ["adminenabled"],
+  last_login:      ["lastlogin"],
+  last_ip:         ["lastip", "ip"],
+  reseller_notes:  ["resellernotes", "notes"],
+  admin_notes:     ["adminnotes"],
+  created_at:      ["createdat", "creationdate", "datecreated"],
+};
+
+// Détecte automatiquement la map { champ_nexora: colonne_source }.
+export function detectMegaottMapping(headers: string[]): Record<string, string> {
+  const out: Record<string, string> = {};
+  const lookup = new Map(headers.map(h => [norm(h), h]));
+  for (const [field, aliases] of Object.entries(COLUMN_ALIASES)) {
+    for (const a of aliases) {
+      const h = lookup.get(a);
+      if (h) { out[field] = h; break; }
+    }
+  }
+  return out;
+}
 
 // ─── Parse file ─────────────────────────────────────────────────────────
 
@@ -79,10 +120,8 @@ export const parseIptvImportFile = createServerFn({ method: "POST" })
 const CommitSchema = z.object({
   filename: z.string().min(1).max(255),
   file_format: z.enum(["csv", "xls", "xlsx"]),
-  mapping: z.record(z.string(), z.string()), // { nexora_field: source_column }
   rows: z.array(z.record(z.string(), z.any())).max(20000),
   dedupe_strategy: z.enum(["skip", "update"]).default("skip"),
-  default_account_type: z.enum(["trial", "premium"]).default("premium"),
 });
 
 function pick(row: Record<string, any>, mapping: Record<string, string>, field: string): string | null {
@@ -92,6 +131,21 @@ function pick(row: Record<string, any>, mapping: Record<string, string>, field: 
   if (v === undefined || v === null) return null;
   const s = String(v).trim();
   return s.length ? s : null;
+}
+
+function pickBool(row: Record<string, any>, mapping: Record<string, string>, field: string): boolean | null {
+  const v = pick(row, mapping, field);
+  if (v == null) return null;
+  if (/^(1|true|yes|y|oui|on|paid|enabled)$/i.test(v)) return true;
+  if (/^(0|false|no|n|non|off|unpaid|disabled)$/i.test(v)) return false;
+  return null;
+}
+
+function pickInt(row: Record<string, any>, mapping: Record<string, string>, field: string): number | null {
+  const v = pick(row, mapping, field);
+  if (!v) return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? Math.trunc(n) : null;
 }
 
 function parseDate(v: string | null): string | null {
@@ -116,13 +170,18 @@ export const commitIptvImport = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const sb = await admin(context.userId);
 
+    // Auto-detect mapping from headers of first row.
+    const headers = data.rows[0] ? Object.keys(data.rows[0]) : [];
+    const mapping = detectMegaottMapping(headers);
+    if (!mapping.username) throw new Error("Colonne 'Username' introuvable dans le fichier — vérifiez que l'export provient bien de MEGAOTT.");
+
     // Create batch first.
     const { data: batch, error: bErr } = await sb.from("iptv_import_batches").insert({
       filename: data.filename,
       file_format: data.file_format,
       row_count: data.rows.length,
       imported_by: context.userId,
-      mapping_snapshot: data.mapping,
+      mapping_snapshot: mapping,
     }).select("id").single();
     if (bErr) throw new Error(bErr.message);
 
@@ -131,45 +190,49 @@ export const commitIptvImport = createServerFn({ method: "POST" })
 
     for (const row of data.rows) {
       try {
-        const username = pick(row, data.mapping, "username");
+        const username = pick(row, mapping, "username");
         if (!username) { skipped++; continue; }
 
-        const megaottId = pick(row, data.mapping, "megaott_subscription_id");
+        const trialFlag = pickBool(row, mapping, "trial");
+        const accountType: "trial" | "premium" =
+          trialFlag === true ? "trial"
+          : (() => {
+              const t = pick(row, mapping, "type");
+              if (t && /trial|essai|free/i.test(t)) return "trial" as const;
+              return "premium" as const;
+            })();
+
         const payload: Record<string, any> = {
           username,
-          password: pick(row, data.mapping, "password"),
-          package: pick(row, data.mapping, "package"),
-          expires_at: parseDate(pick(row, data.mapping, "expires_at")),
-          dns_link: pick(row, data.mapping, "dns_link"),
-          dns_link_samsung_lg: pick(row, data.mapping, "dns_link_samsung_lg"),
-          portal_link: pick(row, data.mapping, "portal_link"),
-          mac_address: pick(row, data.mapping, "mac_address"),
-          max_connections: (() => {
-            const v = pick(row, data.mapping, "max_connections");
-            const n = v ? Number(v) : null;
-            return n && Number.isFinite(n) ? Math.trunc(n) : null;
-          })(),
-          megaott_subscription_id: megaottId,
-          notes: pick(row, data.mapping, "notes"),
-          account_type: (() => {
-            const t = pick(row, data.mapping, "type");
-            if (t && /trial|essai|free/i.test(t)) return "trial";
-            return data.default_account_type;
-          })(),
+          password: pick(row, mapping, "password"),
+          package: pick(row, mapping, "package"),
+          expires_at: parseDate(pick(row, mapping, "expires_at")),
+          dns_link: pick(row, mapping, "dns"),
+          mac: pick(row, mapping, "mac"),
+          mac_address: pick(row, mapping, "mac"),
+          code: pick(row, mapping, "code"),
+          owner: pick(row, mapping, "owner"),
+          paid: pickBool(row, mapping, "paid"),
+          trial: trialFlag,
+          forced_country: pick(row, mapping, "forced_country"),
+          enabled: pickBool(row, mapping, "enabled"),
+          admin_enabled: pickBool(row, mapping, "admin_enabled"),
+          last_login: parseDate(pick(row, mapping, "last_login")),
+          last_ip: pick(row, mapping, "last_ip"),
+          reseller_notes: pick(row, mapping, "reseller_notes"),
+          admin_notes: pick(row, mapping, "admin_notes"),
+          source_created_at: parseDate(pick(row, mapping, "created_at")),
+          max_connections: pickInt(row, mapping, "max_connections"),
+          notes: pick(row, mapping, "reseller_notes"),
+          account_type: accountType,
           imported_at: new Date().toISOString(),
           import_batch_id: batch.id,
         };
 
-        // Find existing by megaott id OR by username
-        let existing: { id: string; status: string } | null = null;
-        if (megaottId) {
-          const { data: e } = await sb.from("iptv_accounts").select("id, status").eq("megaott_subscription_id", megaottId).maybeSingle();
-          if (e) existing = e;
-        }
-        if (!existing) {
-          const { data: e } = await sb.from("iptv_accounts").select("id, status").ilike("username", username).limit(1).maybeSingle();
-          if (e) existing = e;
-        }
+        // Dédup : Username est l'identifiant officiel MEGAOTT.
+        const { data: e } = await sb.from("iptv_accounts")
+          .select("id, status").ilike("username", username).limit(1).maybeSingle();
+        const existing = e as { id: string; status: string } | null;
 
         if (existing) {
           if (data.dedupe_strategy === "skip") { skipped++; continue; }
@@ -266,12 +329,13 @@ export const iptvInventoryKpis = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const sb = await admin(context.userId);
-    const { data, error } = await sb.from("iptv_accounts").select("status, package, account_type, expires_at");
+    const { data, error } = await sb.from("iptv_accounts").select("status, package, account_type, expires_at, paid, trial");
     if (error) throw new Error(error.message);
     const rows = data ?? [];
     const byStatus: Record<string, number> = {};
     const byPackage: Record<string, number> = {};
     const byType: Record<string, number> = {};
+    let paid = 0, trial = 0;
     const now = Date.now();
     let expiringSoon = 0;
     for (const r of rows) {
@@ -279,12 +343,14 @@ export const iptvInventoryKpis = createServerFn({ method: "GET" })
       const pkg = r.package ?? "—";
       byPackage[pkg] = (byPackage[pkg] ?? 0) + 1;
       byType[r.account_type] = (byType[r.account_type] ?? 0) + 1;
+      if (r.paid === true) paid++;
+      if (r.trial === true) trial++;
       if (r.expires_at) {
         const t = new Date(r.expires_at).getTime();
         if (!Number.isNaN(t) && t - now < 7 * 86_400_000 && t > now) expiringSoon++;
       }
     }
-    return { total: rows.length, byStatus, byPackage, byType, expiringSoon };
+    return { total: rows.length, byStatus, byPackage, byType, expiringSoon, paid, trial };
   });
 
 export const listInventoryAccounts = createServerFn({ method: "POST" })
@@ -296,6 +362,9 @@ export const listInventoryAccounts = createServerFn({ method: "POST" })
     search: z.string().optional(),
     expiring_within_days: z.number().int().min(0).max(365).optional(),
     only_available: z.boolean().optional(),
+    paid: z.boolean().optional(),
+    trial: z.boolean().optional(),
+    min_connections: z.number().int().min(0).max(1000).optional(),
     limit: z.number().int().min(1).max(1000).default(500),
   }).parse(d ?? {}))
   .handler(async ({ data, context }) => {
@@ -305,6 +374,9 @@ export const listInventoryAccounts = createServerFn({ method: "POST" })
     else if (data.status) q = q.eq("status", data.status);
     if (data.account_type) q = q.eq("account_type", data.account_type);
     if (data.package) q = q.eq("package", data.package);
+    if (typeof data.paid === "boolean") q = q.eq("paid", data.paid);
+    if (typeof data.trial === "boolean") q = q.eq("trial", data.trial);
+    if (typeof data.min_connections === "number") q = q.gte("max_connections", data.min_connections);
     if (data.search) q = q.ilike("username", `%${data.search}%`);
     if (data.expiring_within_days) {
       const cutoff = new Date(Date.now() + data.expiring_within_days * 86_400_000).toISOString();

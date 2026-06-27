@@ -425,79 +425,118 @@ export type Database = {
       iptv_accounts: {
         Row: {
           account_type: Database["public"]["Enums"]["iptv_account_type"]
+          admin_enabled: boolean | null
+          admin_notes: string | null
           assigned_at: string | null
           bouquet: string | null
+          code: string | null
           created_at: string
           customer_id: string | null
           dns_link: string | null
           dns_link_samsung_lg: string | null
+          enabled: boolean | null
           expires_at: string | null
+          forced_country: string | null
           id: string
           import_batch_id: string | null
           imported_at: string | null
+          last_ip: string | null
+          last_login: string | null
+          mac: string | null
           mac_address: string | null
           max_connections: number | null
           megaott_subscription_id: string | null
           metadata: Json
           notes: string | null
           order_id: string | null
+          owner: string | null
           package: string | null
+          paid: boolean | null
           password: string | null
           portal_link: string | null
           provider_id: string | null
+          reseller_notes: string | null
+          source_created_at: string | null
           status: Database["public"]["Enums"]["iptv_account_status"]
+          trial: boolean | null
           updated_at: string
           username: string
         }
         Insert: {
           account_type?: Database["public"]["Enums"]["iptv_account_type"]
+          admin_enabled?: boolean | null
+          admin_notes?: string | null
           assigned_at?: string | null
           bouquet?: string | null
+          code?: string | null
           created_at?: string
           customer_id?: string | null
           dns_link?: string | null
           dns_link_samsung_lg?: string | null
+          enabled?: boolean | null
           expires_at?: string | null
+          forced_country?: string | null
           id?: string
           import_batch_id?: string | null
           imported_at?: string | null
+          last_ip?: string | null
+          last_login?: string | null
+          mac?: string | null
           mac_address?: string | null
           max_connections?: number | null
           megaott_subscription_id?: string | null
           metadata?: Json
           notes?: string | null
           order_id?: string | null
+          owner?: string | null
           package?: string | null
+          paid?: boolean | null
           password?: string | null
           portal_link?: string | null
           provider_id?: string | null
+          reseller_notes?: string | null
+          source_created_at?: string | null
           status?: Database["public"]["Enums"]["iptv_account_status"]
+          trial?: boolean | null
           updated_at?: string
           username: string
         }
         Update: {
           account_type?: Database["public"]["Enums"]["iptv_account_type"]
+          admin_enabled?: boolean | null
+          admin_notes?: string | null
           assigned_at?: string | null
           bouquet?: string | null
+          code?: string | null
           created_at?: string
           customer_id?: string | null
           dns_link?: string | null
           dns_link_samsung_lg?: string | null
+          enabled?: boolean | null
           expires_at?: string | null
+          forced_country?: string | null
           id?: string
           import_batch_id?: string | null
           imported_at?: string | null
+          last_ip?: string | null
+          last_login?: string | null
+          mac?: string | null
           mac_address?: string | null
           max_connections?: number | null
           megaott_subscription_id?: string | null
           metadata?: Json
           notes?: string | null
           order_id?: string | null
+          owner?: string | null
           package?: string | null
+          paid?: boolean | null
           password?: string | null
           portal_link?: string | null
           provider_id?: string | null
+          reseller_notes?: string | null
+          source_created_at?: string | null
           status?: Database["public"]["Enums"]["iptv_account_status"]
+          trial?: boolean | null
           updated_at?: string
           username?: string
         }

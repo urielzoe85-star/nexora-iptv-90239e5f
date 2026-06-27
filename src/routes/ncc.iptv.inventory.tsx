@@ -35,6 +35,9 @@ function InventoryPage() {
   const [pkg, setPkg] = useState<string>(ALL);
   const [search, setSearch] = useState("");
   const [expiring, setExpiring] = useState<string>(ALL);
+  const [paid, setPaid] = useState<string>(ALL);
+  const [trial, setTrial] = useState<string>(ALL);
+  const [minConn, setMinConn] = useState<string>(ALL);
 
   const filter = useMemo(() => ({
     status: status === ALL ? undefined : status,
@@ -42,7 +45,10 @@ function InventoryPage() {
     package: pkg === ALL ? undefined : pkg,
     search: search || undefined,
     expiring_within_days: expiring === ALL ? undefined : Number(expiring),
-  }), [status, type, pkg, search, expiring]);
+    paid: paid === ALL ? undefined : paid === "yes",
+    trial: trial === ALL ? undefined : trial === "yes",
+    min_connections: minConn === ALL ? undefined : Number(minConn),
+  }), [status, type, pkg, search, expiring, paid, trial, minConn]);
 
   const accounts = useQuery({
     queryKey: ["iptv", "inventory", filter],
@@ -53,17 +59,19 @@ function InventoryPage() {
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-7 gap-3">
         <Kpi label="Total importés" value={kpis.data?.total ?? 0} />
         <Kpi label="Disponibles" value={kpis.data?.byStatus.available ?? 0} accent="emerald" />
-        <Kpi label="Affectés" value={(kpis.data?.byStatus.assigned ?? 0) + (kpis.data?.byStatus.delivered ?? 0)} accent="sky" />
+        <Kpi label="Affectés" value={kpis.data?.byStatus.assigned ?? 0} accent="sky" />
+        <Kpi label="Livrés" value={kpis.data?.byStatus.delivered ?? 0} accent="violet" />
         <Kpi label="Expirés" value={kpis.data?.byStatus.expired ?? 0} accent="zinc" />
         <Kpi label="Désactivés" value={kpis.data?.byStatus.disabled ?? 0} accent="red" />
+        <Kpi label="Trial / Paid" value={`${kpis.data?.trial ?? 0} / ${kpis.data?.paid ?? 0}` as any} />
       </div>
 
       <Card>
         <CardContent className="pt-6 space-y-4">
-          <div className="grid md:grid-cols-5 gap-3">
+          <div className="grid md:grid-cols-4 lg:grid-cols-8 gap-3">
             <div>
               <Label className="text-xs">Recherche</Label>
               <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Username…" />
@@ -74,7 +82,7 @@ function InventoryPage() {
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value={ALL}>Tous</SelectItem>
-                  {["available", "reserved", "assigned", "delivered", "active", "expired", "suspended", "disabled"].map(s =>
+                  {["available", "reserved", "assigned", "delivered", "expired", "disabled"].map(s =>
                     <SelectItem key={s} value={s}>{s}</SelectItem>
                   )}
                 </SelectContent>
@@ -102,6 +110,41 @@ function InventoryPage() {
               </Select>
             </div>
             <div>
+              <Label className="text-xs">Paid</Label>
+              <Select value={paid} onValueChange={setPaid}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ALL}>—</SelectItem>
+                  <SelectItem value="yes">Oui</SelectItem>
+                  <SelectItem value="no">Non</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs">Trial</Label>
+              <Select value={trial} onValueChange={setTrial}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ALL}>—</SelectItem>
+                  <SelectItem value="yes">Oui</SelectItem>
+                  <SelectItem value="no">Non</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs">Connexions min.</Label>
+              <Select value={minConn} onValueChange={setMinConn}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ALL}>—</SelectItem>
+                  <SelectItem value="1">≥ 1</SelectItem>
+                  <SelectItem value="2">≥ 2</SelectItem>
+                  <SelectItem value="3">≥ 3</SelectItem>
+                  <SelectItem value="5">≥ 5</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
               <Label className="text-xs">Expire dans</Label>
               <Select value={expiring} onValueChange={setExpiring}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
@@ -122,28 +165,32 @@ function InventoryPage() {
                   <TableHead>Username</TableHead>
                   <TableHead>Package</TableHead>
                   <TableHead>Type</TableHead>
+                  <TableHead>Connexions</TableHead>
+                  <TableHead>Paid</TableHead>
+                  <TableHead>Trial</TableHead>
                   <TableHead>Statut</TableHead>
                   <TableHead>Expire</TableHead>
                   <TableHead>Importé</TableHead>
-                  <TableHead>ID MEGAOTT</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {accounts.isLoading && <TableRow><TableCell colSpan={7} className="text-sm text-muted-foreground">Chargement…</TableCell></TableRow>}
+                {accounts.isLoading && <TableRow><TableCell colSpan={9} className="text-sm text-muted-foreground">Chargement…</TableCell></TableRow>}
                 {!accounts.isLoading && (accounts.data ?? []).length === 0 && (
-                  <TableRow><TableCell colSpan={7} className="text-sm text-muted-foreground">Aucun abonnement.</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={9} className="text-sm text-muted-foreground">Aucun abonnement.</TableCell></TableRow>
                 )}
                 {(accounts.data ?? []).map((a: any) => (
                   <TableRow key={a.id}>
                     <TableCell className="font-mono text-xs">{a.username}</TableCell>
                     <TableCell className="text-sm">{a.package ?? a.bouquet ?? "—"}</TableCell>
                     <TableCell className="text-sm">{a.account_type}</TableCell>
+                    <TableCell className="text-sm">{a.max_connections ?? "—"}</TableCell>
+                    <TableCell className="text-xs">{a.paid === true ? "✓" : a.paid === false ? "✗" : "—"}</TableCell>
+                    <TableCell className="text-xs">{a.trial === true ? "✓" : a.trial === false ? "✗" : "—"}</TableCell>
                     <TableCell>
                       <Badge variant="outline" className={STATUS_COLORS[a.status] ?? ""}>{a.status}</Badge>
                     </TableCell>
                     <TableCell className="text-xs text-muted-foreground">{fmtDate(a.expires_at)}</TableCell>
                     <TableCell className="text-xs text-muted-foreground">{fmtDate(a.imported_at ?? a.created_at)}</TableCell>
-                    <TableCell className="font-mono text-xs">{a.megaott_subscription_id ?? "—"}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -155,7 +202,7 @@ function InventoryPage() {
   );
 }
 
-function Kpi({ label, value, accent }: { label: string; value: number; accent?: string }) {
+function Kpi({ label, value, accent }: { label: string; value: number | string; accent?: string }) {
   return (
     <Card>
       <CardContent className="pt-6">
