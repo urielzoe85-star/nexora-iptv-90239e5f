@@ -115,3 +115,62 @@ function Field({ label, children, className }: { label: string; children: React.
     </div>
   );
 }
+
+function AssignFromInventory({ orderId }: { orderId: string }) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const listFn = useServerFn(listInventoryAccounts);
+  const assignFn = useServerFn(assignIptvAccountToOrder);
+  const qc = useQueryClient();
+  const q = useQuery({
+    queryKey: ["iptv", "inventory", "available", search],
+    queryFn: () => listFn({ data: { only_available: true, search: search || undefined, limit: 100 } }),
+    enabled: open,
+  });
+  const m = useMutation({
+    mutationFn: (account_id: string) => assignFn({ data: { order_id: orderId, account_id } }),
+    onSuccess: () => {
+      toast.success("Abonnement affecté à la commande");
+      qc.invalidateQueries({ queryKey: ["ncc", "order", orderId] });
+      qc.invalidateQueries({ queryKey: ["iptv"] });
+      setOpen(false);
+    },
+    onError: (e) => toast.error((e as Error).message),
+  });
+  const rows = useMemo(() => q.data ?? [], [q.data]);
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm">
+          <PackageSearch className="h-3 w-3 mr-1" /> Affecter un abonnement
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Affecter un abonnement depuis le stock</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
+          <Input placeholder="Rechercher un username…" value={search} onChange={(e) => setSearch(e.target.value)} />
+          <div className="border rounded-lg max-h-[400px] overflow-auto divide-y">
+            {q.isLoading && <div className="p-4 text-sm text-muted-foreground">Chargement…</div>}
+            {!q.isLoading && rows.length === 0 && <div className="p-4 text-sm text-muted-foreground">Aucun abonnement disponible.</div>}
+            {rows.map((a: any) => (
+              <div key={a.id} className="p-3 flex items-center justify-between gap-3 hover:bg-muted/30">
+                <div className="min-w-0 flex-1">
+                  <div className="font-mono text-sm truncate">{a.username}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {(a.package ?? a.bouquet ?? "—")} · {a.account_type} · expire {a.expires_at ? new Date(a.expires_at).toLocaleDateString() : "—"}
+                  </div>
+                </div>
+                <Button size="sm" disabled={m.isPending} onClick={() => m.mutate(a.id)}>Affecter</Button>
+              </div>
+            ))}
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setOpen(false)}>Annuler</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
