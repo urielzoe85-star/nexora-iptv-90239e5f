@@ -278,6 +278,66 @@ export type Database = {
         }
         Relationships: []
       }
+      delivery_logs: {
+        Row: {
+          admin_id: string | null
+          channel: string
+          content: string
+          created_at: string
+          customer_id: string | null
+          error: string | null
+          id: string
+          order_id: string | null
+          recipient: string | null
+          status: string
+          subject: string | null
+          template_id: string | null
+        }
+        Insert: {
+          admin_id?: string | null
+          channel: string
+          content: string
+          created_at?: string
+          customer_id?: string | null
+          error?: string | null
+          id?: string
+          order_id?: string | null
+          recipient?: string | null
+          status: string
+          subject?: string | null
+          template_id?: string | null
+        }
+        Update: {
+          admin_id?: string | null
+          channel?: string
+          content?: string
+          created_at?: string
+          customer_id?: string | null
+          error?: string | null
+          id?: string
+          order_id?: string | null
+          recipient?: string | null
+          status?: string
+          subject?: string | null
+          template_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "delivery_logs_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_logs_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_send_log: {
         Row: {
           created_at: string
