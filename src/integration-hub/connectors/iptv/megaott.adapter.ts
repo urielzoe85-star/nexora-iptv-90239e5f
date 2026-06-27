@@ -170,6 +170,14 @@ export async function megaottRawCall(opts: {
     };
   }
   const url = joinUrl(cfg.value.apiUrl, opts.path);
+  // Pre-send debug line — visible in server-function-logs. Lets you
+  // confirm the exact URL hit MEGAOTT before the network call.
+  logger.info("megaott → outbound", {
+    url, method: opts.method,
+    baseApiUrl: cfg.value.apiUrl,
+    path: opts.path,
+    hasBody: opts.body !== undefined,
+  });
   const res = await apiGateway.request({
     connectorId: CONNECTOR_ID,
     url, method: opts.method,
