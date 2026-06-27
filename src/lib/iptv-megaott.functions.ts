@@ -329,3 +329,148 @@ export const listIntegrationDebugLogs = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return rows ?? [];
   });
+
+// ─── Semi-automatic delivery workflow (admin) ────────────────────────
+// Le workflow "Créer abonnement MEGAOTT" depuis une commande utilise
+// l'interface native MEGAOTT (popup). NEXORA persiste ensuite les infos
+// que l'admin saisit manuellement.
+
+/** Renvoie l'URL d'origine du panel MEGAOTT (sans `/api/v1`) pour `window.open`. */
+export const getMegaottPanelUrl = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await admin(context.userId);
+    const cfg = await resolveMegaottConfig();
+    if (!cfg.ok) return { ok: false as const, error: cfg.error.message, url: null };
+    try {
+      const u = new URL(cfg.value.apiUrl);
+      const panel = (cfg.value.metadata as any)?.panel_url
+        ?? `${u.protocol}//${u.host}`;
+      return { ok: true as const, url: panel, error: null };
+    } catch {
+      return { ok: true as const, url: cfg.value.apiUrl, error: null };
+    }
+  });
+
+const DeliverySchema = z.object({
+  order_id: z.string().uuid(),
+  megaott_subscription_id: z.string().trim().max(120).optional().nullable(),
+  username: z.string().trim().min(1).max(120),
+  password: z.string().trim().min(1).max(255),
+  package: z.string().trim().max(120).optional().nullable(),
+  expires_at: z.string().trim().optional().nullable(),
+  dns_link: z.string().trim().max(500).optional().nullable(),
+  dns_link_samsung_lg: z.string().trim().max(500).optional().nullable(),
+  portal_link: z.string().trim().max(500).optional().nullable(),
+  note: z.string().trim().max(2000).optional().nullable(),
+});
+
+/**
+ * Saisie manuelle des informations renvoyées par MEGAOTT après création
+ * dans le panel natif. Crée la ligne iptv_accounts + met à jour la
+ * commande (metadata.iptv_delivery).
+ */
+export const saveMegaottDelivery = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => DeliverySchema.parse(d))
+  .handler(async ({ data, context }) => {
+    const sb = await admin(context.userId);
+
+    const { data: order, error: oErr } = await sb
+      .from("orders").select("id, email, full_name, metadata").eq("id", data.order_id).maybeSingle();
+    if (oErr) throw new Error(oErr.message);
+    if (!order) throw new Error("Commande introuvable");
+
+    const expiresIso = (() => {
+      if (!data.expires_at) return null;
+      const d = new Date(data.expires_at);
+      return Number.isNaN(d.getTime()) ? null : d.toISOString();
+    })();
+
+    const { data: provider } = await sb
+      .from("iptv_providers").select("id")
+      .or("metadata->>kind.eq.megaott,name.ilike.%megaott%")
+      .limit(1).maybeSingle();
+
+    const { data: account, error: iErr } = await sb.from("iptv_accounts").insert({
+      provider_id: provider?.id ?? null,
+      username: data.username,
+      password: data.password,
+      account_type: "premium",
+      bouquet: data.package ?? null,
+      status: "active",
+      expires_at: expiresIso,
+      metadata: {
+        provider: "megaott",
+        source: "manual_panel_entry",
+        remote_user_id: data.megaott_subscription_id ?? null,
+        order_id: data.order_id,
+        customer_email: order.email,
+        dns_link: data.dns_link ?? null,
+        dns_link_for_samsung_lg: data.dns_link_samsung_lg ?? null,
+        portal_link: data.portal_link ?? null,
+        note: data.note ?? null,
+      },
+    }).select("id").single();
+    if (iErr) throw new Error(iErr.message);
+
+    const meta = (order.metadata ?? {}) as Record<string, unknown>;
+    const nextMeta = {
+      ...meta,
+      iptv_delivery: {
+        iptv_account_id: account.id,
+        megaott_subscription_id: data.megaott_subscription_id ?? null,
+        username: data.username,
+        package: data.package ?? null,
+        expires_at: expiresIso,
+        dns_link: data.dns_link ?? null,
+        dns_link_samsung_lg: data.dns_link_samsung_lg ?? null,
+        portal_link: data.portal_link ?? null,
+        note: data.note ?? null,
+        delivery_status: "ready_to_send",
+        created_at: new Date().toISOString(),
+        sent_at: null,
+        sent_channel: null,
+      },
+    };
+    await sb.from("orders").update({ metadata: nextMeta }).eq("id", data.order_id);
+    await log(sb, context.userId, "megaott.delivery.saved", data.username, { order_id: data.order_id }, account.id);
+    return { ok: true as const, account_id: account.id };
+  });
+
+/** Marque la livraison comme envoyée par un canal (Email / WhatsApp / Telegram). */
+export const markIptvDeliverySent = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({
+    order_id: z.string().uuid(),
+    channel: z.enum(["email", "whatsapp", "telegram"]),
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    const sb = await admin(context.userId);
+    const { data: order } = await sb.from("orders").select("id,email,full_name,metadata").eq("id", data.order_id).maybeSingle();
+    if (!order) throw new Error("Commande introuvable");
+    const meta = (order.metadata ?? {}) as Record<string, any>;
+    const delivery = meta.iptv_delivery;
+    if (!delivery?.iptv_account_id) throw new Error("Aucun abonnement IPTV lié à cette commande");
+
+    const sentAt = new Date().toISOString();
+    const nextMeta = {
+      ...meta,
+      iptv_delivery: { ...delivery, delivery_status: "sent", sent_at: sentAt, sent_channel: data.channel },
+    };
+    await sb.from("orders").update({ metadata: nextMeta }).eq("id", data.order_id);
+
+    // Architecture only — l'envoi réel sera implémenté plus tard.
+    await sb.from("notifications").insert({
+      channel: data.channel,
+      recipient: order.email,
+      subject: `Vos accès IPTV — commande ${order.id.slice(0, 8)}`,
+      body: `Identifiants MEGAOTT : ${delivery.username}`,
+      status: "sent",
+      sent_at: sentAt,
+      payload: { order_id: order.id, delivery, stub: true },
+    });
+
+    await log(sb, context.userId, "iptv.delivery.sent", data.channel, { order_id: data.order_id }, delivery.iptv_account_id);
+    return { ok: true as const, sent_at: sentAt };
+  });
