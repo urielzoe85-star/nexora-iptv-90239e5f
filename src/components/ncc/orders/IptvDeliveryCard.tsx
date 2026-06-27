@@ -1,11 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { ExternalLink, Mail, MessageCircle, Send, Tv, CheckCircle2 } from "lucide-react";
+import { ExternalLink, Mail, MessageCircle, Send, Tv, CheckCircle2, PackageSearch } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { useState, useMemo } from "react";
 import { getMegaottPanelUrl, markIptvDeliverySent } from "@/lib/iptv-megaott.functions";
+import { listInventoryAccounts, assignIptvAccountToOrder } from "@/lib/iptv-import.functions";
 import { MegaottDeliveryForm } from "./MegaottDeliveryForm";
 
 interface Delivery {
@@ -59,6 +63,7 @@ export function IptvDeliveryCard({ orderId, metadata }: { orderId: string; metad
 
         {!delivery && (
           <div className="flex flex-wrap gap-2">
+            <AssignFromInventory orderId={orderId} />
             <Button size="sm" variant="outline" onClick={openPanel}>
               <ExternalLink className="h-3 w-3 mr-1" /> Créer abonnement MEGAOTT
             </Button>
@@ -108,5 +113,64 @@ function Field({ label, children, className }: { label: string; children: React.
       <div className="text-xs uppercase tracking-wider text-muted-foreground">{label}</div>
       <div className="mt-0.5">{children}</div>
     </div>
+  );
+}
+
+function AssignFromInventory({ orderId }: { orderId: string }) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const listFn = useServerFn(listInventoryAccounts);
+  const assignFn = useServerFn(assignIptvAccountToOrder);
+  const qc = useQueryClient();
+  const q = useQuery({
+    queryKey: ["iptv", "inventory", "available", search],
+    queryFn: () => listFn({ data: { only_available: true, search: search || undefined, limit: 100 } }),
+    enabled: open,
+  });
+  const m = useMutation({
+    mutationFn: (account_id: string) => assignFn({ data: { order_id: orderId, account_id } }),
+    onSuccess: () => {
+      toast.success("Abonnement affecté à la commande");
+      qc.invalidateQueries({ queryKey: ["ncc", "order", orderId] });
+      qc.invalidateQueries({ queryKey: ["iptv"] });
+      setOpen(false);
+    },
+    onError: (e) => toast.error((e as Error).message),
+  });
+  const rows = useMemo(() => q.data ?? [], [q.data]);
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm">
+          <PackageSearch className="h-3 w-3 mr-1" /> Affecter un abonnement
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Affecter un abonnement depuis le stock</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
+          <Input placeholder="Rechercher un username…" value={search} onChange={(e) => setSearch(e.target.value)} />
+          <div className="border rounded-lg max-h-[400px] overflow-auto divide-y">
+            {q.isLoading && <div className="p-4 text-sm text-muted-foreground">Chargement…</div>}
+            {!q.isLoading && rows.length === 0 && <div className="p-4 text-sm text-muted-foreground">Aucun abonnement disponible.</div>}
+            {rows.map((a: any) => (
+              <div key={a.id} className="p-3 flex items-center justify-between gap-3 hover:bg-muted/30">
+                <div className="min-w-0 flex-1">
+                  <div className="font-mono text-sm truncate">{a.username}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {(a.package ?? a.bouquet ?? "—")} · {a.account_type} · expire {a.expires_at ? new Date(a.expires_at).toLocaleDateString() : "—"}
+                  </div>
+                </div>
+                <Button size="sm" disabled={m.isPending} onClick={() => m.mutate(a.id)}>Affecter</Button>
+              </div>
+            ))}
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setOpen(false)}>Annuler</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

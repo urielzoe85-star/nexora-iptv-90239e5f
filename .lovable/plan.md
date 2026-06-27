@@ -1,97 +1,70 @@
-# Workflow semi-automatique MEGAOTT depuis les commandes
+# Nouveau workflow IPTV — Import & Gestion d'inventaire
 
-## Vérification technique iframe MEGAOTT
+Bascule du modèle "NEXORA crée dans MEGAOTT" vers "NEXORA gère un inventaire importé depuis MEGAOTT". Les intégrations API MEGAOTT existantes sont conservées mais ne sont plus le chemin principal.
 
-J'ai testé `https://megaott.net` :
-- Aucun header `X-Frame-Options` ni `Content-Security-Policy: frame-ancestors` n'est renvoyé sur la racine.
-- **MAIS** : MEGAOTT est protégé par **Cloudflare Bot Management** (la page `/login` renvoie déjà un `403`/challenge). En iframe cross-origin, Cloudflare bloquera quasi systématiquement le rendu (challenge JS + cookies tiers refusés par le navigateur).
-- De plus, même si l'iframe affichait la page, le **login MEGAOTT serait demandé à chaque ouverture** (les cookies de session sont 3rd-party et bloqués par défaut sur Chrome/Safari/Firefox).
+## 1. Schéma base de données (migration)
 
-**Conclusion** : l'iframe intégrée n'est pas une option fiable.
+Étendre `iptv_accounts` (table déjà existante avec username/password/status/expires_at/metadata) avec les champs MEGAOTT :
+- `package` (text), `dns_link` (text), `dns_link_samsung_lg` (text), `portal_link` (text)
+- `mac_address` (text), `account_type` déjà présent, `max_connections` (int), `notes` (text)
+- `megaott_subscription_id` (text, unique partiel), `imported_at` (timestamptz), `import_batch_id` (uuid)
+- Étendre l'enum/contrainte de statut : `available`, `reserved`, `assigned`, `delivered`, `expired`, `disabled`
+- `order_id` (uuid, FK → orders, nullable, unique partiel sur statuts actifs pour garantir 1 commande active max)
 
-## Alternative retenue (sans casser le workflow)
+Nouvelles tables :
+- `iptv_import_batches` — id, filename, file_format, row_count, created/updated/skipped counts, imported_by (uuid), mapping_snapshot (jsonb), created_at
+- `iptv_import_mappings` — id, name, mapping (jsonb { nexora_field: source_column }), is_default, created_by, created_at — pour réutiliser un mapping
 
-Ouvrir MEGAOTT dans une **fenêtre popup à côté** (window.open, taille ~1200×800) plutôt qu'en iframe. NEXORA garde la commande affichée à gauche, MEGAOTT s'ouvre en fenêtre séparée à droite. L'administrateur travaille naturellement en double écran logique, puis revient sur NEXORA pour saisir les identifiants générés.
+GRANT + RLS (lecture/écriture admin via `has_role(auth.uid(),'admin')`, service_role full).
 
-C'est la solution utilisée par tous les ERP qui s'interfacent avec des panels protégés Cloudflare (Whapi, Smartmarketing, etc.).
+## 2. Server functions (`src/lib/iptv-import.functions.ts`)
 
-## Plan d'implémentation
+- `parseIptvImportFile({ filename, base64, format })` → renvoie `{ headers, sampleRows, totalRows }` (parsing CSV via `papaparse`, XLS/XLSX via `xlsx` SheetJS). Pas d'écriture DB.
+- `commitIptvImport({ batch_filename, mapping, rows, dedupe_strategy })` → insère/upsert dans `iptv_accounts` (clé de dédup : `megaott_subscription_id` sinon `username`), crée un `iptv_import_batches`, renvoie compteurs.
+- `listImportMappings()`, `saveImportMapping({ name, mapping, is_default })`, `deleteImportMapping(id)`.
+- `listImportBatches({ page })`.
+- `assignIptvAccountToOrder({ order_id, account_id })` — vérifie disponibilité, passe statut `assigned`, met `metadata.iptv_delivery` cohérent avec `IptvDeliveryCard` existant.
+- `releaseIptvAccount({ account_id })`.
+- `iptvInventoryKpis()` — counts par statut/package/type.
 
-### 1. Détails commande — nouvelle section "Livraison IPTV"
+Toutes protégées par `requireSupabaseAuth` + `has_role admin`. `supabaseAdmin` chargé via `await import` dans le handler.
 
-Dans `src/routes/ncc.orders.$id.tsx`, ajouter sous la carte existante une nouvelle carte `IptvDeliveryCard` visible uniquement si `status ∈ {processing, completed}`.
+## 3. UI — nouvelles routes (sous `/ncc/iptv`)
 
-États successifs (calculés depuis `orders.metadata.iptv_delivery`) :
+Ajouter onglets dans `src/routes/ncc.iptv.tsx` : **Import**, **Inventaire** (renomme/clarifie l'existant), **Historique d'imports**.
 
-```text
-[1] Aucun abonnement      → bouton "Créer abonnement MEGAOTT" (ouvre popup)
-                          → bouton "Abonnement créé — saisir les infos"
-[2] Infos saisies         → récap (username, password, dns, expiration…)
-                          → boutons "Envoyer par Email / WhatsApp / Telegram"
-[3] Envoyé au client      → badge timestamp + canal
-```
+- `src/routes/ncc.iptv.import.tsx` — Assistant 3 étapes :
+  1. **Upload** (dropzone CSV/XLS/XLSX, lit fichier en base64 client-side).
+  2. **Mapping** — table 2 colonnes : champ NEXORA ↔ colonne source (select). Charger mapping sauvegardé. Bouton "Enregistrer ce mapping".
+  3. **Preview & commit** — 10 premières lignes mappées, choix stratégie dédup (skip / update), bouton "Importer".
+  Toast résultat avec compteurs.
 
-### 2. Ouverture MEGAOTT
+- `src/routes/ncc.iptv.inventory.tsx` (ou enrichir `AccountsView`) — tableau filtrable par package / type / statut / date d'expiration, KPIs en haut (cards), recherche username.
 
-Bouton "Créer abonnement MEGAOTT" :
-- `window.open(megaottPanelUrl, "megaott_panel", "width=1280,height=900")`
-- L'URL provient de `iptv_providers` (champ `api_url`, nettoyé : on garde l'origine, sans `/api/v1`).
-- Un toast informe "Connectez-vous à MEGAOTT, créez l'abonnement, puis revenez ici."
+- `src/routes/ncc.iptv.history.tsx` (existe déjà — étendre) — liste des batches d'import, qui, quand, fichier, counts.
 
-### 3. Saisie des informations retournées par MEGAOTT
+## 4. Attribution depuis une commande
 
-Nouveau composant `MegaottDeliveryForm.tsx` (modal) avec les champs :
-- `megaott_subscription_id` (texte)
-- `username` (texte)
-- `password` (texte)
-- `package` (texte)
-- `expires_at` (date)
-- `dns_link` (url)
-- `dns_link_samsung_lg` (url, optionnel)
-- `portal_link` (url, optionnel)
-- `note` (textarea, optionnel)
+Dans `src/components/ncc/orders/IptvDeliveryCard.tsx` (et la page `ncc.orders.$id.tsx`) :
+- Quand `delivery == null` ET commande payée : remplacer le bouton "Créer abonnement MEGAOTT" par **"Affecter un abonnement"** qui ouvre un dialog listant les `iptv_accounts` `status=available` (search par username/package).
+- Sélection → appelle `assignIptvAccountToOrder`, le hook `iptv_delivery` dans `orders.metadata` est rempli depuis le compte → la carte affiche déjà Username/Password/Package/Expiration/DNS/Portal.
+- Garder l'ancien flow "Créer dans MEGAOTT + form manuel" en option repliée ("Mode legacy MEGAOTT") pour ne rien casser.
+- Boutons Email/WhatsApp/Telegram restent (déjà en place via `markIptvDeliverySent`).
 
-Server fn `saveMegaottDelivery({ orderId, ...fields })` (dans `src/lib/orders.functions.ts`, protégée par `requireSupabaseAuth` + `has_role admin`) :
-- crée une ligne dans `iptv_accounts` (status `active`, metadata complète) ;
-- met à jour `orders.metadata.iptv_delivery = { iptv_account_id, delivery_status: "ready_to_send", created_at }` ;
-- ne touche pas au statut commande tant que l'admin n'a pas envoyé au client (cf. ci-dessous).
+## 5. Dépendances
 
-### 4. Statuts commande
+`bun add papaparse xlsx @types/papaparse` — parsing 100% côté serverFn pour rester compatible Worker (xlsx fonctionne en pure JS).
 
-Pour éviter une migration sur l'enum `orders.status`, on garde l'enum existant et on ajoute deux champs dans `orders.metadata.iptv_delivery` :
-- `delivery_status`: `"pending" | "ready_to_send" | "sent"`
-- `sent_at`, `sent_channel`
+## 6. Contraintes respectées
 
-Badge affiché dans la carte : « Abonnement créé · Prêt à envoyer ».
+- SebPay / Front Office : aucun changement.
+- Connecteur `iptv.megaott` et `iptv-megaott.functions.ts` : conservés intacts. Le code d'attribution n'appelle plus l'API distante par défaut.
+- Workflows automation IPTV existants : inchangés.
 
-### 5. Envoi client (boutons d'architecture uniquement)
+## Détails techniques
 
-Trois boutons (Email / WhatsApp / Telegram). Chacun appelle la même server fn `markIptvDeliverySent({ orderId, channel })` qui :
-- met `metadata.iptv_delivery.delivery_status = "sent"` + `sent_at` + `sent_channel` ;
-- enregistre une ligne dans `notifications` (canal correspondant, status `sent`) — réutilise `NOTIFICATION_CHANNELS_REGISTRY` qui est déjà un stub ; aucun envoi réel pour le moment.
-- ajoute un log `iptv_logs`.
-
-Aucune intégration WhatsApp/Telegram réelle (conforme à la demande "uniquement les boutons et l'architecture").
-
-### 6. Contraintes respectées
-
-- ✅ Intégration API MEGAOTT existante **conservée** (`megaott.adapter.ts`, `MegaottPanel`, page debug).
-- ✅ SebPay non modifié.
-- ✅ Front Office non modifié.
-- ✅ Aucun formulaire de création MEGAOTT recréé : `MegaottSubscriptionForm.tsx` reste accessible depuis `/ncc/iptv/providers` pour les power users, mais n'est plus le chemin principal depuis la commande.
-- ✅ Aucune migration de schéma SQL (tout passe par `orders.metadata` jsonb déjà existant et `iptv_accounts`).
-
-## Fichiers touchés
-
-- `src/components/ncc/orders/IptvDeliveryCard.tsx` *(nouveau)*
-- `src/components/ncc/orders/MegaottDeliveryForm.tsx` *(nouveau)*
-- `src/routes/ncc.orders.$id.tsx` *(intégration de la carte)*
-- `src/lib/orders.functions.ts` *(server fns `saveMegaottDelivery`, `markIptvDeliverySent`, `getMegaottPanelUrl`)*
-
-## Hors scope (à confirmer)
-
-- Génération réelle d'emails / WhatsApp / Telegram (stub uniquement comme demandé).
-- Aucune modification d'`iptv_accounts` côté schéma.
-- Pas de nouvelle valeur d'enum `orders.status` (on s'appuie sur `metadata`).
-
-Validez ce plan et je l'implémente.
+- Parsing fichier : envoyer le fichier en base64 dans `parseIptvImportFile` (limite raisonnable ~5 MB) ; XLSX via `XLSX.read(buffer, { type:'array' })`.
+- Dédup : `ON CONFLICT (megaott_subscription_id)` quand présent, sinon match par `username`. Stratégie `skip` ou `update` choisie côté UI.
+- Unicité commande active : index partiel `UNIQUE (order_id) WHERE status IN ('assigned','delivered')`.
+- Mapping snapshot stocké dans `iptv_import_batches.mapping_snapshot` pour audit.
+- Permissions : tout sous middleware admin ; aucune exposition `anon`.

@@ -62,6 +62,8 @@ import { Route as NccIptvSubscriptionsRouteImport } from './routes/ncc.iptv.subs
 import { Route as NccIptvRenewalsRouteImport } from './routes/ncc.iptv.renewals'
 import { Route as NccIptvProvidersRouteImport } from './routes/ncc.iptv.providers'
 import { Route as NccIptvPremiumRouteImport } from './routes/ncc.iptv.premium'
+import { Route as NccIptvInventoryRouteImport } from './routes/ncc.iptv.inventory'
+import { Route as NccIptvImportRouteImport } from './routes/ncc.iptv.import'
 import { Route as NccIptvHistoryRouteImport } from './routes/ncc.iptv.history'
 import { Route as NccIptvExpiredRouteImport } from './routes/ncc.iptv.expired'
 import { Route as NccIptvDebugRouteImport } from './routes/ncc.iptv.debug'
@@ -341,6 +343,16 @@ const NccIptvPremiumRoute = NccIptvPremiumRouteImport.update({
   path: '/premium',
   getParentRoute: () => NccIptvRoute,
 } as any)
+const NccIptvInventoryRoute = NccIptvInventoryRouteImport.update({
+  id: '/inventory',
+  path: '/inventory',
+  getParentRoute: () => NccIptvRoute,
+} as any)
+const NccIptvImportRoute = NccIptvImportRouteImport.update({
+  id: '/import',
+  path: '/import',
+  getParentRoute: () => NccIptvRoute,
+} as any)
 const NccIptvHistoryRoute = NccIptvHistoryRouteImport.update({
   id: '/history',
   path: '/history',
@@ -461,6 +473,8 @@ export interface FileRoutesByFullPath {
   '/ncc/iptv/debug': typeof NccIptvDebugRoute
   '/ncc/iptv/expired': typeof NccIptvExpiredRoute
   '/ncc/iptv/history': typeof NccIptvHistoryRoute
+  '/ncc/iptv/import': typeof NccIptvImportRoute
+  '/ncc/iptv/inventory': typeof NccIptvInventoryRoute
   '/ncc/iptv/premium': typeof NccIptvPremiumRoute
   '/ncc/iptv/providers': typeof NccIptvProvidersRoute
   '/ncc/iptv/renewals': typeof NccIptvRenewalsRoute
@@ -523,6 +537,8 @@ export interface FileRoutesByTo {
   '/ncc/iptv/debug': typeof NccIptvDebugRoute
   '/ncc/iptv/expired': typeof NccIptvExpiredRoute
   '/ncc/iptv/history': typeof NccIptvHistoryRoute
+  '/ncc/iptv/import': typeof NccIptvImportRoute
+  '/ncc/iptv/inventory': typeof NccIptvInventoryRoute
   '/ncc/iptv/premium': typeof NccIptvPremiumRoute
   '/ncc/iptv/providers': typeof NccIptvProvidersRoute
   '/ncc/iptv/renewals': typeof NccIptvRenewalsRoute
@@ -592,6 +608,8 @@ export interface FileRoutesById {
   '/ncc/iptv/debug': typeof NccIptvDebugRoute
   '/ncc/iptv/expired': typeof NccIptvExpiredRoute
   '/ncc/iptv/history': typeof NccIptvHistoryRoute
+  '/ncc/iptv/import': typeof NccIptvImportRoute
+  '/ncc/iptv/inventory': typeof NccIptvInventoryRoute
   '/ncc/iptv/premium': typeof NccIptvPremiumRoute
   '/ncc/iptv/providers': typeof NccIptvProvidersRoute
   '/ncc/iptv/renewals': typeof NccIptvRenewalsRoute
@@ -662,6 +680,8 @@ export interface FileRouteTypes {
     | '/ncc/iptv/debug'
     | '/ncc/iptv/expired'
     | '/ncc/iptv/history'
+    | '/ncc/iptv/import'
+    | '/ncc/iptv/inventory'
     | '/ncc/iptv/premium'
     | '/ncc/iptv/providers'
     | '/ncc/iptv/renewals'
@@ -724,6 +744,8 @@ export interface FileRouteTypes {
     | '/ncc/iptv/debug'
     | '/ncc/iptv/expired'
     | '/ncc/iptv/history'
+    | '/ncc/iptv/import'
+    | '/ncc/iptv/inventory'
     | '/ncc/iptv/premium'
     | '/ncc/iptv/providers'
     | '/ncc/iptv/renewals'
@@ -792,6 +814,8 @@ export interface FileRouteTypes {
     | '/ncc/iptv/debug'
     | '/ncc/iptv/expired'
     | '/ncc/iptv/history'
+    | '/ncc/iptv/import'
+    | '/ncc/iptv/inventory'
     | '/ncc/iptv/premium'
     | '/ncc/iptv/providers'
     | '/ncc/iptv/renewals'
@@ -1210,6 +1234,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof NccIptvPremiumRouteImport
       parentRoute: typeof NccIptvRoute
     }
+    '/ncc/iptv/inventory': {
+      id: '/ncc/iptv/inventory'
+      path: '/inventory'
+      fullPath: '/ncc/iptv/inventory'
+      preLoaderRoute: typeof NccIptvInventoryRouteImport
+      parentRoute: typeof NccIptvRoute
+    }
+    '/ncc/iptv/import': {
+      id: '/ncc/iptv/import'
+      path: '/import'
+      fullPath: '/ncc/iptv/import'
+      preLoaderRoute: typeof NccIptvImportRouteImport
+      parentRoute: typeof NccIptvRoute
+    }
     '/ncc/iptv/history': {
       id: '/ncc/iptv/history'
       path: '/history'
@@ -1365,6 +1403,8 @@ interface NccIptvRouteChildren {
   NccIptvDebugRoute: typeof NccIptvDebugRoute
   NccIptvExpiredRoute: typeof NccIptvExpiredRoute
   NccIptvHistoryRoute: typeof NccIptvHistoryRoute
+  NccIptvImportRoute: typeof NccIptvImportRoute
+  NccIptvInventoryRoute: typeof NccIptvInventoryRoute
   NccIptvPremiumRoute: typeof NccIptvPremiumRoute
   NccIptvProvidersRoute: typeof NccIptvProvidersRoute
   NccIptvRenewalsRoute: typeof NccIptvRenewalsRoute
@@ -1379,6 +1419,8 @@ const NccIptvRouteChildren: NccIptvRouteChildren = {
   NccIptvDebugRoute: NccIptvDebugRoute,
   NccIptvExpiredRoute: NccIptvExpiredRoute,
   NccIptvHistoryRoute: NccIptvHistoryRoute,
+  NccIptvImportRoute: NccIptvImportRoute,
+  NccIptvInventoryRoute: NccIptvInventoryRoute,
   NccIptvPremiumRoute: NccIptvPremiumRoute,
   NccIptvProvidersRoute: NccIptvProvidersRoute,
   NccIptvRenewalsRoute: NccIptvRenewalsRoute,

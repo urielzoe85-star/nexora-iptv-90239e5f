@@ -429,11 +429,21 @@ export type Database = {
           bouquet: string | null
           created_at: string
           customer_id: string | null
+          dns_link: string | null
+          dns_link_samsung_lg: string | null
           expires_at: string | null
           id: string
+          import_batch_id: string | null
+          imported_at: string | null
+          mac_address: string | null
+          max_connections: number | null
+          megaott_subscription_id: string | null
           metadata: Json
           notes: string | null
+          order_id: string | null
+          package: string | null
           password: string | null
+          portal_link: string | null
           provider_id: string | null
           status: Database["public"]["Enums"]["iptv_account_status"]
           updated_at: string
@@ -445,11 +455,21 @@ export type Database = {
           bouquet?: string | null
           created_at?: string
           customer_id?: string | null
+          dns_link?: string | null
+          dns_link_samsung_lg?: string | null
           expires_at?: string | null
           id?: string
+          import_batch_id?: string | null
+          imported_at?: string | null
+          mac_address?: string | null
+          max_connections?: number | null
+          megaott_subscription_id?: string | null
           metadata?: Json
           notes?: string | null
+          order_id?: string | null
+          package?: string | null
           password?: string | null
+          portal_link?: string | null
           provider_id?: string | null
           status?: Database["public"]["Enums"]["iptv_account_status"]
           updated_at?: string
@@ -461,11 +481,21 @@ export type Database = {
           bouquet?: string | null
           created_at?: string
           customer_id?: string | null
+          dns_link?: string | null
+          dns_link_samsung_lg?: string | null
           expires_at?: string | null
           id?: string
+          import_batch_id?: string | null
+          imported_at?: string | null
+          mac_address?: string | null
+          max_connections?: number | null
+          megaott_subscription_id?: string | null
           metadata?: Json
           notes?: string | null
+          order_id?: string | null
+          package?: string | null
           password?: string | null
+          portal_link?: string | null
           provider_id?: string | null
           status?: Database["public"]["Enums"]["iptv_account_status"]
           updated_at?: string
@@ -480,6 +510,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "iptv_accounts_import_batch_fk"
+            columns: ["import_batch_id"]
+            isOneToOne: false
+            referencedRelation: "iptv_import_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "iptv_accounts_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "iptv_accounts_provider_id_fkey"
             columns: ["provider_id"]
             isOneToOne: false
@@ -487,6 +531,84 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      iptv_import_batches: {
+        Row: {
+          created_at: string
+          error_count: number
+          file_format: string
+          filename: string
+          id: string
+          imported_by: string | null
+          inserted_count: number
+          mapping_snapshot: Json
+          notes: string | null
+          row_count: number
+          skipped_count: number
+          updated_at: string
+          updated_count: number
+        }
+        Insert: {
+          created_at?: string
+          error_count?: number
+          file_format: string
+          filename: string
+          id?: string
+          imported_by?: string | null
+          inserted_count?: number
+          mapping_snapshot?: Json
+          notes?: string | null
+          row_count?: number
+          skipped_count?: number
+          updated_at?: string
+          updated_count?: number
+        }
+        Update: {
+          created_at?: string
+          error_count?: number
+          file_format?: string
+          filename?: string
+          id?: string
+          imported_by?: string | null
+          inserted_count?: number
+          mapping_snapshot?: Json
+          notes?: string | null
+          row_count?: number
+          skipped_count?: number
+          updated_at?: string
+          updated_count?: number
+        }
+        Relationships: []
+      }
+      iptv_import_mappings: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          is_default: boolean
+          mapping: Json
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_default?: boolean
+          mapping?: Json
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_default?: boolean
+          mapping?: Json
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       iptv_logs: {
         Row: {
@@ -995,6 +1117,9 @@ export type Database = {
         | "active"
         | "expired"
         | "suspended"
+        | "reserved"
+        | "delivered"
+        | "disabled"
       iptv_account_type: "trial" | "premium"
       iptv_provider_status: "active" | "inactive" | "error"
     }
@@ -1131,6 +1256,9 @@ export const Constants = {
         "active",
         "expired",
         "suspended",
+        "reserved",
+        "delivered",
+        "disabled",
       ],
       iptv_account_type: ["trial", "premium"],
       iptv_provider_status: ["active", "inactive", "error"],
