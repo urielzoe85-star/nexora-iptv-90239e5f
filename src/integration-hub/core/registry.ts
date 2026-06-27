@@ -10,11 +10,15 @@ class ConnectorRegistry {
 
   register(connector: Connector): void {
     if (this.byId.has(connector.id)) {
-      // Overwriting is a programmer error — fail loudly instead of leaking
-      // a previous registration into runtime.
-      throw new Error(`Connector "${connector.id}" is already registered.`);
+      // Idempotent: re-registering with the same id replaces the previous
+      // entry. This is important in server runtimes where module instances
+      // can be re-evaluated (HMR, worker isolates, server-fn bundling).
     }
     this.byId.set(connector.id, connector);
+  }
+
+  has(id: string): boolean {
+    return this.byId.has(id);
   }
 
   get<T extends Connector = Connector>(id: string): T | undefined {
