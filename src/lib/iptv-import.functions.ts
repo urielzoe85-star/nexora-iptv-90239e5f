@@ -45,23 +45,23 @@ export const parseIptvImportFile = createServerFn({ method: "POST" })
     const bytes = base64ToUint8(data.base64);
 
     let headers: string[] = [];
-    let rows: Record<string, unknown>[] = [];
+    let rows: Record<string, any>[] = [];
 
     if (data.format === "csv") {
       const Papa = (await import("papaparse")).default;
       const text = new TextDecoder("utf-8").decode(bytes);
-      const parsed = Papa.parse<Record<string, unknown>>(text, {
+      const parsed = Papa.parse<Record<string, any>>(text, {
         header: true, skipEmptyLines: true, dynamicTyping: false,
       });
       headers = (parsed.meta.fields ?? []).map(String);
-      rows = (parsed.data ?? []) as Record<string, unknown>[];
+      rows = (parsed.data ?? []) as Record<string, any>[];
     } else {
       const XLSX = await import("xlsx");
       const wb = XLSX.read(bytes, { type: "array" });
       const sheetName = wb.SheetNames[0];
       if (!sheetName) throw new Error("Fichier vide");
       const ws = wb.Sheets[sheetName];
-      const json = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: "", raw: false });
+      const json = XLSX.utils.sheet_to_json<Record<string, any>>(ws, { defval: "", raw: false });
       rows = json;
       headers = json.length > 0 ? Object.keys(json[0]) : [];
     }
