@@ -43,7 +43,8 @@ export const runWorkflowManually = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await admin(context.userId);
     const { automationApi } = await import("@/automation");
-    return automationApi.run(data.key, data.payload ?? {}, context.userId);
+    const r = await automationApi.run(data.key, data.payload ?? {}, context.userId);
+    return { runId: r.runId, status: r.status, error: r.error ?? null };
   });
 
 export const listRuns = createServerFn({ method: "GET" })
@@ -76,7 +77,8 @@ export const replayRunFn = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await admin(context.userId);
     const { automationApi } = await import("@/automation");
-    return automationApi.replay(data.id);
+    const r = await automationApi.replay(data.id);
+    return { runId: r.runId, status: r.status, error: r.error ?? null };
   });
 
 export const getAutomationKpis = createServerFn({ method: "GET" })
