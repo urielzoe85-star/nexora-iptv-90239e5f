@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { StatusBadge } from "@/components/ncc/ncc-ui";
+import { MegaottPanel } from "@/components/ncc/iptv/MegaottPanel";
 import {
   listProviders, upsertProvider, deleteProvider, setDefaultProvider,
   toggleProviderStatus, checkProviderHealth,
@@ -48,6 +49,7 @@ function ProvidersPage() {
 
   return (
     <div className="space-y-4">
+      <MegaottPanel />
       <div className="flex justify-end">
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild><Button size="sm"><Plus className="h-4 w-4 mr-1" /> Nouveau fournisseur</Button></DialogTrigger>
