@@ -62,6 +62,7 @@ import { Route as NccIptvSubscriptionsRouteImport } from './routes/ncc.iptv.subs
 import { Route as NccIptvRenewalsRouteImport } from './routes/ncc.iptv.renewals'
 import { Route as NccIptvProvidersRouteImport } from './routes/ncc.iptv.providers'
 import { Route as NccIptvPremiumRouteImport } from './routes/ncc.iptv.premium'
+import { Route as NccIptvHistoryRouteImport } from './routes/ncc.iptv.history'
 import { Route as NccIptvExpiredRouteImport } from './routes/ncc.iptv.expired'
 import { Route as NccIptvAccountsRouteImport } from './routes/ncc.iptv.accounts'
 import { Route as NccClientsIdRouteImport } from './routes/ncc.clients.$id'
@@ -338,6 +339,11 @@ const NccIptvPremiumRoute = NccIptvPremiumRouteImport.update({
   path: '/premium',
   getParentRoute: () => NccIptvRoute,
 } as any)
+const NccIptvHistoryRoute = NccIptvHistoryRouteImport.update({
+  id: '/history',
+  path: '/history',
+  getParentRoute: () => NccIptvRoute,
+} as any)
 const NccIptvExpiredRoute = NccIptvExpiredRouteImport.update({
   id: '/expired',
   path: '/expired',
@@ -440,6 +446,7 @@ export interface FileRoutesByFullPath {
   '/ncc/clients/$id': typeof NccClientsIdRoute
   '/ncc/iptv/accounts': typeof NccIptvAccountsRoute
   '/ncc/iptv/expired': typeof NccIptvExpiredRoute
+  '/ncc/iptv/history': typeof NccIptvHistoryRoute
   '/ncc/iptv/premium': typeof NccIptvPremiumRoute
   '/ncc/iptv/providers': typeof NccIptvProvidersRoute
   '/ncc/iptv/renewals': typeof NccIptvRenewalsRoute
@@ -499,6 +506,7 @@ export interface FileRoutesByTo {
   '/ncc/clients/$id': typeof NccClientsIdRoute
   '/ncc/iptv/accounts': typeof NccIptvAccountsRoute
   '/ncc/iptv/expired': typeof NccIptvExpiredRoute
+  '/ncc/iptv/history': typeof NccIptvHistoryRoute
   '/ncc/iptv/premium': typeof NccIptvPremiumRoute
   '/ncc/iptv/providers': typeof NccIptvProvidersRoute
   '/ncc/iptv/renewals': typeof NccIptvRenewalsRoute
@@ -565,6 +573,7 @@ export interface FileRoutesById {
   '/ncc/clients/$id': typeof NccClientsIdRoute
   '/ncc/iptv/accounts': typeof NccIptvAccountsRoute
   '/ncc/iptv/expired': typeof NccIptvExpiredRoute
+  '/ncc/iptv/history': typeof NccIptvHistoryRoute
   '/ncc/iptv/premium': typeof NccIptvPremiumRoute
   '/ncc/iptv/providers': typeof NccIptvProvidersRoute
   '/ncc/iptv/renewals': typeof NccIptvRenewalsRoute
@@ -632,6 +641,7 @@ export interface FileRouteTypes {
     | '/ncc/clients/$id'
     | '/ncc/iptv/accounts'
     | '/ncc/iptv/expired'
+    | '/ncc/iptv/history'
     | '/ncc/iptv/premium'
     | '/ncc/iptv/providers'
     | '/ncc/iptv/renewals'
@@ -691,6 +701,7 @@ export interface FileRouteTypes {
     | '/ncc/clients/$id'
     | '/ncc/iptv/accounts'
     | '/ncc/iptv/expired'
+    | '/ncc/iptv/history'
     | '/ncc/iptv/premium'
     | '/ncc/iptv/providers'
     | '/ncc/iptv/renewals'
@@ -756,6 +767,7 @@ export interface FileRouteTypes {
     | '/ncc/clients/$id'
     | '/ncc/iptv/accounts'
     | '/ncc/iptv/expired'
+    | '/ncc/iptv/history'
     | '/ncc/iptv/premium'
     | '/ncc/iptv/providers'
     | '/ncc/iptv/renewals'
@@ -1172,6 +1184,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof NccIptvPremiumRouteImport
       parentRoute: typeof NccIptvRoute
     }
+    '/ncc/iptv/history': {
+      id: '/ncc/iptv/history'
+      path: '/history'
+      fullPath: '/ncc/iptv/history'
+      preLoaderRoute: typeof NccIptvHistoryRouteImport
+      parentRoute: typeof NccIptvRoute
+    }
     '/ncc/iptv/expired': {
       id: '/ncc/iptv/expired'
       path: '/expired'
@@ -1304,6 +1323,7 @@ const NccClientsRouteWithChildren = NccClientsRoute._addFileChildren(
 interface NccIptvRouteChildren {
   NccIptvAccountsRoute: typeof NccIptvAccountsRoute
   NccIptvExpiredRoute: typeof NccIptvExpiredRoute
+  NccIptvHistoryRoute: typeof NccIptvHistoryRoute
   NccIptvPremiumRoute: typeof NccIptvPremiumRoute
   NccIptvProvidersRoute: typeof NccIptvProvidersRoute
   NccIptvRenewalsRoute: typeof NccIptvRenewalsRoute
@@ -1316,6 +1336,7 @@ interface NccIptvRouteChildren {
 const NccIptvRouteChildren: NccIptvRouteChildren = {
   NccIptvAccountsRoute: NccIptvAccountsRoute,
   NccIptvExpiredRoute: NccIptvExpiredRoute,
+  NccIptvHistoryRoute: NccIptvHistoryRoute,
   NccIptvPremiumRoute: NccIptvPremiumRoute,
   NccIptvProvidersRoute: NccIptvProvidersRoute,
   NccIptvRenewalsRoute: NccIptvRenewalsRoute,
