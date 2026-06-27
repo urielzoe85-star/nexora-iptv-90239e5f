@@ -123,13 +123,18 @@ export const checkProviderHealth = createServerFn({ method: "POST" })
     if (isMegaott && p?.api_url) {
       const { pingMegaott } = await import("@/integration-hub/connectors/iptv/megaott.adapter");
       const r = await pingMegaott(p.api_url);
-      const reachable = r.ok;
+      if (r.ok) {
+        await audit(sb, context.userId, "provider.health_checked", {
+          provider_id: data.id, message: "ok",
+          payload: { status: r.value.status, durationMs: r.value.durationMs },
+        });
+        return { reachable: true, checked_at: new Date().toISOString(), details: r.value };
+      }
       await audit(sb, context.userId, "provider.health_checked", {
-        provider_id: data.id,
-        message: reachable ? "ok" : (r as any).error?.message ?? "unreachable",
-        payload: reachable ? { status: r.value.status, durationMs: r.value.durationMs } : { kind: (r as any).error?.kind },
+        provider_id: data.id, message: r.error.message,
+        payload: { kind: r.error.kind },
       });
-      return { reachable, checked_at: new Date().toISOString(), details: reachable ? r.value : { error: (r as any).error?.message } };
+      return { reachable: false, checked_at: new Date().toISOString(), details: { error: r.error.message } };
     }
     const reachable = Boolean(p?.api_url);
     await audit(sb, context.userId, "provider.health_checked", {
