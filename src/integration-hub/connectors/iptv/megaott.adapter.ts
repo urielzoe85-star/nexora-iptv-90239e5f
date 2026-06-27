@@ -35,9 +35,27 @@ export interface MegaottProviderConfig {
 }
 
 function joinUrl(base: string, path: string): string {
+  // Strip trailing slashes from the base and leading slashes from the path,
+  // then de-duplicate overlapping segments. This is critical because the
+  // operator-configured `api_url` may already end in `/api` or `/api/v1`,
+  // while connector code always passes a canonical path like
+  // `/api/v1/subscriptions`. Without dedup we'd hit
+  // `https://host/api/api/v1/subscriptions` and the upstream returns 404.
   const b = base.replace(/\/+$/, "");
-  const p = path.startsWith("/") ? path : `/${path}`;
-  return `${b}${p}`;
+  const p = path.replace(/^\/+/, "");
+  const baseSegs = b.split("/").filter(Boolean);
+  const pathSegs = p.split("/");
+  // Find the largest k such that the last k segments of base equal the
+  // first k segments of path (case-insensitive). Drop those from path.
+  let overlap = 0;
+  const max = Math.min(baseSegs.length, pathSegs.length);
+  for (let k = max; k > 0; k--) {
+    const tail = baseSegs.slice(-k).map((s) => s.toLowerCase()).join("/");
+    const head = pathSegs.slice(0, k).map((s) => s.toLowerCase()).join("/");
+    if (tail === head) { overlap = k; break; }
+  }
+  const finalPath = pathSegs.slice(overlap).join("/");
+  return `${b}/${finalPath}`;
 }
 
 function authHeaders(): Result<Record<string, string>, IntegrationError> {
@@ -152,6 +170,14 @@ export async function megaottRawCall(opts: {
     };
   }
   const url = joinUrl(cfg.value.apiUrl, opts.path);
+  // Pre-send debug line — visible in server-function-logs. Lets you
+  // confirm the exact URL hit MEGAOTT before the network call.
+  logger.info("megaott → outbound", {
+    url, method: opts.method,
+    baseApiUrl: cfg.value.apiUrl,
+    path: opts.path,
+    hasBody: opts.body !== undefined,
+  });
   const res = await apiGateway.request({
     connectorId: CONNECTOR_ID,
     url, method: opts.method,
