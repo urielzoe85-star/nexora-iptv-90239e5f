@@ -57,6 +57,7 @@ import { Route as NccIptvIndexRouteImport } from './routes/ncc.iptv.index'
 import { Route as NccSettingsSectionRouteImport } from './routes/ncc.settings.$section'
 import { Route as NccOrdersIdRouteImport } from './routes/ncc.orders.$id'
 import { Route as NccIptvSubscriptionsRouteImport } from './routes/ncc.iptv.subscriptions'
+import { Route as NccIptvAccountsRouteImport } from './routes/ncc.iptv.accounts'
 import { Route as NccClientsIdRouteImport } from './routes/ncc.clients.$id'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
@@ -306,6 +307,11 @@ const NccIptvSubscriptionsRoute = NccIptvSubscriptionsRouteImport.update({
   path: '/subscriptions',
   getParentRoute: () => NccIptvRoute,
 } as any)
+const NccIptvAccountsRoute = NccIptvAccountsRouteImport.update({
+  id: '/accounts',
+  path: '/accounts',
+  getParentRoute: () => NccIptvRoute,
+} as any)
 const NccClientsIdRoute = NccClientsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -396,6 +402,7 @@ export interface FileRoutesByFullPath {
   '/ncc/': typeof NccIndexRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/ncc/clients/$id': typeof NccClientsIdRoute
+  '/ncc/iptv/accounts': typeof NccIptvAccountsRoute
   '/ncc/iptv/subscriptions': typeof NccIptvSubscriptionsRoute
   '/ncc/orders/$id': typeof NccOrdersIdRoute
   '/ncc/settings/$section': typeof NccSettingsSectionRoute
@@ -448,6 +455,7 @@ export interface FileRoutesByTo {
   '/ncc': typeof NccIndexRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/ncc/clients/$id': typeof NccClientsIdRoute
+  '/ncc/iptv/accounts': typeof NccIptvAccountsRoute
   '/ncc/iptv/subscriptions': typeof NccIptvSubscriptionsRoute
   '/ncc/orders/$id': typeof NccOrdersIdRoute
   '/ncc/settings/$section': typeof NccSettingsSectionRoute
@@ -507,6 +515,7 @@ export interface FileRoutesById {
   '/ncc/': typeof NccIndexRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/ncc/clients/$id': typeof NccClientsIdRoute
+  '/ncc/iptv/accounts': typeof NccIptvAccountsRoute
   '/ncc/iptv/subscriptions': typeof NccIptvSubscriptionsRoute
   '/ncc/orders/$id': typeof NccOrdersIdRoute
   '/ncc/settings/$section': typeof NccSettingsSectionRoute
@@ -567,6 +576,7 @@ export interface FileRouteTypes {
     | '/ncc/'
     | '/lovable/email/suppression'
     | '/ncc/clients/$id'
+    | '/ncc/iptv/accounts'
     | '/ncc/iptv/subscriptions'
     | '/ncc/orders/$id'
     | '/ncc/settings/$section'
@@ -619,6 +629,7 @@ export interface FileRouteTypes {
     | '/ncc'
     | '/lovable/email/suppression'
     | '/ncc/clients/$id'
+    | '/ncc/iptv/accounts'
     | '/ncc/iptv/subscriptions'
     | '/ncc/orders/$id'
     | '/ncc/settings/$section'
@@ -677,6 +688,7 @@ export interface FileRouteTypes {
     | '/ncc/'
     | '/lovable/email/suppression'
     | '/ncc/clients/$id'
+    | '/ncc/iptv/accounts'
     | '/ncc/iptv/subscriptions'
     | '/ncc/orders/$id'
     | '/ncc/settings/$section'
@@ -1053,6 +1065,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof NccIptvSubscriptionsRouteImport
       parentRoute: typeof NccIptvRoute
     }
+    '/ncc/iptv/accounts': {
+      id: '/ncc/iptv/accounts'
+      path: '/accounts'
+      fullPath: '/ncc/iptv/accounts'
+      preLoaderRoute: typeof NccIptvAccountsRouteImport
+      parentRoute: typeof NccIptvRoute
+    }
     '/ncc/clients/$id': {
       id: '/ncc/clients/$id'
       path: '/$id'
@@ -1169,11 +1188,13 @@ const NccClientsRouteWithChildren = NccClientsRoute._addFileChildren(
 )
 
 interface NccIptvRouteChildren {
+  NccIptvAccountsRoute: typeof NccIptvAccountsRoute
   NccIptvSubscriptionsRoute: typeof NccIptvSubscriptionsRoute
   NccIptvIndexRoute: typeof NccIptvIndexRoute
 }
 
 const NccIptvRouteChildren: NccIptvRouteChildren = {
+  NccIptvAccountsRoute: NccIptvAccountsRoute,
   NccIptvSubscriptionsRoute: NccIptvSubscriptionsRoute,
   NccIptvIndexRoute: NccIptvIndexRoute,
 }
