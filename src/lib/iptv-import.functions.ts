@@ -13,14 +13,55 @@ async function admin(userId: string) {
   return supabaseAdmin as any;
 }
 
-// Champs cibles NEXORA proposés dans l'assistant.
-export const NEXORA_IPTV_FIELDS = [
-  "username", "password", "package", "expires_at",
-  "dns_link", "dns_link_samsung_lg", "portal_link",
-  "mac_address", "type", "max_connections",
-  "megaott_subscription_id", "notes",
+// Format officiel MEGAOTT — colonnes attendues dans l'export.
+export const MEGAOTT_COLUMNS = [
+  "Username", "Password", "Mac", "Code", "Type", "Owner", "Package", "DNS",
+  "Paid", "Trial", "Expiration Date", "Max Connections", "Forced Country",
+  "Enabled", "Admin Enabled", "Last Login", "Last IP",
+  "Reseller Notes", "Admin Notes", "Created At",
 ] as const;
-export type NexoraIptvField = typeof NEXORA_IPTV_FIELDS[number];
+
+// Normalisation : "Max Connections" → "maxconnections"
+function norm(s: string): string {
+  return String(s ?? "").toLowerCase().replace(/[\s_\-\.]+/g, "");
+}
+
+// Aliases acceptés (clé = champ NEXORA, valeurs = variations possibles dans l'en-tête)
+const COLUMN_ALIASES: Record<string, string[]> = {
+  username:        ["username", "user", "login"],
+  password:        ["password", "pass"],
+  mac:             ["mac", "macaddress", "macaddr"],
+  code:            ["code"],
+  type:            ["type"],
+  owner:           ["owner", "reseller"],
+  package:         ["package", "bouquet", "plan"],
+  dns:             ["dns", "dnslink", "url", "m3u"],
+  paid:            ["paid"],
+  trial:           ["trial"],
+  expires_at:      ["expirationdate", "expiration", "expiresat", "expirydate", "expdate"],
+  max_connections: ["maxconnections", "connections", "maxconn"],
+  forced_country:  ["forcedcountry", "country"],
+  enabled:         ["enabled"],
+  admin_enabled:   ["adminenabled"],
+  last_login:      ["lastlogin"],
+  last_ip:         ["lastip", "ip"],
+  reseller_notes:  ["resellernotes", "notes"],
+  admin_notes:     ["adminnotes"],
+  created_at:      ["createdat", "creationdate", "datecreated"],
+};
+
+// Détecte automatiquement la map { champ_nexora: colonne_source }.
+export function detectMegaottMapping(headers: string[]): Record<string, string> {
+  const out: Record<string, string> = {};
+  const lookup = new Map(headers.map(h => [norm(h), h]));
+  for (const [field, aliases] of Object.entries(COLUMN_ALIASES)) {
+    for (const a of aliases) {
+      const h = lookup.get(a);
+      if (h) { out[field] = h; break; }
+    }
+  }
+  return out;
+}
 
 // ─── Parse file ─────────────────────────────────────────────────────────
 
