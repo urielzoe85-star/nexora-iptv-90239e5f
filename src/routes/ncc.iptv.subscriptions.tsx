@@ -15,7 +15,7 @@ import { toast } from "sonner";
 import { listSubscriptions, createSubscription, transitionSubscription, listCustomers, listProducts } from "@/lib/ncc.functions";
 import { fmtDate, StatusBadge } from "@/components/ncc/ncc-ui";
 
-export const Route = createFileRoute("/ncc/iptv")({ component: IptvPage });
+export const Route = createFileRoute("/ncc/iptv/subscriptions")({ component: IptvPage });
 
 type Action = "activate" | "suspend" | "expire" | "cancel" | "renew";
 

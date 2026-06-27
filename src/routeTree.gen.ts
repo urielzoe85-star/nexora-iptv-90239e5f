@@ -37,7 +37,6 @@ import { Route as NccPaymentsRouteImport } from './routes/ncc.payments'
 import { Route as NccOrdersRouteImport } from './routes/ncc.orders'
 import { Route as NccNotificationsRouteImport } from './routes/ncc.notifications'
 import { Route as NccLogsRouteImport } from './routes/ncc.logs'
-import { Route as NccIptvRouteImport } from './routes/ncc.iptv'
 import { Route as NccEmployeesRouteImport } from './routes/ncc.employees'
 import { Route as NccEmailsRouteImport } from './routes/ncc.emails'
 import { Route as NccClientsRouteImport } from './routes/ncc.clients'
@@ -55,6 +54,7 @@ import { Route as AdminAdminsRouteImport } from './routes/admin.admins'
 import { Route as NccSettingsIndexRouteImport } from './routes/ncc.settings.index'
 import { Route as NccSettingsSectionRouteImport } from './routes/ncc.settings.$section'
 import { Route as NccOrdersIdRouteImport } from './routes/ncc.orders.$id'
+import { Route as NccIptvSubscriptionsRouteImport } from './routes/ncc.iptv.subscriptions'
 import { Route as NccClientsIdRouteImport } from './routes/ncc.clients.$id'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
@@ -204,11 +204,6 @@ const NccLogsRoute = NccLogsRouteImport.update({
   path: '/logs',
   getParentRoute: () => NccRoute,
 } as any)
-const NccIptvRoute = NccIptvRouteImport.update({
-  id: '/iptv',
-  path: '/iptv',
-  getParentRoute: () => NccRoute,
-} as any)
 const NccEmployeesRoute = NccEmployeesRouteImport.update({
   id: '/employees',
   path: '/employees',
@@ -294,6 +289,11 @@ const NccOrdersIdRoute = NccOrdersIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => NccOrdersRoute,
 } as any)
+const NccIptvSubscriptionsRoute = NccIptvSubscriptionsRouteImport.update({
+  id: '/iptv/subscriptions',
+  path: '/iptv/subscriptions',
+  getParentRoute: () => NccRoute,
+} as any)
 const NccClientsIdRoute = NccClientsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -365,7 +365,6 @@ export interface FileRoutesByFullPath {
   '/ncc/clients': typeof NccClientsRouteWithChildren
   '/ncc/emails': typeof NccEmailsRoute
   '/ncc/employees': typeof NccEmployeesRoute
-  '/ncc/iptv': typeof NccIptvRoute
   '/ncc/logs': typeof NccLogsRoute
   '/ncc/notifications': typeof NccNotificationsRoute
   '/ncc/orders': typeof NccOrdersRouteWithChildren
@@ -384,6 +383,7 @@ export interface FileRoutesByFullPath {
   '/ncc/': typeof NccIndexRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/ncc/clients/$id': typeof NccClientsIdRoute
+  '/ncc/iptv/subscriptions': typeof NccIptvSubscriptionsRoute
   '/ncc/orders/$id': typeof NccOrdersIdRoute
   '/ncc/settings/$section': typeof NccSettingsSectionRoute
   '/ncc/settings/': typeof NccSettingsIndexRoute
@@ -417,7 +417,6 @@ export interface FileRoutesByTo {
   '/ncc/clients': typeof NccClientsRouteWithChildren
   '/ncc/emails': typeof NccEmailsRoute
   '/ncc/employees': typeof NccEmployeesRoute
-  '/ncc/iptv': typeof NccIptvRoute
   '/ncc/logs': typeof NccLogsRoute
   '/ncc/notifications': typeof NccNotificationsRoute
   '/ncc/orders': typeof NccOrdersRouteWithChildren
@@ -435,6 +434,7 @@ export interface FileRoutesByTo {
   '/ncc': typeof NccIndexRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/ncc/clients/$id': typeof NccClientsIdRoute
+  '/ncc/iptv/subscriptions': typeof NccIptvSubscriptionsRoute
   '/ncc/orders/$id': typeof NccOrdersIdRoute
   '/ncc/settings/$section': typeof NccSettingsSectionRoute
   '/ncc/settings': typeof NccSettingsIndexRoute
@@ -473,7 +473,6 @@ export interface FileRoutesById {
   '/ncc/clients': typeof NccClientsRouteWithChildren
   '/ncc/emails': typeof NccEmailsRoute
   '/ncc/employees': typeof NccEmployeesRoute
-  '/ncc/iptv': typeof NccIptvRoute
   '/ncc/logs': typeof NccLogsRoute
   '/ncc/notifications': typeof NccNotificationsRoute
   '/ncc/orders': typeof NccOrdersRouteWithChildren
@@ -492,6 +491,7 @@ export interface FileRoutesById {
   '/ncc/': typeof NccIndexRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/ncc/clients/$id': typeof NccClientsIdRoute
+  '/ncc/iptv/subscriptions': typeof NccIptvSubscriptionsRoute
   '/ncc/orders/$id': typeof NccOrdersIdRoute
   '/ncc/settings/$section': typeof NccSettingsSectionRoute
   '/ncc/settings/': typeof NccSettingsIndexRoute
@@ -531,7 +531,6 @@ export interface FileRouteTypes {
     | '/ncc/clients'
     | '/ncc/emails'
     | '/ncc/employees'
-    | '/ncc/iptv'
     | '/ncc/logs'
     | '/ncc/notifications'
     | '/ncc/orders'
@@ -550,6 +549,7 @@ export interface FileRouteTypes {
     | '/ncc/'
     | '/lovable/email/suppression'
     | '/ncc/clients/$id'
+    | '/ncc/iptv/subscriptions'
     | '/ncc/orders/$id'
     | '/ncc/settings/$section'
     | '/ncc/settings/'
@@ -583,7 +583,6 @@ export interface FileRouteTypes {
     | '/ncc/clients'
     | '/ncc/emails'
     | '/ncc/employees'
-    | '/ncc/iptv'
     | '/ncc/logs'
     | '/ncc/notifications'
     | '/ncc/orders'
@@ -601,6 +600,7 @@ export interface FileRouteTypes {
     | '/ncc'
     | '/lovable/email/suppression'
     | '/ncc/clients/$id'
+    | '/ncc/iptv/subscriptions'
     | '/ncc/orders/$id'
     | '/ncc/settings/$section'
     | '/ncc/settings'
@@ -638,7 +638,6 @@ export interface FileRouteTypes {
     | '/ncc/clients'
     | '/ncc/emails'
     | '/ncc/employees'
-    | '/ncc/iptv'
     | '/ncc/logs'
     | '/ncc/notifications'
     | '/ncc/orders'
@@ -657,6 +656,7 @@ export interface FileRouteTypes {
     | '/ncc/'
     | '/lovable/email/suppression'
     | '/ncc/clients/$id'
+    | '/ncc/iptv/subscriptions'
     | '/ncc/orders/$id'
     | '/ncc/settings/$section'
     | '/ncc/settings/'
@@ -891,13 +891,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof NccLogsRouteImport
       parentRoute: typeof NccRoute
     }
-    '/ncc/iptv': {
-      id: '/ncc/iptv'
-      path: '/iptv'
-      fullPath: '/ncc/iptv'
-      preLoaderRoute: typeof NccIptvRouteImport
-      parentRoute: typeof NccRoute
-    }
     '/ncc/employees': {
       id: '/ncc/employees'
       path: '/employees'
@@ -1016,6 +1009,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/ncc/orders/$id'
       preLoaderRoute: typeof NccOrdersIdRouteImport
       parentRoute: typeof NccOrdersRoute
+    }
+    '/ncc/iptv/subscriptions': {
+      id: '/ncc/iptv/subscriptions'
+      path: '/iptv/subscriptions'
+      fullPath: '/ncc/iptv/subscriptions'
+      preLoaderRoute: typeof NccIptvSubscriptionsRouteImport
+      parentRoute: typeof NccRoute
     }
     '/ncc/clients/$id': {
       id: '/ncc/clients/$id'
@@ -1165,7 +1165,6 @@ interface NccRouteChildren {
   NccClientsRoute: typeof NccClientsRouteWithChildren
   NccEmailsRoute: typeof NccEmailsRoute
   NccEmployeesRoute: typeof NccEmployeesRoute
-  NccIptvRoute: typeof NccIptvRoute
   NccLogsRoute: typeof NccLogsRoute
   NccNotificationsRoute: typeof NccNotificationsRoute
   NccOrdersRoute: typeof NccOrdersRouteWithChildren
@@ -1177,6 +1176,7 @@ interface NccRouteChildren {
   NccTrialsRoute: typeof NccTrialsRoute
   NccWhatsappRoute: typeof NccWhatsappRoute
   NccIndexRoute: typeof NccIndexRoute
+  NccIptvSubscriptionsRoute: typeof NccIptvSubscriptionsRoute
 }
 
 const NccRouteChildren: NccRouteChildren = {
@@ -1186,7 +1186,6 @@ const NccRouteChildren: NccRouteChildren = {
   NccClientsRoute: NccClientsRouteWithChildren,
   NccEmailsRoute: NccEmailsRoute,
   NccEmployeesRoute: NccEmployeesRoute,
-  NccIptvRoute: NccIptvRoute,
   NccLogsRoute: NccLogsRoute,
   NccNotificationsRoute: NccNotificationsRoute,
   NccOrdersRoute: NccOrdersRouteWithChildren,
@@ -1198,6 +1197,7 @@ const NccRouteChildren: NccRouteChildren = {
   NccTrialsRoute: NccTrialsRoute,
   NccWhatsappRoute: NccWhatsappRoute,
   NccIndexRoute: NccIndexRoute,
+  NccIptvSubscriptionsRoute: NccIptvSubscriptionsRoute,
 }
 
 const NccRouteWithChildren = NccRoute._addFileChildren(NccRouteChildren)
