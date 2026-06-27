@@ -1,11 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { ExternalLink, Mail, MessageCircle, Send, Tv, CheckCircle2 } from "lucide-react";
+import { ExternalLink, Mail, MessageCircle, Send, Tv, CheckCircle2, PackageSearch } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { useState, useMemo } from "react";
 import { getMegaottPanelUrl, markIptvDeliverySent } from "@/lib/iptv-megaott.functions";
+import { listInventoryAccounts, assignIptvAccountToOrder } from "@/lib/iptv-import.functions";
 import { MegaottDeliveryForm } from "./MegaottDeliveryForm";
 
 interface Delivery {
@@ -59,6 +63,7 @@ export function IptvDeliveryCard({ orderId, metadata }: { orderId: string; metad
 
         {!delivery && (
           <div className="flex flex-wrap gap-2">
+            <AssignFromInventory orderId={orderId} />
             <Button size="sm" variant="outline" onClick={openPanel}>
               <ExternalLink className="h-3 w-3 mr-1" /> Créer abonnement MEGAOTT
             </Button>
