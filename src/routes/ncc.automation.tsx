@@ -1,11 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { NccModulePlaceholder } from "@/components/ncc/NccModulePlaceholder";
-import { getModule } from "@/lib/ncc/modules";
+import { Workflow } from "lucide-react";
+import { NccPageHeader } from "@/components/ncc/NccPageHeader";
+import { AutomationPage } from "@/components/ncc/automation/AutomationPage";
 
 export const Route = createFileRoute("/ncc/automation")({
-  component: () => {
-    const m = getModule("automation");
-    if (!m) return null;
-    return <NccModulePlaceholder module={m} />;
-  },
+  component: () => (
+    <div>
+      <NccPageHeader
+        icon={Workflow}
+        title="Automation Engine"
+        description="Moteur de workflows métier — déclencheurs, actions, historique d'exécution."
+      />
+      <AutomationPage />
+    </div>
+  ),
 });
