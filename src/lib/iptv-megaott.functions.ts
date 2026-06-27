@@ -11,7 +11,16 @@ import { z } from "zod";
 import "@/integration-hub"; // ensure connectors are registered
 import { connectorRegistry } from "@/integration-hub/core/registry";
 import type { IPTVConnector } from "@/integration-hub/connectors/iptv/types";
-import { pingMegaott, resolveMegaottConfig } from "@/integration-hub/connectors/iptv/megaott.adapter";
+import { megaottConnector, pingMegaott, resolveMegaottConfig } from "@/integration-hub/connectors/iptv/megaott.adapter";
+
+// Defensive registration: in server-fn bundles the barrel side-effect
+// import above can be split into a different module instance than the
+// registry imported here, leaving this isolate with an empty registry.
+// Registering directly guarantees the connector is available on every
+// invocation regardless of bundler layout.
+if (!connectorRegistry.has("iptv.megaott")) {
+  connectorRegistry.register(megaottConnector);
+}
 
 const CONNECTOR_ID = "iptv.megaott";
 
