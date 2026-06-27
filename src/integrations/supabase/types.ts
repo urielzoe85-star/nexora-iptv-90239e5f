@@ -995,6 +995,9 @@ export type Database = {
         | "active"
         | "expired"
         | "suspended"
+        | "reserved"
+        | "delivered"
+        | "disabled"
       iptv_account_type: "trial" | "premium"
       iptv_provider_status: "active" | "inactive" | "error"
     }
@@ -1131,6 +1134,9 @@ export const Constants = {
         "active",
         "expired",
         "suspended",
+        "reserved",
+        "delivered",
+        "disabled",
       ],
       iptv_account_type: ["trial", "premium"],
       iptv_provider_status: ["active", "inactive", "error"],
