@@ -329,12 +329,13 @@ export const iptvInventoryKpis = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const sb = await admin(context.userId);
-    const { data, error } = await sb.from("iptv_accounts").select("status, package, account_type, expires_at");
+    const { data, error } = await sb.from("iptv_accounts").select("status, package, account_type, expires_at, paid, trial");
     if (error) throw new Error(error.message);
     const rows = data ?? [];
     const byStatus: Record<string, number> = {};
     const byPackage: Record<string, number> = {};
     const byType: Record<string, number> = {};
+    let paid = 0, trial = 0;
     const now = Date.now();
     let expiringSoon = 0;
     for (const r of rows) {
@@ -342,12 +343,14 @@ export const iptvInventoryKpis = createServerFn({ method: "GET" })
       const pkg = r.package ?? "—";
       byPackage[pkg] = (byPackage[pkg] ?? 0) + 1;
       byType[r.account_type] = (byType[r.account_type] ?? 0) + 1;
+      if (r.paid === true) paid++;
+      if (r.trial === true) trial++;
       if (r.expires_at) {
         const t = new Date(r.expires_at).getTime();
         if (!Number.isNaN(t) && t - now < 7 * 86_400_000 && t > now) expiringSoon++;
       }
     }
-    return { total: rows.length, byStatus, byPackage, byType, expiringSoon };
+    return { total: rows.length, byStatus, byPackage, byType, expiringSoon, paid, trial };
   });
 
 export const listInventoryAccounts = createServerFn({ method: "POST" })
@@ -359,6 +362,9 @@ export const listInventoryAccounts = createServerFn({ method: "POST" })
     search: z.string().optional(),
     expiring_within_days: z.number().int().min(0).max(365).optional(),
     only_available: z.boolean().optional(),
+    paid: z.boolean().optional(),
+    trial: z.boolean().optional(),
+    min_connections: z.number().int().min(0).max(1000).optional(),
     limit: z.number().int().min(1).max(1000).default(500),
   }).parse(d ?? {}))
   .handler(async ({ data, context }) => {
@@ -368,6 +374,9 @@ export const listInventoryAccounts = createServerFn({ method: "POST" })
     else if (data.status) q = q.eq("status", data.status);
     if (data.account_type) q = q.eq("account_type", data.account_type);
     if (data.package) q = q.eq("package", data.package);
+    if (typeof data.paid === "boolean") q = q.eq("paid", data.paid);
+    if (typeof data.trial === "boolean") q = q.eq("trial", data.trial);
+    if (typeof data.min_connections === "number") q = q.gte("max_connections", data.min_connections);
     if (data.search) q = q.ilike("username", `%${data.search}%`);
     if (data.expiring_within_days) {
       const cutoff = new Date(Date.now() + data.expiring_within_days * 86_400_000).toISOString();
