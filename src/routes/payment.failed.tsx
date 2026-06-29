@@ -25,8 +25,17 @@ function FailedPage() {
     if (!ref) return;
     (async () => {
       // Best-effort: flip pending/processing to "failed" when the user lands
-      // here. Already-final orders are untouched (no-op).
-      await markOrderFailed({ data: { ref, status: "failed" } }).catch(() => {});
+      // here. The endpoint now requires a server-signed cancellation token
+      // that checkout stashed in sessionStorage at order creation, so a third
+      // party who only sees the failure URL cannot cancel someone else's
+      // order. Already-final orders are untouched server-side (no-op).
+      let token = "";
+      try {
+        token = sessionStorage.getItem(`nx_cancel_${ref}`) ?? "";
+      } catch {}
+      if (token) {
+        await markOrderFailed({ data: { ref, status: "failed", token } }).catch(() => {});
+      }
       const o = await getOrderByRef({ data: { ref } });
       setOrder(o);
     })();
@@ -67,10 +76,10 @@ function FailedPage() {
                 <span className="text-muted-foreground">{t("ok.row.status")}</span>
                 <span className="text-red-400">{t(`status.${order.status}`)}</span>
               </div>
-              {order.metadata?.failure_reason && (
+              {order.failure_reason && (
                 <div className="px-4 py-3 text-sm">
                   <div className="text-muted-foreground mb-1">Raison</div>
-                  <div className="text-red-300">{order.metadata.failure_reason}</div>
+                  <div className="text-red-300">{order.failure_reason}</div>
                 </div>
               )}
             </div>
