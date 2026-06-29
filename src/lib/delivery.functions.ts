@@ -96,3 +96,143 @@ export const getDeliveryStats = createServerFn({ method: "POST" })
     }
     return stats;
   });
+
+// ────────────────────────────────────────────────────────────────────────────
+// ENVOI AUTOMATIQUE — Telegram via gateway connector Lovable
+// ────────────────────────────────────────────────────────────────────────────
+export const sendTelegramAuto = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({
+      order_id: z.string().uuid(),
+      chat_id: z.union([z.string(), z.number()]),
+      text: z.string().min(1).max(4000),
+      template_id: z.string().max(80).optional(),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const sb = await adminClient(context.userId);
+    const LOVABLE_API_KEY = process.env.LOVABLE_API_KEY;
+    const TELEGRAM_API_KEY = process.env.TELEGRAM_API_KEY;
+    if (!LOVABLE_API_KEY || !TELEGRAM_API_KEY) {
+      throw new Error("Telegram non configuré (LOVABLE_API_KEY ou TELEGRAM_API_KEY manquant)");
+    }
+    const res = await fetch("https://connector-gateway.lovable.dev/telegram/sendMessage", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "X-Connection-Api-Key": TELEGRAM_API_KEY,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ chat_id: data.chat_id, text: data.text, disable_web_page_preview: true }),
+    });
+    const body = await res.json().catch(() => ({}));
+    const ok = res.ok && body?.ok !== false;
+    const { data: order } = await sb.from("orders").select("customer_id").eq("id", data.order_id).maybeSingle();
+    await sb.from("delivery_logs").insert({
+      order_id: data.order_id,
+      customer_id: order?.customer_id ?? null,
+      channel: "telegram",
+      status: ok ? "automatic" : "failed",
+      template_id: data.template_id ?? null,
+      content: data.text,
+      recipient: String(data.chat_id),
+      admin_id: context.userId,
+      error: ok ? null : (body?.description ?? `HTTP ${res.status}`),
+    });
+    if (!ok) throw new Error(body?.description ?? `Telegram error ${res.status}`);
+    return { ok: true, message_id: body?.result?.message_id };
+  });
+
+// ────────────────────────────────────────────────────────────────────────────
+// ENVOI AUTOMATIQUE — Email via Lovable Emails (queue + retry)
+// ────────────────────────────────────────────────────────────────────────────
+export const sendEmailAuto = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({
+      order_id: z.string().uuid(),
+      recipient: z.string().email(),
+      subject: z.string().max(300).optional(),
+      template_data: z.record(z.string(), z.any()).default({}),
+      message_override: z.string().max(20000).optional(),
+      template_id: z.string().max(80).optional(),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const sb = await adminClient(context.userId);
+    const React = await import("react");
+    const { render } = await import("react-email");
+    const { template } = await import("@/lib/email-templates/iptv-delivery");
+
+    const messageId = crypto.randomUUID();
+    const props = { ...data.template_data, message: data.message_override };
+    let html = "", text = "";
+    try {
+      const el = React.createElement(template.component as any, props);
+      html = await render(el);
+      text = await render(el, { plainText: true });
+    } catch (e: any) {
+      await sb.from("delivery_logs").insert({
+        order_id: data.order_id, channel: "email", status: "failed",
+        template_id: data.template_id ?? "iptv-delivery", content: data.message_override ?? "",
+        recipient: data.recipient, admin_id: context.userId,
+        error: `render: ${e?.message ?? e}`,
+      });
+      throw new Error(`Render échoué: ${e?.message ?? e}`);
+    }
+
+    const subject = data.subject
+      || (typeof template.subject === "function" ? template.subject(props) : template.subject);
+
+    // Suppression check
+    const { data: suppressed } = await sb
+      .from("suppressed_emails").select("id").eq("email", data.recipient.toLowerCase()).maybeSingle();
+    if (suppressed) {
+      await sb.from("delivery_logs").insert({
+        order_id: data.order_id, channel: "email", status: "failed",
+        template_id: data.template_id ?? "iptv-delivery", content: data.message_override ?? "",
+        recipient: data.recipient, admin_id: context.userId,
+        error: "Adresse désabonnée / supprimée",
+      });
+      throw new Error("Cette adresse est désabonnée.");
+    }
+
+    await sb.from("email_send_log").insert({
+      message_id: messageId, template_name: "iptv-delivery",
+      recipient_email: data.recipient, status: "pending",
+    });
+
+    const { error: enqueueErr } = await sb.rpc("enqueue_email", {
+      queue_name: "transactional_emails",
+      payload: {
+        message_id: messageId,
+        to: data.recipient,
+        from: `nexora-iptv <noreply@nexora-iptv.com>`,
+        sender_domain: "notify.nexora-iptv.com",
+        subject,
+        html, text,
+        purpose: "transactional",
+        label: "iptv-delivery",
+        idempotency_key: `iptv-delivery-${data.order_id}-${Date.now()}`,
+        queued_at: new Date().toISOString(),
+      },
+    });
+
+    const { data: order } = await sb.from("orders").select("customer_id").eq("id", data.order_id).maybeSingle();
+    await sb.from("delivery_logs").insert({
+      order_id: data.order_id,
+      customer_id: order?.customer_id ?? null,
+      channel: "email",
+      status: enqueueErr ? "failed" : "automatic",
+      template_id: data.template_id ?? "iptv-delivery",
+      subject,
+      content: data.message_override ?? subject,
+      recipient: data.recipient,
+      admin_id: context.userId,
+      error: enqueueErr?.message ?? null,
+    });
+
+    if (enqueueErr) throw new Error(enqueueErr.message);
+    return { ok: true, queued: true, message_id: messageId };
+  });

@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
 import { Route as TrackRouteImport } from './routes/track'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as NccRouteImport } from './routes/ncc'
@@ -78,6 +79,11 @@ import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/em
 import { Route as ApiPublicSebpayWebhookRouteImport } from './routes/api/public/sebpay/webhook'
 import { Route as ApiPublicAutomationProcessQueueRouteImport } from './routes/api/public/automation/process-queue'
 
+const UnsubscribeRoute = UnsubscribeRouteImport.update({
+  id: '/unsubscribe',
+  path: '/unsubscribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TrackRoute = TrackRouteImport.update({
   id: '/track',
   path: '/track',
@@ -436,6 +442,7 @@ export interface FileRoutesByFullPath {
   '/ncc': typeof NccRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/track': typeof TrackRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/admin/admins': typeof AdminAdminsRoute
   '/admin/content': typeof AdminContentRoute
   '/admin/login': typeof AdminLoginRoute
@@ -502,6 +509,7 @@ export interface FileRoutesByTo {
   '/legal-guide': typeof LegalGuideRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/track': typeof TrackRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/admin/admins': typeof AdminAdminsRoute
   '/admin/content': typeof AdminContentRoute
   '/admin/login': typeof AdminLoginRoute
@@ -571,6 +579,7 @@ export interface FileRoutesById {
   '/ncc': typeof NccRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/track': typeof TrackRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/admin/admins': typeof AdminAdminsRoute
   '/admin/content': typeof AdminContentRoute
   '/admin/login': typeof AdminLoginRoute
@@ -643,6 +652,7 @@ export interface FileRouteTypes {
     | '/ncc'
     | '/sitemap.xml'
     | '/track'
+    | '/unsubscribe'
     | '/admin/admins'
     | '/admin/content'
     | '/admin/login'
@@ -709,6 +719,7 @@ export interface FileRouteTypes {
     | '/legal-guide'
     | '/sitemap.xml'
     | '/track'
+    | '/unsubscribe'
     | '/admin/admins'
     | '/admin/content'
     | '/admin/login'
@@ -777,6 +788,7 @@ export interface FileRouteTypes {
     | '/ncc'
     | '/sitemap.xml'
     | '/track'
+    | '/unsubscribe'
     | '/admin/admins'
     | '/admin/content'
     | '/admin/login'
@@ -848,6 +860,7 @@ export interface RootRouteChildren {
   NccRoute: typeof NccRouteWithChildren
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TrackRoute: typeof TrackRoute
+  UnsubscribeRoute: typeof UnsubscribeRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   PaymentFailedRoute: typeof PaymentFailedRoute
   PaymentSuccessRoute: typeof PaymentSuccessRoute
@@ -863,6 +876,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/unsubscribe': {
+      id: '/unsubscribe'
+      path: '/unsubscribe'
+      fullPath: '/unsubscribe'
+      preLoaderRoute: typeof UnsubscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/track': {
       id: '/track'
       path: '/track'
@@ -1516,6 +1536,7 @@ const rootRouteChildren: RootRouteChildren = {
   NccRoute: NccRouteWithChildren,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TrackRoute: TrackRoute,
+  UnsubscribeRoute: UnsubscribeRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   PaymentFailedRoute: PaymentFailedRoute,
   PaymentSuccessRoute: PaymentSuccessRoute,
