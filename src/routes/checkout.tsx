@@ -132,6 +132,15 @@ function CheckoutPage() {
       });
       if (!order?.order_ref) throw new Error("Could not create order");
 
+      // Stash the per-order cancellation token so the failure page can call
+      // markOrderFailed without re-deriving anything client-side. The token is
+      // server-signed; without it the cancellation endpoint refuses the call.
+      if (typeof window !== "undefined" && order.cancel_token) {
+        try {
+          sessionStorage.setItem(`nx_cancel_${order.order_ref}`, order.cancel_token);
+        } catch {}
+      }
+
       const origin = typeof window !== "undefined" ? window.location.origin : "";
       const result = await initSebPayCheckout({
         data: {
