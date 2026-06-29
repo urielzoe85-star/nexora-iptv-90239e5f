@@ -181,6 +181,7 @@ function CheckoutPage() {
       </header>
 
       <div className="max-w-6xl mx-auto px-6 py-10">
+        <h1 className="sr-only">Checkout — Complete your Nexora IPTV order</h1>
         {pending ? (
           <PendingPanel pending={pending} />
         ) : !selected ? (
