@@ -15,8 +15,9 @@ import {
   buildAccessSnippet, buildDeliveryContext, normalizePhoneForWa, renderTemplate,
   type DeliveryChannel,
 } from "@/domain/delivery/message-engine";
-import { logDelivery, listDeliveryLogs } from "@/lib/delivery.functions";
+import { logDelivery, listDeliveryLogs, sendTelegramAuto, sendEmailAuto } from "@/lib/delivery.functions";
 import { markIptvDeliverySent } from "@/lib/iptv-megaott.functions";
+import { Zap } from "lucide-react";
 
 async function copy(text: string) {
   try {
@@ -44,6 +45,8 @@ export function DeliveryComposer({ orderId, order, customer, delivery }: Props) 
   const logFn = useServerFn(logDelivery);
   const markSentFn = useServerFn(markIptvDeliverySent);
   const listLogsFn = useServerFn(listDeliveryLogs);
+  const sendTgAutoFn = useServerFn(sendTelegramAuto);
+  const sendEmailAutoFn = useServerFn(sendEmailAuto);
 
   const [channel, setChannel] = useState<DeliveryChannel>("whatsapp");
   const [templateId, setTemplateId] = useState<string>("fr_standard");
@@ -69,6 +72,44 @@ export function DeliveryComposer({ orderId, order, customer, delivery }: Props) 
   const log = useMutation({
     mutationFn: (p: any) => logFn({ data: p }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["delivery", "logs", orderId] }),
+  });
+
+  const tgAuto = useMutation({
+    mutationFn: () => {
+      const chatId = customer?.metadata?.telegram_chat_id;
+      if (!chatId) throw new Error("Telegram chat_id manquant — le client doit avoir démarré le bot.");
+      return sendTgAutoFn({ data: { order_id: orderId, chat_id: chatId, text: body, template_id: templateId } });
+    },
+    onSuccess: () => {
+      toast.success("Telegram envoyé automatiquement");
+      markSentFn({ data: { order_id: orderId, channel: "telegram" } }).catch(() => {});
+      qc.invalidateQueries({ queryKey: ["delivery", "logs", orderId] });
+      qc.invalidateQueries({ queryKey: ["ncc", "order", orderId] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Échec envoi Telegram"),
+  });
+
+  const emailAuto = useMutation({
+    mutationFn: () => {
+      if (!ctx.email) throw new Error("Email client manquant");
+      return sendEmailAutoFn({
+        data: {
+          order_id: orderId,
+          recipient: ctx.email,
+          subject,
+          template_data: { ...ctx },
+          message_override: body,
+          template_id: templateId,
+        },
+      });
+    },
+    onSuccess: () => {
+      toast.success("Email mis en file d'envoi automatique");
+      markSentFn({ data: { order_id: orderId, channel: "email" } }).catch(() => {});
+      qc.invalidateQueries({ queryKey: ["delivery", "logs", orderId] });
+      qc.invalidateQueries({ queryKey: ["ncc", "order", orderId] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Échec envoi email"),
   });
 
   async function handleCopyAccess() {
@@ -201,14 +242,36 @@ export function DeliveryComposer({ orderId, order, customer, delivery }: Props) 
             </Button>
           )}
           {channel === "telegram" && (
-            <Button size="sm" onClick={handleSendTelegram} className="bg-sky-600 hover:bg-sky-700 text-white">
-              <Send className="h-3 w-3 mr-1" /> Envoyer via Telegram
-            </Button>
+            <>
+              <Button size="sm" onClick={handleSendTelegram} variant="outline">
+                <Send className="h-3 w-3 mr-1" /> Ouvrir Telegram (manuel)
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => tgAuto.mutate()}
+                disabled={tgAuto.isPending}
+                className="bg-sky-600 hover:bg-sky-700 text-white"
+              >
+                <Zap className="h-3 w-3 mr-1" />
+                {tgAuto.isPending ? "Envoi…" : "Envoi automatique Telegram"}
+              </Button>
+            </>
           )}
           {channel === "email" && (
-            <Button size="sm" onClick={handleSendEmail} className="bg-indigo-600 hover:bg-indigo-700 text-white" disabled={!ctx.email}>
-              <Mail className="h-3 w-3 mr-1" /> Envoyer par Email
-            </Button>
+            <>
+              <Button size="sm" onClick={handleSendEmail} variant="outline" disabled={!ctx.email}>
+                <Mail className="h-3 w-3 mr-1" /> Ouvrir client mail (manuel)
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => emailAuto.mutate()}
+                disabled={!ctx.email || emailAuto.isPending}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white"
+              >
+                <Zap className="h-3 w-3 mr-1" />
+                {emailAuto.isPending ? "Envoi…" : "Envoi automatique Email"}
+              </Button>
+            </>
           )}
         </div>
       </Tabs>
