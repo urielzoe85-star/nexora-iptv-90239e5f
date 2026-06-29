@@ -105,9 +105,21 @@ export const getOrderByRef = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
     if (!row) return null;
     const meta = (row.metadata ?? {}) as Record<string, unknown>;
-    const failureReason = typeof meta.failure_reason === "string" ? meta.failure_reason : null;
-    const { metadata: _drop, ...safe } = row as Record<string, unknown>;
-    return { ...safe, failure_reason: failureReason } as typeof safe & { failure_reason: string | null };
+    const failure_reason = typeof meta.failure_reason === "string" ? meta.failure_reason : null;
+    return {
+      order_ref: row.order_ref,
+      email: row.email,
+      full_name: row.full_name,
+      plan_name: row.plan_name,
+      amount: row.amount,
+      currency: row.currency,
+      method: row.method,
+      status: row.status,
+      sebpay_reference: row.sebpay_reference,
+      created_at: row.created_at,
+      updated_at: row.updated_at,
+      failure_reason,
+    };
   });
 
 export const getOrdersByEmail = createServerFn({ method: "GET" })
