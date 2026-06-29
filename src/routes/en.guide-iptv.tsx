@@ -36,7 +36,7 @@ export const Route = createFileRoute("/en/guide-iptv")({
   head: () => ({
     meta: [
       { title: "How to Install IPTV and Watch Live TV Online — 2026 Guide" },
-      { name: "description", content: "Step-by-step English guide to install IPTV on Smart TV, Android, iPhone, Fire TV and Apple TV, configure your M3U / Xtream Codes access and watch live TV on the internet." },
+      { name: "description", content: "Install IPTV on Smart TV, Android, iPhone, Fire TV and Apple TV: M3U / Xtream Codes setup and live TV streaming guide." },
       { property: "og:title", content: "How to Install IPTV and Watch Live TV Online — Nexora Guide" },
       { property: "og:description", content: "IPTV installation step by step: apps, M3U / Xtream Codes setup, troubleshooting and FAQ." },
       { property: "og:url", content: "https://nexora-iptv.com/en/guide-iptv" },
