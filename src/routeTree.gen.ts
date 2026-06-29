@@ -76,6 +76,7 @@ import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/l
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
+import { Route as ApiPublicTelegramWebhookRouteImport } from './routes/api/public/telegram/webhook'
 import { Route as ApiPublicSebpayWebhookRouteImport } from './routes/api/public/sebpay/webhook'
 import { Route as ApiPublicAutomationProcessQueueRouteImport } from './routes/api/public/automation/process-queue'
 
@@ -417,6 +418,12 @@ const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
   path: '/lovable/email/auth/preview',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicTelegramWebhookRoute =
+  ApiPublicTelegramWebhookRouteImport.update({
+    id: '/api/public/telegram/webhook',
+    path: '/api/public/telegram/webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicSebpayWebhookRoute = ApiPublicSebpayWebhookRouteImport.update({
   id: '/api/public/sebpay/webhook',
   path: '/api/public/sebpay/webhook',
@@ -494,6 +501,7 @@ export interface FileRoutesByFullPath {
   '/ncc/settings/': typeof NccSettingsIndexRoute
   '/api/public/automation/process-queue': typeof ApiPublicAutomationProcessQueueRoute
   '/api/public/sebpay/webhook': typeof ApiPublicSebpayWebhookRoute
+  '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -559,6 +567,7 @@ export interface FileRoutesByTo {
   '/ncc/settings': typeof NccSettingsIndexRoute
   '/api/public/automation/process-queue': typeof ApiPublicAutomationProcessQueueRoute
   '/api/public/sebpay/webhook': typeof ApiPublicSebpayWebhookRoute
+  '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -631,6 +640,7 @@ export interface FileRoutesById {
   '/ncc/settings/': typeof NccSettingsIndexRoute
   '/api/public/automation/process-queue': typeof ApiPublicAutomationProcessQueueRoute
   '/api/public/sebpay/webhook': typeof ApiPublicSebpayWebhookRoute
+  '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -704,6 +714,7 @@ export interface FileRouteTypes {
     | '/ncc/settings/'
     | '/api/public/automation/process-queue'
     | '/api/public/sebpay/webhook'
+    | '/api/public/telegram/webhook'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
@@ -769,6 +780,7 @@ export interface FileRouteTypes {
     | '/ncc/settings'
     | '/api/public/automation/process-queue'
     | '/api/public/sebpay/webhook'
+    | '/api/public/telegram/webhook'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
@@ -840,6 +852,7 @@ export interface FileRouteTypes {
     | '/ncc/settings/'
     | '/api/public/automation/process-queue'
     | '/api/public/sebpay/webhook'
+    | '/api/public/telegram/webhook'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
@@ -867,6 +880,7 @@ export interface RootRouteChildren {
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ApiPublicAutomationProcessQueueRoute: typeof ApiPublicAutomationProcessQueueRoute
   ApiPublicSebpayWebhookRoute: typeof ApiPublicSebpayWebhookRoute
+  ApiPublicTelegramWebhookRoute: typeof ApiPublicTelegramWebhookRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
@@ -1345,6 +1359,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableEmailAuthPreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/telegram/webhook': {
+      id: '/api/public/telegram/webhook'
+      path: '/api/public/telegram/webhook'
+      fullPath: '/api/public/telegram/webhook'
+      preLoaderRoute: typeof ApiPublicTelegramWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/sebpay/webhook': {
       id: '/api/public/sebpay/webhook'
       path: '/api/public/sebpay/webhook'
@@ -1543,6 +1564,7 @@ const rootRouteChildren: RootRouteChildren = {
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ApiPublicAutomationProcessQueueRoute: ApiPublicAutomationProcessQueueRoute,
   ApiPublicSebpayWebhookRoute: ApiPublicSebpayWebhookRoute,
+  ApiPublicTelegramWebhookRoute: ApiPublicTelegramWebhookRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
@@ -1552,13 +1574,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
