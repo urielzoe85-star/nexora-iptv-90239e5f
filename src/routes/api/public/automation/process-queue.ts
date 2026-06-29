@@ -8,9 +8,19 @@ export const Route = createFileRoute("/api/public/automation/process-queue")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const apikey = request.headers.get("apikey") ?? "";
-        const expected = process.env.SUPABASE_PUBLISHABLE_KEY ?? "";
-        if (!apikey || apikey !== expected) {
+        // The queue drain is invoked by pg_cron with a shared secret in the
+        // Authorization: Bearer header. The previous gate accepted the public
+        // anon key (shipped in every client bundle), so anyone could trigger
+        // a drain — replace it with a dedicated server-only secret.
+        const expected = process.env.AUTOMATION_CRON_SECRET ?? "";
+        if (!expected) {
+          return new Response("Server misconfigured", { status: 500 });
+        }
+        const auth = request.headers.get("authorization") ?? "";
+        const token = auth.toLowerCase().startsWith("bearer ")
+          ? auth.slice(7).trim()
+          : "";
+        if (!token || token !== expected) {
           return new Response("Unauthorized", { status: 401 });
         }
 

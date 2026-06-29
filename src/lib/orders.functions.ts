@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { createHmac, timingSafeEqual } from "crypto";
 import { convertUsdToLocal } from "@/lib/countries";
 
 // Legacy export kept for any consumer importing it. SebPay charges in the
@@ -24,6 +25,28 @@ function genOrderRef() {
   let s = "";
   for (let i = 0; i < 10; i++) s += chars[Math.floor(Math.random() * chars.length)];
   return `NX-${s}`;
+}
+
+// Derive a per-order cancellation token from a server-only secret. The token
+// is returned at creation time and required to call markOrderFailed, so the
+// public order-ref (visible in URLs / history / referrers) is no longer
+// sufficient on its own to cancel a pending order.
+function cancelSecret(): string {
+  const s = (process.env.SEBPAY_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || "").trim();
+  if (!s) throw new Error("Server misconfigured: missing signing secret");
+  return s;
+}
+function makeCancelToken(orderRef: string): string {
+  return createHmac("sha256", cancelSecret()).update(`cancel:${orderRef}`).digest("hex");
+}
+function verifyCancelToken(orderRef: string, token: string): boolean {
+  try {
+    const expected = Buffer.from(makeCancelToken(orderRef), "hex");
+    const got = Buffer.from(token, "hex");
+    return expected.length === got.length && timingSafeEqual(expected, got);
+  } catch {
+    return false;
+  }
 }
 
 export const createOrder = createServerFn({ method: "POST" })
@@ -63,7 +86,7 @@ export const createOrder = createServerFn({ method: "POST" })
       .select("order_ref, status, amount, currency, plan_name, email, method")
       .single();
     if (error) throw new Error(error.message);
-    return row;
+    return { ...row, cancel_token: makeCancelToken(row.order_ref) };
   });
 
 export const getOrderByRef = createServerFn({ method: "GET" })
@@ -72,11 +95,31 @@ export const getOrderByRef = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: row, error } = await supabaseAdmin
       .from("orders")
+      // Never select `metadata` here — it contains PII (Mobile Money phone,
+      // operator, country) and raw SebPay request/response payloads. Anyone
+      // with the order reference can hit this endpoint. We surface only a
+      // sanitised `failure_reason` string for the failure page.
       .select("order_ref, email, full_name, plan_name, amount, currency, method, status, sebpay_reference, metadata, created_at, updated_at")
       .eq("order_ref", data.ref)
       .maybeSingle();
     if (error) throw new Error(error.message);
-    return row;
+    if (!row) return null;
+    const meta = (row.metadata ?? {}) as Record<string, unknown>;
+    const failure_reason = typeof meta.failure_reason === "string" ? meta.failure_reason : null;
+    return {
+      order_ref: row.order_ref,
+      email: row.email,
+      full_name: row.full_name,
+      plan_name: row.plan_name,
+      amount: row.amount,
+      currency: row.currency,
+      method: row.method,
+      status: row.status,
+      sebpay_reference: row.sebpay_reference,
+      created_at: row.created_at,
+      updated_at: row.updated_at,
+      failure_reason,
+    };
   });
 
 export const getOrdersByEmail = createServerFn({ method: "GET" })
@@ -104,10 +147,14 @@ export const markOrderFailed = createServerFn({ method: "POST" })
       .object({
         ref: z.string().min(4).max(40),
         status: z.enum(["failed", "cancelled"]),
+        token: z.string().min(16).max(128),
       })
       .parse(data),
   )
   .handler(async ({ data }) => {
+    if (!verifyCancelToken(data.ref, data.token)) {
+      throw new Error("Invalid cancellation token");
+    }
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: row, error } = await supabaseAdmin
       .from("orders")
