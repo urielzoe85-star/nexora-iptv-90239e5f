@@ -31,7 +31,7 @@ export const Route = createFileRoute("/")({
     ],
     links: [
       { rel: "canonical", href: "https://nexora-iptv.com/" },
-      { rel: "preload", as: "image", href: "/src/assets/hero-bg.jpg", fetchpriority: "high" },
+      { rel: "preload", as: "image", href: heroBg, fetchpriority: "high" },
     ],
     scripts: [
       {
