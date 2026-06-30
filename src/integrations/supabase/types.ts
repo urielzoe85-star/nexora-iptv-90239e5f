@@ -19,6 +19,7 @@ export type Database = {
           attempts: number
           created_at: string
           id: string
+          idempotency_key: string | null
           last_error: string | null
           locked_at: string | null
           max_attempts: number
@@ -33,6 +34,7 @@ export type Database = {
           attempts?: number
           created_at?: string
           id?: string
+          idempotency_key?: string | null
           last_error?: string | null
           locked_at?: string | null
           max_attempts?: number
@@ -47,6 +49,7 @@ export type Database = {
           attempts?: number
           created_at?: string
           id?: string
+          idempotency_key?: string | null
           last_error?: string | null
           locked_at?: string | null
           max_attempts?: number
@@ -1175,6 +1178,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      automation_claim_jobs: {
+        Args: { _batch_size?: number }
+        Returns: {
+          attempts: number
+          id: string
+          max_attempts: number
+          payload: Json
+          trigger_event: string
+          workflow_key: string
+        }[]
+      }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean

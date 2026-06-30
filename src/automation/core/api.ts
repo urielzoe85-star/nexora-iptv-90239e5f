@@ -11,6 +11,8 @@ export interface EmitOptions {
   /** Si true, exécute immédiatement (par défaut : enqueue async). */
   sync?: boolean;
   actorId?: string | null;
+  /** Clé d'idempotence — empêche le double-enqueue du même événement métier. */
+  idempotencyKey?: string | null;
 }
 
 export const automationApi = {
@@ -23,7 +25,9 @@ export const automationApi = {
         const r = await runWorkflow(w.key, { payload, triggerEvent: event, actorId: opts.actorId ?? null });
         out.push(r.runId);
       } else {
-        out.push(await enqueueWorkflow(w.key, payload, event));
+        // Per-workflow idempotency key: caller-supplied scope + workflow key.
+        const idk = opts.idempotencyKey ? `${w.key}:${opts.idempotencyKey}` : null;
+        out.push(await enqueueWorkflow(w.key, payload, event, { idempotencyKey: idk }));
       }
     }
     return out;

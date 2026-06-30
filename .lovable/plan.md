@@ -27,9 +27,13 @@ Le flux qui doit absolument marcher de bout en bout :
 - Logs `delivery_logs` / `integration_debug_logs` en cas d'échec.
 
 ### 1.2 — Workflow automation `payment-confirmed`
-- Engine en mémoire (`src/automation/core/engine.ts`) : risque connu d'audit. **Pour la RC** : je ne réécris pas l'engine, mais j'ajoute persistance basique via `automation_queue` + endpoint `process-queue` déjà existant, pour que le redéploiement ne perde rien.
-- Idempotence du run (clé = `orderId + event`).
-- Retry contrôlé en cas d'erreur MEGAOTT.
+- [x] Migration : colonne `idempotency_key` + index unique partiel sur `automation_queue`.
+- [x] RPC `automation_claim_jobs` (FOR UPDATE SKIP LOCKED) — deux drains concurrents ne peuvent plus claim la même tâche.
+- [x] `enqueueWorkflow` accepte une clé d'idempotence ; `emitBusinessEvent` la passe sous la forme `${event}:${orderRef}`.
+- [x] Workflow `payment-confirmed` : guard "déjà completed" + `createIptvSubscription` skip si compte existe pour cet `order_ref`.
+- [x] `createIptvSubscription` throw au lieu de masquer les échecs MEGAOTT en "simulated:true" → le run est failed et retenté.
+- [x] `fetchOrder` / `markOrderStatus` acceptent `order_ref` ET `id` (bug : le payload émet `order_ref`, le workflow query par `id`).
+- [x] Drain `process-queue` : backoff exponentiel (30s → 15min cap), reset `locked_at`, claim atomique via RPC.
 
 ### 1.3 — Intégration MEGAOTT
 - `src/integration-hub/connectors/iptv/megaott.adapter.ts` + `src/lib/iptv-megaott.functions.ts`.

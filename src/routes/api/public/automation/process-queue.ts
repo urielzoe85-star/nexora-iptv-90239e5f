@@ -29,35 +29,47 @@ export const Route = createFileRoute("/api/public/automation/process-queue")({
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const sb = supabaseAdmin as any;
 
-        const { data: jobs } = await sb
-          .from("automation_queue")
-          .select("id, workflow_key, payload, trigger_event, attempts, max_attempts")
-          .eq("status", "queued")
-          .lte("scheduled_at", new Date().toISOString())
-          .order("scheduled_at", { ascending: true })
-          .limit(10);
+        // Atomic claim via FOR UPDATE SKIP LOCKED — two concurrent drains
+        // can never grab the same row. attempts is already incremented and
+        // status is already `processing` when this returns.
+        const { data: jobs, error: claimErr } = await sb.rpc("automation_claim_jobs", { _batch_size: 10 });
+        if (claimErr) {
+          console.error("[automation] claim failed", claimErr.message);
+          return new Response(`claim failed: ${claimErr.message}`, { status: 500 });
+        }
 
         const processed: Array<{ id: string; status: string; error?: string | null }> = [];
         for (const job of (jobs ?? []) as Array<{ id: string; workflow_key: string; payload: any; trigger_event: string | null; attempts: number; max_attempts: number }>) {
-          await sb.from("automation_queue").update({ status: "processing", locked_at: new Date().toISOString(), attempts: job.attempts + 1 }).eq("id", job.id);
           try {
             const r = await automationApi.run(job.workflow_key, job.payload ?? {}, null);
             if (r.status === "success") {
-              await sb.from("automation_queue").update({ status: "done" }).eq("id", job.id);
+              await sb.from("automation_queue").update({ status: "done", updated_at: new Date().toISOString() }).eq("id", job.id);
               processed.push({ id: job.id, status: "done" });
             } else {
-              const failed = job.attempts + 1 >= job.max_attempts;
+              // `attempts` was incremented by the claim RPC, so it already
+              // reflects the current attempt count.
+              const failed = job.attempts >= job.max_attempts;
+              const backoffMs = Math.min(15 * 60_000, 30_000 * Math.pow(2, Math.max(0, job.attempts - 1)));
+              const nextAt = new Date(Date.now() + backoffMs).toISOString();
               await sb.from("automation_queue").update({
                 status: failed ? "failed" : "queued",
                 last_error: r.error ?? "workflow failed",
+                scheduled_at: failed ? undefined : nextAt,
+                locked_at: null,
+                updated_at: new Date().toISOString(),
               }).eq("id", job.id);
               processed.push({ id: job.id, status: failed ? "failed" : "retry", error: r.error });
             }
           } catch (e: any) {
-            const failed = job.attempts + 1 >= job.max_attempts;
+            const failed = job.attempts >= job.max_attempts;
+            const backoffMs = Math.min(15 * 60_000, 30_000 * Math.pow(2, Math.max(0, job.attempts - 1)));
+            const nextAt = new Date(Date.now() + backoffMs).toISOString();
             await sb.from("automation_queue").update({
               status: failed ? "failed" : "queued",
               last_error: String(e?.message ?? e),
+              scheduled_at: failed ? undefined : nextAt,
+              locked_at: null,
+              updated_at: new Date().toISOString(),
             }).eq("id", job.id);
             processed.push({ id: job.id, status: failed ? "failed" : "retry", error: String(e?.message ?? e) });
           }

@@ -12,14 +12,27 @@ export const paymentConfirmedWorkflow: WorkflowDefinition = {
     {
       name: "validate:order",
       run: async (ctx) => {
-        const orderId = String(ctx.payload.orderId ?? "");
-        if (!orderId) throw new Error("orderId manquant dans le payload");
+        const orderId = String(ctx.payload.orderId ?? ctx.payload.orderRef ?? "");
+        if (!orderId) throw new Error("orderId/orderRef manquant dans le payload");
         const order = await fetchOrder(orderId);
-        return { orderId, email: order.email, plan: order.plan_name };
+        return {
+          orderId,
+          email: order.email,
+          plan: order.plan_name,
+          alreadyCompleted: order.status === "completed",
+        };
       },
     },
     {
+      // Defensive idempotency: if the order was already completed by a
+      // previous run (e.g. a manual replay), skip provisioning entirely.
+      name: "guard:already-completed",
+      when: (ctx) => Boolean((ctx.outputs["validate:order"] as any)?.alreadyCompleted) === false,
+      run: async () => ({ skipped: false }),
+    },
+    {
       name: "iptv:create-subscription",
+      when: (ctx) => Boolean((ctx.outputs["validate:order"] as any)?.alreadyCompleted) === false,
       run: async (ctx) => {
         const v = ctx.outputs["validate:order"] as { orderId: string; email: string };
         return createIptvSubscription({
@@ -31,6 +44,7 @@ export const paymentConfirmedWorkflow: WorkflowDefinition = {
     },
     {
       name: "invoice:generate",
+      when: (ctx) => Boolean((ctx.outputs["validate:order"] as any)?.alreadyCompleted) === false,
       run: async (ctx) => {
         const v = ctx.outputs["validate:order"] as { orderId: string };
         return generateInvoiceStub(v.orderId);
@@ -38,6 +52,7 @@ export const paymentConfirmedWorkflow: WorkflowDefinition = {
     },
     {
       name: "order:mark-completed",
+      when: (ctx) => Boolean((ctx.outputs["validate:order"] as any)?.alreadyCompleted) === false,
       run: async (ctx) => {
         const v = ctx.outputs["validate:order"] as { orderId: string };
         return markOrderStatus(v.orderId, "completed");

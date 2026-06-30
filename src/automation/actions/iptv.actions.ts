@@ -24,6 +24,28 @@ export async function createIptvSubscription(input: {
   password?: string;
 }) {
   const sb = await admin();
+
+  // Idempotency at the action level: if an account was already provisioned
+  // for this order, return it instead of creating a duplicate. The queue's
+  // idempotency_key normally prevents this, but a manual replay of a failed
+  // run (after the row was created) could still re-enter here.
+  if (input.orderId) {
+    const { data: existing } = await sb
+      .from("iptv_accounts")
+      .select("id, username, metadata")
+      .eq("metadata->>order_ref", input.orderId)
+      .maybeSingle();
+    if (existing?.id) {
+      return {
+        accountId: existing.id,
+        username: existing.username,
+        simulated: false,
+        remoteUserId: (existing.metadata as any)?.remote_user_id ?? null,
+        deduplicated: true,
+      };
+    }
+  }
+
   const username = input.username ?? `nx_${Date.now().toString(36)}`;
   const expiresAt = input.durationMonths
     ? new Date(Date.now() + input.durationMonths * 30 * 86_400_000).toISOString()
@@ -36,7 +58,9 @@ export async function createIptvSubscription(input: {
     if (r.ok) {
       remoteMeta = { provider: "megaott", remote_user_id: r.value.providerUserId, m3u_url: r.value.m3uUrl ?? null };
     } else {
-      return { simulated: true, reason: `megaott: ${r.error.kind} ${r.error.message}` };
+      // Throw so the workflow is marked failed and retried with backoff.
+      // Returning a "simulated" success silently hid real provisioning errors.
+      throw new Error(`megaott: ${r.error.kind} ${r.error.message}`);
     }
   }
 
@@ -45,12 +69,18 @@ export async function createIptvSubscription(input: {
     password: input.password ?? null,
     status: c ? "active" : "available",
     expires_at: expiresAt,
-    metadata: { source: "automation", duration_months: input.durationMonths ?? null, ...remoteMeta },
+    metadata: {
+      source: "automation",
+      duration_months: input.durationMonths ?? null,
+      order_ref: input.orderId ?? null,
+      customer_email: input.customerEmail ?? null,
+      ...remoteMeta,
+    },
   }).select("id").maybeSingle();
   if (error) {
-    return { simulated: true, reason: error.message };
+    throw new Error(`iptv_accounts insert failed: ${error.message}`);
   }
-  return { accountId: data?.id ?? null, simulated: !c, remoteUserId: (remoteMeta as any).remote_user_id ?? null };
+  return { accountId: data?.id ?? null, username, simulated: !c, remoteUserId: (remoteMeta as any).remote_user_id ?? null };
 }
 
 export async function renewIptvSubscription(accountId: string, months = 1) {

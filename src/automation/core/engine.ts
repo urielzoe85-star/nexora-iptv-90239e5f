@@ -130,15 +130,40 @@ function serialize(v: unknown): unknown {
 }
 
 /** Enqueue un workflow pour traitement asynchrone. */
-export async function enqueueWorkflow(key: string, payload: Record<string, unknown> = {}, triggerEvent?: string) {
+export async function enqueueWorkflow(
+  key: string,
+  payload: Record<string, unknown> = {},
+  triggerEvent?: string,
+  opts: { idempotencyKey?: string | null; scheduledAt?: string | null } = {},
+) {
   const sb = await getAdmin();
-  const { data, error } = await sb.from("automation_queue").insert({
+  const row: Record<string, unknown> = {
     workflow_key: key,
     payload,
     trigger_event: triggerEvent ?? null,
     status: "queued",
-  }).select("id").single();
-  if (error) throw new Error(error.message);
+  };
+  if (opts.idempotencyKey) row.idempotency_key = opts.idempotencyKey;
+  if (opts.scheduledAt) row.scheduled_at = opts.scheduledAt;
+
+  const { data, error } = await sb
+    .from("automation_queue")
+    .insert(row)
+    .select("id")
+    .single();
+  if (error) {
+    // 23505 = unique_violation on idempotency_key — silently skip duplicates.
+    if (opts.idempotencyKey && String((error as any).code) === "23505") {
+      const { data: existing } = await sb
+        .from("automation_queue")
+        .select("id")
+        .eq("idempotency_key", opts.idempotencyKey)
+        .in("status", ["queued", "processing", "done"])
+        .maybeSingle();
+      return (existing?.id as string) ?? "";
+    }
+    throw new Error(error.message);
+  }
   return data.id as string;
 }
 

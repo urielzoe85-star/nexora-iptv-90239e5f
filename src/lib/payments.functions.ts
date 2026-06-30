@@ -355,7 +355,12 @@ export async function emitBusinessEvent(
   try {
     await import("@/automation"); // ensure workflows are registered
     const { automationApi } = await import("@/automation");
-    await automationApi.emit(event, payload, { sync: false });
+    // Idempotency scope: one workflow run per (event, order_ref). Prevents
+    // the webhook + success-page poll from queuing the same IPTV creation
+    // twice when both race to verify the same payment.
+    const ref = String((payload as any).orderRef ?? (payload as any).orderId ?? "");
+    const idempotencyKey = ref ? `${event}:${ref}` : null;
+    await automationApi.emit(event, payload, { sync: false, idempotencyKey });
   } catch (e: any) {
     console.error("[automation] emit failed", { event, message: String(e?.message ?? e) });
   }
