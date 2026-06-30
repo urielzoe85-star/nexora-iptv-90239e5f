@@ -59,8 +59,11 @@ export async function createIptvSubscription(input: {
       remoteMeta = { provider: "megaott", remote_user_id: r.value.providerUserId, m3u_url: r.value.m3uUrl ?? null };
     } else {
       // Throw so the workflow is marked failed and retried with backoff.
-      // Returning a "simulated" success silently hid real provisioning errors.
-      throw new Error(`megaott: ${r.error.kind} ${r.error.message}`);
+      // Include upstream status + body snippet so the failed-run UI surfaces
+      // a real diagnostic (e.g. "username taken", "invalid package_id")
+      // instead of an opaque "Upstream returned 422".
+      const status = r.error.status ? ` [${r.error.status}]` : "";
+      throw new Error(`megaott.createUser failed (${r.error.kind}${status}): ${r.error.message}`);
     }
   }
 

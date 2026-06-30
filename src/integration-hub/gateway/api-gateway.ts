@@ -130,14 +130,29 @@ export const apiGateway = {
           return ok({ status: res.status, headers: res.headers, raw: raw ?? "", json, durationMs: totalDuration, attempts: i });
         }
         const kind = res.status === 401 ? "unauthorized" : res.status === 403 ? "forbidden" : res.status === 404 ? "not_found" : res.status === 429 ? "rate_limited" : res.status >= 500 ? "provider" : "validation";
-        lastErr = integrationError(kind, `Upstream returned ${res.status}`, {
+        // Surface upstream detail so admins can diagnose without digging
+        // through server-function-logs. We extract a human-readable hint
+        // (json.message / json.error / json.detail), keep a short raw snippet
+        // in meta.upstreamBody, and the parsed JSON in meta.upstreamJson.
+        const hint =
+          (json && typeof json === "object"
+            ? (json as any).message ?? (json as any).error ?? (json as any).detail ?? null
+            : null) ?? (raw ? raw.slice(0, 200) : null);
+        const message = hint
+          ? `Upstream ${res.status}: ${String(hint).slice(0, 240)}`
+          : `Upstream returned ${res.status}`;
+        lastErr = integrationError(kind, message, {
           status: res.status,
           connectorId: req.connectorId,
           retryable: kind === "rate_limited" || kind === "provider",
+          meta: {
+            upstreamBody: raw ? raw.slice(0, 1000) : null,
+            upstreamJson: json ?? null,
+          },
         });
         if (!isRetryable(lastErr) || i === maxAttempts) {
           metrics.record({ connectorId: req.connectorId, operation: "http", status: "failure", durationMs: totalDuration, errorKind: lastErr.kind });
-          logger.warn("outbound non-2xx", { connectorId: req.connectorId, requestId, status: res.status, attempts: i });
+          logger.warn("outbound non-2xx", { connectorId: req.connectorId, requestId, status: res.status, attempts: i, hint });
           return err(lastErr);
         }
       }
