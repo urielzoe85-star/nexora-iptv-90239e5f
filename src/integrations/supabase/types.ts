@@ -1178,7 +1178,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      _tmp_get_email_cron_secret: { Args: never; Returns: string }
       automation_claim_jobs: {
         Args: { _batch_size?: number }
         Returns: {
