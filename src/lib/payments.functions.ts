@@ -106,11 +106,27 @@ async function sebpayFetch(
   if (init.body !== undefined) headers["Content-Type"] = "application/json";
 
   console.log("[sebpay] →", init.method, url, init.body ? { payload: redactSebpayPayload(init.body) } : "");
-  const res = await fetch(url, {
-    method: init.method,
-    headers,
-    body: init.body !== undefined ? JSON.stringify(init.body) : undefined,
-  });
+  // Cap upstream latency so a slow SebPay can't blow past the webhook's 5s
+  // budget or hang the success-page poll. GET (verify) is cheaper than POST
+  // (collection creation) so the budgets differ.
+  const timeoutMs = init.method === "GET" ? 8_000 : 20_000;
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method: init.method,
+      headers,
+      body: init.body !== undefined ? JSON.stringify(init.body) : undefined,
+      signal: ctrl.signal,
+    });
+  } catch (e: any) {
+    clearTimeout(timer);
+    const aborted = e?.name === "AbortError";
+    console.error("[sebpay] fetch failed", { url, method: init.method, aborted, message: String(e?.message ?? e) });
+    throw new Error(aborted ? "SebPay timeout" : `SebPay network error: ${String(e?.message ?? e)}`);
+  }
+  clearTimeout(timer);
   const raw = await res.text();
   let json: any = null;
   try { json = raw ? JSON.parse(raw) : null; } catch { /* non-JSON */ }
@@ -285,7 +301,12 @@ export async function verifyPaymentInternal(ref: string): Promise<{ status: stri
   const mapped = mapSebpayStatus(sebStatus);
   if (mapped === "pending") return { status: "processing" };
 
-  await supabaseAdmin
+  // Atomic transition: only the row whose status is still pending/processing
+  // is updated. `select()` returns it so we know whether THIS call actually
+  // moved the order — only then do we emit the business event, ensuring the
+  // payment-confirmed workflow runs exactly once even if the webhook and the
+  // success-page poll both race to verify.
+  const { data: updatedRows } = await supabaseAdmin
     .from("orders")
     .update({
       status: mapped,
@@ -297,7 +318,45 @@ export async function verifyPaymentInternal(ref: string): Promise<{ status: stri
       },
     })
     .eq("order_ref", ref)
-    .in("status", ["pending", "processing"]);
+    .in("status", ["pending", "processing"])
+    .select("order_ref, email, plan_name, amount, currency");
+
+  const transitioned = Array.isArray(updatedRows) && updatedRows.length > 0;
+  if (transitioned) {
+    const row = updatedRows[0]!;
+    await emitBusinessEvent(
+      mapped === "paid" ? "payment.confirmed" : mapped === "failed" ? "payment.failed" : null,
+      {
+        orderId: row.order_ref,
+        orderRef: row.order_ref,
+        email: row.email,
+        planName: row.plan_name,
+        amount: row.amount,
+        currency: row.currency,
+        sebpayStatus: sebStatus,
+      },
+    );
+  }
 
   return { status: mapped };
+}
+
+/**
+ * Emit a business event into the automation queue. Failures are logged and
+ * swallowed — payment processing must never fail because the automation
+ * queue is temporarily unavailable. The cron drain (`/api/public/automation/
+ * process-queue`) will pick the job up on its next tick.
+ */
+export async function emitBusinessEvent(
+  event: "payment.confirmed" | "payment.failed" | "order.created" | null,
+  payload: Record<string, unknown>,
+): Promise<void> {
+  if (!event) return;
+  try {
+    await import("@/automation"); // ensure workflows are registered
+    const { automationApi } = await import("@/automation");
+    await automationApi.emit(event, payload, { sync: false });
+  } catch (e: any) {
+    console.error("[automation] emit failed", { event, message: String(e?.message ?? e) });
+  }
 }

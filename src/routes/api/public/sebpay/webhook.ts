@@ -1,6 +1,41 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createHmac, timingSafeEqual } from "crypto";
 
+// Persist a webhook receipt to `integration_debug_logs` so signature failures,
+// replays, and processing errors survive Worker log rotation. Best-effort —
+// never break the webhook ack on a logging failure.
+async function logWebhook(row: {
+  ok: boolean;
+  status: number;
+  ref?: string | null;
+  signatureValid?: boolean;
+  rawPreview?: string;
+  payloadPreview?: unknown;
+  error?: string | null;
+}) {
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await (supabaseAdmin as any).from("integration_debug_logs").insert({
+      connector_id: "payment.sebpay",
+      operation: "webhook",
+      method: "POST",
+      url: "/api/public/sebpay/webhook",
+      status: row.status,
+      ok: row.ok,
+      attempts: 1,
+      request_body: row.payloadPreview
+        ? { ref: row.ref, payload: row.payloadPreview }
+        : { ref: row.ref ?? null, raw: row.rawPreview ?? null },
+      response_body: row.signatureValid === undefined
+        ? { error: row.error ?? null }
+        : { signature_valid: row.signatureValid, error: row.error ?? null },
+      error: row.error ?? null,
+    });
+  } catch (e) {
+    console.error("[sebpay-webhook] log persistence failed", e);
+  }
+}
+
 // SebPay webhook receiver.
 //
 // SebPay signs each callback with HMAC-SHA256 of the raw JSON body using our
@@ -27,10 +62,12 @@ export const Route = createFileRoute("/api/public/sebpay/webhook")({
           .replace(/^['"]|['"]$/g, "");
         if (!secret) {
           console.error("[sebpay-webhook] missing SEBPAY_SECRET_KEY");
+          await logWebhook({ ok: false, status: 500, error: "missing SEBPAY_SECRET_KEY", rawPreview: raw.slice(0, 200) });
           return new Response("Server misconfigured", { status: 500 });
         }
         if (!signatureHeader) {
           console.warn("[sebpay-webhook] missing X-SebPay-Signature header");
+          await logWebhook({ ok: false, status: 401, error: "missing signature header", rawPreview: raw.slice(0, 200) });
           return new Response("Missing signature", { status: 401 });
         }
         const expected = createHmac("sha256", secret).update(raw).digest("hex");
@@ -49,12 +86,17 @@ export const Route = createFileRoute("/api/public/sebpay/webhook")({
             providedLength: provided.length,
             expectedLength: expectedLc.length,
           });
+          await logWebhook({
+            ok: false, status: 401, signatureValid: false,
+            error: "invalid signature", rawPreview: raw.slice(0, 200),
+          });
           return new Response("Invalid signature", { status: 401 });
         }
 
         // ---- 2. Parse payload ---------------------------------------------
         let payload: any;
         try { payload = JSON.parse(raw); } catch {
+          await logWebhook({ ok: false, status: 400, signatureValid: true, error: "bad JSON", rawPreview: raw.slice(0, 200) });
           return new Response("Bad JSON", { status: 400 });
         }
         console.log("[sebpay-webhook] received", {
@@ -69,21 +111,36 @@ export const Route = createFileRoute("/api/public/sebpay/webhook")({
         const d = payload.data ?? payload;
         const ref: string | undefined =
           d.external_reference ?? d.reference ?? d.order_ref ?? d.ref ?? payload.metadata?.reference;
-        if (!ref) return new Response("Missing external_reference", { status: 400 });
+        if (!ref) {
+          await logWebhook({ ok: false, status: 400, signatureValid: true, error: "missing external_reference", payloadPreview: d });
+          return new Response("Missing external_reference", { status: 400 });
+        }
 
         // ---- 3. Re-verify via SebPay API (idempotent) ---------------------
         // verifyPaymentInternal short-circuits when the order is already in a
         // terminal state (paid / failed / cancelled), so replayed webhooks
         // are safe to process multiple times.
+        let processingError: string | null = null;
+        let resultStatus: string | null = null;
         try {
           const { verifyPaymentInternal } = await import("@/lib/payments.functions");
           const result = await verifyPaymentInternal(ref);
+          resultStatus = result.status;
           console.log("[sebpay-webhook] verified", { ref, status: result.status });
         } catch (err) {
           // Always ACK with 200 so SebPay doesn't retry-storm; processing
           // errors are logged and can be reconciled out-of-band.
           console.error("[sebpay-webhook] processing error", err);
+          processingError = String((err as any)?.message ?? err);
         }
+        await logWebhook({
+          ok: !processingError,
+          status: 200,
+          ref,
+          signatureValid: true,
+          payloadPreview: { transaction_id: d.transaction_id, status: d.status, currency: d.currency, resultStatus },
+          error: processingError,
+        });
         return Response.json({ ok: true });
       },
     },
