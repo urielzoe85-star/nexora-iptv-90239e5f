@@ -9,8 +9,12 @@ export const Route = createFileRoute("/payment/failed")({
     meta: [
       { title: "Payment Failed — Nexora IPTV" },
       { name: "description", content: "Your payment could not be processed." },
+      { property: "og:title", content: "Payment Failed — Nexora IPTV" },
+      { property: "og:description", content: "Your payment could not be processed." },
+      { property: "og:url", content: "https://nexora-iptv.com/payment/failed" },
       { name: "robots", content: "noindex" },
     ],
+    links: [{ rel: "canonical", href: "https://nexora-iptv.com/payment/failed" }],
   }),
   validateSearch: (s: Record<string, unknown>) => ({ ref: typeof s.ref === "string" ? s.ref : "" }),
   component: FailedPage,

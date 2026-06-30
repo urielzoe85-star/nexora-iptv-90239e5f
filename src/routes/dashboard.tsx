@@ -9,8 +9,12 @@ export const Route = createFileRoute("/dashboard")({
     meta: [
       { title: "Customer Dashboard — Nexora IPTV" },
       { name: "description", content: "View your Nexora IPTV orders and subscription status." },
+      { property: "og:title", content: "Customer Dashboard — Nexora IPTV" },
+      { property: "og:description", content: "View your Nexora IPTV orders and subscription status." },
+      { property: "og:url", content: "https://nexora-iptv.com/dashboard" },
       { name: "robots", content: "noindex" },
     ],
+    links: [{ rel: "canonical", href: "https://nexora-iptv.com/dashboard" }],
   }),
   validateSearch: (s: Record<string, unknown>) => ({ email: typeof s.email === "string" ? s.email : "" }),
   component: Dashboard,

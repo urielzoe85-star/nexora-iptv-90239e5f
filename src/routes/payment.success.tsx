@@ -10,8 +10,12 @@ export const Route = createFileRoute("/payment/success")({
     meta: [
       { title: "Payment Successful — Nexora IPTV" },
       { name: "description", content: "Your Nexora IPTV subscription is being activated." },
+      { property: "og:title", content: "Payment Successful — Nexora IPTV" },
+      { property: "og:description", content: "Your Nexora IPTV subscription is being activated." },
+      { property: "og:url", content: "https://nexora-iptv.com/payment/success" },
       { name: "robots", content: "noindex" },
     ],
+    links: [{ rel: "canonical", href: "https://nexora-iptv.com/payment/success" }],
   }),
   validateSearch: (s: Record<string, unknown>) => ({ ref: typeof s.ref === "string" ? s.ref : "" }),
   component: SuccessPage,
