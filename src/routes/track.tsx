@@ -37,6 +37,11 @@ type Order = {
   sebpay_reference: string | null;
   created_at: string;
   updated_at: string;
+  delivery?: {
+    status: "pending" | "ready_to_send" | "sent" | string;
+    sent_channel: "email" | "whatsapp" | "telegram" | null;
+    sent_at: string | null;
+  } | null;
 };
 
 // Fenêtre d'activation visuelle après confirmation du paiement (ms).
@@ -182,8 +187,25 @@ function TrackView({ order, now, lastChecked }: { order: Order; now: number; las
   const t = useT();
   const paidAt = isConfirmed(order.status) ? new Date(order.updated_at).getTime() : null;
   const elapsedSincePaid = paidAt ? Math.max(0, now - paidAt) : 0;
-  const activationPct = paidAt ? Math.min(100, Math.round((elapsedSincePaid / ACTIVATION_MS) * 100)) : 0;
-  const activated = paidAt ? elapsedSincePaid >= ACTIVATION_MS : false;
+  // L'étape "compte créé" se valide quand un abonnement IPTV est rattaché
+  // à la commande (delivery.status présent), avec fallback temporel pour
+  // les commandes anciennes/legacy sans champ delivery.
+  const provisioned =
+    !!order.delivery && order.delivery.status !== "pending"
+      ? true
+      : paidAt
+        ? elapsedSincePaid >= ACTIVATION_MS
+        : false;
+  // L'étape "identifiants envoyés" se valide UNIQUEMENT quand l'admin
+  // (ou l'automatisation) a marqué la livraison comme envoyée.
+  const delivered = order.delivery?.status === "sent";
+  const activationPct = delivered
+    ? 100
+    : provisioned
+      ? 66
+      : paidAt
+        ? Math.min(60, Math.round((elapsedSincePaid / ACTIVATION_MS) * 60))
+        : 0;
 
   // Compute step states.
   type StepState = "done" | "active" | "pending" | "failed";
@@ -223,9 +245,8 @@ function TrackView({ order, now, lastChecked }: { order: Order; now: number; las
       label: t("track.step.provision"),
       desc: t("track.step.provision.desc"),
       state:
-        isConfirmed(s) && activated ? "done" :
+        provisioned ? "done" :
         isConfirmed(s) ? "active" :
-        s === "failed" || s === "cancelled" ? "pending" :
         "pending",
     },
     {
@@ -233,12 +254,15 @@ function TrackView({ order, now, lastChecked }: { order: Order; now: number; las
       icon: <Mail className="h-4 w-4" />,
       label: t("track.step.delivered"),
       desc: t("track.step.delivered.desc"),
-      state: isConfirmed(s) && activated ? "done" : "pending",
+      state:
+        delivered ? "done" :
+        provisioned ? "active" :
+        "pending",
     },
   ];
 
   const terminal = s === "failed" || s === "cancelled";
-  const polling = !terminal && !(isConfirmed(s) && activated);
+  const polling = !terminal && !delivered;
 
   return (
     <div className="space-y-6">
@@ -297,7 +321,7 @@ function TrackView({ order, now, lastChecked }: { order: Order; now: number; las
               />
             </div>
             <p className="text-[11px] text-muted-foreground mt-2">
-              {activated ? t("track.activation.done") : t("track.activation.eta")}
+              {delivered ? t("track.activation.done") : t("track.activation.eta")}
             </p>
           </div>
         )}
