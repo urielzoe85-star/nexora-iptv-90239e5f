@@ -59,6 +59,16 @@ export const Route = createFileRoute("/lovable/email/transactional/send")({
           return Response.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
+        // Require admin role — this endpoint can send branded emails to any recipient,
+        // so it must not be reachable by ordinary signed-in users.
+        const { data: isAdmin, error: roleError } = await supabase.rpc('has_role', {
+          _user_id: user.id,
+          _role: 'admin',
+        })
+        if (roleError || !isAdmin) {
+          return Response.json({ error: 'Forbidden' }, { status: 403 })
+        }
+
         // Parse request body
         let templateName: string
         let recipientEmail: string
@@ -94,9 +104,7 @@ export const Route = createFileRoute("/lovable/email/transactional/send")({
         if (!template) {
           console.error('Template not found in registry', { templateName })
           return Response.json(
-            {
-              error: `Template '${templateName}' not found. Available: ${Object.keys(TEMPLATES).join(', ')}`,
-            },
+            { error: `Template '${templateName}' not found` },
             { status: 404 }
           )
         }
