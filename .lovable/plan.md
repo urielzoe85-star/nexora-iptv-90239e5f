@@ -42,9 +42,11 @@ Le flux qui doit absolument marcher de bout en bout :
 - [x] Fix collateral : `Link to="/checkout"` ajoutait pas le search param requis → 3 routes patchées.
 
 ### 1.4 — Affectation & livraison
-- `src/components/ncc/orders/DeliveryComposer.tsx` + `IptvDeliveryCard.tsx` + `MegaottDeliveryForm.tsx` : vérifier que l'admin peut livrer manuellement si auto a échoué.
-- Email de livraison (`iptv-delivery.tsx` template) : valider rendu, envoi via la queue email, anti-duplication.
-- Page `track.tsx` : le client doit pouvoir suivre sa commande.
+- [x] `MegaottDeliveryForm` branché dans `IptvDeliveryCard` (bouton « Saisie manuelle MEGAOTT » à côté de « Affecter depuis stock ») — l'admin peut livrer même quand l'auto a échoué.
+- [x] `sendEmailAuto` : `idempotency_key` déterministe (`iptv-delivery-${order_id}`) — fini les doubles envois sur double-clic / retry.
+- [x] Template `iptv-delivery.tsx` : quand `message_override` est fourni, on rend le corps tel quel (plus de double salutation ni de bloc monospace au milieu d'un HTML).
+- [x] `markIptvDeliverySent` : suppression du stub d'insert dans `notifications` (la trace réelle est dans `delivery_logs`).
+- [x] `getOrderByRef` expose `delivery.{status,sent_channel,sent_at}` (champs non sensibles uniquement) ; `track.tsx` base les étapes « compte créé » et « identifiants envoyés » sur le vrai statut de livraison au lieu d'un timer de 60 s.
 
 ### 1.5 — Tests E2E (Playwright, MEGAOTT réel)
 - Scénario complet en headless, screenshots à chaque étape.
