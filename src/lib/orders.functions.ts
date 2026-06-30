@@ -86,6 +86,22 @@ export const createOrder = createServerFn({ method: "POST" })
       .select("order_ref, status, amount, currency, plan_name, email, method")
       .single();
     if (error) throw new Error(error.message);
+    // Fire the automation event AFTER insert so downstream workflows
+    // (welcome email, CRM sync, abandoned-cart timer) can hook in. Async
+    // enqueue — never block the checkout response.
+    try {
+      const { emitBusinessEvent } = await import("@/lib/payments.functions");
+      await emitBusinessEvent("order.created", {
+        orderId: row.order_ref,
+        orderRef: row.order_ref,
+        email: row.email,
+        planName: row.plan_name,
+        amount: row.amount,
+        currency: row.currency,
+      });
+    } catch (e: any) {
+      console.error("[orders] order.created emit failed", String(e?.message ?? e));
+    }
     return { ...row, cancel_token: makeCancelToken(row.order_ref) };
   });
 
