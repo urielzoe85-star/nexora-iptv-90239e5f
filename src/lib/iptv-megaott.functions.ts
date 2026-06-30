@@ -458,17 +458,9 @@ export const markIptvDeliverySent = createServerFn({ method: "POST" })
     };
     await sb.from("orders").update({ metadata: nextMeta }).eq("id", data.order_id);
 
-    // Architecture only — l'envoi réel sera implémenté plus tard.
-    await sb.from("notifications").insert({
-      channel: data.channel,
-      recipient: order.email,
-      subject: `Vos accès IPTV — commande ${order.id.slice(0, 8)}`,
-      body: `Identifiants MEGAOTT : ${delivery.username}`,
-      status: "sent",
-      sent_at: sentAt,
-      payload: { order_id: order.id, delivery, stub: true },
-    });
-
+    // La trace réelle de l'envoi est faite dans `delivery_logs` par les
+    // actions du DeliveryComposer (sendEmailAuto / sendTelegramAuto / log).
+    // Ici on se contente de mettre à jour `orders.metadata.iptv_delivery`.
     await log(sb, context.userId, "iptv.delivery.sent", data.channel, { order_id: data.order_id }, delivery.iptv_account_id);
     return { ok: true as const, sent_at: sentAt };
   });
