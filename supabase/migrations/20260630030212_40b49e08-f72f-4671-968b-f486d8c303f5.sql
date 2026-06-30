@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.automation_claim_jobs(integer) FROM anon, authenticated;
