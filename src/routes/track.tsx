@@ -363,7 +363,7 @@ function TrackView({ order, now, lastChecked }: { order: Order; now: number; las
             {t("ok.orders")}
           </Link>
           {terminal && (
-            <Link to="/checkout" className="btn-gold btn-gold-hover px-5 py-2 rounded-full text-xs font-semibold">
+            <Link to="/checkout" search={{ plan: undefined }} className="btn-gold btn-gold-hover px-5 py-2 rounded-full text-xs font-semibold">
               {t("fail.retry")}
             </Link>
           )}

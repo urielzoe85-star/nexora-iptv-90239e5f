@@ -68,10 +68,17 @@ function authHeaders(): Result<Record<string, string>, IntegrationError> {
 }
 
 function mapStatus(s: unknown): IPTVUser["status"] {
-  const v = String(s ?? "").toLowerCase();
+  // Conservative default: when the upstream response has no status field
+  // (some MEGAOTT endpoints omit it), assume the user is still active —
+  // defaulting to "expired" would wrongly flip live accounts to expired on
+  // a sync.
+  if (s === null || s === undefined || s === "") return "active";
+  const v = String(s).toLowerCase();
   if (v === "active" || v === "1" || v === "enabled" || v === "true") return "active";
   if (v === "suspended" || v === "disabled" || v === "banned") return "suspended";
-  return "expired";
+  if (v === "expired" || v === "0" || v === "false") return "expired";
+  // Unknown but non-empty value: log path can flag this; treat as active.
+  return "active";
 }
 
 function parseUser(json: any, fallbackUsername?: string): IPTVUser {

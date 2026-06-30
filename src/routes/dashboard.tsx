@@ -55,7 +55,7 @@ function Dashboard() {
           </Link>
           <div className="flex items-center gap-3">
             <LanguageSwitcher />
-            <Link to="/checkout" className="btn-gold btn-gold-hover px-4 py-2 rounded-full text-xs font-semibold">{t("dash.new")}</Link>
+            <Link to="/checkout" search={{ plan: undefined }} className="btn-gold btn-gold-hover px-4 py-2 rounded-full text-xs font-semibold">{t("dash.new")}</Link>
           </div>
         </div>
       </header>

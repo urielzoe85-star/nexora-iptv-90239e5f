@@ -36,10 +36,10 @@ Le flux qui doit absolument marcher de bout en bout :
 - [x] Drain `process-queue` : backoff exponentiel (30s → 15min cap), reset `locked_at`, claim atomique via RPC.
 
 ### 1.3 — Intégration MEGAOTT
-- `src/integration-hub/connectors/iptv/megaott.adapter.ts` + `src/lib/iptv-megaott.functions.ts`.
-- Validation : token présent, errors API mappées (401, 429, 5xx) vers `Result.err` typé.
-- Action `createIptvSubscription` : fallback propre si MEGAOTT down → marquer commande `processing` au lieu de `completed`, notifier admin.
-- Sync des statuts compte (active/suspended/expired).
+- [x] Gateway : surface du body upstream dans `IntegrationError.meta.upstreamBody` + `upstreamJson`, et hint (`json.message/error/detail`) dans le message — fini les "Upstream returned 422" opaques.
+- [x] `mapStatus` : ne flip plus les comptes en `expired` quand la réponse n'a pas de champ status (bug : sync écrasait à expired des comptes actifs).
+- [x] `createIptvSubscription` : message d'erreur inclut kind + status + détail upstream → visible dans `automation_steps.error` et dans les runs failed du panneau Automation.
+- [x] Fix collateral : `Link to="/checkout"` ajoutait pas le search param requis → 3 routes patchées.
 
 ### 1.4 — Affectation & livraison
 - `src/components/ncc/orders/DeliveryComposer.tsx` + `IptvDeliveryCard.tsx` + `MegaottDeliveryForm.tsx` : vérifier que l'admin peut livrer manuellement si auto a échoué.
