@@ -2,6 +2,13 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
 export const Route = createFileRoute("/unsubscribe")({
+  head: () => ({
+    meta: [
+      { title: "Unsubscribe — Nexora IPTV" },
+      { name: "description", content: "Unsubscribe from Nexora IPTV email notifications." },
+      { name: "robots", content: "noindex, nofollow" },
+    ],
+  }),
   component: UnsubscribePage,
 });
 

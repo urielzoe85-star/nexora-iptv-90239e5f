@@ -9,7 +9,13 @@ import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/ncc")({
   ssr: false,
-  head: () => ({ meta: [{ title: "Nexora Control Center" }, { name: "robots", content: "noindex" }] }),
+  head: () => ({
+    meta: [
+      { title: "Nexora Control Center" },
+      { name: "description", content: "Internal Nexora Control Center for operators and staff." },
+      { name: "robots", content: "noindex, nofollow" },
+    ],
+  }),
   component: NccLayout,
 });
 

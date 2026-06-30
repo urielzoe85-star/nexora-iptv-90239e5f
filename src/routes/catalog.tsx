@@ -17,6 +17,22 @@ export const Route = createFileRoute("/catalog")({
       { property: "og:url", content: "https://nexora-iptv.com/catalog" },
     ],
     links: [{ rel: "canonical", href: "https://nexora-iptv.com/catalog" }],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Service",
+          name: "Nexora IPTV Subscription",
+          serviceType: "IPTV streaming subscription",
+          provider: { "@type": "Organization", name: "Nexora IPTV", url: "https://nexora-iptv.com" },
+          areaServed: "Worldwide",
+          description: "Access thousands of live channels by country, premium bouquets (Canal+, Sky, BeIN, DAZN), movies, series and VOD across Smart TV, mobile, tablet and PC.",
+          url: "https://nexora-iptv.com/catalog",
+          offers: { "@type": "AggregateOffer", priceCurrency: "USD", lowPrice: "9", highPrice: "120" },
+        }),
+      },
+    ],
   }),
   component: CatalogPage,
 });

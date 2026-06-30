@@ -20,7 +20,16 @@ import {
 } from "@/components/ui/table";
 import { Loader2, Plus, Trash2 } from "lucide-react";
 
-export const Route = createFileRoute("/admin/admins")({ component: AdminsPage });
+export const Route = createFileRoute("/admin/admins")({
+  head: () => ({
+    meta: [
+      { title: "Admin users — Nexora IPTV" },
+      { name: "description", content: "Manage Nexora IPTV administrator accounts." },
+      { name: "robots", content: "noindex, nofollow" },
+    ],
+  }),
+  component: AdminsPage,
+});
 
 function AdminsPage() {
   const list = useServerFn(adminListAdmins);

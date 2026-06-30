@@ -17,6 +17,7 @@ export const Route = createFileRoute("/track")({
       { property: "og:description", content: "Live payment and activation status for your Nexora IPTV order." },
       { name: "robots", content: "noindex" },
     ],
+    links: [{ rel: "canonical", href: "https://nexora-iptv.com/track" }],
   }),
   validateSearch: (s: Record<string, unknown>) => ({
     ref: typeof s.ref === "string" ? s.ref : "",

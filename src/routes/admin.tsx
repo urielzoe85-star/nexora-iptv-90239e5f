@@ -9,6 +9,13 @@ import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/admin")({
   ssr: false,
+  head: () => ({
+    meta: [
+      { title: "Admin — Nexora IPTV" },
+      { name: "description", content: "Restricted admin area for Nexora IPTV operators." },
+      { name: "robots", content: "noindex, nofollow" },
+    ],
+  }),
   component: AdminLayout,
 });
 

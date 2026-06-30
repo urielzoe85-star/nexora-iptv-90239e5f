@@ -23,13 +23,16 @@ import { getPublicPlans, type PublicPlan } from "@/lib/plans.functions";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Nexora IPTV — Unlimited Entertainment. One Subscription." },
+      { title: "Nexora IPTV — Premium IPTV Subscription, Instant Activation" },
       { name: "description", content: "Premium IPTV with thousands of channels, movies & series in HD/FHD/4K. Instant activation, multi-device, 24/7 support." },
-      { property: "og:title", content: "Nexora IPTV — Premium Streaming" },
+      { property: "og:title", content: "Nexora IPTV — Premium IPTV Subscription" },
       { property: "og:description", content: "Thousands of live channels & VOD. Instant access. Multi-device." },
       { property: "og:url", content: "https://nexora-iptv.com/" },
     ],
-    links: [{ rel: "canonical", href: "https://nexora-iptv.com/" }],
+    links: [
+      { rel: "canonical", href: "https://nexora-iptv.com/" },
+      { rel: "preload", as: "image", href: "/src/assets/hero-bg.jpg", fetchpriority: "high" },
+    ],
     scripts: [
       {
         type: "application/ld+json",
