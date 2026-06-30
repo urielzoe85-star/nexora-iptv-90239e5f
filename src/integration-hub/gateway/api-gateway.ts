@@ -134,10 +134,11 @@ export const apiGateway = {
         // through server-function-logs. We extract a human-readable hint
         // (json.message / json.error / json.detail), keep a short raw snippet
         // in meta.upstreamBody, and the parsed JSON in meta.upstreamJson.
-        const hint =
-          (json && typeof json === "object"
-            ? (json as any).message ?? (json as any).error ?? (json as any).detail ?? null
-            : null) ?? (raw ? raw.slice(0, 200) : null);
+        const jsonHint =
+          json && typeof json === "object"
+            ? ((json as any).message ?? (json as any).error ?? (json as any).detail)
+            : null;
+        const hint = jsonHint ?? (raw ? raw.slice(0, 200) : null);
         const message = hint
           ? `Upstream ${res.status}: ${String(hint).slice(0, 240)}`
           : `Upstream returned ${res.status}`;
