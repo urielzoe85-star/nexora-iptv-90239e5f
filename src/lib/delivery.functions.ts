@@ -214,7 +214,11 @@ export const sendEmailAuto = createServerFn({ method: "POST" })
         html, text,
         purpose: "transactional",
         label: "iptv-delivery",
-        idempotency_key: `iptv-delivery-${data.order_id}-${Date.now()}`,
+        // Clé déterministe : un double-clic / retry n'enfile pas deux mails.
+        // Un renvoi explicite (admin clique « Envoi automatique » à nouveau)
+        // garde la même clé tant que la commande n'a pas changé d'identifiant
+        // d'abonnement — c'est ce qu'on veut pour l'anti-duplication.
+        idempotency_key: `iptv-delivery-${data.order_id}`,
         queued_at: new Date().toISOString(),
       },
     });

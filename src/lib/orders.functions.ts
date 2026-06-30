@@ -122,6 +122,25 @@ export const getOrderByRef = createServerFn({ method: "GET" })
     if (!row) return null;
     const meta = (row.metadata ?? {}) as Record<string, unknown>;
     const failure_reason = typeof meta.failure_reason === "string" ? meta.failure_reason : null;
+    // Expose uniquement les champs non-sensibles de la livraison IPTV pour
+    // que la page /track puisse honorer le timeline (étape « identifiants
+    // envoyés »). On ne sort JAMAIS username / password / dns / portal_link
+    // depuis un endpoint public — seul le statut et l'horodatage.
+    const rawDelivery = (meta.iptv_delivery ?? null) as
+      | { delivery_status?: string; sent_channel?: string | null; sent_at?: string | null }
+      | null;
+    const delivery = rawDelivery
+      ? {
+          status:
+            rawDelivery.delivery_status === "sent" ||
+            rawDelivery.delivery_status === "ready_to_send" ||
+            rawDelivery.delivery_status === "pending"
+              ? rawDelivery.delivery_status
+              : "pending",
+          sent_channel: rawDelivery.sent_channel ?? null,
+          sent_at: rawDelivery.sent_at ?? null,
+        }
+      : null;
     return {
       order_ref: row.order_ref,
       email: row.email,
@@ -135,6 +154,7 @@ export const getOrderByRef = createServerFn({ method: "GET" })
       created_at: row.created_at,
       updated_at: row.updated_at,
       failure_reason,
+      delivery,
     };
   });
 

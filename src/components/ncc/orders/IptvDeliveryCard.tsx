@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { useState, useMemo } from "react";
 import { listInventoryAccounts, assignIptvAccountToOrder } from "@/lib/iptv-import.functions";
 import { DeliveryComposer } from "./DeliveryComposer";
+import { MegaottDeliveryForm } from "./MegaottDeliveryForm";
 import { getOrder } from "@/lib/ncc.functions";
 
 interface Delivery {
@@ -54,10 +55,21 @@ export function IptvDeliveryCard({ orderId, metadata }: { orderId: string; metad
 
         {!delivery && (
           <div className="space-y-2">
-            <AssignFromInventory orderId={orderId} />
+            <div className="flex flex-wrap gap-2">
+              <AssignFromInventory orderId={orderId} />
+              <MegaottDeliveryForm
+                orderId={orderId}
+                trigger={
+                  <Button size="sm" variant="outline">
+                    <Tv className="h-3 w-3 mr-1" /> Saisie manuelle MEGAOTT
+                  </Button>
+                }
+              />
+            </div>
             <p className="text-xs text-muted-foreground">
-              Les abonnements sont créés dans MEGAOTT puis importés dans l'inventaire NEXORA.
-              Affectez ici un abonnement disponible à cette commande.
+              Soit vous affectez un abonnement déjà importé dans l'inventaire,
+              soit vous saisissez manuellement les infos renvoyées par le panel
+              MEGAOTT (fallback si l'automatisation a échoué).
             </p>
           </div>
         )}

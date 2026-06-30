@@ -21,6 +21,12 @@ interface Props {
 const Email = (p: Props) => {
   const name = (p.client_name || 'client').toString()
   const product = p.product_name || 'Abonnement IPTV'
+  // Quand l'admin a saisi un corps personnalisé dans le DeliveryComposer,
+  // on le rend tel quel (texte préformaté), sans ajouter notre propre
+  // salutation / bloc credentials — sinon on dupliquait le « Bonjour … »
+  // et on collait le message complet dans un bloc monospace au milieu
+  // d'une mise en page HTML.
+  const useCustomMessage = !!(p.message && p.message.trim().length > 0)
   return (
     <Html lang="fr" dir="ltr">
       <Head />
@@ -30,25 +36,25 @@ const Email = (p: Props) => {
           <Heading style={brand}>Nexora IPTV</Heading>
           <Section style={card}>
             <Heading as="h2" style={h2}>Vos accès sont prêts 🎬</Heading>
-            <Text style={text}>Bonjour {name},</Text>
-            <Text style={text}>
-              Votre abonnement <strong>{product}</strong> est activé. Voici vos
-              identifiants&nbsp;:
-            </Text>
-            {p.message ? (
-              <Section style={pre}>
-                <Text style={preText}>{p.message}</Text>
-              </Section>
+            {useCustomMessage ? (
+              <Text style={messageText}>{p.message}</Text>
             ) : (
-              <Section style={pre}>
-                <Text style={preText}>
-                  {`Username : ${p.username ?? '—'}\nPassword : ${p.password ?? '—'}\nDNS : ${p.dns ?? '—'}\nPortail : ${p.portal_link ?? '—'}\nConnexions max : ${p.max_connections ?? '—'}\nExpiration : ${p.expiration_date ?? '—'}`}
+              <>
+                <Text style={text}>Bonjour {name},</Text>
+                <Text style={text}>
+                  Votre abonnement <strong>{product}</strong> est activé. Voici vos
+                  identifiants&nbsp;:
                 </Text>
-              </Section>
+                <Section style={pre}>
+                  <Text style={preText}>
+                    {`Username : ${p.username ?? '—'}\nPassword : ${p.password ?? '—'}\nDNS : ${p.dns ?? '—'}\nPortail : ${p.portal_link ?? '—'}\nConnexions max : ${p.max_connections ?? '—'}\nExpiration : ${p.expiration_date ?? '—'}`}
+                  </Text>
+                </Section>
+                <Text style={text}>
+                  Référence commande&nbsp;: <strong>{p.order_ref || '—'}</strong>
+                </Text>
+              </>
             )}
-            <Text style={text}>
-              Référence commande&nbsp;: <strong>{p.order_ref || '—'}</strong>
-            </Text>
             <Hr style={hr} />
             <Text style={footer}>— L'équipe Nexora IPTV</Text>
           </Section>
@@ -84,5 +90,6 @@ const h2 = { fontSize: 20, color: '#0f172a', margin: '0 0 12px' }
 const text = { fontSize: 14, lineHeight: '22px', color: '#334155', margin: '0 0 12px' }
 const pre = { backgroundColor: '#0f172a', borderRadius: 8, padding: '12px 16px', margin: '12px 0' }
 const preText = { fontFamily: 'Menlo, Consolas, monospace', fontSize: 13, color: '#e2e8f0', whiteSpace: 'pre-wrap' as const, margin: 0 }
+const messageText = { fontSize: 14, lineHeight: '22px', color: '#0f172a', whiteSpace: 'pre-wrap' as const, margin: '0 0 12px' }
 const hr = { borderColor: '#e2e8f0', margin: '20px 0' }
 const footer = { fontSize: 12, color: '#64748b', textAlign: 'center' as const, margin: 0 }
