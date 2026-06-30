@@ -96,17 +96,16 @@ function TrackPage() {
     fetchOnce({ verify: true }).finally(() => { if (!cancelled) setLoading(false); });
 
     // Poll quasi temps réel toutes les 1.2 s tant que la commande n'est
-    // pas dans un état terminal et que la fenêtre d'activation est ouverte.
+    // pas dans un état terminal et que la livraison n'a pas été envoyée.
     // Re-vérification SebPay une fois sur 5 (~6 s) pour limiter la charge.
     const id = setInterval(() => {
       const status = order?.status;
-      const inActivation =
-        !!status && isConfirmed(status) &&
-        Date.now() - new Date(order!.updated_at).getTime() < ACTIVATION_MS;
       if (status === "failed" || status === "cancelled") return; // terminal
-      if (status && isConfirmed(status) && !inActivation) return; // fully activated
+      if (order?.delivery?.status === "sent") return; // fully delivered
       tickCount += 1;
-      fetchOnce({ verify: tickCount % 5 === 0 });
+      // On ne re-vérifie SebPay que tant que le paiement n'est pas confirmé.
+      const needsSebpayCheck = !status || !isConfirmed(status);
+      fetchOnce({ verify: needsSebpayCheck && tickCount % 5 === 0 });
     }, 1200);
 
     // Refetch immédiat quand l'onglet redevient visible / reçoit le focus.
@@ -123,7 +122,7 @@ function TrackPage() {
       window.removeEventListener("focus", onFocus);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ref, order?.status, order?.updated_at]);
+  }, [ref, order?.status, order?.updated_at, order?.delivery?.status]);
 
   function handleLookup(e: React.FormEvent) {
     e.preventDefault();
