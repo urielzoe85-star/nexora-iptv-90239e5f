@@ -90,7 +90,7 @@ function FailedPage() {
           )}
 
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link to="/checkout" className="btn-gold btn-gold-hover px-6 py-3 rounded-full text-sm font-semibold inline-flex items-center justify-center gap-2">
+            <Link to="/checkout" search={{ plan: undefined }} className="btn-gold btn-gold-hover px-6 py-3 rounded-full text-sm font-semibold inline-flex items-center justify-center gap-2">
               <RefreshCw className="h-4 w-4" /> {t("fail.retry")}
             </Link>
             <Link to="/" className="px-6 py-3 rounded-full glass hover:border-[color:var(--gold)]/40 transition text-sm font-medium">{t("fail.home")}</Link>
