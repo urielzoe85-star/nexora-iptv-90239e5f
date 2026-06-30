@@ -1221,6 +1221,7 @@ export type Database = {
           read_ct: number
         }[]
       }
+      verify_email_cron_secret: { Args: { _token: string }; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "user"
