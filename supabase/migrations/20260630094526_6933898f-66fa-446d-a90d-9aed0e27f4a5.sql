@@ -1,0 +1,1 @@
+DROP FUNCTION IF EXISTS public._tmp_get_email_cron_secret();
