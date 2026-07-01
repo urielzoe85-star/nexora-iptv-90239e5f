@@ -86,3 +86,24 @@ Aucune modification des fichiers de production hors le nouvel endpoint test (gua
 **Ordre d'exécution proposé** : (1) endpoint test + helpers → (2) scenario 1 vert → (3) scenario 2 vert → (4) doc manuelle → (5) mettre à jour plan.md et te rendre le rapport.
 
 Tu valides ?
+
+---
+
+## État Sprint 1.5 — livré (implémentation)
+
+- [x] Endpoint test `POST /api/public/automation/emit-test`
+      (`src/routes/api/public/automation/emit-test.ts`) — double-guard
+      `AUTOMATION_CRON_SECRET` + préfixe `NXR-E2E-`.
+- [x] Helpers Python : `helpers/db.py` (Supabase admin via PostgREST + seed
+      / cleanup / restore MEGAOTT), `helpers/http.py` (emit-test + drain
+      queue + webhook SebPay), `helpers/signing.py` (HMAC SebPay),
+      `helpers/cleanup.py` (purge orphelins `NXR-E2E-*`).
+- [x] `tests/e2e/sprint-1.5/01_happy_path.py` — seed → 2× emit (idempotence)
+      → drain → assertions DB → screenshot `/track`.
+- [x] `tests/e2e/sprint-1.5/02_webhook_replay.py` — 2× webhook signé + 1×
+      signature invalide, assert 0 iptv_account créé.
+- [x] `tests/e2e/sprint-1.5/03-real-megaott.md` — runbook manuel.
+- [x] `.lovable/sprint-1.5-report.md` — template de rapport.
+- [ ] **À exécuter** dans un env avec `SUPABASE_SERVICE_ROLE_KEY` +
+      `AUTOMATION_CRON_SECRET` + `SEBPAY_SECRET_KEY` (indisponibles dans
+      le sandbox preview Lovable Cloud).
