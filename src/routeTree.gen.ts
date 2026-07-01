@@ -79,6 +79,7 @@ import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/em
 import { Route as ApiPublicTelegramWebhookRouteImport } from './routes/api/public/telegram/webhook'
 import { Route as ApiPublicSebpayWebhookRouteImport } from './routes/api/public/sebpay/webhook'
 import { Route as ApiPublicAutomationProcessQueueRouteImport } from './routes/api/public/automation/process-queue'
+import { Route as ApiPublicAutomationEmitTestRouteImport } from './routes/api/public/automation/emit-test'
 
 const UnsubscribeRoute = UnsubscribeRouteImport.update({
   id: '/unsubscribe',
@@ -435,6 +436,12 @@ const ApiPublicAutomationProcessQueueRoute =
     path: '/api/public/automation/process-queue',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicAutomationEmitTestRoute =
+  ApiPublicAutomationEmitTestRouteImport.update({
+    id: '/api/public/automation/emit-test',
+    path: '/api/public/automation/emit-test',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -499,6 +506,7 @@ export interface FileRoutesByFullPath {
   '/ncc/settings/$section': typeof NccSettingsSectionRoute
   '/ncc/iptv/': typeof NccIptvIndexRoute
   '/ncc/settings/': typeof NccSettingsIndexRoute
+  '/api/public/automation/emit-test': typeof ApiPublicAutomationEmitTestRoute
   '/api/public/automation/process-queue': typeof ApiPublicAutomationProcessQueueRoute
   '/api/public/sebpay/webhook': typeof ApiPublicSebpayWebhookRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
@@ -565,6 +573,7 @@ export interface FileRoutesByTo {
   '/ncc/settings/$section': typeof NccSettingsSectionRoute
   '/ncc/iptv': typeof NccIptvIndexRoute
   '/ncc/settings': typeof NccSettingsIndexRoute
+  '/api/public/automation/emit-test': typeof ApiPublicAutomationEmitTestRoute
   '/api/public/automation/process-queue': typeof ApiPublicAutomationProcessQueueRoute
   '/api/public/sebpay/webhook': typeof ApiPublicSebpayWebhookRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
@@ -638,6 +647,7 @@ export interface FileRoutesById {
   '/ncc/settings/$section': typeof NccSettingsSectionRoute
   '/ncc/iptv/': typeof NccIptvIndexRoute
   '/ncc/settings/': typeof NccSettingsIndexRoute
+  '/api/public/automation/emit-test': typeof ApiPublicAutomationEmitTestRoute
   '/api/public/automation/process-queue': typeof ApiPublicAutomationProcessQueueRoute
   '/api/public/sebpay/webhook': typeof ApiPublicSebpayWebhookRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
@@ -712,6 +722,7 @@ export interface FileRouteTypes {
     | '/ncc/settings/$section'
     | '/ncc/iptv/'
     | '/ncc/settings/'
+    | '/api/public/automation/emit-test'
     | '/api/public/automation/process-queue'
     | '/api/public/sebpay/webhook'
     | '/api/public/telegram/webhook'
@@ -778,6 +789,7 @@ export interface FileRouteTypes {
     | '/ncc/settings/$section'
     | '/ncc/iptv'
     | '/ncc/settings'
+    | '/api/public/automation/emit-test'
     | '/api/public/automation/process-queue'
     | '/api/public/sebpay/webhook'
     | '/api/public/telegram/webhook'
@@ -850,6 +862,7 @@ export interface FileRouteTypes {
     | '/ncc/settings/$section'
     | '/ncc/iptv/'
     | '/ncc/settings/'
+    | '/api/public/automation/emit-test'
     | '/api/public/automation/process-queue'
     | '/api/public/sebpay/webhook'
     | '/api/public/telegram/webhook'
@@ -878,6 +891,7 @@ export interface RootRouteChildren {
   PaymentFailedRoute: typeof PaymentFailedRoute
   PaymentSuccessRoute: typeof PaymentSuccessRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
+  ApiPublicAutomationEmitTestRoute: typeof ApiPublicAutomationEmitTestRoute
   ApiPublicAutomationProcessQueueRoute: typeof ApiPublicAutomationProcessQueueRoute
   ApiPublicSebpayWebhookRoute: typeof ApiPublicSebpayWebhookRoute
   ApiPublicTelegramWebhookRoute: typeof ApiPublicTelegramWebhookRoute
@@ -1380,6 +1394,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAutomationProcessQueueRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/automation/emit-test': {
+      id: '/api/public/automation/emit-test'
+      path: '/api/public/automation/emit-test'
+      fullPath: '/api/public/automation/emit-test'
+      preLoaderRoute: typeof ApiPublicAutomationEmitTestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -1562,6 +1583,7 @@ const rootRouteChildren: RootRouteChildren = {
   PaymentFailedRoute: PaymentFailedRoute,
   PaymentSuccessRoute: PaymentSuccessRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
+  ApiPublicAutomationEmitTestRoute: ApiPublicAutomationEmitTestRoute,
   ApiPublicAutomationProcessQueueRoute: ApiPublicAutomationProcessQueueRoute,
   ApiPublicSebpayWebhookRoute: ApiPublicSebpayWebhookRoute,
   ApiPublicTelegramWebhookRoute: ApiPublicTelegramWebhookRoute,
