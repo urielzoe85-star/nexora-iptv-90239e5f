@@ -3,7 +3,7 @@ import type {} from "@tanstack/react-start";
 
 const BASE_URL = "https://nexora-iptv.com";
 
-const PAGES = ["/", "/fr", "/en", "/de", "/catalog", "/legal-guide", "/fr/guide-iptv", "/en/guide-iptv", "/blog/best-iptv-2026"];
+const PAGES = ["/", "/fr", "/en", "/de", "/catalog", "/legal-guide", "/fr/guide-iptv", "/en/guide-iptv", "/blog/best-iptv-2026", "/track"];
 const LOCALES: Record<string, string> = { fr: "fr", en: "en", de: "de" };
 
 export const Route = createFileRoute("/sitemap.xml")({
