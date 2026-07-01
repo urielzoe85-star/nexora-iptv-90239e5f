@@ -1,140 +1,88 @@
 
-# NEXORA™ ERP — Plan de stabilisation Release Candidate v1.0
+# Sprint 1.5 — E2E chemin critique (Playwright)
 
-Aucune nouvelle fonctionnalité. Aucun ajout de module. Objectif : rendre 100 % opérationnel ce qui existe déjà, dans l'ordre de criticité business.
+Objectif : prouver que le chemin **checkout → paiement → workflow → livraison → /track** fonctionne bout-en-bout, sans consommer de crédit MEGAOTT sur chaque run.
 
-## Principe de livraison
+## Contraintes techniques (constatées à l'audit)
 
-Je travaille par **sprints courts validés un par un**. Chaque sprint =
-1. Audit ciblé du module (lecture code + DB + logs).
-2. Liste des bugs/dead code/risques trouvés.
-3. Corrections + tests.
-4. Tu valides → on passe au sprint suivant.
+- SebPay n'a pas de sandbox : on ne peut pas dérouler un vrai `verifyPayment` en test.
+- Le connecteur MEGAOTT bascule automatiquement en mode "local" (aucun appel distant, `iptv_accounts.status='available'`) quand `isReady()` est faux — c'est le mock naturel de l'adapter.
+- Le webhook `/api/public/sebpay/webhook` fait de la vérification HMAC + rappelle SebPay (défense en profondeur). On peut tester la HMAC sans SebPay, mais pas la transition `pending → paid` sans mock upstream.
 
-Pas de gros refactor "big bang". Pas de réécriture. On corrige, on durcit, on supprime le mort.
+## Architecture de la suite
 
----
+Dossier `tests/e2e/sprint-1.5/` :
 
-## Sprint 1 — Chemin critique business (bloque la prod)
+```
+tests/e2e/sprint-1.5/
+  README.md              # comment lancer chaque scénario
+  helpers/
+    db.ts                # client Supabase admin (lit .env), seed & cleanup
+    signing.ts           # HMAC SebPay pour forger un webhook signé
+    fixtures.ts          # payloads type (order, customer, sebpay body)
+  01-happy-path.spec.ts  # scénario nominal, MEGAOTT mocké (isReady=false)
+  02-webhook-replay.spec.ts # même webhook 2x → 1 seul compte, 1 seul email
+  03-real-megaott.md     # runbook manuel (1 run réel documenté)
+```
 
-Le flux qui doit absolument marcher de bout en bout :
-**Commande → SebPay → Webhook → Workflow `payment-confirmed` → MEGAOTT → Affectation compte IPTV → Livraison email/page → Historique client.**
+Lancé via `bunx playwright test tests/e2e/sprint-1.5` en ciblant `http://localhost:8080` (dev server déjà up).
 
-### 1.1 — Paiement SebPay
-- Vérifier `src/lib/payments.functions.ts` (`initSebPayCheckout`, `verifyPaymentInternal`).
-- Webhook `src/routes/api/public/sebpay/webhook.ts` : signature HMAC, idempotence (rejouer 2× le même webhook ne doit pas créer 2 abonnements), validation Zod du payload, code de réponse correct.
-- Pages `payment.success.tsx` / `payment.failed.tsx` : gestion des cas limites (ref invalide, paiement en attente, double-clic).
-- Logs `delivery_logs` / `integration_debug_logs` en cas d'échec.
+## Scénario 1 — Happy path (nominal, mocké)
 
-### 1.2 — Workflow automation `payment-confirmed`
-- [x] Migration : colonne `idempotency_key` + index unique partiel sur `automation_queue`.
-- [x] RPC `automation_claim_jobs` (FOR UPDATE SKIP LOCKED) — deux drains concurrents ne peuvent plus claim la même tâche.
-- [x] `enqueueWorkflow` accepte une clé d'idempotence ; `emitBusinessEvent` la passe sous la forme `${event}:${orderRef}`.
-- [x] Workflow `payment-confirmed` : guard "déjà completed" + `createIptvSubscription` skip si compte existe pour cet `order_ref`.
-- [x] `createIptvSubscription` throw au lieu de masquer les échecs MEGAOTT en "simulated:true" → le run est failed et retenté.
-- [x] `fetchOrder` / `markOrderStatus` acceptent `order_ref` ET `id` (bug : le payload émet `order_ref`, le workflow query par `id`).
-- [x] Drain `process-queue` : backoff exponentiel (30s → 15min cap), reset `locked_at`, claim atomique via RPC.
+1. **Seed DB** (helpers/db.ts, service role) :
+   - désactive temporairement le provider MEGAOTT (`UPDATE iptv_providers SET metadata = metadata || '{"kind":"disabled"}' WHERE metadata->>'kind'='megaott'` puis restore en teardown) — force `isReady()=false`, donc mode simulé côté adapter.
+   - crée `customers` + `orders` (status=pending, order_ref=`NXR-E2E-${ts}`, sebpay_reference=null pour skip re-verify).
+2. **Émettre `payment.confirmed`** directement (bypass SebPay upstream) : POST vers un mini endpoint de test `/api/public/automation/emit-test` protégé par `AUTOMATION_CRON_SECRET`. → à créer, ~20 lignes, refuse tout ref qui ne commence pas par `NXR-E2E-`.
+3. **Drainer la queue** : POST `/api/public/automation/process-queue` avec `Authorization: Bearer $AUTOMATION_CRON_SECRET`, en boucle (max 5 itérations) jusqu'à ce que la queue soit vide.
+4. **Assertions DB** :
+   - `iptv_accounts` : 1 ligne pour `metadata->>order_ref = NXR-E2E-*`
+   - `automation_runs` : 1 run `completed` pour `payment-confirmed`
+   - `delivery_logs` : au moins 1 entrée
+   - `orders.metadata.iptv_delivery` : présent avec `delivery_status ∈ {ready_to_send, sent}`
+5. **UI /track** : Playwright ouvre `/track?ref=NXR-E2E-...`, vérifie badge "Livraison affectée" + screenshot.
+6. **Teardown** : delete tout ce qui commence par `NXR-E2E-`, restore provider MEGAOTT.
 
-### 1.3 — Intégration MEGAOTT
-- [x] Gateway : surface du body upstream dans `IntegrationError.meta.upstreamBody` + `upstreamJson`, et hint (`json.message/error/detail`) dans le message — fini les "Upstream returned 422" opaques.
-- [x] `mapStatus` : ne flip plus les comptes en `expired` quand la réponse n'a pas de champ status (bug : sync écrasait à expired des comptes actifs).
-- [x] `createIptvSubscription` : message d'erreur inclut kind + status + détail upstream → visible dans `automation_steps.error` et dans les runs failed du panneau Automation.
-- [x] Fix collateral : `Link to="/checkout"` ajoutait pas le search param requis → 3 routes patchées.
+## Scénario 2 — Webhook rejoué
 
-### 1.4 — Affectation & livraison
-- [x] `MegaottDeliveryForm` branché dans `IptvDeliveryCard` (bouton « Saisie manuelle MEGAOTT » à côté de « Affecter depuis stock ») — l'admin peut livrer même quand l'auto a échoué.
-- [x] `sendEmailAuto` : `idempotency_key` déterministe (`iptv-delivery-${order_id}`) — fini les doubles envois sur double-clic / retry.
-- [x] Template `iptv-delivery.tsx` : quand `message_override` est fourni, on rend le corps tel quel (plus de double salutation ni de bloc monospace au milieu d'un HTML).
-- [x] `markIptvDeliverySent` : suppression du stub d'insert dans `notifications` (la trace réelle est dans `delivery_logs`).
-- [x] `getOrderByRef` expose `delivery.{status,sent_channel,sent_at}` (champs non sensibles uniquement) ; `track.tsx` base les étapes « compte créé » et « identifiants envoyés » sur le vrai statut de livraison au lieu d'un timer de 60 s.
+Même seed que scenario 1 mais on garde `sebpay_reference` set pour tester le chemin webhook.
 
-### 1.5 — Tests E2E (Playwright, MEGAOTT réel)
-- Scénario complet en headless, screenshots à chaque étape.
-- SebPay mocké (pas de sandbox dispo).
-- Vérifier `iptv_logs`, `delivery_logs`, `customer_events` peuplés correctement.
+1. Forger le body SebPay + signer avec `SEBPAY_SECRET_KEY` (via `crypto.createHmac`).
+2. POST `/api/public/sebpay/webhook` avec `X-SebPay-Signature` valide → attendu `200 {ok:true}`. Le webhook va tenter `verifyPaymentInternal` qui appellera SebPay upstream et échouera silencieusement → l'ordre reste `pending`, mais l'entrée `integration_debug_logs` est créée. On assert :
+   - 1 ligne `integration_debug_logs` (signature_valid=true, HTTP 200)
+3. POST **le même** body/signature une 2ème fois. Assert :
+   - 2 lignes `integration_debug_logs` (les receipts)
+   - **toujours 0** `automation_queue` / `iptv_accounts` (car verify n'a pas transitionné)
+4. Test complémentaire : POST avec signature volontairement fausse → `401`, 1 ligne log avec `signature_valid=false`. Prouve la protection.
 
-**Livrable Sprint 1** : rapport de bugs trouvés/corrigés + screenshots E2E + diff résumé.
+Note : le test d'idempotence "2 webhooks paid → 1 seul compte" est déjà couvert au niveau code par l'index unique `automation_queue.idempotency_key` (`payment.confirmed:${order_ref}`) et par le guard "compte existant" dans `createIptvSubscription`. On le prouve indirectement en scénario 1 en émettant 2x l'event et en vérifiant `count(iptv_accounts) = 1`.
 
----
+## Scénario 3 — Run réel MEGAOTT (manuel, documenté)
 
-## Sprint 2 — Sécurité & robustesse du critique
+Fichier `03-real-megaott.md` : checklist step-by-step, à jouer 1 fois par release :
 
-Avant d'élargir, on durcit ce qu'on vient de stabiliser.
+1. Vérifier `MEGAOTT_BEARER_TOKEN` en secrets + provider `metadata.kind=megaott` actif.
+2. Créer une vraie commande via l'UI checkout (montant 1 EUR sur plan test).
+3. Rejouer la même séquence que scénario 1 (émission event via l'endpoint test).
+4. Vérifier dans le panel MEGAOTT que l'utilisateur existe, que l'email est reçu.
+5. Cleanup : supprimer l'utilisateur MEGAOTT + l'ordre.
 
-- Audit RLS sur `orders`, `iptv_accounts`, `customers`, `subscriptions`, `delivery_logs`, `user_roles` via `supabase--linter`.
-- Vérifier que toutes les Server Functions privilégiées (`supabaseAdmin`) vérifient bien `has_role(auth.uid(), 'admin')` avant d'agir.
-- Vérifier qu'aucune route publique `/api/public/*` ne fait d'écriture sans vérification de signature/secret.
-- Vérifier qu'aucun mot de passe IPTV / token MEGAOTT ne fuite dans les logs client, les responses serveur non-admin, ou les emails.
-- Scan secrets via `security--run_security_scan`.
+## Changements code
 
-**Livrable Sprint 2** : rapport sécurité + corrections appliquées.
+- **Nouveau** `src/routes/api/public/automation/emit-test.ts` (~40 lignes) : POST, protégé par `AUTOMATION_CRON_SECRET` + guard `ref` doit matcher `/^NXR-E2E-/`. Émet un event automation arbitraire. Utilité : contourner SebPay upstream en test sans polluer `verifyPaymentInternal`.
+- **Nouveau** `tests/e2e/sprint-1.5/*` (les 3 specs + helpers).
+- **Nouveau** `.lovable/sprint-1.5-report.md` : template pour reporter les résultats après chaque run.
+- **Mise à jour** `.lovable/plan.md` : cocher Sprint 1.5 quand tout est vert.
 
----
+Aucune modification des fichiers de production hors le nouvel endpoint test (guardé et inoffensif : refuse tout ref non-préfixé).
 
-## Sprint 3 — Back-office NCC (Phase A + UX)
+## Livrable
 
-Module par module, dans cet ordre :
-
-1. **Auth admin** (`admin.login.tsx`, `ncc.tsx` gate, `getMyAdminStatus`) — vérifier flux, déconnexion, redirections.
-2. **Dashboard NCC** (`ncc.index.tsx` + `DashboardKpis`, `DashboardRevenueChart`, `DashboardActivityFeed`) — supprimer les mocks (`src/lib/ncc/mock-dashboard.ts`) si données réelles dispo, sinon clarifier le badge "mock".
-3. **CRM Clients** (`ncc.clients.tsx`, `ncc.clients.$id.tsx`) — CRUD complet, recherche, pagination.
-4. **Commandes** (`ncc.orders.tsx`, `ncc.orders.$id.tsx`) — vue détail, actions admin (refund, relance, livraison manuelle).
-5. **Produits / Plans** (`ncc.products.tsx`, `admin.plans.tsx`).
-6. **Stock IPTV** (`ncc.iptv.*` — 14 routes !) — vérifier doublons, regrouper si pertinent, supprimer les pages vides ou en double.
-7. **Import MEGAOTT** (`ncc.iptv.import.tsx` + `iptv-import.functions.ts`) — robustesse parser CSV, mapping.
-8. **Notifications** (`ncc.notifications.tsx` + `NccNotificationsPanel`).
-9. **Paramètres** (`ncc.settings.*`).
-
-À chaque module : harmoniser loaders/toasts/boutons (utiliser composants shadcn déjà installés), supprimer code mort.
-
-**Livrable Sprint 3** : checklist module-par-module + capture avant/après quand UX changée.
+- Suite Playwright verte (scénarios 1 & 2) reproductible via `bunx playwright test tests/e2e/sprint-1.5`.
+- Screenshots `/track` avant/après livraison.
+- Rapport avec les rows insérées (iptv_accounts.id, delivery_logs.id, automation_runs.id) pour audit.
 
 ---
 
-## Sprint 4 — Public, SEO, i18n
+**Ordre d'exécution proposé** : (1) endpoint test + helpers → (2) scenario 1 vert → (3) scenario 2 vert → (4) doc manuelle → (5) mettre à jour plan.md et te rendre le rapport.
 
-- Pages publiques (`index.tsx`, `catalog.tsx`, `fr/en/de.tsx`, `legal-guide.tsx`, `guide-iptv`).
-- Vérifier traductions FR/EN/DE complètes (`src/i18n/messages.ts`) — pas de clé manquante.
-- Sitemap : vérifier que toutes les pages publiques indexables sont dedans, dynamiques (plans) inclus.
-- Relancer scan SEO Lovable, traiter les findings restants.
-- Vérifier `robots.txt`, métas par route, hreflang.
-
-**Livrable Sprint 4** : scan SEO clean + audit i18n.
-
----
-
-## Sprint 5 — Nettoyage final (Phase B)
-
-Une seule passe transverse à la fin, parce qu'avant ça on a déjà nettoyé module par module.
-
-- `bunx knip` ou équivalent pour détecter exports/dépendances non utilisés.
-- Supprimer composants `src/components/ncc/modules/*` non référencés.
-- Dédupliquer formulaires MEGAOTT (3 variants en doublon possible).
-- Vérifier toutes les dépendances `package.json` réellement utilisées.
-
-**Livrable Sprint 5** : liste fichiers supprimés + diff package.json.
-
----
-
-## Sprint 6 — Documentation & release notes
-
-- Mettre à jour `.lovable/plan.md`.
-- Produire `docs/RC-v1.0.md` : modules opérationnels, limitations connues, runbook prod (que faire si MEGAOTT down, si webhook SebPay rejoué, etc.).
-- Checklist pré-publication.
-
----
-
-## Ce que je NE FERAI PAS dans cette RC (hors scope, à confirmer)
-
-- Réécrire l'engine d'automatisation en queue persistante complète (déjà signalé dans l'audit).
-- Brancher les connecteurs stub (Stripe, PayPal, autres IPTV, Resend) — restent désactivés explicitement.
-- Ajouter monitoring externe (Sentry).
-- Ajouter suite de tests unitaires (>10% coverage) — uniquement E2E sur chemin critique.
-
-Si tu veux que l'un de ces points entre dans la RC, dis-le et je l'ajoute.
-
----
-
-## Démarrage
-
-Si tu valides ce plan, **je commence par le Sprint 1.1 (SebPay)** : audit + corrections, et je te livre un premier rapport avant de toucher au reste.
+Tu valides ?
