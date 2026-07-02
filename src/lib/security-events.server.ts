@@ -82,7 +82,7 @@ export async function recordSecurityEvent(evt: SecurityEventInput): Promise<void
       ip: evt.ip ?? null,
       user_agent: evt.user_agent ?? null,
       message: evt.message,
-      payload: evt.payload ?? {},
+      payload: (evt.payload ?? {}) as never,
     });
     if (error) {
       console.error("[security-events] insert failed:", error.message);
