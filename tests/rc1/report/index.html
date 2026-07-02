@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"/><title>RC1 Certification Report</title>
+<style>
+body{font-family:system-ui,sans-serif;margin:2rem;max-width:1200px;color:#111}
+h1{margin-bottom:.2rem} .meta{color:#666;margin-bottom:1rem}
+.verdict{padding:1rem 1.4rem;border-radius:.6rem;font-weight:700;font-size:1.15rem;margin:1rem 0}
+.verdict.ok{background:#e6f8ec;color:#065f2b;border:1px solid #22c55e}
+.verdict.ko{background:#fde8e8;color:#7f1d1d;border:1px solid #dc2626}
+table{border-collapse:collapse;width:100%;margin:.6rem 0 1.4rem}
+th,td{border:1px solid #e5e7eb;padding:.35rem .5rem;text-align:left;font-size:.92rem;vertical-align:top}
+th{background:#f3f4f6}
+section.scenario{border:1px solid #e5e7eb;border-radius:.5rem;padding:1rem;margin:1rem 0;background:#fafafa}
+.shots{display:flex;flex-wrap:wrap;gap:.6rem} .shots figure{margin:0;max-width:320px}
+.shots img{width:100%;border:1px solid #ddd;border-radius:.3rem} figcaption{font-size:.75rem;color:#555;text-align:center}
+code,pre{background:#f6f8fa;padding:0 .3rem;border-radius:.2rem;font-size:.85rem}
+pre{white-space:pre-wrap;word-break:break-word;margin:0}
+</style></head><body>
+<h1>RC1 Certification Report</h1>
+<p class="meta">Base URL: <code>http://localhost:8080</code>
+ · Budget perf t_total: 30000 ms
+ · Généré: 2026-07-02T12:05:16.326461+00:00</p>
+<div class="verdict ko">❌ RC1 NOT CERTIFIED</div><ul><li>2 scenario(s) failed: RC1-01, RC1-03</li><li>Workflow chain broken for: NXR-E2E-RC1-1782993891-wh</li></ul>
+
+<h2>Scénarios</h2>
+<table><thead><tr><th>ID</th><th>Nom</th><th>Résultat</th><th>Ref</th><th>Erreur</th></tr></thead>
+<tbody><tr><td>RC1-01</td><td>Full journey — Checkout → Payment → Workflow → IPTV → Delivery → Track</td><td>❌ FAIL</td><td><code>NXR-E2E-RC1-1782993873</code></td><td>AssertionError: expected 1 iptv_account, got 0</td></tr><tr><td>RC1-02</td><td>Webhook replay + invalid signature</td><td>✅ PASS</td><td><code>NXR-E2E-RC1-1782993891-wh</code></td><td></td></tr><tr><td>RC1-03</td><td>Provider fallback (MEGAOTT off)</td><td>❌ FAIL</td><td><code>NXR-E2E-RC1-1782993893-fb</code></td><td>AssertionError: expected 1 iptv_account under fallback, got 0</td></tr></tbody></table>
+
+<h2>Détails par scénario</h2>
+
+          <section class="scenario">
+            <h3>RC1-01 — Full journey — Checkout → Payment → Workflow → IPTV → Delivery → Track — ❌ FAIL</h3>
+            <p>Ref: <code>NXR-E2E-RC1-1782993873</code> · Total: 17483 ms</p>
+            <table><thead><tr><th>Étape</th><th>OK</th><th>Durée (ms)</th><th>Détails</th></tr></thead>
+              <tbody><tr><td>disable_megaott</td><td>✅</td><td></td><td><pre>{&#x27;count&#x27;: 0}</pre></td></tr><tr><td>checkout_seed</td><td>✅</td><td>157</td><td><pre>{&#x27;order_ref&#x27;: &#x27;NXR-E2E-RC1-1782993873&#x27;}</pre></td></tr><tr><td>payment_emit</td><td>✅</td><td>103</td><td><pre>{&#x27;http&#x27;: 200}</pre></td></tr><tr><td>workflow_drain</td><td>✅</td><td>1386</td><td><pre>{&#x27;iterations&#x27;: 2}</pre></td></tr></tbody></table>
+            
+          </section>
+        
+          <section class="scenario">
+            <h3>RC1-02 — Webhook replay + invalid signature — ✅ PASS</h3>
+            <p>Ref: <code>NXR-E2E-RC1-1782993891-wh</code> · Total: 652 ms</p>
+            <table><thead><tr><th>Étape</th><th>OK</th><th>Durée (ms)</th><th>Détails</th></tr></thead>
+              <tbody><tr><td>webhook_valid_1</td><td>✅</td><td></td><td><pre>{&#x27;http&#x27;: 200}</pre></td></tr><tr><td>webhook_valid_2_replay</td><td>✅</td><td></td><td><pre>{&#x27;http&#x27;: 200}</pre></td></tr><tr><td>webhook_invalid_sig</td><td>✅</td><td></td><td><pre>{&#x27;http&#x27;: 401}</pre></td></tr><tr><td>receipts_recorded</td><td>✅</td><td></td><td><pre>{&#x27;valid_count&#x27;: 2}</pre></td></tr></tbody></table>
+            
+          </section>
+        
+          <section class="scenario">
+            <h3>RC1-03 — Provider fallback (MEGAOTT off) — ❌ FAIL</h3>
+            <p>Ref: <code>NXR-E2E-RC1-1782993893-fb</code> · Total: ? ms</p>
+            <table><thead><tr><th>Étape</th><th>OK</th><th>Durée (ms)</th><th>Détails</th></tr></thead>
+              <tbody><tr><td>disable_megaott</td><td>✅</td><td></td><td><pre>{&#x27;count&#x27;: 0}</pre></td></tr></tbody></table>
+            
+          </section>
+        
+
+<h2>Performances</h2>
+<table><thead><tr><th>Étape</th><th>Médiane (ms)</th><th>p95 (ms)</th><th>Max (ms)</th><th>Échantillons</th></tr></thead>
+<tbody><tr><td>t_checkout</td><td>157</td><td>157</td><td>157</td><td>1</td></tr><tr><td>t_payment</td><td>103</td><td>103</td><td>103</td><td>1</td></tr><tr><td>t_workflow</td><td>1386</td><td>1386</td><td>1386</td><td>1</td></tr><tr><td>t_delivery</td><td>—</td><td>—</td><td>—</td><td>0</td></tr><tr><td>t_tracking</td><td>—</td><td>—</td><td>—</td><td>0</td></tr><tr><td>t_total</td><td>9067</td><td>652</td><td>17483</td><td>2</td></tr></tbody></table>
+
+<h2>Intégrité DB</h2>
+<p>Critical: <b>0</b> · Warnings: <b>0</b> ·
+Mapping: <code>payments→orders</code>, <code>audit_logs→iptv_logs+automation_steps+integration_debug_logs</code></p>
+<table><thead><tr><th>Sévérité</th><th>Table</th><th>Anomalie</th></tr></thead><tbody><tr><td colspan='3'>Aucune anomalie DB.</td></tr></tbody></table>
+
+<h2>Logs</h2>
+<p>Critical: <b>0</b> · Warnings: <b>0</b></p>
+<table><thead><tr><th>Sévérité</th><th>Source</th><th>Message</th></tr></thead><tbody><tr><td colspan='3'>Aucune anomalie de logs.</td></tr></tbody></table>
+
+<h2>Chaîne de workflow</h2>
+<table><thead><tr><th>OK</th><th>Ref</th><th>Chain</th><th>Track</th><th>Missing</th></tr></thead>
+<tbody><tr><td>❌</td><td><code>NXR-E2E-RC1-1782993891-wh</code></td><td>True</td><td>True (HTTP 200)</td><td>[&#x27;order_created_at&#x27;, &#x27;run_completed_at&#x27;, &#x27;account_created_at&#x27;, &#x27;delivery_sent_at&#x27;]</td></tr></tbody></table>
+
+<h2>Rapport markdown</h2>
+<pre># RC1 Certification Report
+
+- **Date**: 2026-07-02T12:05:16.326192+00:00
+- **Base URL**: http://localhost:8080
+- **Perf budget (t_total, median)**: 30000 ms
+
+## Verdict
+
+## ❌ RC1 NOT CERTIFIED
+
+- 2 scenario(s) failed: RC1-01, RC1-03
+- Workflow chain broken for: NXR-E2E-RC1-1782993891-wh
+
+## Tests
+
+- Total: **3**  ·  Passed: **1**  ·  Failed: **2**
+
+| ID | Nom | Résultat | Ref | Erreur |
+|----|-----|----------|-----|--------|
+| RC1-01 | Full journey — Checkout → Payment → Workflow → IPTV → Delivery → Track | ❌ FAIL | `NXR-E2E-RC1-1782993873` | AssertionError: expected 1 iptv_account, got 0 |
+| RC1-02 | Webhook replay + invalid signature | ✅ PASS | `NXR-E2E-RC1-1782993891-wh` |  |
+| RC1-03 | Provider fallback (MEGAOTT off) | ❌ FAIL | `NXR-E2E-RC1-1782993893-fb` | AssertionError: expected 1 iptv_account under fallback, got 0 |
+
+## Modules couverts
+
+`checkout`, `payment`, `workflow`, `iptv`, `delivery`, `tracking`, `notifications`
+
+## Couverture fonctionnelle
+
+- Checkout → seed d&#x27;ordre + validation status (RC1-01)
+- Payment → emit-test + webhook SebPay signé (RC1-01, RC1-02)
+- Workflow → drain queue + steps (RC1-01, RC1-03)
+- IPTV assignment → 1 compte / order, fallback si MEGAOTT off (RC1-01, RC1-03)
+- Delivery → delivery_logs + orders.metadata.iptv_delivery (RC1-01)
+- Tracking → /track?ref=... 200 + ref affiché (RC1-01, workflow-chain)
+- Idempotence / sécurité HMAC → replay + signature invalide (RC1-02)
+
+## Performances
+
+| Étape | Médiane (ms) | p95 (ms) | Max (ms) | Échantillons |
+|-------|--------------|----------|----------|--------------|
+| t_checkout | 157 | 157 | 157 | 1 |
+| t_payment | 103 | 103 | 103 | 1 |
+| t_workflow | 1386 | 1386 | 1386 | 1 |
+| t_delivery | — | — | — | 0 |
+| t_tracking | — | — | — | 0 |
+| t_total | 9067 | 652 | 17483 | 2 |
+
+## Intégrité DB
+
+- Critical: **0**  ·  Warnings: **0**
+- Stats: `{&quot;orders_rc1&quot;: 0, &quot;iptv_accounts_total&quot;: 20, &quot;automation_runs_rc1&quot;: 0, &quot;automation_steps_rc1&quot;: 0, &quot;delivery_logs_total&quot;: 0, &quot;notifications_total&quot;: 10, &quot;customer_events_total&quot;: 3}`
+- Mapping demandé → réel: `payments`→`orders`, `audit_logs`→`iptv_logs+automation_steps+integration_debug_logs`
+
+## Logs
+
+- Critical: **0**  ·  Warnings: **0**
+
+## Chaîne de workflow
+
+- Refs vérifiés: **1**  ·  OK: **0**
+- ❌ `NXR-E2E-RC1-1782993891-wh` — chain_ok=True track_ok=True(HTTP 200) missing=[&#x27;order_created_at&#x27;, &#x27;run_completed_at&#x27;, &#x27;account_created_at&#x27;, &#x27;delivery_sent_at&#x27;]
+
+## Prochaine étape
+
+Corriger les blocages listés puis rejouer `bash tests/rc1/run-certification.sh`.
+</pre>
+</body></html>

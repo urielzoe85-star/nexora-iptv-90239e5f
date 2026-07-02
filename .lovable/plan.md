@@ -1,109 +1,95 @@
+# Certification RC1 — Plan
 
-# Sprint 1.5 — E2E chemin critique (Playwright)
+Objectif : produire une certification reproductible qui atteste, ou refuse, que la version courante est **RC1 CERTIFIED – READY FOR PRODUCTION**. Tout est scripté sous `tests/rc1/` pour rejouer la certification à volonté.
 
-Objectif : prouver que le chemin **checkout → paiement → workflow → livraison → /track** fonctionne bout-en-bout, sans consommer de crédit MEGAOTT sur chaque run.
+## Livrables
 
-## Contraintes techniques (constatées à l'audit)
+1. Suite E2E RC1 (Playwright + Python) sous `tests/rc1/`.
+2. Rapport HTML Playwright (`tests/rc1/report/index.html`) : screenshots, logs, durées, étapes.
+3. Rapport DB `tests/rc1/out/db-integrity.json` + section markdown.
+4. Rapport logs `tests/rc1/out/logs-check.json`.
+5. Rapport perf `tests/rc1/out/perf.json` (chrono par étape + total).
+6. **Rapport final** `tests/rc1/out/RC1-REPORT.md` avec verdict `RC1 CERTIFIED` / `RC1 NOT CERTIFIED`.
 
-- SebPay n'a pas de sandbox : on ne peut pas dérouler un vrai `verifyPayment` en test.
-- Le connecteur MEGAOTT bascule automatiquement en mode "local" (aucun appel distant, `iptv_accounts.status='available'`) quand `isReady()` est faux — c'est le mock naturel de l'adapter.
-- Le webhook `/api/public/sebpay/webhook` fait de la vérification HMAC + rappelle SebPay (défense en profondeur). On peut tester la HMAC sans SebPay, mais pas la transition `pending → paid` sans mock upstream.
+## Structure
 
-## Architecture de la suite
-
-Dossier `tests/e2e/sprint-1.5/` :
-
+```text
+tests/rc1/
+  README.md
+  run-certification.sh         # orchestrateur unique
+  playwright.config.ts         # reporter=html, screenshots on, trace on
+  package.json                 # @playwright/test seulement (workspace isolé)
+  scenarios/
+    01-checkout-to-track.spec.ts     # parcours complet UI + assertions
+    02-idempotence.spec.ts           # double webhook, 1 seul compte
+    03-provider-fallback.spec.ts     # MEGAOTT off → adapter simulé
+  checks/
+    db-integrity.py            # orphelins, doublons, FK, états
+    workflow-chain.py          # chaîne Checkout→…→Track par ref
+    logs-audit.py              # scan iptv_logs + automation_steps + runs
+    perf-collector.py          # agrège perf.json depuis Playwright
+    build-report.py            # assemble RC1-REPORT.md + verdict
+  helpers/                     # réutilise tests/e2e/sprint-1.5/helpers/
 ```
-tests/e2e/sprint-1.5/
-  README.md              # comment lancer chaque scénario
-  helpers/
-    db.ts                # client Supabase admin (lit .env), seed & cleanup
-    signing.ts           # HMAC SebPay pour forger un webhook signé
-    fixtures.ts          # payloads type (order, customer, sebpay body)
-  01-happy-path.spec.ts  # scénario nominal, MEGAOTT mocké (isReady=false)
-  02-webhook-replay.spec.ts # même webhook 2x → 1 seul compte, 1 seul email
-  03-real-megaott.md     # runbook manuel (1 run réel documenté)
+
+## Contenu des vérifications
+
+### DB (`db-integrity.py`)
+Table par table :
+
+- `orders` — pas de doublon `order_ref`, `status` ∈ enum, `amount>0`, `email` non nul.
+- `iptv_accounts` — `metadata->>order_ref` référence un `orders.order_ref` existant (orphelins), pas de duplicata `(username, provider_id)`.
+- `automation_runs` — chaque run `completed` a ≥1 step `succeeded`, aucun step `failed` non retenté, `payload->>orderRef` référence un order.
+- `delivery_logs` — `order_ref` existe dans `orders`, `channel` connu, pas de doublon `(order_ref, channel, sent_at)`.
+- `notifications` — FK `customer_id` valide quand renseignée.
+- `customer_events` — `order_ref` valide quand renseigné.
+- FK invalides / colonnes NULL interdites signalées.
+
+Note : `payments` et `audit_logs` ne sont pas des tables du projet. On les mappe explicitement : `payments` → `orders` (colonnes `sebpay_reference`, `method`, `amount`, `currency`) ; `audit_logs` → `iptv_logs` + `automation_steps` + `integration_debug_logs`. C'est écrit noir sur blanc dans le rapport.
+
+### Chaîne de workflow (`workflow-chain.py`)
+Pour chaque `order_ref` de test, vérifie l'ordre chronologique :
+`orders.created_at` < `automation_runs(payment-confirmed).started_at` < `automation_runs.completed_at` < `iptv_accounts.created_at` < `delivery_logs.sent_at`, et que `/track?ref=…` répond 200 avec le ref affiché.
+
+### Logs (`logs-audit.py`)
+Scanne `iptv_logs`, `automation_steps`, `integration_debug_logs`, `automation_queue`, `automation_runs` sur la fenêtre du run pour détecter :
+`level=error`, `status=failed`, exceptions, `promise rejection`, warnings marqués bloquants, jobs `dead_letter`. Retourne 0 anomalie ou la liste précise.
+
+### Performances (`perf-collector.py`)
+Chaque scénario Playwright émet un `perf-<ref>.json` avec les timers :
+`t_checkout`, `t_payment`, `t_workflow`, `t_delivery`, `t_tracking`, `t_total`. Agrégés en médiane + p95.
+
+## Rapport final `RC1-REPORT.md`
+
+Sections : tests exécutés / réussis / échoués, modules couverts (checkout, paiement, workflow, IPTV, delivery, tracking, notifications), couverture fonctionnelle (checklist des scénarios), tableau des perfs, tableau des anomalies DB/logs, verdict final.
+
+Verdict = `RC1 CERTIFIED – READY FOR PRODUCTION` si et seulement si :
+- tous les scénarios Playwright pass,
+- 0 anomalie DB critique,
+- 0 anomalie logs critique,
+- chaîne de workflow OK pour chaque ref,
+- perf totale médiane < seuil configurable (défaut 30 s).
+
+Sinon `RC1 NOT CERTIFIED` avec la liste précise des blocages.
+
+## Exécution
+
+```bash
+bash tests/rc1/run-certification.sh
+# → tests/rc1/report/index.html  (Playwright)
+# → tests/rc1/out/RC1-REPORT.md   (verdict)
 ```
 
-Lancé via `bunx playwright test tests/e2e/sprint-1.5` en ciblant `http://localhost:8080` (dev server déjà up).
+Le script : (1) installe `@playwright/test` local à `tests/rc1/`, (2) lance Playwright avec `--reporter=html`, (3) chaîne les 4 checks Python, (4) construit le rapport final, (5) sort en code ≠ 0 si `NOT CERTIFIED` pour bloquer un pipeline CI.
 
-## Scénario 1 — Happy path (nominal, mocké)
+## Détails techniques
 
-1. **Seed DB** (helpers/db.ts, service role) :
-   - désactive temporairement le provider MEGAOTT (`UPDATE iptv_providers SET metadata = metadata || '{"kind":"disabled"}' WHERE metadata->>'kind'='megaott'` puis restore en teardown) — force `isReady()=false`, donc mode simulé côté adapter.
-   - crée `customers` + `orders` (status=pending, order_ref=`NXR-E2E-${ts}`, sebpay_reference=null pour skip re-verify).
-2. **Émettre `payment.confirmed`** directement (bypass SebPay upstream) : POST vers un mini endpoint de test `/api/public/automation/emit-test` protégé par `AUTOMATION_CRON_SECRET`. → à créer, ~20 lignes, refuse tout ref qui ne commence pas par `NXR-E2E-`.
-3. **Drainer la queue** : POST `/api/public/automation/process-queue` avec `Authorization: Bearer $AUTOMATION_CRON_SECRET`, en boucle (max 5 itérations) jusqu'à ce que la queue soit vide.
-4. **Assertions DB** :
-   - `iptv_accounts` : 1 ligne pour `metadata->>order_ref = NXR-E2E-*`
-   - `automation_runs` : 1 run `completed` pour `payment-confirmed`
-   - `delivery_logs` : au moins 1 entrée
-   - `orders.metadata.iptv_delivery` : présent avec `delivery_status ∈ {ready_to_send, sent}`
-5. **UI /track** : Playwright ouvre `/track?ref=NXR-E2E-...`, vérifie badge "Livraison affectée" + screenshot.
-6. **Teardown** : delete tout ce qui commence par `NXR-E2E-`, restore provider MEGAOTT.
+- Aucun changement du code applicatif (`src/**`) — la certification est purement additive.
+- Réutilise `tests/e2e/sprint-1.5/helpers/{db,http,cleanup}.py` déjà validés.
+- Toutes les données de test créées avec préfixe `NXR-RC1-<ts>` et nettoyées en `finally`.
+- `run-certification.sh` détecte l'absence de `SUPABASE_SERVICE_ROLE_KEY` et l'annonce clairement (obligatoire).
+- Aucune modification de schéma DB. Aucun tag Git côté agent (le tag reste une action humaine explicite).
 
-## Scénario 2 — Webhook rejoué
+## Hors périmètre (Sprint 2)
 
-Même seed que scenario 1 mais on garde `sebpay_reference` set pour tester le chemin webhook.
-
-1. Forger le body SebPay + signer avec `SEBPAY_SECRET_KEY` (via `crypto.createHmac`).
-2. POST `/api/public/sebpay/webhook` avec `X-SebPay-Signature` valide → attendu `200 {ok:true}`. Le webhook va tenter `verifyPaymentInternal` qui appellera SebPay upstream et échouera silencieusement → l'ordre reste `pending`, mais l'entrée `integration_debug_logs` est créée. On assert :
-   - 1 ligne `integration_debug_logs` (signature_valid=true, HTTP 200)
-3. POST **le même** body/signature une 2ème fois. Assert :
-   - 2 lignes `integration_debug_logs` (les receipts)
-   - **toujours 0** `automation_queue` / `iptv_accounts` (car verify n'a pas transitionné)
-4. Test complémentaire : POST avec signature volontairement fausse → `401`, 1 ligne log avec `signature_valid=false`. Prouve la protection.
-
-Note : le test d'idempotence "2 webhooks paid → 1 seul compte" est déjà couvert au niveau code par l'index unique `automation_queue.idempotency_key` (`payment.confirmed:${order_ref}`) et par le guard "compte existant" dans `createIptvSubscription`. On le prouve indirectement en scénario 1 en émettant 2x l'event et en vérifiant `count(iptv_accounts) = 1`.
-
-## Scénario 3 — Run réel MEGAOTT (manuel, documenté)
-
-Fichier `03-real-megaott.md` : checklist step-by-step, à jouer 1 fois par release :
-
-1. Vérifier `MEGAOTT_BEARER_TOKEN` en secrets + provider `metadata.kind=megaott` actif.
-2. Créer une vraie commande via l'UI checkout (montant 1 EUR sur plan test).
-3. Rejouer la même séquence que scénario 1 (émission event via l'endpoint test).
-4. Vérifier dans le panel MEGAOTT que l'utilisateur existe, que l'email est reçu.
-5. Cleanup : supprimer l'utilisateur MEGAOTT + l'ordre.
-
-## Changements code
-
-- **Nouveau** `src/routes/api/public/automation/emit-test.ts` (~40 lignes) : POST, protégé par `AUTOMATION_CRON_SECRET` + guard `ref` doit matcher `/^NXR-E2E-/`. Émet un event automation arbitraire. Utilité : contourner SebPay upstream en test sans polluer `verifyPaymentInternal`.
-- **Nouveau** `tests/e2e/sprint-1.5/*` (les 3 specs + helpers).
-- **Nouveau** `.lovable/sprint-1.5-report.md` : template pour reporter les résultats après chaque run.
-- **Mise à jour** `.lovable/plan.md` : cocher Sprint 1.5 quand tout est vert.
-
-Aucune modification des fichiers de production hors le nouvel endpoint test (guardé et inoffensif : refuse tout ref non-préfixé).
-
-## Livrable
-
-- Suite Playwright verte (scénarios 1 & 2) reproductible via `bunx playwright test tests/e2e/sprint-1.5`.
-- Screenshots `/track` avant/après livraison.
-- Rapport avec les rows insérées (iptv_accounts.id, delivery_logs.id, automation_runs.id) pour audit.
-
----
-
-**Ordre d'exécution proposé** : (1) endpoint test + helpers → (2) scenario 1 vert → (3) scenario 2 vert → (4) doc manuelle → (5) mettre à jour plan.md et te rendre le rapport.
-
-Tu valides ?
-
----
-
-## État Sprint 1.5 — livré (implémentation)
-
-- [x] Endpoint test `POST /api/public/automation/emit-test`
-      (`src/routes/api/public/automation/emit-test.ts`) — double-guard
-      `AUTOMATION_CRON_SECRET` + préfixe `NXR-E2E-`.
-- [x] Helpers Python : `helpers/db.py` (Supabase admin via PostgREST + seed
-      / cleanup / restore MEGAOTT), `helpers/http.py` (emit-test + drain
-      queue + webhook SebPay), `helpers/signing.py` (HMAC SebPay),
-      `helpers/cleanup.py` (purge orphelins `NXR-E2E-*`).
-- [x] `tests/e2e/sprint-1.5/01_happy_path.py` — seed → 2× emit (idempotence)
-      → drain → assertions DB → screenshot `/track`.
-- [x] `tests/e2e/sprint-1.5/02_webhook_replay.py` — 2× webhook signé + 1×
-      signature invalide, assert 0 iptv_account créé.
-- [x] `tests/e2e/sprint-1.5/03-real-megaott.md` — runbook manuel.
-- [x] `.lovable/sprint-1.5-report.md` — template de rapport.
-- [ ] **À exécuter** dans un env avec `SUPABASE_SERVICE_ROLE_KEY` +
-      `AUTOMATION_CRON_SECRET` + `SEBPAY_SECRET_KEY` (indisponibles dans
-      le sandbox preview Lovable Cloud).
+Durcissement sécurité, IA, ERP, SaaS — non touchés ici.
