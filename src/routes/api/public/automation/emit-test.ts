@@ -8,6 +8,7 @@
 // secret couldn't be used to trigger workflows on real orders.
 
 import { createFileRoute } from "@tanstack/react-router";
+import { allow, clientKey, tooManyRequests } from "@/lib/rate-limit.server";
 
 const ALLOWED_EVENTS = new Set([
   "payment.confirmed",
@@ -24,6 +25,11 @@ export const Route = createFileRoute("/api/public/automation/emit-test")({
         // flag is unset, so the endpoint returns 404 as if it didn't exist.
         const enabled = process.env.ALLOW_E2E_ENDPOINTS === "1";
         if (!enabled) return new Response("Not found", { status: 404 });
+
+        // Local rate-limit — E2E tests may fire fast, but 30/min is enough
+        // for any legitimate suite and cheap enough to block runaway loops.
+        const rl = allow(clientKey(request, "emit-test"), { limit: 30, windowMs: 60_000 });
+        if (!rl.ok) return tooManyRequests(rl);
 
         const expected = process.env.AUTOMATION_CRON_SECRET ?? "";
         if (!expected) return new Response("Server misconfigured", { status: 500 });
