@@ -42,7 +42,7 @@ export const Route = createFileRoute("/api/public/hooks/payment-dunning")({
 
           const { data: orders, error } = await sb
             .from("orders")
-            .select("id, reference, customer_id, amount_cents, currency, status, updated_at")
+            .select("id, order_ref, email, full_name, customer_id, amount, currency, status, updated_at")
             .in("status", ["failed", "payment_failed", "unpaid"])
             .gte("updated_at", targetStart)
             .lt("updated_at", targetEnd);
@@ -68,12 +68,14 @@ export const Route = createFileRoute("/api/public/hooks/payment-dunning")({
               continue;
             }
 
-            const { data: cust } = await sb
-              .from("customers")
-              .select("email, full_name, metadata")
-              .eq("id", ord.customer_id)
-              .maybeSingle();
-            const recipient = cust?.email as string | undefined;
+            const { data: cust } = ord.customer_id
+              ? await sb
+                  .from("customers")
+                  .select("email, full_name, metadata")
+                  .eq("id", ord.customer_id)
+                  .maybeSingle()
+              : { data: null as any };
+            const recipient = (cust?.email ?? ord.email) as string | undefined;
             const locale = (cust?.metadata?.locale as string | undefined) ?? "fr";
 
             if (recipient) {
@@ -84,9 +86,9 @@ export const Route = createFileRoute("/api/public/hooks/payment-dunning")({
                   to_user_id: ord.customer_id,
                   to: recipient,
                   data: {
-                    client_name: cust?.full_name ?? "",
-                    order_ref: ord.reference,
-                    amount: ord.amount_cents ? (ord.amount_cents / 100).toFixed(2) : undefined,
+                    client_name: cust?.full_name ?? ord.full_name ?? "",
+                    order_ref: ord.order_ref,
+                    amount: ord.amount != null ? Number(ord.amount).toFixed(2) : undefined,
                     currency: ord.currency ?? "EUR",
                     days_since_failure: milestone,
                     locale,
