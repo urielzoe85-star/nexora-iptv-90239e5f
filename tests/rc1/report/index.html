@@ -18,26 +18,26 @@ pre{white-space:pre-wrap;word-break:break-word;margin:0}
 <h1>RC1 Certification Report</h1>
 <p class="meta">Base URL: <code>http://localhost:8080</code>
  · Budget perf t_total: 30000 ms
- · Généré: 2026-07-02T17:06:50.137603+00:00</p>
+ · Généré: 2026-07-02T17:11:26.835754+00:00</p>
 <div class="verdict ok">✅ RC1 CERTIFIED – READY FOR PRODUCTION</div>
 
 <h2>Scénarios</h2>
 <table><thead><tr><th>ID</th><th>Nom</th><th>Résultat</th><th>Ref</th><th>Erreur</th></tr></thead>
-<tbody><tr><td>RC1-01</td><td>Full journey — Checkout → Payment → Workflow → IPTV → Delivery → Track</td><td>✅ PASS</td><td><code>NXR-E2E-RC1-1783011996</code></td><td></td></tr><tr><td>RC1-02</td><td>Webhook replay + invalid signature</td><td>✅ PASS</td><td><code>NXR-E2E-RC1-1783012002-wh</code></td><td></td></tr><tr><td>RC1-03</td><td>Provider fallback (MEGAOTT off)</td><td>✅ PASS</td><td><code>NXR-E2E-RC1-1783012002-fb</code></td><td></td></tr></tbody></table>
+<tbody><tr><td>RC1-01</td><td>Full journey — Checkout → Payment → Workflow → IPTV → Delivery → Track</td><td>✅ PASS</td><td><code>NXR-E2E-RC1-1783012270</code></td><td></td></tr><tr><td>RC1-02</td><td>Webhook replay + invalid signature</td><td>✅ PASS</td><td><code>NXR-E2E-RC1-1783012277-wh</code></td><td></td></tr><tr><td>RC1-03</td><td>Provider fallback (MEGAOTT off)</td><td>✅ PASS</td><td><code>NXR-E2E-RC1-1783012279-fb</code></td><td></td></tr></tbody></table>
 
 <h2>Détails par scénario</h2>
 
           <section class="scenario">
             <h3>RC1-01 — Full journey — Checkout → Payment → Workflow → IPTV → Delivery → Track — ✅ PASS</h3>
-            <p>Ref: <code>NXR-E2E-RC1-1783011996</code> · Total: 5463 ms</p>
+            <p>Ref: <code>NXR-E2E-RC1-1783012270</code> · Total: 6548 ms</p>
             <table><thead><tr><th>Étape</th><th>OK</th><th>Durée (ms)</th><th>Détails</th></tr></thead>
-              <tbody><tr><td>disable_megaott</td><td>✅</td><td></td><td><pre>{&#x27;count&#x27;: 1}</pre></td></tr><tr><td>checkout_seed</td><td>✅</td><td>172</td><td><pre>{&#x27;order_ref&#x27;: &#x27;NXR-E2E-RC1-1783011996&#x27;}</pre></td></tr><tr><td>payment_emit</td><td>✅</td><td>249</td><td><pre>{&#x27;http&#x27;: 200}</pre></td></tr><tr><td>workflow_drain</td><td>✅</td><td>1512</td><td><pre>{&#x27;iterations&#x27;: 2}</pre></td></tr><tr><td>delivery_ready</td><td>✅</td><td>208</td><td><pre>{&#x27;delivery_status&#x27;: &#x27;ready_to_send&#x27;, &#x27;iptv_accounts&#x27;: 1, &#x27;delivery_logs&#x27;: 1}</pre></td></tr><tr><td>tracking_visible</td><td>✅</td><td>1921</td><td><pre>{&#x27;screenshot&#x27;: &#x27;rc1_01_track_NXR-E2E-RC1-1783011996.png&#x27;, &#x27;url&#x27;: &#x27;http://localhost:8080/track?ref=NXR-E2E-RC1-1783011996&#x27;}</pre></td></tr></tbody></table>
-            <div class="shots"><figure><img src="../screenshots/rc1_01_track_NXR-E2E-RC1-1783011996.png" alt="rc1_01_track_NXR-E2E-RC1-1783011996.png"/><figcaption>rc1_01_track_NXR-E2E-RC1-1783011996.png</figcaption></figure></div>
+              <tbody><tr><td>disable_megaott</td><td>✅</td><td></td><td><pre>{&#x27;count&#x27;: 1}</pre></td></tr><tr><td>checkout_seed</td><td>✅</td><td>214</td><td><pre>{&#x27;order_ref&#x27;: &#x27;NXR-E2E-RC1-1783012270&#x27;}</pre></td></tr><tr><td>payment_emit</td><td>✅</td><td>276</td><td><pre>{&#x27;http&#x27;: 200}</pre></td></tr><tr><td>workflow_drain</td><td>✅</td><td>1759</td><td><pre>{&#x27;iterations&#x27;: 2}</pre></td></tr><tr><td>delivery_ready</td><td>✅</td><td>215</td><td><pre>{&#x27;delivery_status&#x27;: &#x27;ready_to_send&#x27;, &#x27;iptv_accounts&#x27;: 1, &#x27;delivery_logs&#x27;: 1}</pre></td></tr><tr><td>tracking_visible</td><td>✅</td><td>2033</td><td><pre>{&#x27;screenshot&#x27;: &#x27;rc1_01_track_NXR-E2E-RC1-1783012270.png&#x27;, &#x27;url&#x27;: &#x27;http://localhost:8080/track?ref=NXR-E2E-RC1-1783012270&#x27;}</pre></td></tr></tbody></table>
+            <div class="shots"><figure><img src="../screenshots/rc1_01_track_NXR-E2E-RC1-1783012270.png" alt="rc1_01_track_NXR-E2E-RC1-1783012270.png"/><figcaption>rc1_01_track_NXR-E2E-RC1-1783012270.png</figcaption></figure></div>
           </section>
         
           <section class="scenario">
             <h3>RC1-02 — Webhook replay + invalid signature — ✅ PASS</h3>
-            <p>Ref: <code>NXR-E2E-RC1-1783012002-wh</code> · Total: 689 ms</p>
+            <p>Ref: <code>NXR-E2E-RC1-1783012277-wh</code> · Total: 1371 ms</p>
             <table><thead><tr><th>Étape</th><th>OK</th><th>Durée (ms)</th><th>Détails</th></tr></thead>
               <tbody><tr><td>webhook_valid_1</td><td>✅</td><td></td><td><pre>{&#x27;http&#x27;: 200}</pre></td></tr><tr><td>webhook_valid_2_replay</td><td>✅</td><td></td><td><pre>{&#x27;http&#x27;: 200}</pre></td></tr><tr><td>webhook_invalid_sig</td><td>✅</td><td></td><td><pre>{&#x27;http&#x27;: 401}</pre></td></tr><tr><td>receipts_recorded</td><td>✅</td><td></td><td><pre>{&#x27;valid_count&#x27;: 2}</pre></td></tr></tbody></table>
             
@@ -45,7 +45,7 @@ pre{white-space:pre-wrap;word-break:break-word;margin:0}
         
           <section class="scenario">
             <h3>RC1-03 — Provider fallback (MEGAOTT off) — ✅ PASS</h3>
-            <p>Ref: <code>NXR-E2E-RC1-1783012002-fb</code> · Total: 1991 ms</p>
+            <p>Ref: <code>NXR-E2E-RC1-1783012279-fb</code> · Total: 1924 ms</p>
             <table><thead><tr><th>Étape</th><th>OK</th><th>Durée (ms)</th><th>Détails</th></tr></thead>
               <tbody><tr><td>disable_megaott</td><td>✅</td><td></td><td><pre>{&#x27;count&#x27;: 1}</pre></td></tr><tr><td>fallback_account_created</td><td>✅</td><td></td><td><pre>{&#x27;provider&#x27;: None}</pre></td></tr></tbody></table>
             
@@ -54,7 +54,7 @@ pre{white-space:pre-wrap;word-break:break-word;margin:0}
 
 <h2>Performances</h2>
 <table><thead><tr><th>Étape</th><th>Médiane (ms)</th><th>p95 (ms)</th><th>Max (ms)</th><th>Échantillons</th></tr></thead>
-<tbody><tr><td>t_checkout</td><td>172</td><td>172</td><td>172</td><td>1</td></tr><tr><td>t_payment</td><td>249</td><td>249</td><td>249</td><td>1</td></tr><tr><td>t_workflow</td><td>1512</td><td>1512</td><td>1512</td><td>1</td></tr><tr><td>t_delivery</td><td>208</td><td>208</td><td>208</td><td>1</td></tr><tr><td>t_tracking</td><td>1921</td><td>1921</td><td>1921</td><td>1</td></tr><tr><td>t_total</td><td>1991</td><td>1991</td><td>5463</td><td>3</td></tr></tbody></table>
+<tbody><tr><td>t_checkout</td><td>214</td><td>214</td><td>214</td><td>1</td></tr><tr><td>t_payment</td><td>276</td><td>276</td><td>276</td><td>1</td></tr><tr><td>t_workflow</td><td>1759</td><td>1759</td><td>1759</td><td>1</td></tr><tr><td>t_delivery</td><td>215</td><td>215</td><td>215</td><td>1</td></tr><tr><td>t_tracking</td><td>2033</td><td>2033</td><td>2033</td><td>1</td></tr><tr><td>t_total</td><td>1924</td><td>1924</td><td>6548</td><td>3</td></tr></tbody></table>
 
 <h2>Intégrité DB</h2>
 <p>Critical: <b>0</b> · Warnings: <b>0</b> ·
@@ -67,12 +67,12 @@ Mapping: <code>payments→orders</code>, <code>audit_logs→iptv_logs+automation
 
 <h2>Chaîne de workflow</h2>
 <table><thead><tr><th>OK</th><th>Ref</th><th>Chain</th><th>Track</th><th>Missing</th></tr></thead>
-<tbody><tr><td>✅</td><td><code>NXR-E2E-RC1-1783011996</code></td><td>True</td><td>True (HTTP 200)</td><td>[]</td></tr></tbody></table>
+<tbody><tr><td>✅</td><td><code>NXR-E2E-RC1-1783012270</code></td><td>True</td><td>True (HTTP 200)</td><td>[]</td></tr></tbody></table>
 
 <h2>Rapport markdown</h2>
 <pre># RC1 Certification Report
 
-- **Date**: 2026-07-02T17:06:50.137283+00:00
+- **Date**: 2026-07-02T17:11:26.835395+00:00
 - **Base URL**: http://localhost:8080
 - **Perf budget (t_total, median)**: 30000 ms
 
@@ -86,9 +86,9 @@ Mapping: <code>payments→orders</code>, <code>audit_logs→iptv_logs+automation
 
 | ID | Nom | Résultat | Ref | Erreur |
 |----|-----|----------|-----|--------|
-| RC1-01 | Full journey — Checkout → Payment → Workflow → IPTV → Delivery → Track | ✅ PASS | `NXR-E2E-RC1-1783011996` |  |
-| RC1-02 | Webhook replay + invalid signature | ✅ PASS | `NXR-E2E-RC1-1783012002-wh` |  |
-| RC1-03 | Provider fallback (MEGAOTT off) | ✅ PASS | `NXR-E2E-RC1-1783012002-fb` |  |
+| RC1-01 | Full journey — Checkout → Payment → Workflow → IPTV → Delivery → Track | ✅ PASS | `NXR-E2E-RC1-1783012270` |  |
+| RC1-02 | Webhook replay + invalid signature | ✅ PASS | `NXR-E2E-RC1-1783012277-wh` |  |
+| RC1-03 | Provider fallback (MEGAOTT off) | ✅ PASS | `NXR-E2E-RC1-1783012279-fb` |  |
 
 ## Modules couverts
 
@@ -108,12 +108,12 @@ Mapping: <code>payments→orders</code>, <code>audit_logs→iptv_logs+automation
 
 | Étape | Médiane (ms) | p95 (ms) | Max (ms) | Échantillons |
 |-------|--------------|----------|----------|--------------|
-| t_checkout | 172 | 172 | 172 | 1 |
-| t_payment | 249 | 249 | 249 | 1 |
-| t_workflow | 1512 | 1512 | 1512 | 1 |
-| t_delivery | 208 | 208 | 208 | 1 |
-| t_tracking | 1921 | 1921 | 1921 | 1 |
-| t_total | 1991 | 1991 | 5463 | 3 |
+| t_checkout | 214 | 214 | 214 | 1 |
+| t_payment | 276 | 276 | 276 | 1 |
+| t_workflow | 1759 | 1759 | 1759 | 1 |
+| t_delivery | 215 | 215 | 215 | 1 |
+| t_tracking | 2033 | 2033 | 2033 | 1 |
+| t_total | 1924 | 1924 | 6548 | 3 |
 
 ## Intégrité DB
 
@@ -128,7 +128,7 @@ Mapping: <code>payments→orders</code>, <code>audit_logs→iptv_logs+automation
 ## Chaîne de workflow
 
 - Refs vérifiés: **1**  ·  OK: **1**
-- ✅ `NXR-E2E-RC1-1783011996` — chain_ok=True track_ok=True(HTTP 200) missing=[]
+- ✅ `NXR-E2E-RC1-1783012270` — chain_ok=True track_ok=True(HTTP 200) missing=[]
 
 ## Prochaine étape
 
