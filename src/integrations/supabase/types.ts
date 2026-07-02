@@ -1005,6 +1005,54 @@ export type Database = {
         }
         Relationships: []
       }
+      secret_registry: {
+        Row: {
+          created_at: string
+          criticality: string
+          environment: string
+          id: string
+          last_rotated_at: string | null
+          name: string
+          next_rotation_at: string | null
+          notes: string | null
+          owner: string
+          rotation_interval: string
+          service: string
+          updated_at: string
+          vault_backed: boolean
+        }
+        Insert: {
+          created_at?: string
+          criticality: string
+          environment?: string
+          id?: string
+          last_rotated_at?: string | null
+          name: string
+          next_rotation_at?: string | null
+          notes?: string | null
+          owner: string
+          rotation_interval?: string
+          service: string
+          updated_at?: string
+          vault_backed?: boolean
+        }
+        Update: {
+          created_at?: string
+          criticality?: string
+          environment?: string
+          id?: string
+          last_rotated_at?: string | null
+          name?: string
+          next_rotation_at?: string | null
+          notes?: string | null
+          owner?: string
+          rotation_interval?: string
+          service?: string
+          updated_at?: string
+          vault_backed?: boolean
+        }
+        Relationships: []
+      }
       security_events: {
         Row: {
           actor_email: string | null
@@ -1278,6 +1326,7 @@ export type Database = {
           read_ct: number
         }[]
       }
+      secret_registry_scan: { Args: never; Returns: Json }
       verify_email_cron_secret: { Args: { _token: string }; Returns: boolean }
     }
     Enums: {
