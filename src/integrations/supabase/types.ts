@@ -207,6 +207,77 @@ export type Database = {
         }
         Relationships: []
       }
+      backup_integrity_snapshots: {
+        Row: {
+          captured_at: string
+          checksum: string
+          id: string
+          row_count: number
+          run_id: string
+          table_name: string
+        }
+        Insert: {
+          captured_at?: string
+          checksum: string
+          id?: string
+          row_count: number
+          run_id: string
+          table_name: string
+        }
+        Update: {
+          captured_at?: string
+          checksum?: string
+          id?: string
+          row_count?: number
+          run_id?: string
+          table_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "backup_integrity_snapshots_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "backup_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      backup_runs: {
+        Row: {
+          created_at: string
+          duration_ms: number | null
+          error: string | null
+          finished_at: string | null
+          id: string
+          kind: string
+          started_at: string
+          status: string
+          summary: Json
+        }
+        Insert: {
+          created_at?: string
+          duration_ms?: number | null
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          kind: string
+          started_at?: string
+          status: string
+          summary?: Json
+        }
+        Update: {
+          created_at?: string
+          duration_ms?: number | null
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          kind?: string
+          started_at?: string
+          status?: string
+          summary?: Json
+        }
+        Relationships: []
+      }
       customer_events: {
         Row: {
           actor_id: string | null
@@ -1386,6 +1457,8 @@ export type Database = {
           workflow_key: string
         }[]
       }
+      backup_capture_integrity: { Args: { _run_id: string }; Returns: Json }
+      backup_restore_drill: { Args: { _table: string }; Returns: Json }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean

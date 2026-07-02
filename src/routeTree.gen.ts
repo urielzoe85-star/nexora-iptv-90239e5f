@@ -81,6 +81,7 @@ import { Route as ApiPublicTelegramWebhookRouteImport } from './routes/api/publi
 import { Route as ApiPublicSebpayWebhookRouteImport } from './routes/api/public/sebpay/webhook'
 import { Route as ApiPublicHooksRenewalRemindersRouteImport } from './routes/api/public/hooks/renewal-reminders'
 import { Route as ApiPublicHooksPaymentDunningRouteImport } from './routes/api/public/hooks/payment-dunning'
+import { Route as ApiPublicHooksBackupVerifyRouteImport } from './routes/api/public/hooks/backup-verify'
 import { Route as ApiPublicAutomationProcessQueueRouteImport } from './routes/api/public/automation/process-queue'
 import { Route as ApiPublicAutomationEmitTestRouteImport } from './routes/api/public/automation/emit-test'
 
@@ -450,6 +451,12 @@ const ApiPublicHooksPaymentDunningRoute =
     path: '/api/public/hooks/payment-dunning',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksBackupVerifyRoute =
+  ApiPublicHooksBackupVerifyRouteImport.update({
+    id: '/api/public/hooks/backup-verify',
+    path: '/api/public/hooks/backup-verify',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicAutomationProcessQueueRoute =
   ApiPublicAutomationProcessQueueRouteImport.update({
     id: '/api/public/automation/process-queue',
@@ -529,6 +536,7 @@ export interface FileRoutesByFullPath {
   '/ncc/settings/': typeof NccSettingsIndexRoute
   '/api/public/automation/emit-test': typeof ApiPublicAutomationEmitTestRoute
   '/api/public/automation/process-queue': typeof ApiPublicAutomationProcessQueueRoute
+  '/api/public/hooks/backup-verify': typeof ApiPublicHooksBackupVerifyRoute
   '/api/public/hooks/payment-dunning': typeof ApiPublicHooksPaymentDunningRoute
   '/api/public/hooks/renewal-reminders': typeof ApiPublicHooksRenewalRemindersRoute
   '/api/public/sebpay/webhook': typeof ApiPublicSebpayWebhookRoute
@@ -599,6 +607,7 @@ export interface FileRoutesByTo {
   '/ncc/settings': typeof NccSettingsIndexRoute
   '/api/public/automation/emit-test': typeof ApiPublicAutomationEmitTestRoute
   '/api/public/automation/process-queue': typeof ApiPublicAutomationProcessQueueRoute
+  '/api/public/hooks/backup-verify': typeof ApiPublicHooksBackupVerifyRoute
   '/api/public/hooks/payment-dunning': typeof ApiPublicHooksPaymentDunningRoute
   '/api/public/hooks/renewal-reminders': typeof ApiPublicHooksRenewalRemindersRoute
   '/api/public/sebpay/webhook': typeof ApiPublicSebpayWebhookRoute
@@ -676,6 +685,7 @@ export interface FileRoutesById {
   '/ncc/settings/': typeof NccSettingsIndexRoute
   '/api/public/automation/emit-test': typeof ApiPublicAutomationEmitTestRoute
   '/api/public/automation/process-queue': typeof ApiPublicAutomationProcessQueueRoute
+  '/api/public/hooks/backup-verify': typeof ApiPublicHooksBackupVerifyRoute
   '/api/public/hooks/payment-dunning': typeof ApiPublicHooksPaymentDunningRoute
   '/api/public/hooks/renewal-reminders': typeof ApiPublicHooksRenewalRemindersRoute
   '/api/public/sebpay/webhook': typeof ApiPublicSebpayWebhookRoute
@@ -754,6 +764,7 @@ export interface FileRouteTypes {
     | '/ncc/settings/'
     | '/api/public/automation/emit-test'
     | '/api/public/automation/process-queue'
+    | '/api/public/hooks/backup-verify'
     | '/api/public/hooks/payment-dunning'
     | '/api/public/hooks/renewal-reminders'
     | '/api/public/sebpay/webhook'
@@ -824,6 +835,7 @@ export interface FileRouteTypes {
     | '/ncc/settings'
     | '/api/public/automation/emit-test'
     | '/api/public/automation/process-queue'
+    | '/api/public/hooks/backup-verify'
     | '/api/public/hooks/payment-dunning'
     | '/api/public/hooks/renewal-reminders'
     | '/api/public/sebpay/webhook'
@@ -900,6 +912,7 @@ export interface FileRouteTypes {
     | '/ncc/settings/'
     | '/api/public/automation/emit-test'
     | '/api/public/automation/process-queue'
+    | '/api/public/hooks/backup-verify'
     | '/api/public/hooks/payment-dunning'
     | '/api/public/hooks/renewal-reminders'
     | '/api/public/sebpay/webhook'
@@ -932,6 +945,7 @@ export interface RootRouteChildren {
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ApiPublicAutomationEmitTestRoute: typeof ApiPublicAutomationEmitTestRoute
   ApiPublicAutomationProcessQueueRoute: typeof ApiPublicAutomationProcessQueueRoute
+  ApiPublicHooksBackupVerifyRoute: typeof ApiPublicHooksBackupVerifyRoute
   ApiPublicHooksPaymentDunningRoute: typeof ApiPublicHooksPaymentDunningRoute
   ApiPublicHooksRenewalRemindersRoute: typeof ApiPublicHooksRenewalRemindersRoute
   ApiPublicSebpayWebhookRoute: typeof ApiPublicSebpayWebhookRoute
@@ -1449,6 +1463,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksPaymentDunningRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/backup-verify': {
+      id: '/api/public/hooks/backup-verify'
+      path: '/api/public/hooks/backup-verify'
+      fullPath: '/api/public/hooks/backup-verify'
+      preLoaderRoute: typeof ApiPublicHooksBackupVerifyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/automation/process-queue': {
       id: '/api/public/automation/process-queue'
       path: '/api/public/automation/process-queue'
@@ -1648,6 +1669,7 @@ const rootRouteChildren: RootRouteChildren = {
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ApiPublicAutomationEmitTestRoute: ApiPublicAutomationEmitTestRoute,
   ApiPublicAutomationProcessQueueRoute: ApiPublicAutomationProcessQueueRoute,
+  ApiPublicHooksBackupVerifyRoute: ApiPublicHooksBackupVerifyRoute,
   ApiPublicHooksPaymentDunningRoute: ApiPublicHooksPaymentDunningRoute,
   ApiPublicHooksRenewalRemindersRoute: ApiPublicHooksRenewalRemindersRoute,
   ApiPublicSebpayWebhookRoute: ApiPublicSebpayWebhookRoute,
