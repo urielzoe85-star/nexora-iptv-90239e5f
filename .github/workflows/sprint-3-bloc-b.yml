@@ -1,0 +1,65 @@
+name: Sprint 3 · Bloc B — Backups & Restore E2E
+
+# Certifie que la stratégie de sauvegarde reste opérationnelle sur toute
+# évolution touchant l'endpoint backup-verify, les fonctions SQL
+# d'intégrité/drill, ou la suite E2E dédiée.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/routes/api/public/hooks/backup-verify.ts"
+      - "supabase/migrations/**"
+      - "docs/backups/**"
+      - "tests/e2e/sprint-3/backup_lifecycle_test.py"
+      - ".github/workflows/sprint-3-bloc-b.yml"
+  pull_request:
+    paths:
+      - "src/routes/api/public/hooks/backup-verify.ts"
+      - "supabase/migrations/**"
+      - "docs/backups/**"
+      - "tests/e2e/sprint-3/backup_lifecycle_test.py"
+  workflow_dispatch:
+
+jobs:
+  bloc-b-backups-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Typecheck
+        run: bunx tsgo --noEmit
+
+      - name: Build
+        run: bun run build
+
+      - name: Start preview server
+        run: |
+          bun run start &
+          echo $! > .server.pid
+          for i in {1..40}; do
+            curl -sf http://localhost:8080/ >/dev/null && break
+            sleep 2
+          done
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Run Bloc B E2E — backup lifecycle
+        env:
+          BASE_URL: http://localhost:8080
+        run: python tests/e2e/sprint-3/backup_lifecycle_test.py
+
+      - name: Stop preview server
+        if: always()
+        run: kill "$(cat .server.pid)" || true
