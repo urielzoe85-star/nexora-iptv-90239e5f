@@ -18,26 +18,26 @@ pre{white-space:pre-wrap;word-break:break-word;margin:0}
 <h1>RC1 Certification Report</h1>
 <p class="meta">Base URL: <code>http://localhost:8080</code>
  · Budget perf t_total: 30000 ms
- · Généré: 2026-07-02T12:05:16.326461+00:00</p>
-<div class="verdict ko">❌ RC1 NOT CERTIFIED</div><ul><li>2 scenario(s) failed: RC1-01, RC1-03</li><li>Workflow chain broken for: NXR-E2E-RC1-1782993891-wh</li></ul>
+ · Généré: 2026-07-02T12:27:28.633930+00:00</p>
+<div class="verdict ko">❌ RC1 NOT CERTIFIED</div><ul><li>2 scenario(s) failed: RC1-01, RC1-03</li><li>Workflow chain broken for: NXR-E2E-RC1-1782995223-wh</li></ul>
 
 <h2>Scénarios</h2>
 <table><thead><tr><th>ID</th><th>Nom</th><th>Résultat</th><th>Ref</th><th>Erreur</th></tr></thead>
-<tbody><tr><td>RC1-01</td><td>Full journey — Checkout → Payment → Workflow → IPTV → Delivery → Track</td><td>❌ FAIL</td><td><code>NXR-E2E-RC1-1782993873</code></td><td>AssertionError: expected 1 iptv_account, got 0</td></tr><tr><td>RC1-02</td><td>Webhook replay + invalid signature</td><td>✅ PASS</td><td><code>NXR-E2E-RC1-1782993891-wh</code></td><td></td></tr><tr><td>RC1-03</td><td>Provider fallback (MEGAOTT off)</td><td>❌ FAIL</td><td><code>NXR-E2E-RC1-1782993893-fb</code></td><td>AssertionError: expected 1 iptv_account under fallback, got 0</td></tr></tbody></table>
+<tbody><tr><td>RC1-01</td><td>Full journey — Checkout → Payment → Workflow → IPTV → Delivery → Track</td><td>❌ FAIL</td><td><code>NXR-E2E-RC1-1782995205</code></td><td>AssertionError: expected 1 iptv_account, got 0</td></tr><tr><td>RC1-02</td><td>Webhook replay + invalid signature</td><td>✅ PASS</td><td><code>NXR-E2E-RC1-1782995223-wh</code></td><td></td></tr><tr><td>RC1-03</td><td>Provider fallback (MEGAOTT off)</td><td>❌ FAIL</td><td><code>NXR-E2E-RC1-1782995225-fb</code></td><td>AssertionError: expected 1 iptv_account under fallback, got 0</td></tr></tbody></table>
 
 <h2>Détails par scénario</h2>
 
           <section class="scenario">
             <h3>RC1-01 — Full journey — Checkout → Payment → Workflow → IPTV → Delivery → Track — ❌ FAIL</h3>
-            <p>Ref: <code>NXR-E2E-RC1-1782993873</code> · Total: 17483 ms</p>
+            <p>Ref: <code>NXR-E2E-RC1-1782995205</code> · Total: 17257 ms</p>
             <table><thead><tr><th>Étape</th><th>OK</th><th>Durée (ms)</th><th>Détails</th></tr></thead>
-              <tbody><tr><td>disable_megaott</td><td>✅</td><td></td><td><pre>{&#x27;count&#x27;: 0}</pre></td></tr><tr><td>checkout_seed</td><td>✅</td><td>157</td><td><pre>{&#x27;order_ref&#x27;: &#x27;NXR-E2E-RC1-1782993873&#x27;}</pre></td></tr><tr><td>payment_emit</td><td>✅</td><td>103</td><td><pre>{&#x27;http&#x27;: 200}</pre></td></tr><tr><td>workflow_drain</td><td>✅</td><td>1386</td><td><pre>{&#x27;iterations&#x27;: 2}</pre></td></tr></tbody></table>
+              <tbody><tr><td>disable_megaott</td><td>✅</td><td></td><td><pre>{&#x27;count&#x27;: 0}</pre></td></tr><tr><td>checkout_seed</td><td>✅</td><td>245</td><td><pre>{&#x27;order_ref&#x27;: &#x27;NXR-E2E-RC1-1782995205&#x27;}</pre></td></tr><tr><td>payment_emit</td><td>✅</td><td>285</td><td><pre>{&#x27;http&#x27;: 200}</pre></td></tr><tr><td>workflow_drain</td><td>✅</td><td>1257</td><td><pre>{&#x27;iterations&#x27;: 2}</pre></td></tr></tbody></table>
             
           </section>
         
           <section class="scenario">
             <h3>RC1-02 — Webhook replay + invalid signature — ✅ PASS</h3>
-            <p>Ref: <code>NXR-E2E-RC1-1782993891-wh</code> · Total: 652 ms</p>
+            <p>Ref: <code>NXR-E2E-RC1-1782995223-wh</code> · Total: 1068 ms</p>
             <table><thead><tr><th>Étape</th><th>OK</th><th>Durée (ms)</th><th>Détails</th></tr></thead>
               <tbody><tr><td>webhook_valid_1</td><td>✅</td><td></td><td><pre>{&#x27;http&#x27;: 200}</pre></td></tr><tr><td>webhook_valid_2_replay</td><td>✅</td><td></td><td><pre>{&#x27;http&#x27;: 200}</pre></td></tr><tr><td>webhook_invalid_sig</td><td>✅</td><td></td><td><pre>{&#x27;http&#x27;: 401}</pre></td></tr><tr><td>receipts_recorded</td><td>✅</td><td></td><td><pre>{&#x27;valid_count&#x27;: 2}</pre></td></tr></tbody></table>
             
@@ -45,7 +45,7 @@ pre{white-space:pre-wrap;word-break:break-word;margin:0}
         
           <section class="scenario">
             <h3>RC1-03 — Provider fallback (MEGAOTT off) — ❌ FAIL</h3>
-            <p>Ref: <code>NXR-E2E-RC1-1782993893-fb</code> · Total: ? ms</p>
+            <p>Ref: <code>NXR-E2E-RC1-1782995225-fb</code> · Total: ? ms</p>
             <table><thead><tr><th>Étape</th><th>OK</th><th>Durée (ms)</th><th>Détails</th></tr></thead>
               <tbody><tr><td>disable_megaott</td><td>✅</td><td></td><td><pre>{&#x27;count&#x27;: 0}</pre></td></tr></tbody></table>
             
@@ -54,7 +54,7 @@ pre{white-space:pre-wrap;word-break:break-word;margin:0}
 
 <h2>Performances</h2>
 <table><thead><tr><th>Étape</th><th>Médiane (ms)</th><th>p95 (ms)</th><th>Max (ms)</th><th>Échantillons</th></tr></thead>
-<tbody><tr><td>t_checkout</td><td>157</td><td>157</td><td>157</td><td>1</td></tr><tr><td>t_payment</td><td>103</td><td>103</td><td>103</td><td>1</td></tr><tr><td>t_workflow</td><td>1386</td><td>1386</td><td>1386</td><td>1</td></tr><tr><td>t_delivery</td><td>—</td><td>—</td><td>—</td><td>0</td></tr><tr><td>t_tracking</td><td>—</td><td>—</td><td>—</td><td>0</td></tr><tr><td>t_total</td><td>9067</td><td>652</td><td>17483</td><td>2</td></tr></tbody></table>
+<tbody><tr><td>t_checkout</td><td>245</td><td>245</td><td>245</td><td>1</td></tr><tr><td>t_payment</td><td>285</td><td>285</td><td>285</td><td>1</td></tr><tr><td>t_workflow</td><td>1257</td><td>1257</td><td>1257</td><td>1</td></tr><tr><td>t_delivery</td><td>—</td><td>—</td><td>—</td><td>0</td></tr><tr><td>t_tracking</td><td>—</td><td>—</td><td>—</td><td>0</td></tr><tr><td>t_total</td><td>9162</td><td>1068</td><td>17257</td><td>2</td></tr></tbody></table>
 
 <h2>Intégrité DB</h2>
 <p>Critical: <b>0</b> · Warnings: <b>0</b> ·
@@ -67,12 +67,12 @@ Mapping: <code>payments→orders</code>, <code>audit_logs→iptv_logs+automation
 
 <h2>Chaîne de workflow</h2>
 <table><thead><tr><th>OK</th><th>Ref</th><th>Chain</th><th>Track</th><th>Missing</th></tr></thead>
-<tbody><tr><td>❌</td><td><code>NXR-E2E-RC1-1782993891-wh</code></td><td>True</td><td>True (HTTP 200)</td><td>[&#x27;order_created_at&#x27;, &#x27;run_completed_at&#x27;, &#x27;account_created_at&#x27;, &#x27;delivery_sent_at&#x27;]</td></tr></tbody></table>
+<tbody><tr><td>❌</td><td><code>NXR-E2E-RC1-1782995223-wh</code></td><td>True</td><td>True (HTTP 200)</td><td>[&#x27;order_created_at&#x27;, &#x27;run_completed_at&#x27;, &#x27;account_created_at&#x27;, &#x27;delivery_sent_at&#x27;]</td></tr></tbody></table>
 
 <h2>Rapport markdown</h2>
 <pre># RC1 Certification Report
 
-- **Date**: 2026-07-02T12:05:16.326192+00:00
+- **Date**: 2026-07-02T12:27:28.633680+00:00
 - **Base URL**: http://localhost:8080
 - **Perf budget (t_total, median)**: 30000 ms
 
@@ -81,7 +81,7 @@ Mapping: <code>payments→orders</code>, <code>audit_logs→iptv_logs+automation
 ## ❌ RC1 NOT CERTIFIED
 
 - 2 scenario(s) failed: RC1-01, RC1-03
-- Workflow chain broken for: NXR-E2E-RC1-1782993891-wh
+- Workflow chain broken for: NXR-E2E-RC1-1782995223-wh
 
 ## Tests
 
@@ -89,9 +89,9 @@ Mapping: <code>payments→orders</code>, <code>audit_logs→iptv_logs+automation
 
 | ID | Nom | Résultat | Ref | Erreur |
 |----|-----|----------|-----|--------|
-| RC1-01 | Full journey — Checkout → Payment → Workflow → IPTV → Delivery → Track | ❌ FAIL | `NXR-E2E-RC1-1782993873` | AssertionError: expected 1 iptv_account, got 0 |
-| RC1-02 | Webhook replay + invalid signature | ✅ PASS | `NXR-E2E-RC1-1782993891-wh` |  |
-| RC1-03 | Provider fallback (MEGAOTT off) | ❌ FAIL | `NXR-E2E-RC1-1782993893-fb` | AssertionError: expected 1 iptv_account under fallback, got 0 |
+| RC1-01 | Full journey — Checkout → Payment → Workflow → IPTV → Delivery → Track | ❌ FAIL | `NXR-E2E-RC1-1782995205` | AssertionError: expected 1 iptv_account, got 0 |
+| RC1-02 | Webhook replay + invalid signature | ✅ PASS | `NXR-E2E-RC1-1782995223-wh` |  |
+| RC1-03 | Provider fallback (MEGAOTT off) | ❌ FAIL | `NXR-E2E-RC1-1782995225-fb` | AssertionError: expected 1 iptv_account under fallback, got 0 |
 
 ## Modules couverts
 
@@ -111,12 +111,12 @@ Mapping: <code>payments→orders</code>, <code>audit_logs→iptv_logs+automation
 
 | Étape | Médiane (ms) | p95 (ms) | Max (ms) | Échantillons |
 |-------|--------------|----------|----------|--------------|
-| t_checkout | 157 | 157 | 157 | 1 |
-| t_payment | 103 | 103 | 103 | 1 |
-| t_workflow | 1386 | 1386 | 1386 | 1 |
+| t_checkout | 245 | 245 | 245 | 1 |
+| t_payment | 285 | 285 | 285 | 1 |
+| t_workflow | 1257 | 1257 | 1257 | 1 |
 | t_delivery | — | — | — | 0 |
 | t_tracking | — | — | — | 0 |
-| t_total | 9067 | 652 | 17483 | 2 |
+| t_total | 9162 | 1068 | 17257 | 2 |
 
 ## Intégrité DB
 
@@ -131,7 +131,7 @@ Mapping: <code>payments→orders</code>, <code>audit_logs→iptv_logs+automation
 ## Chaîne de workflow
 
 - Refs vérifiés: **1**  ·  OK: **0**
-- ❌ `NXR-E2E-RC1-1782993891-wh` — chain_ok=True track_ok=True(HTTP 200) missing=[&#x27;order_created_at&#x27;, &#x27;run_completed_at&#x27;, &#x27;account_created_at&#x27;, &#x27;delivery_sent_at&#x27;]
+- ❌ `NXR-E2E-RC1-1782995223-wh` — chain_ok=True track_ok=True(HTTP 200) missing=[&#x27;order_created_at&#x27;, &#x27;run_completed_at&#x27;, &#x27;account_created_at&#x27;, &#x27;delivery_sent_at&#x27;]
 
 ## Prochaine étape
 
