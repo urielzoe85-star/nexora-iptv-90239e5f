@@ -57,13 +57,7 @@ VERDICT=$?
 
 echo ""
 echo "▶ Cleanup final (rows NXR-E2E-*)"
-python3 - <<'PY'
-import sys, pathlib
-sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent / "e2e" / "sprint-1.5"))
-from helpers.db import SupaAdmin
-SupaAdmin().cleanup_e2e_refs()
-print("[cleanup-final] done")
-PY
+PYTHONPATH="$HERE/../e2e/sprint-1.5" python3 -c "from helpers.db import SupaAdmin; SupaAdmin().cleanup_e2e_refs(); print('[cleanup-final] done')"
 
 echo ""
 echo "→ Markdown : $HERE/out/RC1-REPORT.md"
