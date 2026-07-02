@@ -1005,6 +1005,48 @@ export type Database = {
         }
         Relationships: []
       }
+      security_events: {
+        Row: {
+          actor_email: string | null
+          actor_user_id: string | null
+          created_at: string
+          event_type: string
+          id: string
+          ip: string | null
+          message: string
+          payload: Json
+          route: string | null
+          severity: string
+          user_agent: string | null
+        }
+        Insert: {
+          actor_email?: string | null
+          actor_user_id?: string | null
+          created_at?: string
+          event_type: string
+          id?: string
+          ip?: string | null
+          message: string
+          payload?: Json
+          route?: string | null
+          severity?: string
+          user_agent?: string | null
+        }
+        Update: {
+          actor_email?: string | null
+          actor_user_id?: string | null
+          created_at?: string
+          event_type?: string
+          id?: string
+          ip?: string | null
+          message?: string
+          payload?: Json
+          route?: string | null
+          severity?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       site_settings: {
         Row: {
           key: string

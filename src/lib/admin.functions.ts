@@ -97,6 +97,14 @@ export const adminSignIn = createServerFn({ method: "POST" })
     });
     if (error || !signIn.session || !signIn.user) {
       // Generic message to avoid leaking which factor failed.
+      const { recordSecurityEvent } = await import("@/lib/security-events.server");
+      await recordSecurityEvent({
+        event_type: "auth.admin.signin_failed",
+        severity: "warn",
+        actor_email: data.email,
+        route: "adminSignIn",
+        message: "Admin sign-in rejected: invalid credentials",
+      });
       throw new Error("Identifiants invalides ou accès refusé.");
     }
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -108,7 +116,28 @@ export const adminSignIn = createServerFn({ method: "POST" })
       // Revoke any refresh token tied to this attempt so the credential check
       // does not leave a usable session anywhere.
       try { await ephemeral.auth.signOut(); } catch { /* noop */ }
+      const { recordSecurityEvent } = await import("@/lib/security-events.server");
+      await recordSecurityEvent({
+        event_type: "auth.admin.signin_not_admin",
+        severity: "critical",
+        actor_user_id: signIn.user.id,
+        actor_email: data.email,
+        route: "adminSignIn",
+        message: "Valid credentials but user is not admin — session revoked",
+      });
       throw new Error("Identifiants invalides ou accès refusé.");
+    }
+    // Succès : trace info (utile pour corréler avec les webhooks).
+    {
+      const { recordSecurityEvent } = await import("@/lib/security-events.server");
+      await recordSecurityEvent({
+        event_type: "auth.admin.signin_success",
+        severity: "info",
+        actor_user_id: signIn.user.id,
+        actor_email: data.email,
+        route: "adminSignIn",
+        message: "Admin sign-in success",
+      });
     }
     return {
       access_token: signIn.session.access_token,
