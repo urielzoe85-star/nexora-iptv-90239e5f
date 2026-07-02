@@ -1,0 +1,1 @@
+"""Sprint 3 · Bloc A — Billing lifecycle E2E suite."""
