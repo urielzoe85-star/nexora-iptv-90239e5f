@@ -48,7 +48,7 @@ def main() -> int:
     for row in q("""SELECT order_ref, status, coalesce(email,''), amount
                     FROM orders WHERE order_ref LIKE 'NXR-E2E-RC1-%'"""):
         ref, status, email, amount = row
-        if status not in ("pending", "processing", "paid", "delivered",
+        if status not in ("pending", "processing", "paid", "delivered", "completed",
                           "failed", "cancelled", "refunded", "expired", "awaiting_payment"):
             add("critical", "orders", f"invalid status {status!r}", ref=ref)
         if not email:
