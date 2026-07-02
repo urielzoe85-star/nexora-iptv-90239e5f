@@ -76,6 +76,7 @@ export const Route = createFileRoute("/api/public/sebpay/webhook")({
             route: "/api/public/sebpay/webhook",
             ip: meta.ip,
             user_agent: meta.user_agent,
+            request_id: meta.request_id,
             message: "SebPay webhook rejected: missing X-SebPay-Signature header",
           });
           return new Response("Missing signature", { status: 401 });
@@ -97,6 +98,7 @@ export const Route = createFileRoute("/api/public/sebpay/webhook")({
             route: "/api/public/sebpay/webhook",
             ip: meta.ip,
             user_agent: meta.user_agent,
+            request_id: meta.request_id,
             message: "SebPay webhook rejected: HMAC signature mismatch",
             payload: { provided_length: signatureHeader.trim().length },
           });
