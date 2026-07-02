@@ -1,0 +1,19 @@
+{
+  "ok": true,
+  "critical_count": 0,
+  "warning_count": 0,
+  "stats": {
+    "orders_rc1": 3,
+    "iptv_accounts_total": 22,
+    "automation_runs_rc1": 2,
+    "automation_steps_rc1": 14,
+    "delivery_logs_total": 2,
+    "notifications_total": 10,
+    "customer_events_total": 3
+  },
+  "anomalies": [],
+  "table_mapping": {
+    "payments": "orders (sebpay_reference, method, amount, currency, status)",
+    "audit_logs": "iptv_logs + automation_steps + integration_debug_logs"
+  }
+}
