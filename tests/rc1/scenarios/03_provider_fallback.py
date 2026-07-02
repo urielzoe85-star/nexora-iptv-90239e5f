@@ -47,8 +47,12 @@ def main() -> int:
         report["steps"].append({"name": "fallback_account_created", "ok": True,
                                 "provider": provider})
 
-        steps_rows = sb.select("automation_steps", {"payload->>orderRef": f"eq.{ref}"})
-        failed = [s for s in steps_rows if s.get("status") == "failed"]
+        # automation_steps has no payload column — filter by the parent runs.
+        runs = sb.select("automation_runs", {"payload->>orderRef": f"eq.{ref}"})
+        failed = []
+        for r in runs:
+            failed.extend([s for s in sb.select("automation_steps", {"run_id": f"eq.{r['id']}"})
+                           if s.get("status") == "failed"])
         assert not failed, f"unexpected failed steps: {failed}"
 
         report["ok"] = True
