@@ -19,6 +19,12 @@ export const Route = createFileRoute("/api/public/automation/emit-test")({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        // Hard production kill-switch: this endpoint is only usable when
+        // explicitly enabled via env (CI / preview). In production the
+        // flag is unset, so the endpoint returns 404 as if it didn't exist.
+        const enabled = process.env.ALLOW_E2E_ENDPOINTS === "1";
+        if (!enabled) return new Response("Not found", { status: 404 });
+
         const expected = process.env.AUTOMATION_CRON_SECRET ?? "";
         if (!expected) return new Response("Server misconfigured", { status: 500 });
         const auth = request.headers.get("authorization") ?? "";
