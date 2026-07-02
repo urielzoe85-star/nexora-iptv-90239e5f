@@ -24,9 +24,9 @@ if not DB_URL:
     sys.exit(0)
 
 
-def psql(sql: str, *, role: str = "service_role") -> tuple[int, str, str]:
-    """Exécute `sql` avec le rôle demandé, retourne (code, stdout, stderr)."""
-    wrapped = f"SET ROLE {role}; {sql}"
+def psql(sql: str, *, role: str | None = None) -> tuple[int, str, str]:
+    """Exécute `sql`, en tentant `SET ROLE` si demandé (best-effort)."""
+    wrapped = f"SET ROLE {role}; {sql}" if role else sql
     p = subprocess.run(
         ["psql", DB_URL, "-Atqc", wrapped],
         capture_output=True, text=True, timeout=30,
@@ -97,14 +97,26 @@ def run() -> int:
               err[:120])
 
         # 5. Rôles non autorisés ne peuvent pas exécuter la fonction.
+        # `SET ROLE` requiert d'être MEMBER du rôle cible ; sur les
+        # environnements où ce n'est pas possible, on retombe sur la
+        # métadonnée pg_catalog (has_function_privilege) pour valider les
+        # révocations EXECUTE émises par la migration Bloc E.
         for role in ("anon", "authenticated"):
             c, out, err = psql(
                 f"SELECT public.admin_change_role('{actor}','{target}','grant_admin');",
                 role=role,
             )
-            check(f"exécution refusée pour {role}",
-                  c != 0 and "permission denied" in err.lower(),
-                  err[:120])
+            if c != 0 and "permission denied to set role" in err.lower():
+                c2, out2, err2 = psql(
+                    "SELECT has_function_privilege("
+                    f"'{role}','public.admin_change_role(uuid,uuid,text)','EXECUTE');"
+                )
+                check(f"EXECUTE révoqué pour {role} (metadata)",
+                      c2 == 0 and out2 == "f", err2 or out2)
+            else:
+                check(f"exécution refusée pour {role}",
+                      c != 0 and "permission denied" in err.lower(),
+                      err[:120])
 
     finally:
         psql(
