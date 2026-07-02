@@ -712,6 +712,39 @@ export type Database = {
         }
         Relationships: []
       }
+      iptv_lifecycle_events: {
+        Row: {
+          account_id: string
+          actor: string
+          created_at: string
+          from_state: string | null
+          id: string
+          metadata: Json
+          reason: string
+          to_state: string
+        }
+        Insert: {
+          account_id: string
+          actor?: string
+          created_at?: string
+          from_state?: string | null
+          id?: string
+          metadata?: Json
+          reason: string
+          to_state: string
+        }
+        Update: {
+          account_id?: string
+          actor?: string
+          created_at?: string
+          from_state?: string | null
+          id?: string
+          metadata?: Json
+          reason?: string
+          to_state?: string
+        }
+        Relationships: []
+      }
       iptv_logs: {
         Row: {
           account_id: string | null
@@ -911,6 +944,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      payment_dunning_sent: {
+        Row: {
+          customer_id: string | null
+          failed_at: string
+          id: string
+          milestone_days: number
+          order_id: string
+          sent_at: string
+        }
+        Insert: {
+          customer_id?: string | null
+          failed_at: string
+          id?: string
+          milestone_days: number
+          order_id: string
+          sent_at?: string
+        }
+        Update: {
+          customer_id?: string | null
+          failed_at?: string
+          id?: string
+          milestone_days?: number
+          order_id?: string
+          sent_at?: string
+        }
+        Relationships: []
       }
       plans: {
         Row: {
@@ -1295,7 +1355,16 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      billing_metrics_daily: {
+        Row: {
+          day: string | null
+          dunning_sent: number | null
+          reactivations: number | null
+          reminders_sent: number | null
+          suspensions: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       admin_change_role: {
