@@ -52,10 +52,12 @@ def test_verify_captures_snapshot(sb: SupaAdmin) -> None:
     code, body = _post({"mode": "verify"})
     assert code == 200 and body.get("ok"), body
     run_id = body["run_id"]
-    run = sb.select_one("backup_runs", {"id": run_id})
+    runs = sb.select("backup_runs", {"id": f"eq.{run_id}"})
+    assert runs, "run row not persisted"
+    run = runs[0]
     assert run["kind"] == "integrity"
     assert run["status"] in ("ok", "warn")
-    snaps = sb.select("backup_integrity_snapshots", {"run_id": run_id})
+    snaps = sb.select("backup_integrity_snapshots", {"run_id": f"eq.{run_id}"})
     tables = {s["table_name"] for s in snaps}
     assert {"customers", "orders", "iptv_accounts"}.issubset(tables), tables
 
