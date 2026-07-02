@@ -99,6 +99,13 @@ class SupaAdmin:
             })
 
     def cleanup_ref(self, ref: str) -> None:
+        # RC1_KEEP_DATA=1 keeps every seeded row so the certification
+        # harness can run cross-scenario checks (workflow_chain, DB
+        # integrity) against real evidence. `run-certification.sh` then
+        # calls `cleanup_e2e_refs()` once, at the very end, to drop
+        # everything prefixed by `NXR-E2E-`.
+        if os.environ.get("RC1_KEEP_DATA") == "1":
+            return
         # Schema-aligned cleanup. Relies on ON DELETE CASCADE for:
         #   * delivery_logs.order_id     -> orders.id
         #   * automation_steps.run_id    -> automation_runs.id
@@ -117,6 +124,20 @@ class SupaAdmin:
                 self.delete(table, where)
             except Exception as e:
                 print(f"[cleanup] skip {table}: {e}")
+
+    def cleanup_e2e_refs(self, prefix: str = "NXR-E2E-") -> None:
+        """Nuke every seeded row that matches `NXR-E2E-*`. Idempotent."""
+        for table, where in [
+            ("iptv_accounts",    {"metadata->>order_ref": f"like.{prefix}*"}),
+            ("automation_queue", {"payload->>orderRef":   f"like.{prefix}*"}),
+            ("automation_runs",  {"payload->>orderRef":   f"like.{prefix}*"}),
+            ("orders",           {"order_ref":            f"like.{prefix}*"}),
+            ("customers",        {"metadata->>ref":       f"like.{prefix}*"}),
+        ]:
+            try:
+                self.delete(table, where)
+            except Exception as e:
+                print(f"[cleanup-final] skip {table}: {e}")
 
     def poll(self, fn, *, timeout: float = 20.0, interval: float = 0.5):
         """Retry fn() until truthy or timeout."""
