@@ -81,7 +81,23 @@ référencé dans le CHANGELOG.
 - **CI** : `.github/workflows/sprint-3-bloc-b.yml` exécutée sur toute
   modification d'endpoint, migration, doc backup ou suite E2E.
 
+### Certification (2026-07-02)
+
+- ✅ `backup_capture_integrity` : 8 / 8 tables critiques snapshotées.
+- ✅ `backup_restore_drill` sur `plans` : `match=true`
+  (checksum `1b5525f5…3f15` identique source / clone).
+- ✅ Garde allow-list : les tables hors périmètre sont rejetées
+  (SQLSTATE `22023`).
+- ✅ Rétention 365 j : purge idempotente, 0 erreur.
+- ✅ Auth gate endpoint : 401 sur 4 variantes (sans / avec token invalide,
+  3 modes).
+- ✅ `SECURITY DEFINER` + EXECUTE réservé `service_role` — aucune fuite
+  anon/authenticated.
+- ⚠️ Action post-cert : mirrorer `AUTOMATION_CRON_SECRET` dans
+  `vault.decrypted_secrets` avant d'activer `cron.schedule`.
+
+Rapport complet : `docs/releases/sprint-3/bloc-b/CERTIFICATION.md`.
+
 ### Statut
 
-**DEV COMPLETE — en attente de la phase de certification.**
-Aucun Bloc C ne sera ouvert tant que le Bloc B n'est pas CERTIFIED.
+**CERTIFIED ✅** — Bloc B figé, prêt pour clôture.
