@@ -18,9 +18,23 @@ export const requireAdmin = createMiddleware({ type: "function" })
     });
     if (error) {
       console.error("[requireAdmin] has_role error:", error.message);
+      const { recordSecurityEvent } = await import("@/lib/security-events.server");
+      await recordSecurityEvent({
+        event_type: "auth.admin.check_error",
+        severity: "warn",
+        actor_user_id: context.userId,
+        message: `has_role RPC failed: ${error.message}`,
+      });
       throw new Error("Forbidden");
     }
     if (!data) {
+      const { recordSecurityEvent } = await import("@/lib/security-events.server");
+      await recordSecurityEvent({
+        event_type: "auth.admin.forbidden",
+        severity: "warn",
+        actor_user_id: context.userId,
+        message: "Non-admin user attempted to call an admin-only server function",
+      });
       throw new Error("Forbidden");
     }
     return next();
