@@ -1015,8 +1015,10 @@ export type Database = {
           ip: string | null
           message: string
           payload: Json
+          request_id: string | null
           route: string | null
           severity: string
+          target_user_id: string | null
           user_agent: string | null
         }
         Insert: {
@@ -1028,8 +1030,10 @@ export type Database = {
           ip?: string | null
           message: string
           payload?: Json
+          request_id?: string | null
           route?: string | null
           severity?: string
+          target_user_id?: string | null
           user_agent?: string | null
         }
         Update: {
@@ -1041,8 +1045,10 @@ export type Database = {
           ip?: string | null
           message?: string
           payload?: Json
+          request_id?: string | null
           route?: string | null
           severity?: string
+          target_user_id?: string | null
           user_agent?: string | null
         }
         Relationships: []
@@ -1220,6 +1226,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_change_role: {
+        Args: {
+          _action: string
+          _actor_user_id: string
+          _target_user_id: string
+        }
+        Returns: Json
+      }
       automation_claim_jobs: {
         Args: { _batch_size?: number }
         Returns: {
