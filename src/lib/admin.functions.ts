@@ -425,6 +425,8 @@ export const adminAddAdmin = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { recordSecurityEvent } = await import("@/lib/security-events.server");
+    const requestId = (context as any).requestId ?? null;
 
     // Find existing user by email; if none, create one.
     let userId: string | null = null;
@@ -442,9 +444,40 @@ export const adminAddAdmin = createServerFn({ method: "POST" })
       userId = created.user.id;
     }
 
-    const { error } = await supabaseAdmin
-      .from("user_roles").insert({ user_id: userId, role: "admin" });
-    if (error && !error.message.includes("duplicate")) throw new Error(error.message);
+    const { data: result, error } = await supabaseAdmin.rpc("admin_change_role", {
+      _actor_user_id: context.userId,
+      _target_user_id: userId,
+      _action: "grant_admin",
+    });
+    if (error) {
+      await recordSecurityEvent({
+        event_type: "admin.role.grant_failed",
+        severity: "warn",
+        actor_user_id: context.userId,
+        target_user_id: userId,
+        request_id: requestId,
+        route: "adminAddAdmin",
+        message: `Failed to grant admin: ${error.message}`,
+        payload: { target_email: data.email },
+      });
+      throw new Error(error.message);
+    }
+    const r = (result ?? {}) as { old_role?: string; new_role?: string; admin_count?: number };
+    await recordSecurityEvent({
+      event_type: "admin.role.granted",
+      severity: r.old_role === "admin" ? "info" : "critical",
+      actor_user_id: context.userId,
+      target_user_id: userId,
+      request_id: requestId,
+      route: "adminAddAdmin",
+      message: `Admin role granted (${r.old_role} → ${r.new_role})`,
+      payload: {
+        target_email: data.email,
+        old_role: r.old_role,
+        new_role: r.new_role,
+        admin_count: r.admin_count,
+      },
+    });
     return { ok: true, user_id: userId };
   });
 
@@ -452,10 +485,43 @@ export const adminRemoveAdmin = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
   .inputValidator((d: unknown) => z.object({ user_id: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }) => {
-    if (data.user_id === context.userId) throw new Error("You cannot remove yourself.");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin
-      .from("user_roles").delete().eq("user_id", data.user_id).eq("role", "admin");
-    if (error) throw new Error(error.message);
+    const { recordSecurityEvent } = await import("@/lib/security-events.server");
+    const requestId = (context as any).requestId ?? null;
+    const { data: result, error } = await supabaseAdmin.rpc("admin_change_role", {
+      _actor_user_id: context.userId,
+      _target_user_id: data.user_id,
+      _action: "revoke_admin",
+    });
+    if (error) {
+      const isGuard =
+        /last active administrator/i.test(error.message) ||
+        /cannot revoke your own/i.test(error.message);
+      await recordSecurityEvent({
+        event_type: isGuard ? "admin.role.revoke_blocked" : "admin.role.revoke_failed",
+        severity: "critical",
+        actor_user_id: context.userId,
+        target_user_id: data.user_id,
+        request_id: requestId,
+        route: "adminRemoveAdmin",
+        message: `Revoke rejected: ${error.message}`,
+      });
+      throw new Error(error.message);
+    }
+    const r = (result ?? {}) as { old_role?: string; new_role?: string; admin_count?: number };
+    await recordSecurityEvent({
+      event_type: "admin.role.revoked",
+      severity: "critical",
+      actor_user_id: context.userId,
+      target_user_id: data.user_id,
+      request_id: requestId,
+      route: "adminRemoveAdmin",
+      message: `Admin role revoked (${r.old_role} → ${r.new_role})`,
+      payload: {
+        old_role: r.old_role,
+        new_role: r.new_role,
+        admin_count: r.admin_count,
+      },
+    });
     return { ok: true };
   });
