@@ -12,7 +12,26 @@ async function megaott() {
   await import("@/integration-hub");
   const { connectorRegistry } = await import("@/integration-hub/core/registry");
   const c = connectorRegistry.get("iptv.megaott") as any;
-  return c?.isReady?.() ? c : null;
+  if (!c?.isReady?.()) return null;
+  // Extra async gate: the connector's isReady() only checks the secret,
+  // but the workflow must be considered "in simulated mode" whenever no
+  // MEGAOTT provider row is active. This lets E2E and CI runs disable
+  // the real upstream deterministically by flipping every megaott provider
+  // row to `status = 'inactive'` — no code path calls the real API in
+  // that state and the workflow falls back to the local stub branch.
+  try {
+    const sb = await admin();
+    const { data } = await sb
+      .from("iptv_providers")
+      .select("id")
+      .or("metadata->>kind.eq.megaott,name.ilike.%megaott%")
+      .eq("status", "active")
+      .limit(1)
+      .maybeSingle();
+    return data?.id ? c : null;
+  } catch {
+    return null;
+  }
 }
 
 export async function createIptvSubscription(input: {
@@ -47,6 +66,7 @@ export async function createIptvSubscription(input: {
   }
 
   const username = input.username ?? `nx_${Date.now().toString(36)}`;
+  const password = input.password ?? `pw_${Math.random().toString(36).slice(2, 10)}`;
   const expiresAt = input.durationMonths
     ? new Date(Date.now() + input.durationMonths * 30 * 86_400_000).toISOString()
     : null;
@@ -54,7 +74,7 @@ export async function createIptvSubscription(input: {
   let remoteMeta: Record<string, unknown> = {};
   const c = await megaott();
   if (c) {
-    const r = await c.createUser({ username, password: input.password, packageId: "", expiresAt });
+    const r = await c.createUser({ username, password, packageId: "", expiresAt });
     if (r.ok) {
       remoteMeta = { provider: "megaott", remote_user_id: r.value.providerUserId, m3u_url: r.value.m3uUrl ?? null };
     } else {
@@ -67,9 +87,23 @@ export async function createIptvSubscription(input: {
     }
   }
 
+  // Resolve the parent order (by order_ref) so we can populate the FKs.
+  // Tolerated to fail — legacy callers may not have an orderId.
+  let orderRow: { id: string; customer_id: string | null } | null = null;
+  if (input.orderId) {
+    const { data } = await sb
+      .from("orders")
+      .select("id, customer_id")
+      .eq("order_ref", input.orderId)
+      .maybeSingle();
+    orderRow = (data as any) ?? null;
+  }
+
   const { data, error } = await sb.from("iptv_accounts").insert({
     username,
-    password: input.password ?? null,
+    password,
+    order_id: orderRow?.id ?? null,
+    customer_id: orderRow?.customer_id ?? null,
     status: c ? "active" : "available",
     expires_at: expiresAt,
     metadata: {
@@ -83,7 +117,95 @@ export async function createIptvSubscription(input: {
   if (error) {
     throw new Error(`iptv_accounts insert failed: ${error.message}`);
   }
-  return { accountId: data?.id ?? null, username, simulated: !c, remoteUserId: (remoteMeta as any).remote_user_id ?? null };
+  return {
+    accountId: data?.id ?? null,
+    username,
+    password,
+    simulated: !c,
+    orderId: orderRow?.id ?? null,
+    customerId: orderRow?.customer_id ?? null,
+    m3uUrl: (remoteMeta as any).m3u_url ?? null,
+    remoteUserId: (remoteMeta as any).remote_user_id ?? null,
+  };
+}
+
+/**
+ * Compose the delivery payload after an IPTV subscription has been created.
+ * Writes `orders.metadata.iptv_delivery` in the same shape the NCC UI uses
+ * (see `IptvDeliveryCard`) and inserts a `delivery_logs` row in
+ * `prepared` state so the delivery pipeline can pick it up.
+ *
+ * This step is what turns "provisioning" into "ready to send" and is what
+ * lets the RC1 harness assert the whole chain without a human clicking
+ * the "prepare delivery" button in the back-office.
+ */
+export async function composeIptvDelivery(input: {
+  orderRef?: string;
+  accountId?: string | null;
+}) {
+  const sb = await admin();
+  if (!input.orderRef) throw new Error("composeIptvDelivery: orderRef manquant");
+  if (!input.accountId) return { skipped: true, reason: "no iptv_account_id" };
+
+  const { data: order } = await sb
+    .from("orders")
+    .select("id, customer_id, email, metadata")
+    .eq("order_ref", input.orderRef)
+    .maybeSingle();
+  if (!order?.id) throw new Error(`composeIptvDelivery: commande ${input.orderRef} introuvable`);
+
+  const { data: account } = await sb
+    .from("iptv_accounts")
+    .select("id, username, password, expires_at, metadata")
+    .eq("id", input.accountId)
+    .maybeSingle();
+  if (!account?.id) throw new Error(`composeIptvDelivery: iptv_account ${input.accountId} introuvable`);
+
+  const accMeta = (account.metadata ?? {}) as Record<string, any>;
+  const meta = (order.metadata ?? {}) as Record<string, unknown>;
+  const nowIso = new Date().toISOString();
+  const delivery = {
+    iptv_account_id: account.id,
+    megaott_subscription_id: accMeta.remote_user_id ?? null,
+    username: account.username,
+    package: accMeta.package ?? null,
+    expires_at: account.expires_at ?? null,
+    dns_link: accMeta.dns_link ?? null,
+    dns_link_samsung_lg: accMeta.dns_link_samsung_lg ?? null,
+    portal_link: accMeta.portal_link ?? null,
+    m3u_url: accMeta.m3u_url ?? null,
+    note: null,
+    delivery_status: "ready_to_send" as const,
+    created_at: nowIso,
+    sent_at: null,
+    sent_channel: null,
+  };
+  const nextMeta = { ...meta, iptv_delivery: delivery };
+  const { error: upErr } = await sb.from("orders").update({ metadata: nextMeta }).eq("id", order.id);
+  if (upErr) throw new Error(`orders.metadata update failed: ${upErr.message}`);
+
+  const content = [
+    `Identifiants IPTV — commande ${input.orderRef}`,
+    `Utilisateur : ${account.username}`,
+    `Mot de passe : ${account.password ?? "(voir panneau)"}`,
+    account.expires_at ? `Expire le : ${account.expires_at}` : "",
+    accMeta.m3u_url ? `M3U : ${accMeta.m3u_url}` : "",
+  ].filter(Boolean).join("\n");
+
+  const { error: dlErr } = await sb.from("delivery_logs").insert({
+    order_id: order.id,
+    customer_id: order.customer_id ?? null,
+    channel: "email",
+    status: "prepared",
+    template_id: "iptv-delivery",
+    subject: `Vos identifiants IPTV — ${input.orderRef}`,
+    content,
+    recipient: order.email ?? null,
+    admin_id: null,
+  });
+  if (dlErr) throw new Error(`delivery_logs insert failed: ${dlErr.message}`);
+
+  return { orderId: order.id, iptvAccountId: account.id, deliveryStatus: "ready_to_send" as const };
 }
 
 export async function renewIptvSubscription(accountId: string, months = 1) {
