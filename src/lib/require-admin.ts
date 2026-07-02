@@ -8,7 +8,11 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 export const requireAdmin = createMiddleware({ type: "function" })
   .middleware([requireSupabaseAuth])
   .server(async ({ next, context }) => {
-    const { data, error } = await context.supabase.rpc("has_role", {
+    // `has_role` n'est pas EXECUTE pour le rôle `authenticated`
+    // (RLS l'utilise via SECURITY DEFINER + owner grant), on l'appelle
+    // donc avec le client admin (service_role) déjà autorisé.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin.rpc("has_role", {
       _user_id: context.userId,
       _role: "admin",
     });
