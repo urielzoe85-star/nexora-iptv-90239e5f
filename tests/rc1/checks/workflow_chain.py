@@ -41,14 +41,19 @@ def _iso(v: str | None) -> datetime | None:
 
 
 def _load_refs() -> list[str]:
+    """Only refs coming from the *full journey* scenario are expected to
+    have the complete chain (order → run → account → delivery). Webhook /
+    fallback scenarios don't necessarily traverse every table, so they
+    are excluded from this specific check."""
     refs: list[str] = []
-    for p in OUT.glob("scenario_*.json"):
+    p = OUT / "scenario_01.json"
+    if p.exists():
         try:
             d = json.loads(p.read_text())
             if d.get("ok") and d.get("ref"):
                 refs.append(d["ref"])
         except Exception:
-            continue
+            pass
     return refs
 
 
@@ -73,11 +78,11 @@ def main() -> int:
         rows = q(f"""SELECT o.created_at,
                             (SELECT started_at FROM automation_runs
                               WHERE workflow_key='payment-confirmed'
-                                AND payload->>'orderRef'='{ref}' AND status='completed'
+                                AND payload->>'orderRef'='{ref}' AND status='success'
                               ORDER BY started_at DESC LIMIT 1),
                             (SELECT finished_at FROM automation_runs
                               WHERE workflow_key='payment-confirmed'
-                                AND payload->>'orderRef'='{ref}' AND status='completed'
+                                AND payload->>'orderRef'='{ref}' AND status='success'
                               ORDER BY finished_at DESC LIMIT 1),
                             (SELECT created_at FROM iptv_accounts WHERE order_id=o.id ORDER BY created_at ASC LIMIT 1),
                             (SELECT created_at FROM delivery_logs
