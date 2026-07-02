@@ -1,19 +1,18 @@
 // Server functions du moteur d'automatisation. Admin uniquement.
 
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireAdmin } from "@/lib/require-admin";
 import { z } from "zod";
 
-async function admin(userId: string) {
+// Le middleware `requireAdmin` a déjà vérifié le rôle ; ce helper ne fait
+// que renvoyer le client service_role prêt à l'emploi.
+async function admin(_userId: string) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data: ok, error } = await (supabaseAdmin as any).rpc("has_role", { _user_id: userId, _role: "admin" });
-  if (error) throw new Error(error.message);
-  if (!ok) throw new Error("Forbidden");
   return supabaseAdmin as any;
 }
 
 export const listWorkflows = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAdmin])
   .handler(async ({ context }) => {
     const sb = await admin(context.userId);
     await import("@/automation");
@@ -28,7 +27,7 @@ export const listWorkflows = createServerFn({ method: "GET" })
   });
 
 export const toggleWorkflow = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAdmin])
   .inputValidator((d) => z.object({ key: z.string(), enabled: z.boolean() }).parse(d))
   .handler(async ({ data, context }) => {
     const sb = await admin(context.userId);
@@ -38,7 +37,7 @@ export const toggleWorkflow = createServerFn({ method: "POST" })
   });
 
 export const runWorkflowManually = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAdmin])
   .inputValidator((d) => z.object({ key: z.string(), payload: z.record(z.unknown()).optional() }).parse(d))
   .handler(async ({ data, context }) => {
     await admin(context.userId);
@@ -48,7 +47,7 @@ export const runWorkflowManually = createServerFn({ method: "POST" })
   });
 
 export const listRuns = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAdmin])
   .inputValidator((d) => z.object({ status: z.string().optional(), workflow: z.string().optional(), limit: z.number().int().min(1).max(200).optional() }).parse(d ?? {}))
   .handler(async ({ data, context }) => {
     const sb = await admin(context.userId);
@@ -61,7 +60,7 @@ export const listRuns = createServerFn({ method: "GET" })
   });
 
 export const getRun = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAdmin])
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const sb = await admin(context.userId);
@@ -72,7 +71,7 @@ export const getRun = createServerFn({ method: "GET" })
   });
 
 export const replayRunFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAdmin])
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     await admin(context.userId);
@@ -82,7 +81,7 @@ export const replayRunFn = createServerFn({ method: "POST" })
   });
 
 export const getAutomationKpis = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAdmin])
   .handler(async ({ context }) => {
     const sb = await admin(context.userId);
     const since = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
@@ -107,7 +106,7 @@ export const getAutomationKpis = createServerFn({ method: "GET" })
 
 /** API publique pour modules internes (futurs Telegram/WhatsApp/IA). */
 export const emitBusinessEvent = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAdmin])
   .inputValidator((d) => z.object({
     event: z.string(),
     payload: z.record(z.unknown()).optional(),
