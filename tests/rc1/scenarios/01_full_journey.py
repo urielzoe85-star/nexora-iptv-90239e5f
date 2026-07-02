@@ -109,10 +109,12 @@ def main() -> int:
         }), timeout=15)
         assert len(accounts) == 1, f"expected 1 iptv_account, got {len(accounts)}"
 
-        logs = sb.poll(lambda: sb.select("delivery_logs", {"order_ref": f"eq.{ref}"}), timeout=15)
+        order_after = sb.select("orders", {"order_ref": f"eq.{ref}"})[0]
+        logs = sb.poll(lambda: sb.select("delivery_logs", {
+            "order_id": f"eq.{order_after['id']}",
+        }), timeout=15)
         assert len(logs) >= 1, "no delivery_logs entry"
 
-        order_after = sb.select("orders", {"order_ref": f"eq.{ref}"})[0]
         delivery = (order_after.get("metadata") or {}).get("iptv_delivery")
         assert delivery, "orders.metadata.iptv_delivery missing"
         assert delivery.get("delivery_status") in {"ready_to_send", "sent"}, delivery

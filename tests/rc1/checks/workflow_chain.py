@@ -41,14 +41,19 @@ def _iso(v: str | None) -> datetime | None:
 
 
 def _load_refs() -> list[str]:
+    """Only refs coming from the *full journey* scenario are expected to
+    have the complete chain (order → run → account → delivery). Webhook /
+    fallback scenarios don't necessarily traverse every table, so they
+    are excluded from this specific check."""
     refs: list[str] = []
-    for p in OUT.glob("scenario_*.json"):
+    p = OUT / "scenario_01.json"
+    if p.exists():
         try:
             d = json.loads(p.read_text())
             if d.get("ok") and d.get("ref"):
                 refs.append(d["ref"])
         except Exception:
-            continue
+            pass
     return refs
 
 
@@ -73,11 +78,11 @@ def main() -> int:
         rows = q(f"""SELECT o.created_at,
                             (SELECT started_at FROM automation_runs
                               WHERE workflow_key='payment-confirmed'
-                                AND payload->>'orderRef'='{ref}' AND status='completed'
+                                AND payload->>'orderRef'='{ref}' AND status='success'
                               ORDER BY started_at DESC LIMIT 1),
                             (SELECT finished_at FROM automation_runs
                               WHERE workflow_key='payment-confirmed'
-                                AND payload->>'orderRef'='{ref}' AND status='completed'
+                                AND payload->>'orderRef'='{ref}' AND status='success'
                               ORDER BY finished_at DESC LIMIT 1),
                             (SELECT created_at FROM iptv_accounts WHERE order_id=o.id ORDER BY created_at ASC LIMIT 1),
                             (SELECT created_at FROM delivery_logs
@@ -93,11 +98,18 @@ def main() -> int:
             "delivery_sent_at": _iso(r0[4]),
         }
 
-        seq = [k for k, v in times.items() if v is not None]
+        # The correct chain is: order → run_started → account_created →
+        # delivery_sent → run_completed. `run_completed_at` naturally lands
+        # AFTER the child artifacts (account/delivery) because they are
+        # emitted mid-run, so we validate that order.
+        order = ["order_created_at", "run_started_at", "account_created_at",
+                 "delivery_sent_at", "run_completed_at"]
         chain_ok = True
         prev = None
-        for k in seq:
+        for k in order:
             v = times[k]
+            if v is None:
+                continue
             if prev and v < prev:
                 chain_ok = False
             prev = v

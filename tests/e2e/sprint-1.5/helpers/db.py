@@ -76,40 +76,68 @@ class SupaAdmin:
         return {"customer": cust, "order": order}
 
     def disable_megaott(self) -> list[dict]:
-        """Force iptv.megaott isReady() = false. Returns providers modified so we can restore."""
-        current = self.select("iptv_providers", {"metadata->>kind": "eq.megaott"})
-        for p in current:
-            self.update("iptv_providers", {"id": f"eq.{p['id']}"}, {
-                "status": "inactive",
-                "metadata": {**(p.get("metadata") or {}), "kind": "megaott_disabled_e2e"},
-            })
-        return current
+        """Force the automation to run in simulated MEGAOTT mode.
+
+        Matches the same resolver used by the connector
+        (`metadata.kind = 'megaott'` OR `name ILIKE '%megaott%'`) and flips
+        every matching row to `status = 'inactive'`. Returns a snapshot so
+        `restore_megaott` can revert exactly what we changed — never widens
+        the write beyond the row IDs we touched.
+        """
+        rows = self._req("GET", "iptv_providers", params={
+            "select": "*",
+            "or": "(metadata->>kind.eq.megaott,name.ilike.*megaott*)",
+        }) or []
+        for p in rows:
+            self.update("iptv_providers", {"id": f"eq.{p['id']}"}, {"status": "inactive"})
+        return rows
 
     def restore_megaott(self, snapshot: list[dict]) -> None:
         for p in snapshot:
             self.update("iptv_providers", {"id": f"eq.{p['id']}"}, {
                 "status": p.get("status") or "inactive",
-                "metadata": p.get("metadata") or {},
             })
 
     def cleanup_ref(self, ref: str) -> None:
-        # Delete children first (FKs are SET NULL on iptv_accounts.customer_id,
-        # so we can drop customers safely too). Best-effort.
+        # RC1_KEEP_DATA=1 keeps every seeded row so the certification
+        # harness can run cross-scenario checks (workflow_chain, DB
+        # integrity) against real evidence. `run-certification.sh` then
+        # calls `cleanup_e2e_refs()` once, at the very end, to drop
+        # everything prefixed by `NXR-E2E-`.
+        if os.environ.get("RC1_KEEP_DATA") == "1":
+            return
+        # Schema-aligned cleanup. Relies on ON DELETE CASCADE for:
+        #   * delivery_logs.order_id     -> orders.id
+        #   * automation_steps.run_id    -> automation_runs.id
+        #   * customer_events.customer_id-> customers.id
+        # so we only need to delete the parents explicitly. All queries are
+        # keyed on values we control (order_ref / metadata.ref / payload)
+        # and never reference columns that don't exist on the target table.
         for table, where in [
-            ("iptv_accounts", {"metadata->>order_ref": f"eq.{ref}"}),
-            ("delivery_logs", {"order_ref": f"eq.{ref}"}),
-            ("customer_events", {"order_ref": f"eq.{ref}"}),
-            ("automation_queue", {"payload->>orderRef": f"eq.{ref}"}),
-            ("automation_runs", {"payload->>orderRef": f"eq.{ref}"}),
-            ("automation_steps", {"payload->>orderRef": f"eq.{ref}"}),
-            ("orders", {"order_ref": f"eq.{ref}"}),
-            ("customers", {"metadata->>ref": f"eq.{ref}"}),
-            ("integration_debug_logs", {"request_body->>ref": f"eq.{ref}"}),
+            ("iptv_accounts",    {"metadata->>order_ref": f"eq.{ref}"}),
+            ("automation_queue", {"payload->>orderRef":   f"eq.{ref}"}),
+            ("automation_runs",  {"payload->>orderRef":   f"eq.{ref}"}),
+            ("orders",           {"order_ref":            f"eq.{ref}"}),
+            ("customers",        {"metadata->>ref":       f"eq.{ref}"}),
         ]:
             try:
                 self.delete(table, where)
             except Exception as e:
                 print(f"[cleanup] skip {table}: {e}")
+
+    def cleanup_e2e_refs(self, prefix: str = "NXR-E2E-") -> None:
+        """Nuke every seeded row that matches `NXR-E2E-*`. Idempotent."""
+        for table, where in [
+            ("iptv_accounts",    {"metadata->>order_ref": f"like.{prefix}*"}),
+            ("automation_queue", {"payload->>orderRef":   f"like.{prefix}*"}),
+            ("automation_runs",  {"payload->>orderRef":   f"like.{prefix}*"}),
+            ("orders",           {"order_ref":            f"like.{prefix}*"}),
+            ("customers",        {"metadata->>ref":       f"like.{prefix}*"}),
+        ]:
+            try:
+                self.delete(table, where)
+            except Exception as e:
+                print(f"[cleanup-final] skip {table}: {e}")
 
     def poll(self, fn, *, timeout: float = 20.0, interval: float = 0.5):
         """Retry fn() until truthy or timeout."""

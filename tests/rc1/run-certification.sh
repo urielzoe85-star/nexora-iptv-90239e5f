@@ -27,6 +27,10 @@ if [ "$MISSING" = "1" ]; then
   exit 2
 fi
 export E2E_BASE_URL="${E2E_BASE_URL:-http://localhost:8080}"
+# Keep seeded rows during the whole certification so the cross-scenario
+# checks (workflow_chain, db_integrity, logs_audit) see real evidence.
+# A final cleanup pass wipes every NXR-E2E-* row after the report is built.
+export RC1_KEEP_DATA=1
 
 FAIL=0
 run() {
@@ -50,6 +54,10 @@ echo ""
 echo "▶ Assemble le rapport final"
 python3 checks/build_report.py
 VERDICT=$?
+
+echo ""
+echo "▶ Cleanup final (rows NXR-E2E-*)"
+PYTHONPATH="$HERE/../e2e/sprint-1.5" python3 -c "from helpers.db import SupaAdmin; SupaAdmin().cleanup_e2e_refs(); print('[cleanup-final] done')"
 
 echo ""
 echo "→ Markdown : $HERE/out/RC1-REPORT.md"

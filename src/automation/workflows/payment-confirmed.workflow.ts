@@ -1,6 +1,6 @@
 import type { WorkflowDefinition } from "../core/workflow";
 import { fetchOrder, markOrderStatus, generateInvoiceStub } from "../actions/orders.actions";
-import { createIptvSubscription } from "../actions/iptv.actions";
+import { createIptvSubscription, composeIptvDelivery } from "../actions/iptv.actions";
 import { logToIptvJournal } from "../actions/logs.actions";
 
 export const paymentConfirmedWorkflow: WorkflowDefinition = {
@@ -40,6 +40,18 @@ export const paymentConfirmedWorkflow: WorkflowDefinition = {
           orderId: v.orderId,
           durationMonths: Number(ctx.payload.durationMonths ?? 1),
         });
+      },
+    },
+    {
+      // Bridge provisioning → delivery: fills orders.metadata.iptv_delivery
+      // and inserts a delivery_logs row (channel=email, status=prepared) so
+      // the delivery pipeline (or a human operator) can dispatch it.
+      name: "delivery:compose",
+      when: (ctx) => Boolean((ctx.outputs["validate:order"] as any)?.alreadyCompleted) === false,
+      run: async (ctx) => {
+        const v = ctx.outputs["validate:order"] as { orderId: string };
+        const sub = ctx.outputs["iptv:create-subscription"] as { accountId: string | null } | undefined;
+        return composeIptvDelivery({ orderRef: v.orderId, accountId: sub?.accountId ?? null });
       },
     },
     {
