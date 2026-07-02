@@ -98,11 +98,18 @@ def main() -> int:
             "delivery_sent_at": _iso(r0[4]),
         }
 
-        seq = [k for k, v in times.items() if v is not None]
+        # The correct chain is: order → run_started → account_created →
+        # delivery_sent → run_completed. `run_completed_at` naturally lands
+        # AFTER the child artifacts (account/delivery) because they are
+        # emitted mid-run, so we validate that order.
+        order = ["order_created_at", "run_started_at", "account_created_at",
+                 "delivery_sent_at", "run_completed_at"]
         chain_ok = True
         prev = None
-        for k in seq:
+        for k in order:
             v = times[k]
+            if v is None:
+                continue
             if prev and v < prev:
                 chain_ok = False
             prev = v
