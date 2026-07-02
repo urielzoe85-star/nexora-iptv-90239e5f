@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { verifyHmac } from "@/integration-hub/webhooks/signatures";
+import { allow, clientKey, tooManyRequests } from "@/lib/rate-limit.server";
 
 // Persist a webhook receipt to `integration_debug_logs` so signature failures,
 // replays, and processing errors survive Worker log rotation. Best-effort —
@@ -50,6 +51,13 @@ export const Route = createFileRoute("/api/public/sebpay/webhook")({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        // Local rate-limit: SebPay's documented retry cadence caps around
+        // 6/min per event; 60/min per source IP is generous headroom and
+        // still shields against a runaway retry storm. Documented as a
+        // per-Worker best-effort control (see src/lib/rate-limit.server.ts).
+        const rl = allow(clientKey(request, "sebpay-webhook"), { limit: 60, windowMs: 60_000 });
+        if (!rl.ok) return tooManyRequests(rl);
+
         const raw = await request.text();
 
         // ---- 1. Verify HMAC-SHA256 signature ------------------------------
