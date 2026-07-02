@@ -1005,6 +1005,30 @@ export type Database = {
         }
         Relationships: []
       }
+      renewal_reminders_sent: {
+        Row: {
+          account_id: string
+          expires_at: string
+          id: string
+          milestone_days: number
+          sent_at: string
+        }
+        Insert: {
+          account_id: string
+          expires_at: string
+          id?: string
+          milestone_days: number
+          sent_at?: string
+        }
+        Update: {
+          account_id?: string
+          expires_at?: string
+          id?: string
+          milestone_days?: number
+          sent_at?: string
+        }
+        Relationships: []
+      }
       secret_registry: {
         Row: {
           created_at: string
