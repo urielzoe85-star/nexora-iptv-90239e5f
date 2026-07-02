@@ -80,9 +80,9 @@ def main() -> int:
                                 AND payload->>'orderRef'='{ref}' AND status='completed'
                               ORDER BY finished_at DESC LIMIT 1),
                             (SELECT created_at FROM iptv_accounts WHERE order_id=o.id ORDER BY created_at ASC LIMIT 1),
-                            (SELECT coalesce(sent_at, created_at) FROM delivery_logs
+                            (SELECT created_at FROM delivery_logs
                               WHERE order_id=o.id
-                              ORDER BY coalesce(sent_at, created_at) DESC LIMIT 1)
+                              ORDER BY created_at DESC LIMIT 1)
                      FROM orders o WHERE o.order_ref='{ref}'""")
         r0 = rows[0] if rows else ["", "", "", "", ""]
         times = {
