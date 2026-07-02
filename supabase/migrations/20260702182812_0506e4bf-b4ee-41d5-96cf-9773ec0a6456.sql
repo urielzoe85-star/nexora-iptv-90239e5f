@@ -1,0 +1,1 @@
+ALTER VIEW public.billing_metrics_daily SET (security_invoker = true);
