@@ -324,6 +324,21 @@ export async function verifyPaymentInternal(ref: string): Promise<{ status: stri
   const transitioned = Array.isArray(updatedRows) && updatedRows.length > 0;
   if (transitioned) {
     const row = updatedRows[0]!;
+    // Auto-reactivate any IPTV accounts previously suspended for this order.
+    if (mapped === "paid") {
+      try {
+        const { reactivateAccountsForOrder } = await import("@/lib/billing.server");
+        // orders.order_ref is the customer-facing reference; iptv_accounts.order_id
+        // stores the internal orders.id. Resolve it before reactivating.
+        const { data: internal } = await supabaseAdmin
+          .from("orders").select("id").eq("order_ref", ref).maybeSingle();
+        if (internal?.id) {
+          await reactivateAccountsForOrder(internal.id, { source: "payment.verify" });
+        }
+      } catch (e) {
+        console.error("[billing] reactivation on payment failed", e);
+      }
+    }
     await emitBusinessEvent(
       mapped === "paid" ? "payment.confirmed" : mapped === "failed" ? "payment.failed" : null,
       {
