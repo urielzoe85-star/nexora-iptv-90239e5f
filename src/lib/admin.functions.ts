@@ -4,16 +4,6 @@ import { requireAdmin } from "@/lib/require-admin";
 import { z } from "zod";
 import { toE164 } from "@/lib/countries";
 
-async function ensureAdmin(_supabase: any, userId: string) {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data, error } = await supabaseAdmin.rpc("has_role", {
-    _user_id: userId,
-    _role: "admin",
-  });
-  if (error) throw new Error(error.message);
-  if (!data) throw new Error("Forbidden");
-}
-
 // ─── NCC password gate ───────────────────────────────────────────────────
 // Vérifie un second mot de passe (env NCC_ACCESS_PASSWORD) pour autoriser
 // l'accès au Nexora Control Center depuis le dashboard admin.
