@@ -108,15 +108,20 @@ def scan_values(files: list[Path], label: str) -> list[str]:
         rel = str(f.relative_to(ROOT)) if f.is_absolute() and str(f).startswith(str(ROOT)) else str(f)
         for name, pat in VALUE_PATTERNS:
             for m in pat.finditer(data):
-                # Whitelist: docs/tests reference example / redacted values.
                 snippet = m.group(0)
+                # Whitelist: docs/tests reference example / redacted values.
                 if DOC_LIKE.search(rel) and ("example" in snippet.lower() or "xxxx" in snippet.lower()):
                     continue
-                # Whitelist the project publishable anon key stored in .env
-                # (publishable / low criticality — safe by design).
-                if rel.endswith(".env") and name == "supabase_service_role_jwt":
-                    # Any JWT in .env should still be reported to force review.
-                    pass
+                # Whitelist: .env holds only publishable JWTs by convention
+                # (SUPABASE_PUBLISHABLE_KEY / VITE_SUPABASE_PUBLISHABLE_KEY).
+                # Service-role JWTs must never land here — they live in secrets.
+                if rel == ".env" and name == "supabase_service_role_jwt":
+                    # Confirm the surrounding line references a publishable var.
+                    line_start = data.rfind("\n", 0, m.start()) + 1
+                    line_end = data.find("\n", m.end())
+                    line = data[line_start: line_end if line_end != -1 else None]
+                    if "PUBLISHABLE" in line or "ANON" in line:
+                        continue
                 hits.append(f"[{label}] {rel} :: {name} :: {snippet[:40]}…")
     return hits
 
