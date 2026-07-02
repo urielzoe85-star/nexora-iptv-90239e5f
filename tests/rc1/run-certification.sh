@@ -27,6 +27,10 @@ if [ "$MISSING" = "1" ]; then
   exit 2
 fi
 export E2E_BASE_URL="${E2E_BASE_URL:-http://localhost:8080}"
+# Enable the /api/public/automation/emit-test endpoint. This flag is
+# required in every environment (dev / CI). It is intentionally never
+# set in production, so the endpoint returns 404 on nexora-iptv.com.
+export ALLOW_E2E_ENDPOINTS=1
 # Keep seeded rows during the whole certification so the cross-scenario
 # checks (workflow_chain, db_integrity, logs_audit) see real evidence.
 # A final cleanup pass wipes every NXR-E2E-* row after the report is built.
