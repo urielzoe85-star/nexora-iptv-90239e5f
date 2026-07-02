@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { createHmac, timingSafeEqual } from "crypto";
+import { verifyHmac } from "@/integration-hub/webhooks/signatures";
 
 // Persist a webhook receipt to `integration_debug_logs` so signature failures,
 // replays, and processing errors survive Worker log rotation. Best-effort —
@@ -70,21 +70,10 @@ export const Route = createFileRoute("/api/public/sebpay/webhook")({
           await logWebhook({ ok: false, status: 401, error: "missing signature header", rawPreview: raw.slice(0, 200) });
           return new Response("Missing signature", { status: 401 });
         }
-        const expected = createHmac("sha256", secret).update(raw).digest("hex");
-        const provided = signatureHeader.trim().toLowerCase();
-        const expectedLc = expected.toLowerCase();
-        let signatureValid = false;
-        try {
-          const a = Buffer.from(provided, "utf8");
-          const b = Buffer.from(expectedLc, "utf8");
-          signatureValid = a.length === b.length && timingSafeEqual(a, b);
-        } catch {
-          signatureValid = false;
-        }
+        const signatureValid = verifyHmac(secret, raw, signatureHeader);
         if (!signatureValid) {
           console.warn("[sebpay-webhook] invalid signature", {
-            providedLength: provided.length,
-            expectedLength: expectedLc.length,
+            providedLength: signatureHeader.trim().length,
           });
           await logWebhook({
             ok: false, status: 401, signatureValid: false,
