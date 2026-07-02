@@ -68,6 +68,16 @@ export const Route = createFileRoute("/api/public/sebpay/webhook")({
         if (!signatureHeader) {
           console.warn("[sebpay-webhook] missing X-SebPay-Signature header");
           await logWebhook({ ok: false, status: 401, error: "missing signature header", rawPreview: raw.slice(0, 200) });
+          const { recordSecurityEvent, extractRequestMeta } = await import("@/lib/security-events.server");
+          const meta = extractRequestMeta(request);
+          await recordSecurityEvent({
+            event_type: "webhook.sebpay.signature_missing",
+            severity: "warn",
+            route: "/api/public/sebpay/webhook",
+            ip: meta.ip,
+            user_agent: meta.user_agent,
+            message: "SebPay webhook rejected: missing X-SebPay-Signature header",
+          });
           return new Response("Missing signature", { status: 401 });
         }
         const signatureValid = verifyHmac(secret, raw, signatureHeader);
@@ -78,6 +88,17 @@ export const Route = createFileRoute("/api/public/sebpay/webhook")({
           await logWebhook({
             ok: false, status: 401, signatureValid: false,
             error: "invalid signature", rawPreview: raw.slice(0, 200),
+          });
+          const { recordSecurityEvent, extractRequestMeta } = await import("@/lib/security-events.server");
+          const meta = extractRequestMeta(request);
+          await recordSecurityEvent({
+            event_type: "webhook.sebpay.signature_invalid",
+            severity: "critical",
+            route: "/api/public/sebpay/webhook",
+            ip: meta.ip,
+            user_agent: meta.user_agent,
+            message: "SebPay webhook rejected: HMAC signature mismatch",
+            payload: { provided_length: signatureHeader.trim().length },
           });
           return new Response("Invalid signature", { status: 401 });
         }
