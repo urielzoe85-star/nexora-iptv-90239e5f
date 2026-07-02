@@ -53,7 +53,35 @@ référencé dans le CHANGELOG.
 
 ---
 
-## [Bloc B] — À OUVRIR
+## [Bloc B] Backups & Restore — DEV COMPLETE (en attente de certification)
 
-Méthodologie : Développement → Tests → Certification → Bloc figé.
-Aucun Bloc C ne sera ouvert tant que le Bloc B n'est pas certifié.
+**Date d'ouverture** : 2026-07-02
+**Scope** : S3-P0-02 — Backups DB automatisés + restore drill.
+
+### Fonctionnalités livrées
+
+- **Endpoint cron unifié** `POST /api/public/hooks/backup-verify`
+  (Bearer `AUTOMATION_CRON_SECRET`) avec 3 modes :
+  - `verify` — snapshot d'intégrité (row count + checksum md5) sur les
+    8 tables critiques + détection de dérive > 10 %.
+  - `restore_drill` — clone / compare / drop en round-robin.
+  - `retention` — purge des métadonnées `backup_runs` > 365 j.
+- **Migration** : tables `public.backup_runs` +
+  `public.backup_integrity_snapshots`, fonctions SECURITY DEFINER
+  `backup_capture_integrity` et `backup_restore_drill` (allow-list en dur,
+  EXECUTE verrouillé à `service_role`).
+- **Alertes** : `backup.failure` (critical) et `backup.drift_detected`
+  (warn) via `security_events` → Telegram immédiat.
+- **Documentation** :
+  - `docs/backups/strategy.md` — RPO/RTO, rétention, tables critiques
+  - `docs/backups/runbook-restore.md` — procédure ciblée / PITR / snapshot
+  - `docs/backups/integrity.md` — algo checksum + garanties drill
+- **Suite E2E** : `tests/e2e/sprint-3/backup_lifecycle_test.py`
+  (unauthorized / verify / restore_drill / retention).
+- **CI** : `.github/workflows/sprint-3-bloc-b.yml` exécutée sur toute
+  modification d'endpoint, migration, doc backup ou suite E2E.
+
+### Statut
+
+**DEV COMPLETE — en attente de la phase de certification.**
+Aucun Bloc C ne sera ouvert tant que le Bloc B n'est pas CERTIFIED.
