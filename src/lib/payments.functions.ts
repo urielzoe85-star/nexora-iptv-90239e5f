@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { requireAdmin } from "@/lib/require-admin";
 
 // Sprint 3 · GA-BLOCK-01 — All top-level SebPay helpers have been moved to
 // `src/lib/payments-sebpay.server.ts` so no SebPay secret NAME literal
