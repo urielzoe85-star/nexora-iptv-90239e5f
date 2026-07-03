@@ -228,3 +228,169 @@ export async function emitBusinessEvent(
     console.error("[automation] emit failed", { event, message: String(e?.message ?? e) });
   }
 }
+
+// =========================================================================
+// Binance Pay (crypto)
+// =========================================================================
+
+/**
+ * Create a Binance Pay checkout for an existing crypto order. Returns the
+ * URLs / QR code the front-end can use to complete payment. The order flips
+ * from `pending` to `processing`; only the signed webhook (or a follow-up
+ * `verifyBinancePayPayment` call) can move it to `paid`.
+ */
+export const initBinancePayCheckout = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        ref: z.string().min(4).max(40),
+        successUrl: z.string().url(),
+        failureUrl: z.string().url(),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
+    const { createBinancePayOrder } = await import("@/lib/payments-binance.server");
+
+    const { data: order, error } = await supabaseAdmin
+      .from("orders")
+      .select("order_ref, email, full_name, plan_name, amount, currency, method, status, metadata")
+      .eq("order_ref", data.ref)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!order) throw new Error("Order not found");
+    if (order.status !== "pending") {
+      throw new Error(`Order is already ${order.status}; cannot start a new checkout.`);
+    }
+    if (order.method !== "crypto") {
+      throw new Error("This order is not a crypto order.");
+    }
+
+    const meta = (order.metadata as Record<string, any>) ?? {};
+    // Binance Pay is billed in USDT (auto-convert to fiat is configured
+    // on the merchant dashboard). We ship the USD amount as-is; 1 USDT ≈ 1 USD.
+    const usdtAmount = Number(meta.usd_amount ?? order.amount);
+    if (!Number.isFinite(usdtAmount) || usdtAmount <= 0) {
+      throw new Error("Invalid order amount for Binance Pay");
+    }
+
+    const origin = new URL(data.successUrl).origin;
+    const webhookUrl = `${origin}/api/public/binance-pay/webhook`;
+
+    const result = await createBinancePayOrder({
+      orderRef: order.order_ref,
+      amount: usdtAmount,
+      currency: "USDT",
+      buyerEmail: order.email,
+      goodsName: `Nexora IPTV — ${order.plan_name}`,
+      webhookUrl,
+      returnUrl: data.successUrl,
+      cancelUrl: data.failureUrl,
+    });
+
+    await supabaseAdmin
+      .from("orders")
+      .update({
+        status: "processing",
+        metadata: {
+          ...meta,
+          binance: {
+            prepay_id: result.prepayId,
+            checkout_url: result.checkoutUrl,
+            qrcode_link: result.qrcodeLink,
+            deeplink: result.deeplink,
+            expire_time: result.expireTime,
+            initiated_at: new Date().toISOString(),
+          },
+        },
+      })
+      .eq("order_ref", order.order_ref);
+
+    return {
+      prepayId: result.prepayId,
+      checkoutUrl: result.checkoutUrl,
+      qrcodeLink: result.qrcodeLink,
+      deeplink: result.deeplink,
+    };
+  });
+
+/**
+ * Verify a Binance Pay order via the query API. Called by the checkout page
+ * polling loop AND by the webhook receiver as a defense-in-depth re-check —
+ * order state must always be sourced from Binance, never trusted from the
+ * webhook payload alone.
+ */
+export const verifyBinancePayPayment = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) => z.object({ ref: z.string().min(4).max(40) }).parse(data))
+  .handler(async ({ data }) => verifyBinancePayInternal(data.ref));
+
+export async function verifyBinancePayInternal(ref: string): Promise<{ status: string }> {
+  const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
+  const { queryBinancePayOrder } = await import("@/lib/payments-binance.server");
+
+  const { data: order, error } = await supabaseAdmin
+    .from("orders")
+    .select("order_ref, status, method, metadata, email, plan_name, amount, currency")
+    .eq("order_ref", ref)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!order) return { status: "not_found" };
+  if (order.method !== "crypto") return { status: order.status };
+  if (["paid", "failed", "cancelled"].includes(order.status)) return { status: order.status };
+
+  const q = await queryBinancePayOrder(order.order_ref);
+  if (q.status === "pending") return { status: "processing" };
+
+  const dbStatus = q.status === "expired" ? "cancelled" : q.status;
+  const meta = (order.metadata as Record<string, any>) ?? {};
+  const { data: updatedRows } = await supabaseAdmin
+    .from("orders")
+    .update({
+      status: dbStatus,
+      metadata: {
+        ...meta,
+        binance: {
+          ...(meta.binance ?? {}),
+          verified_status: q.rawStatus,
+          transaction_id: q.transactionId,
+          verified_at: new Date().toISOString(),
+        },
+      },
+    })
+    .eq("order_ref", ref)
+    .in("status", ["pending", "processing"])
+    .select("order_ref, email, plan_name, amount, currency");
+
+  const transitioned = Array.isArray(updatedRows) && updatedRows.length > 0;
+  if (transitioned) {
+    const row = updatedRows[0]!;
+    if (dbStatus === "paid") {
+      try {
+        const { reactivateAccountsForOrder } = await import("@/lib/billing.server");
+        const { data: internal } = await supabaseAdmin
+          .from("orders").select("id").eq("order_ref", ref).maybeSingle();
+        if (internal?.id) {
+          await reactivateAccountsForOrder(internal.id, { source: "payment.verify.binance" });
+        }
+      } catch (e) {
+        console.error("[billing] reactivation on binance payment failed", e);
+      }
+    }
+    await emitBusinessEvent(
+      dbStatus === "paid" ? "payment.confirmed" : dbStatus === "failed" ? "payment.failed" : null,
+      {
+        orderId: row.order_ref,
+        orderRef: row.order_ref,
+        email: row.email,
+        planName: row.plan_name,
+        amount: row.amount,
+        currency: row.currency,
+        provider: "binance_pay",
+        binanceStatus: q.rawStatus,
+      },
+    );
+  }
+
+  return { status: dbStatus };
+}
