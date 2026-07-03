@@ -11,6 +11,8 @@ import { useState, useMemo } from "react";
 import { listInventoryAccounts, assignIptvAccountToOrder } from "@/lib/iptv-import.functions";
 import { DeliveryComposer } from "./DeliveryComposer";
 import { MegaottDeliveryForm } from "./MegaottDeliveryForm";
+import { DeliveryPreview } from "./DeliveryPreview";
+import { dispatchIptvDelivery } from "@/lib/delivery.functions";
 import { getOrder } from "@/lib/ncc.functions";
 
 interface Delivery {
@@ -32,10 +34,28 @@ interface Delivery {
 export function IptvDeliveryCard({ orderId, metadata }: { orderId: string; metadata: any }) {
   const delivery = (metadata?.iptv_delivery ?? null) as Delivery | null;
   const getOrderFn = useServerFn(getOrder);
+  const dispatchFn = useServerFn(dispatchIptvDelivery);
+  const qc = useQueryClient();
   const orderQ = useQuery({
     queryKey: ["ncc", "order", orderId],
     queryFn: () => getOrderFn({ data: { id: orderId } }),
     enabled: !!delivery,
+  });
+
+  const dispatchM = useMutation({
+    mutationFn: (channels?: Array<"email" | "whatsapp" | "telegram">) =>
+      dispatchFn({ data: { order_id: orderId, channels, force: false } }),
+    onSuccess: (res: any) => {
+      const parts = Object.entries(res.channels ?? {}).map(([c, o]: any) => {
+        if (o.skipped) return `${c}: ${o.reason ?? "skipped"}`;
+        return `${c}: ${o.ok ? "envoyé" : (o.error ?? "échec")}`;
+      });
+      if (res.status === "sent") toast.success(`Envoyé — ${parts.join(" · ")}`);
+      else if (res.status === "partial") toast.warning(`Envoi partiel — ${parts.join(" · ")}`);
+      else toast.error(`Échec — ${parts.join(" · ")}`);
+      qc.invalidateQueries({ queryKey: ["ncc", "order", orderId] });
+    },
+    onError: (e) => toast.error((e as Error).message),
   });
 
   return (
@@ -76,14 +96,12 @@ export function IptvDeliveryCard({ orderId, metadata }: { orderId: string; metad
 
         {delivery && (
           <>
-            <div className="grid sm:grid-cols-2 gap-3 text-sm">
-              <Field label="Username">{delivery.username}</Field>
-              <Field label="Password">{delivery.password ?? "—"}</Field>
-              <Field label="Package">{delivery.package ?? "—"}</Field>
-              <Field label="Expiration">{delivery.expires_at ? new Date(delivery.expires_at).toLocaleDateString() : "—"}</Field>
-              <Field label="Max connexions">{delivery.max_connections ?? "—"}</Field>
-              <Field label="DNS link" className="sm:col-span-2 truncate">{delivery.dns_link ?? "—"}</Field>
-            </div>
+            <DeliveryPreview
+              delivery={delivery as any}
+              orderRef={orderQ.data?.order?.order_ref ?? null}
+              onDispatch={(chs) => dispatchM.mutate(chs)}
+              dispatching={dispatchM.isPending}
+            />
             {orderQ.data && (
               <DeliveryComposer
                 orderId={orderId}
