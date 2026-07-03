@@ -2,7 +2,7 @@ import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  LayoutDashboard, ShoppingBag, Users, Package, Settings, Shield, LogOut,
+  LayoutDashboard, ShoppingBag, Users, Package, Settings, Shield, LogOut, Workflow,
 } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
