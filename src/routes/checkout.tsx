@@ -557,16 +557,18 @@ function PendingPanel({ pending }: { pending: PendingState }) {
   const [tries, setTries] = useState(0);
 
   // Poll payment status server-side every 4s for up to ~3min. We never mark
-  // "paid" client-side — verifyPayment updates the DB only after confirmation.
+  // "paid" client-side — the verify server fn updates the DB only after
+  // the upstream provider (SebPay or Binance Pay) confirms.
   useEffect(() => {
     let cancelled = false;
     let attempts = 0;
+    const verify = pending.provider === "binance_pay" ? verifyBinancePayPayment : verifyPayment;
     async function poll() {
       while (!cancelled && attempts < 45) {
         attempts++;
         setTries(attempts);
         try {
-          const v = await verifyPayment({ data: { ref: pending.orderRef } });
+          const v = await verify({ data: { ref: pending.orderRef } });
           if (cancelled) return;
           setStatus(v.status);
           if (v.status === "paid") {
@@ -585,7 +587,7 @@ function PendingPanel({ pending }: { pending: PendingState }) {
     }
     poll();
     return () => { cancelled = true; };
-  }, [pending.orderRef]);
+  }, [pending.orderRef, pending.provider]);
 
   return (
     <section className="max-w-2xl mx-auto glass rounded-2xl p-8 md:p-12 text-center">
@@ -594,13 +596,21 @@ function PendingPanel({ pending }: { pending: PendingState }) {
       </div>
       <h1 className="text-2xl font-bold mb-2">Paiement en attente</h1>
       <p className="text-muted-foreground mb-6">
-        Confirmez la transaction sur votre téléphone ({pending.message ?? "USSD / page opérateur"}).
+        {pending.provider === "binance_pay"
+          ? "Scannez le QR code avec l'app Binance pour finaliser le paiement."
+          : `Confirmez la transaction sur votre téléphone (${pending.message ?? "USSD / page opérateur"}).`}
         Cette page se met à jour automatiquement.
       </p>
 
+      {pending.qrcodeLink && (
+        <div className="mx-auto mb-6 inline-block rounded-xl bg-white p-3">
+          <img src={pending.qrcodeLink} alt="Binance Pay QR" className="h-56 w-56" />
+        </div>
+      )}
+
       <div className="text-left mx-auto max-w-md rounded-xl border border-white/10 divide-y divide-white/5 mb-6">
         <Row label="Référence commande" value={<span className="font-mono">{pending.orderRef}</span>} />
-        <Row label="Référence transaction" value={<span className="font-mono text-xs">{pending.transactionId}</span>} />
+        <Row label={pending.provider === "binance_pay" ? "Prepay ID" : "Référence transaction"} value={<span className="font-mono text-xs">{pending.transactionId}</span>} />
         <Row label="Statut" value={<span className="text-amber-400">{status}</span>} />
         <Row label="Vérifications" value={`${tries} / 45`} />
       </div>
@@ -613,7 +623,7 @@ function PendingPanel({ pending }: { pending: PendingState }) {
           className="inline-flex items-center gap-2 px-6 py-3 rounded-full glass hover:border-[color:var(--gold)]/40 transition text-sm font-medium"
         >
           <ExternalLink className="h-4 w-4 text-[color:var(--gold)]" />
-          Ouvrir la page opérateur
+          {pending.provider === "binance_pay" ? "Ouvrir Binance Pay" : "Ouvrir la page opérateur"}
         </a>
       )}
 
