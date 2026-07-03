@@ -193,6 +193,9 @@ function CheckoutPage() {
           provider: "binance_pay_manual",
           orderRef: order.order_ref,
           submittedAt: new Date().toISOString(),
+          amount: total,
+          currency: "USDT",
+          customerEmail: email.toLowerCase(),
         });
       }
     } catch (err: any) {
