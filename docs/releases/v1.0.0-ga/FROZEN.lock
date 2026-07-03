@@ -1,9 +1,22 @@
 release: v1.0.0-ga
-frozen_at: 2026-07-03T12:30:00Z
+frozen_at: null
 predecessor: v1.0.0-security
 sprint: 3
 blocs: [A, B, C, D, E, F]
-status: CERTIFIED
+status: NOT_CERTIFIED
+blocker:
+  - id: GA-BLOCK-01
+    check: tests/rc2/secrets_leak_test.py
+    severity: critical
+    summary: |
+      Régression vs v1.0.0-security (0 hit → 20 hits). Modules serveur
+      (client.server, payments.functions, integration-hub, megaott.adapter)
+      code-splittés dans dist/client/*, exposant les noms des secrets
+      SUPABASE_SERVICE_ROLE_KEY, SEBPAY_SECRET_KEY, MEGAOTT_BEARER_TOKEN
+      dans le bundle navigateur. Aucune valeur secrète en clair, mais
+      violation du contrat "server-only never ships to client".
 notes: |
-  General Availability. Tag `v1.0.0-ga` prêt à être posé.
-  Suivi SLO 7 jours à démarrer post-tag pour validation opérationnelle.
+  Tag `v1.0.0-ga` NON posé. Correctif requis avant re-certification :
+  isoler les modules `*.server.ts` et `*.functions.ts` privilégiés du
+  graphe d'import client (voir docs/releases/v1.0.0-ga/CERTIFICATION.md
+  section « Correctifs requis »).

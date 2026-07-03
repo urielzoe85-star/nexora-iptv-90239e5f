@@ -1,0 +1,8 @@
+{
+  "scenario": "saturate_queue",
+  "generated_at": "2026-07-03T12:39:08.801652+00:00",
+  "mode": "dry-run",
+  "ok": true,
+  "target_events": 200,
+  "slo_s": 30
+}
