@@ -3,6 +3,13 @@ import type {} from "@tanstack/react-start";
 
 const BASE_URL = "https://nexora-iptv.com";
 
+// Public, indexable routes only. The following app routes are intentionally
+// EXCLUDED from the sitemap (and should stay excluded):
+//   - /checkout, /dashboard          → transactional / authenticated, no SEO value
+//   - /unsubscribe                   → one-shot token endpoint, not shareable
+//   - /admin, /admin/*, /ncc, /ncc/* → private backoffice (noindex,nofollow)
+//   - /payment/success, /payment/failed → post-payment redirects
+//   - /api/*, /lovable/*, /email/*   → server endpoints, not pages
 const PAGES = ["/", "/fr", "/en", "/de", "/catalog", "/legal-guide", "/fr/guide-iptv", "/en/guide-iptv", "/blog/best-iptv-2026", "/track"];
 const LOCALES: Record<string, string> = { fr: "fr", en: "en", de: "de" };
 
