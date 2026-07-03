@@ -362,6 +362,7 @@ function PaymentStep(props: {
   phone: string; setPhone: (v: string) => void;
   operator: Operator; setOperator: (v: Operator) => void;
   country: string; setCountry: (v: string) => void;
+  paymentMethod: "momo" | "crypto"; setPaymentMethod: (v: "momo" | "crypto") => void;
   termsAccepted: boolean; setTermsAccepted: (v: boolean) => void;
   processing: boolean; canPay: boolean; total: number; errorMsg?: string;
   onBack: () => void; onSubmit: (e: React.FormEvent) => void;
@@ -370,6 +371,7 @@ function PaymentStep(props: {
   const {
     email, setEmail, fullName, setFullName,
     phone, setPhone, operator, setOperator, country, setCountry,
+    paymentMethod, setPaymentMethod,
     termsAccepted, setTermsAccepted,
     processing, canPay, total, errorMsg, onBack, onSubmit,
   } = props;
@@ -400,6 +402,37 @@ function PaymentStep(props: {
         </div>
       </section>
 
+      <section className="glass rounded-2xl p-6 md:p-8">
+        <h2 className="text-xl font-bold mb-4">Choix du moyen de paiement</h2>
+        <div className="grid sm:grid-cols-2 gap-3">
+          <button
+            type="button"
+            onClick={() => setPaymentMethod("momo")}
+            className={`text-left rounded-xl p-4 border transition ${paymentMethod === "momo"
+              ? "border-[color:var(--gold)] bg-white/[0.04] shadow-[var(--shadow-gold)]"
+              : "border-white/10 hover:border-white/20 bg-white/[0.02]"}`}
+          >
+            <div className="flex items-center gap-2 font-semibold">
+              <Smartphone className="h-4 w-4 text-[color:var(--gold)]" /> Mobile Money
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">MTN, Orange, Moov, Wave — Afrique de l'Ouest & Centrale.</p>
+          </button>
+          <button
+            type="button"
+            onClick={() => setPaymentMethod("crypto")}
+            className={`text-left rounded-xl p-4 border transition ${paymentMethod === "crypto"
+              ? "border-[color:var(--gold)] bg-white/[0.04] shadow-[var(--shadow-gold)]"
+              : "border-white/10 hover:border-white/20 bg-white/[0.02]"}`}
+          >
+            <div className="flex items-center gap-2 font-semibold">
+              <Bitcoin className="h-4 w-4 text-[color:var(--gold)]" /> Crypto (Binance Pay)
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">BTC, ETH, USDT — paiement instantané via l'app Binance.</p>
+          </button>
+        </div>
+      </section>
+
+      {paymentMethod === "momo" ? (
       <section className="glass rounded-2xl p-6 md:p-8">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold">Paiement Mobile Money</h2>
@@ -451,6 +484,28 @@ function PaymentStep(props: {
         </div>
 
       </section>
+      ) : (
+      <section className="glass rounded-2xl p-6 md:p-8">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-bold">Paiement Crypto — Binance Pay</h2>
+          <span className="text-xs text-muted-foreground flex items-center gap-1">
+              <ShieldCheck className="h-4 w-4 text-[color:var(--gold)]" /> Sécurisé
+          </span>
+        </div>
+        <div className="space-y-3 text-sm text-muted-foreground">
+          <p>
+            Après validation, un QR code Binance Pay s'affichera. Ouvrez l'app
+            Binance sur votre téléphone, scannez le code et confirmez le paiement
+            en <span className="text-foreground font-medium">BTC, ETH ou USDT</span>.
+          </p>
+          <ul className="list-disc pl-5 space-y-1">
+            <li>Montant facturé : <span className="font-mono text-foreground">{total.toFixed(2)} USDT</span> (≈ ${total.toFixed(2)}).</li>
+            <li>Confirmation automatique dès que Binance valide la transaction.</li>
+            <li>Aucun frais caché — conversion auto en fiat côté marchand.</li>
+          </ul>
+        </div>
+      </section>
+      )}
 
       {errorMsg && (
         <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200 whitespace-pre-wrap break-words">
