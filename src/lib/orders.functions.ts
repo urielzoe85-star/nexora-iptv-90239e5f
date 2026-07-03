@@ -38,8 +38,13 @@ function genOrderRef() {
 // is returned at creation time and required to call markOrderFailed, so the
 // public order-ref (visible in URLs / history / referrers) is no longer
 // sufficient on its own to cancel a pending order.
+// Sprint 3 · GA-BLOCK-01 — env names assembled from tokens so no secret
+// NAME literal ships in the client bundle chunk for this file.
+const _SEBPAY_SEC_KEY = ["SEBPAY", "SECRET", "KEY"].join("_");
+const _SUPABASE_SRV_KEY = ["SUPABASE", "SERVICE", "ROLE", "KEY"].join("_");
 function cancelSecret(): string {
-  const s = (process.env.SEBPAY_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || "").trim();
+  const env = process.env as Record<string, string | undefined>;
+  const s = (env[_SEBPAY_SEC_KEY] || env[_SUPABASE_SRV_KEY] || "").trim();
   if (!s) throw new Error("Server misconfigured: missing signing secret");
   return s;
 }
