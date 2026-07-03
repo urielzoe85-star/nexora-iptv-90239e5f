@@ -2,7 +2,7 @@ import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
-import { getMyAdminStatus } from "@/lib/admin.functions";
+import { getMyAdminStatus, getNccUnlockStatus, lockNccAccess } from "@/lib/admin.functions";
 import { NccShell } from "@/components/ncc/NccShell";
 import { Loader2, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,8 @@ export const Route = createFileRoute("/ncc")({
 function NccLayout() {
   const navigate = useNavigate();
   const getStatus = useServerFn(getMyAdminStatus);
+  const getUnlock = useServerFn(getNccUnlockStatus);
+  const lockNcc = useServerFn(lockNccAccess);
   const [state, setState] = useState<
     | { kind: "loading" }
     | { kind: "no-auth" }
@@ -44,8 +46,9 @@ function NccLayout() {
           setState({ kind: "forbidden", email: s.session.user.email ?? null });
           return;
         }
-        const unlocked = typeof window !== "undefined" && sessionStorage.getItem("ncc.unlocked") === "1";
-        if (!unlocked) {
+        const gate = await getUnlock();
+        if (!gate.unlocked) {
+          try { sessionStorage.removeItem("ncc.unlocked"); } catch { /* noop */ }
           navigate({ to: "/admin", replace: true });
           return;
         }
@@ -55,7 +58,7 @@ function NccLayout() {
       }
     })();
     return () => { cancelled = true; };
-  }, [getStatus, navigate]);
+  }, [getStatus, getUnlock, navigate]);
 
   if (state.kind === "loading" || state.kind === "no-auth") {
     return (
@@ -77,6 +80,7 @@ function NccLayout() {
             Le compte <strong>{state.email}</strong> n'a pas le rôle administrateur.
           </p>
           <Button onClick={async () => {
+            try { await lockNcc(); } catch { /* noop */ }
             await supabase.auth.signOut();
             navigate({ to: "/admin/login", replace: true });
           }}>Se déconnecter</Button>
