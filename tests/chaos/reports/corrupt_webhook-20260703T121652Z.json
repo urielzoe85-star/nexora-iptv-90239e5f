@@ -1,0 +1,6 @@
+{
+  "scenario": "corrupt_webhook",
+  "generated_at": "2026-07-03T12:16:52.848846+00:00",
+  "mode": "dry-run",
+  "ok": true
+}
