@@ -49,6 +49,7 @@ import { Route as LegalTermsRouteImport } from './routes/legal.terms'
 import { Route as LegalSalesRouteImport } from './routes/legal.sales'
 import { Route as LegalRefundRouteImport } from './routes/legal.refund'
 import { Route as LegalPrivacyRouteImport } from './routes/legal.privacy'
+import { Route as LegalNoticeRouteImport } from './routes/legal.notice'
 import { Route as FrGuideIptvRouteImport } from './routes/fr.guide-iptv'
 import { Route as EnGuideIptvRouteImport } from './routes/en.guide-iptv'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
@@ -289,6 +290,11 @@ const LegalPrivacyRoute = LegalPrivacyRouteImport.update({
   path: '/legal/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LegalNoticeRoute = LegalNoticeRouteImport.update({
+  id: '/legal/notice',
+  path: '/legal/notice',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const FrGuideIptvRoute = FrGuideIptvRouteImport.update({
   id: '/guide-iptv',
   path: '/guide-iptv',
@@ -517,6 +523,7 @@ export interface FileRoutesByFullPath {
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/en/guide-iptv': typeof EnGuideIptvRoute
   '/fr/guide-iptv': typeof FrGuideIptvRoute
+  '/legal/notice': typeof LegalNoticeRoute
   '/legal/privacy': typeof LegalPrivacyRoute
   '/legal/refund': typeof LegalRefundRoute
   '/legal/sales': typeof LegalSalesRoute
@@ -594,6 +601,7 @@ export interface FileRoutesByTo {
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/en/guide-iptv': typeof EnGuideIptvRoute
   '/fr/guide-iptv': typeof FrGuideIptvRoute
+  '/legal/notice': typeof LegalNoticeRoute
   '/legal/privacy': typeof LegalPrivacyRoute
   '/legal/refund': typeof LegalRefundRoute
   '/legal/sales': typeof LegalSalesRoute
@@ -674,6 +682,7 @@ export interface FileRoutesById {
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/en/guide-iptv': typeof EnGuideIptvRoute
   '/fr/guide-iptv': typeof FrGuideIptvRoute
+  '/legal/notice': typeof LegalNoticeRoute
   '/legal/privacy': typeof LegalPrivacyRoute
   '/legal/refund': typeof LegalRefundRoute
   '/legal/sales': typeof LegalSalesRoute
@@ -757,6 +766,7 @@ export interface FileRouteTypes {
     | '/email/unsubscribe'
     | '/en/guide-iptv'
     | '/fr/guide-iptv'
+    | '/legal/notice'
     | '/legal/privacy'
     | '/legal/refund'
     | '/legal/sales'
@@ -834,6 +844,7 @@ export interface FileRouteTypes {
     | '/email/unsubscribe'
     | '/en/guide-iptv'
     | '/fr/guide-iptv'
+    | '/legal/notice'
     | '/legal/privacy'
     | '/legal/refund'
     | '/legal/sales'
@@ -913,6 +924,7 @@ export interface FileRouteTypes {
     | '/email/unsubscribe'
     | '/en/guide-iptv'
     | '/fr/guide-iptv'
+    | '/legal/notice'
     | '/legal/privacy'
     | '/legal/refund'
     | '/legal/sales'
@@ -988,6 +1000,7 @@ export interface RootRouteChildren {
   UnsubscribeRoute: typeof UnsubscribeRoute
   BlogBestIptv2026Route: typeof BlogBestIptv2026Route
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
+  LegalNoticeRoute: typeof LegalNoticeRoute
   LegalPrivacyRoute: typeof LegalPrivacyRoute
   LegalRefundRoute: typeof LegalRefundRoute
   LegalSalesRoute: typeof LegalSalesRoute
@@ -1289,6 +1302,13 @@ declare module '@tanstack/react-router' {
       path: '/legal/privacy'
       fullPath: '/legal/privacy'
       preLoaderRoute: typeof LegalPrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/legal/notice': {
+      id: '/legal/notice'
+      path: '/legal/notice'
+      fullPath: '/legal/notice'
+      preLoaderRoute: typeof LegalNoticeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/fr/guide-iptv': {
@@ -1744,6 +1764,7 @@ const rootRouteChildren: RootRouteChildren = {
   UnsubscribeRoute: UnsubscribeRoute,
   BlogBestIptv2026Route: BlogBestIptv2026Route,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
+  LegalNoticeRoute: LegalNoticeRoute,
   LegalPrivacyRoute: LegalPrivacyRoute,
   LegalRefundRoute: LegalRefundRoute,
   LegalSalesRoute: LegalSalesRoute,
