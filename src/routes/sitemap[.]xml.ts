@@ -10,7 +10,15 @@ const BASE_URL = "https://nexora-iptv.com";
 //   - /admin, /admin/*, /ncc, /ncc/* → private backoffice (noindex,nofollow)
 //   - /payment/success, /payment/failed → post-payment redirects
 //   - /api/*, /lovable/*, /email/*   → server endpoints, not pages
-const PAGES = ["/", "/fr", "/en", "/de", "/catalog", "/legal-guide", "/fr/guide-iptv", "/en/guide-iptv", "/blog/best-iptv-2026", "/track"];
+const PAGES = [
+  "/", "/fr", "/en", "/de",
+  "/catalog", "/legal-guide",
+  "/fr/guide-iptv", "/en/guide-iptv",
+  "/blog/best-iptv-2026", "/track",
+  // Sprint 3 · Bloc C — public compliance pages
+  "/legal/terms", "/legal/sales", "/legal/privacy",
+  "/legal/refund", "/legal/notice",
+];
 const LOCALES: Record<string, string> = { fr: "fr", en: "en", de: "de" };
 
 export const Route = createFileRoute("/sitemap.xml")({
