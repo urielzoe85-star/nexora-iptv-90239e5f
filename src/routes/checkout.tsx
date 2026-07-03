@@ -2,11 +2,11 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
   Check, Lock, ShieldCheck, ChevronLeft, Mail, User,
-  Loader2, Tv, Phone, Globe, Smartphone, ExternalLink, Clock,
+  Loader2, Tv, Phone, Globe, Smartphone, ExternalLink, Clock, Bitcoin,
 } from "lucide-react";
 import { createOrder } from "@/lib/orders.functions";
 import { LEGAL_VERSION } from "@/lib/legal-version";
-import { initSebPayCheckout, verifyPayment } from "@/lib/payments.functions";
+import { initSebPayCheckout, verifyPayment, initBinancePayCheckout, verifyBinancePayPayment } from "@/lib/payments.functions";
 import { useT, LanguageSwitcher } from "@/i18n/context";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -48,6 +48,8 @@ type PendingState = {
   transactionId: string;
   providerLink: string | null;
   message: string | null;
+  provider: "sebpay" | "binance_pay";
+  qrcodeLink?: string | null;
 };
 
 function CheckoutPage() {
@@ -85,6 +87,7 @@ function CheckoutPage() {
   const [errorMsg, setErrorMsg] = useState<string>("");
   const [pending, setPending] = useState<PendingState | null>(null);
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<"momo" | "crypto">("momo");
 
   // When the country changes: re-prefix the phone with the new dial code
   // and reset the operator if the previous one isn't offered there.
@@ -113,8 +116,8 @@ function CheckoutPage() {
     !!selected &&
     email.includes("@") &&
     fullName.trim().length > 1 &&
-    phone.replace(/\D/g, "").length >= 8 &&
-    !!operator && !!country &&
+    (paymentMethod === "crypto" ||
+      (phone.replace(/\D/g, "").length >= 8 && !!operator && !!country)) &&
     termsAccepted;
 
   async function handlePay(e: React.FormEvent) {
@@ -123,20 +126,27 @@ function CheckoutPage() {
     setErrorMsg("");
     setProcessing(true);
     try {
-      const order = await createOrder({
-        data: {
-          email: email.toLowerCase(),
-          fullName,
-          planId: selected.id,
-          planName: selected.name,
-          amount: total,
-          currency: "USD",
-          method: "momo",
-          phone, operator, country,
-          termsAccepted: true,
-          termsVersion: LEGAL_VERSION,
-        },
-      });
+      const orderData =
+        paymentMethod === "momo"
+          ? {
+              email: email.toLowerCase(), fullName,
+              planId: selected.id, planName: selected.name,
+              amount: total, currency: "USD",
+              method: "momo" as const,
+              phone, operator, country,
+              termsAccepted: true as const,
+              termsVersion: LEGAL_VERSION,
+            }
+          : {
+              email: email.toLowerCase(), fullName,
+              planId: selected.id, planName: selected.name,
+              amount: total, currency: "USD",
+              method: "crypto" as const,
+              crypto_currency: "USDT" as const,
+              termsAccepted: true as const,
+              termsVersion: LEGAL_VERSION,
+            };
+      const order = await createOrder({ data: orderData });
       if (!order?.order_ref) throw new Error("Could not create order");
 
       // Stash the per-order cancellation token so the failure page can call
@@ -149,25 +159,39 @@ function CheckoutPage() {
       }
 
       const origin = typeof window !== "undefined" ? window.location.origin : "";
-      const result = await initSebPayCheckout({
-        data: {
-          ref: order.order_ref,
-          successUrl: `${origin}/payment/success?ref=${order.order_ref}`,
-          failureUrl: `${origin}/payment/failed?ref=${order.order_ref}`,
-        },
-      });
-      // If the payment provider returns a confirmation page, open it in a new
-      // tab so the customer can complete the payment.
-      if (result.providerLink && typeof window !== "undefined") {
-        window.open(result.providerLink, "_blank", "noopener,noreferrer");
-      }
+      const successUrl = `${origin}/payment/success?ref=${order.order_ref}`;
+      const failureUrl = `${origin}/payment/failed?ref=${order.order_ref}`;
 
-      setPending({
-        orderRef: order.order_ref,
-        transactionId: result.transactionId,
-        providerLink: result.providerLink,
-        message: result.message,
-      });
+      if (paymentMethod === "momo") {
+        const result = await initSebPayCheckout({
+          data: { ref: order.order_ref, successUrl, failureUrl },
+        });
+        if (result.providerLink && typeof window !== "undefined") {
+          window.open(result.providerLink, "_blank", "noopener,noreferrer");
+        }
+        setPending({
+          orderRef: order.order_ref,
+          transactionId: result.transactionId,
+          providerLink: result.providerLink,
+          message: result.message,
+          provider: "sebpay",
+        });
+      } else {
+        const result = await initBinancePayCheckout({
+          data: { ref: order.order_ref, successUrl, failureUrl },
+        });
+        if (result.checkoutUrl && typeof window !== "undefined") {
+          window.open(result.checkoutUrl, "_blank", "noopener,noreferrer");
+        }
+        setPending({
+          orderRef: order.order_ref,
+          transactionId: result.prepayId,
+          providerLink: result.checkoutUrl,
+          qrcodeLink: result.qrcodeLink,
+          message: "Scannez le QR code avec l'app Binance pour payer en BTC, ETH ou USDT.",
+          provider: "binance_pay",
+        });
+      }
     } catch (err: any) {
       console.error("[checkout] payment init failed", err);
       setErrorMsg(err?.message ?? t("co.err.generic"));
