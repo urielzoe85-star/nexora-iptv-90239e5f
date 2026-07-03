@@ -1,0 +1,22 @@
+  [OK  ] admin_change_role est SECURITY DEFINER avec search_path=public — t|{search_path=public}
+  [OK  ] guard SQL présent: 'Cannot remove the last active administrator'
+  [OK  ] guard SQL présent: 'You cannot revoke your own admin role'
+  [OK  ] guard SQL présent: 'FOR UPDATE'
+  [OK  ] guard SQL présent: 'grant_admin'
+  [OK  ] guard SQL présent: 'revoke_admin'
+  [OK  ] action inconnue rejetée (input validation) — ERROR:  Invalid action: bogus
+CONTEXT:  PL/pgSQL function admin_change_role(uuid,uuid,text) line 9 at RAISE
+  [OK  ] actor/target NULL rejetés — ERROR:  actor and target are required
+CONTEXT:  PL/pgSQL function admin_change_role(uuid,uuid,text) line 12 at RAISE
+  [OK  ] EXECUTE anon = f — f
+  [OK  ] EXECUTE authenticated = f — f
+  [OK  ] EXECUTE service_role = t — t
+  [OK  ] security_events.request_id existe — id,event_type,severity,actor_user_id,actor_email,route,ip,user_agent,message,payload,created_at,request_id,target_user_id
+  [OK  ] security_events.target_user_id existe — id,event_type,severity,actor_user_id,actor_email,route,ip,user_agent,message,payload,created_at,request_id,target_user_id
+  [OK  ] security_events.actor_user_id existe — id,event_type,severity,actor_user_id,actor_email,route,ip,user_agent,message,payload,created_at,request_id,target_user_id
+  [OK  ] événement audit défini: admin.role.granted
+  [OK  ] événement audit défini: admin.role.revoked
+  [OK  ] événement audit défini: admin.role.revoke_blocked
+  [OK  ] événement audit défini: admin.role.grant_failed
+
+RESULT: all Bloc E guarantees hold ✅

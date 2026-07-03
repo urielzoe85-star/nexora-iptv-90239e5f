@@ -1,0 +1,31 @@
+{
+  "id": "RC1-02",
+  "name": "Webhook replay + invalid signature",
+  "ref": "NXR-E2E-RC1-1783012277-wh",
+  "steps": [
+    {
+      "name": "webhook_valid_1",
+      "ok": true,
+      "http": 200
+    },
+    {
+      "name": "webhook_valid_2_replay",
+      "ok": true,
+      "http": 200
+    },
+    {
+      "name": "webhook_invalid_sig",
+      "ok": true,
+      "http": 401
+    },
+    {
+      "name": "receipts_recorded",
+      "ok": true,
+      "valid_count": 2
+    }
+  ],
+  "ok": true,
+  "perf_ms": {
+    "t_total": 1371
+  }
+}

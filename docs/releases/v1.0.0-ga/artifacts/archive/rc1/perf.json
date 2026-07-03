@@ -1,0 +1,38 @@
+{
+  "t_checkout": {
+    "median_ms": 214,
+    "p95_ms": 214,
+    "max_ms": 214,
+    "samples": 1
+  },
+  "t_payment": {
+    "median_ms": 276,
+    "p95_ms": 276,
+    "max_ms": 276,
+    "samples": 1
+  },
+  "t_workflow": {
+    "median_ms": 1759,
+    "p95_ms": 1759,
+    "max_ms": 1759,
+    "samples": 1
+  },
+  "t_delivery": {
+    "median_ms": 215,
+    "p95_ms": 215,
+    "max_ms": 215,
+    "samples": 1
+  },
+  "t_tracking": {
+    "median_ms": 2033,
+    "p95_ms": 2033,
+    "max_ms": 2033,
+    "samples": 1
+  },
+  "t_total": {
+    "median_ms": 1924,
+    "p95_ms": 1924,
+    "max_ms": 6548,
+    "samples": 3
+  }
+}

@@ -1,0 +1,13 @@
+STATUS: FROZEN
+SPRINT: 3
+BLOC: A (Billing Cycle)
+CERTIFIED_AT: 2026-07-02
+CERTIFICATION: docs/releases/sprint-3/bloc-a/CERTIFICATION.md
+CHANGELOG: docs/releases/sprint-3/CHANGELOG.md
+GIT_TAG: v1.0.0-ga-bloc-a (agrégé dans v1.0.0-ga en clôture Sprint 3)
+
+Scope figé — ne pas modifier sans hotfix référencé dans le CHANGELOG.
+Endpoints : /api/public/hooks/renewal-reminders, /api/public/hooks/payment-dunning
+Templates : iptv-renewal-reminder, payment-failed
+Tests E2E : tests/e2e/sprint-3/billing_lifecycle_test.py
+CI       : .github/workflows/sprint-3-billing.yml

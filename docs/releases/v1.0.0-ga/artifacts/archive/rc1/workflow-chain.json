@@ -1,0 +1,21 @@
+{
+  "ok": true,
+  "refs_checked": 1,
+  "results": [
+    {
+      "ref": "NXR-E2E-RC1-1783012270",
+      "ok": true,
+      "missing": [],
+      "chain_ok": true,
+      "track_ok": true,
+      "track_http": 200,
+      "timestamps": {
+        "order_created_at": "2026-07-02T17:11:11.513812+00:00",
+        "run_started_at": "2026-07-02T17:11:12.005000+00:00",
+        "run_completed_at": "2026-07-02T17:11:13.445000+00:00",
+        "account_created_at": "2026-07-02T17:11:12.818462+00:00",
+        "delivery_sent_at": "2026-07-02T17:11:13.063333+00:00"
+      }
+    }
+  ]
+}
