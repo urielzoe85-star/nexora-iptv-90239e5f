@@ -147,6 +147,8 @@ function TrackPage() {
           <div className="flex items-center gap-2 flex-1 rounded-xl border border-white/10 bg-white/[0.02] px-3 py-2">
             <Search className="h-4 w-4 text-muted-foreground" />
             <input
+              id="order-reference"
+              aria-label="Order reference"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="NX-XXXXXXXXXX"
