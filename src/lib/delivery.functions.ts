@@ -4,7 +4,7 @@
 // à l'envoi automatique (WhatsApp Business / Bot Telegram / SMTP).
 
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNccUnlock } from "@/lib/require-ncc-unlock";
 import { z } from "zod";
 
 async function adminClient(userId: string) {
@@ -19,7 +19,7 @@ const ChannelEnum = z.enum(["whatsapp", "telegram", "email"]);
 const StatusEnum = z.enum(["prepared", "copied", "sent", "automatic", "failed"]);
 
 export const logDelivery = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNccUnlock])
   .inputValidator((d: unknown) =>
     z.object({
       order_id: z.string().uuid(),
@@ -52,7 +52,7 @@ export const logDelivery = createServerFn({ method: "POST" })
   });
 
 export const listDeliveryLogs = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNccUnlock])
   .inputValidator((d: unknown) =>
     z.object({
       order_id: z.string().uuid().optional(),
@@ -73,7 +73,7 @@ export const listDeliveryLogs = createServerFn({ method: "POST" })
   });
 
 export const getDeliveryStats = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNccUnlock])
   .inputValidator((d: unknown) =>
     z.object({ days: z.number().int().min(1).max(365).default(30) }).parse(d ?? {}),
   )
@@ -101,7 +101,7 @@ export const getDeliveryStats = createServerFn({ method: "POST" })
 // ENVOI AUTOMATIQUE — Telegram via gateway connector Lovable
 // ────────────────────────────────────────────────────────────────────────────
 export const sendTelegramAuto = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNccUnlock])
   .inputValidator((d: unknown) =>
     z.object({
       order_id: z.string().uuid(),
@@ -148,7 +148,7 @@ export const sendTelegramAuto = createServerFn({ method: "POST" })
 // ENVOI AUTOMATIQUE — Email via Lovable Emails (queue + retry)
 // ────────────────────────────────────────────────────────────────────────────
 export const sendEmailAuto = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNccUnlock])
   .inputValidator((d: unknown) =>
     z.object({
       order_id: z.string().uuid(),

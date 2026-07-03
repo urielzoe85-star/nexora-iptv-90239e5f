@@ -4,7 +4,7 @@
 // handler (never at module scope) per project rules.
 
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNccUnlock } from "@/lib/require-ncc-unlock";
 import { z } from "zod";
 
 async function admin(userId: string) {
@@ -48,7 +48,7 @@ const ProviderUpsertSchema = z.object({
 });
 
 export const listProviders = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNccUnlock])
   .handler(async ({ context }) => {
     const sb = await admin(context.userId);
     const { data, error } = await sb.from("iptv_providers")
@@ -58,7 +58,7 @@ export const listProviders = createServerFn({ method: "GET" })
   });
 
 export const upsertProvider = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNccUnlock])
   .inputValidator((d: unknown) => ProviderUpsertSchema.parse(d))
   .handler(async ({ data, context }) => {
     const sb = await admin(context.userId);
@@ -75,7 +75,7 @@ export const upsertProvider = createServerFn({ method: "POST" })
   });
 
 export const deleteProvider = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNccUnlock])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const sb = await admin(context.userId);
@@ -86,7 +86,7 @@ export const deleteProvider = createServerFn({ method: "POST" })
   });
 
 export const setDefaultProvider = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNccUnlock])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const sb = await admin(context.userId);
@@ -98,7 +98,7 @@ export const setDefaultProvider = createServerFn({ method: "POST" })
   });
 
 export const toggleProviderStatus = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNccUnlock])
   .inputValidator((d: unknown) => z.object({
     id: z.string().uuid(),
     status: z.enum(["active", "inactive", "error"]),
@@ -113,7 +113,7 @@ export const toggleProviderStatus = createServerFn({ method: "POST" })
 
 // Health check (stub — to be wired to integration hub later)
 export const checkProviderHealth = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNccUnlock])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const sb = await admin(context.userId);
@@ -164,7 +164,7 @@ const AccountUpdateSchema = AccountCreateSchema.partial().extend({
 });
 
 export const listAccounts = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNccUnlock])
   .inputValidator((d: unknown) => z.object({
     search: z.string().trim().max(200).optional(),
     status: z.enum(ACC_STATUS).optional(),
@@ -201,7 +201,7 @@ async function ensureProvider(sb: any, provider_id?: string | null) {
 }
 
 export const createAccount = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNccUnlock])
   .inputValidator((d: unknown) => AccountCreateSchema.parse(d))
   .handler(async ({ data, context }) => {
     const sb = await admin(context.userId);
@@ -215,7 +215,7 @@ export const createAccount = createServerFn({ method: "POST" })
   });
 
 export const updateAccount = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNccUnlock])
   .inputValidator((d: unknown) => AccountUpdateSchema.parse(d))
   .handler(async ({ data, context }) => {
     const sb = await admin(context.userId);
@@ -227,7 +227,7 @@ export const updateAccount = createServerFn({ method: "POST" })
   });
 
 export const deleteAccount = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNccUnlock])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const sb = await admin(context.userId);
@@ -247,7 +247,7 @@ const TransitionSchema = z.object({
 });
 
 export const transitionAccount = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNccUnlock])
   .inputValidator((d: unknown) => TransitionSchema.parse(d))
   .handler(async ({ data, context }) => {
     const sb = await admin(context.userId);
@@ -300,7 +300,7 @@ function parseCsv(text: string): Record<string, string>[] {
 }
 
 export const importAccountsCsv = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNccUnlock])
   .inputValidator((d: unknown) => z.object({
     csv: z.string().min(1).max(2_000_000),
     account_type: z.enum(ACC_TYPE).default("trial"),
@@ -332,7 +332,7 @@ export const importAccountsCsv = createServerFn({ method: "POST" })
   });
 
 export const exportAccountsCsv = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNccUnlock])
   .inputValidator((d: unknown) => z.object({
     account_type: z.enum(ACC_TYPE).optional(),
     status: z.enum(ACC_STATUS).optional(),
@@ -354,7 +354,7 @@ export const exportAccountsCsv = createServerFn({ method: "POST" })
 // ─── LOGS ──────────────────────────────────────────────────────────────
 
 export const listIptvLogs = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNccUnlock])
   .inputValidator((d: unknown) => z.object({
     limit: z.number().int().min(1).max(500).default(200),
     action: z.string().max(80).optional(),
@@ -372,7 +372,7 @@ export const listIptvLogs = createServerFn({ method: "POST" })
 // ─── DASHBOARD ─────────────────────────────────────────────────────────
 
 export const iptvDashboard = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNccUnlock])
   .handler(async ({ context }) => {
     const sb = await admin(context.userId);
     const now = new Date();
