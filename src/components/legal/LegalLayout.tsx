@@ -31,7 +31,7 @@ export function LegalLayout({
           {intro ? (
             <p className="text-lg text-muted-foreground leading-relaxed mb-8">{intro}</p>
           ) : null}
-          <div className="prose prose-invert max-w-none prose-headings:scroll-mt-24 prose-h2:text-2xl prose-h2:font-semibold prose-h2:mt-10 prose-h2:mb-3 prose-p:text-muted-foreground prose-li:text-muted-foreground prose-a:text-[color:var(--gold)]">
+          <div className="legal-content space-y-4 text-muted-foreground leading-relaxed [&_h2]:text-2xl [&_h2]:font-semibold [&_h2]:text-foreground [&_h2]:mt-10 [&_h2]:mb-3 [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:space-y-1 [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:space-y-1 [&_a]:text-[color:var(--gold)] [&_a:hover]:underline [&_strong]:text-foreground">
             {children}
           </div>
           <nav aria-label="Documents légaux" className="mt-16 flex flex-wrap gap-3 text-sm">
