@@ -62,6 +62,7 @@ import { Route as AdminAdminsRouteImport } from './routes/admin.admins'
 import { Route as NccSettingsIndexRouteImport } from './routes/ncc.settings.index'
 import { Route as NccIptvIndexRouteImport } from './routes/ncc.iptv.index'
 import { Route as NccSettingsSectionRouteImport } from './routes/ncc.settings.$section'
+import { Route as NccPaymentsBinanceRouteImport } from './routes/ncc.payments.binance'
 import { Route as NccOrdersIdRouteImport } from './routes/ncc.orders.$id'
 import { Route as NccIptvTrialsRouteImport } from './routes/ncc.iptv.trials'
 import { Route as NccIptvSuspendedRouteImport } from './routes/ncc.iptv.suspended'
@@ -358,6 +359,11 @@ const NccSettingsSectionRoute = NccSettingsSectionRouteImport.update({
   path: '/$section',
   getParentRoute: () => NccSettingsRoute,
 } as any)
+const NccPaymentsBinanceRoute = NccPaymentsBinanceRouteImport.update({
+  id: '/binance',
+  path: '/binance',
+  getParentRoute: () => NccPaymentsRoute,
+} as any)
 const NccOrdersIdRoute = NccOrdersIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -558,7 +564,7 @@ export interface FileRoutesByFullPath {
   '/ncc/logs': typeof NccLogsRoute
   '/ncc/notifications': typeof NccNotificationsRoute
   '/ncc/orders': typeof NccOrdersRouteWithChildren
-  '/ncc/payments': typeof NccPaymentsRoute
+  '/ncc/payments': typeof NccPaymentsRouteWithChildren
   '/ncc/products': typeof NccProductsRoute
   '/ncc/settings': typeof NccSettingsRouteWithChildren
   '/ncc/support': typeof NccSupportRoute
@@ -587,6 +593,7 @@ export interface FileRoutesByFullPath {
   '/ncc/iptv/suspended': typeof NccIptvSuspendedRoute
   '/ncc/iptv/trials': typeof NccIptvTrialsRoute
   '/ncc/orders/$id': typeof NccOrdersIdRoute
+  '/ncc/payments/binance': typeof NccPaymentsBinanceRoute
   '/ncc/settings/$section': typeof NccSettingsSectionRoute
   '/ncc/iptv/': typeof NccIptvIndexRoute
   '/ncc/settings/': typeof NccSettingsIndexRoute
@@ -638,7 +645,7 @@ export interface FileRoutesByTo {
   '/ncc/logs': typeof NccLogsRoute
   '/ncc/notifications': typeof NccNotificationsRoute
   '/ncc/orders': typeof NccOrdersRouteWithChildren
-  '/ncc/payments': typeof NccPaymentsRoute
+  '/ncc/payments': typeof NccPaymentsRouteWithChildren
   '/ncc/products': typeof NccProductsRoute
   '/ncc/support': typeof NccSupportRoute
   '/ncc/telegram': typeof NccTelegramRoute
@@ -666,6 +673,7 @@ export interface FileRoutesByTo {
   '/ncc/iptv/suspended': typeof NccIptvSuspendedRoute
   '/ncc/iptv/trials': typeof NccIptvTrialsRoute
   '/ncc/orders/$id': typeof NccOrdersIdRoute
+  '/ncc/payments/binance': typeof NccPaymentsBinanceRoute
   '/ncc/settings/$section': typeof NccSettingsSectionRoute
   '/ncc/iptv': typeof NccIptvIndexRoute
   '/ncc/settings': typeof NccSettingsIndexRoute
@@ -723,7 +731,7 @@ export interface FileRoutesById {
   '/ncc/logs': typeof NccLogsRoute
   '/ncc/notifications': typeof NccNotificationsRoute
   '/ncc/orders': typeof NccOrdersRouteWithChildren
-  '/ncc/payments': typeof NccPaymentsRoute
+  '/ncc/payments': typeof NccPaymentsRouteWithChildren
   '/ncc/products': typeof NccProductsRoute
   '/ncc/settings': typeof NccSettingsRouteWithChildren
   '/ncc/support': typeof NccSupportRoute
@@ -752,6 +760,7 @@ export interface FileRoutesById {
   '/ncc/iptv/suspended': typeof NccIptvSuspendedRoute
   '/ncc/iptv/trials': typeof NccIptvTrialsRoute
   '/ncc/orders/$id': typeof NccOrdersIdRoute
+  '/ncc/payments/binance': typeof NccPaymentsBinanceRoute
   '/ncc/settings/$section': typeof NccSettingsSectionRoute
   '/ncc/iptv/': typeof NccIptvIndexRoute
   '/ncc/settings/': typeof NccSettingsIndexRoute
@@ -839,6 +848,7 @@ export interface FileRouteTypes {
     | '/ncc/iptv/suspended'
     | '/ncc/iptv/trials'
     | '/ncc/orders/$id'
+    | '/ncc/payments/binance'
     | '/ncc/settings/$section'
     | '/ncc/iptv/'
     | '/ncc/settings/'
@@ -918,6 +928,7 @@ export interface FileRouteTypes {
     | '/ncc/iptv/suspended'
     | '/ncc/iptv/trials'
     | '/ncc/orders/$id'
+    | '/ncc/payments/binance'
     | '/ncc/settings/$section'
     | '/ncc/iptv'
     | '/ncc/settings'
@@ -1003,6 +1014,7 @@ export interface FileRouteTypes {
     | '/ncc/iptv/suspended'
     | '/ncc/iptv/trials'
     | '/ncc/orders/$id'
+    | '/ncc/payments/binance'
     | '/ncc/settings/$section'
     | '/ncc/iptv/'
     | '/ncc/settings/'
@@ -1436,6 +1448,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof NccSettingsSectionRouteImport
       parentRoute: typeof NccSettingsRoute
     }
+    '/ncc/payments/binance': {
+      id: '/ncc/payments/binance'
+      path: '/binance'
+      fullPath: '/ncc/payments/binance'
+      preLoaderRoute: typeof NccPaymentsBinanceRouteImport
+      parentRoute: typeof NccPaymentsRoute
+    }
     '/ncc/orders/$id': {
       id: '/ncc/orders/$id'
       path: '/$id'
@@ -1752,6 +1771,18 @@ const NccOrdersRouteWithChildren = NccOrdersRoute._addFileChildren(
   NccOrdersRouteChildren,
 )
 
+interface NccPaymentsRouteChildren {
+  NccPaymentsBinanceRoute: typeof NccPaymentsBinanceRoute
+}
+
+const NccPaymentsRouteChildren: NccPaymentsRouteChildren = {
+  NccPaymentsBinanceRoute: NccPaymentsBinanceRoute,
+}
+
+const NccPaymentsRouteWithChildren = NccPaymentsRoute._addFileChildren(
+  NccPaymentsRouteChildren,
+)
+
 interface NccSettingsRouteChildren {
   NccSettingsSectionRoute: typeof NccSettingsSectionRoute
   NccSettingsIndexRoute: typeof NccSettingsIndexRoute
@@ -1777,7 +1808,7 @@ interface NccRouteChildren {
   NccLogsRoute: typeof NccLogsRoute
   NccNotificationsRoute: typeof NccNotificationsRoute
   NccOrdersRoute: typeof NccOrdersRouteWithChildren
-  NccPaymentsRoute: typeof NccPaymentsRoute
+  NccPaymentsRoute: typeof NccPaymentsRouteWithChildren
   NccProductsRoute: typeof NccProductsRoute
   NccSettingsRoute: typeof NccSettingsRouteWithChildren
   NccSupportRoute: typeof NccSupportRoute
@@ -1798,7 +1829,7 @@ const NccRouteChildren: NccRouteChildren = {
   NccLogsRoute: NccLogsRoute,
   NccNotificationsRoute: NccNotificationsRoute,
   NccOrdersRoute: NccOrdersRouteWithChildren,
-  NccPaymentsRoute: NccPaymentsRoute,
+  NccPaymentsRoute: NccPaymentsRouteWithChildren,
   NccProductsRoute: NccProductsRoute,
   NccSettingsRoute: NccSettingsRouteWithChildren,
   NccSupportRoute: NccSupportRoute,
