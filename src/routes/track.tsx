@@ -15,6 +15,7 @@ export const Route = createFileRoute("/track")({
       { name: "description", content: "Real-time payment and activation status for your Nexora IPTV subscription." },
       { property: "og:title", content: "Track Your Order — Nexora IPTV" },
       { property: "og:description", content: "Live payment and activation status for your Nexora IPTV order." },
+      { property: "og:url", content: "https://nexora-iptv.com/track" },
       { name: "robots", content: "noindex" },
     ],
     links: [{ rel: "canonical", href: "https://nexora-iptv.com/track" }],
