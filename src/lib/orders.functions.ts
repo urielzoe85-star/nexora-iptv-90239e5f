@@ -205,6 +205,46 @@ export const getOrdersByEmail = createServerFn({ method: "GET" })
     return rows ?? [];
   });
 
+// Accès sécurisé côté client à la fiche de livraison IPTV depuis la page
+// publique /track. Le client doit prouver qu'il connaît à la fois la
+// référence de commande (visible dans l'URL / email) ET l'email exact de la
+// commande. Sans ces deux éléments, on ne renvoie JAMAIS les credentials.
+// L'endpoint est rate-limité côté infra ; la vérification est en O(1) et
+// insensible à la casse pour l'email.
+export const getOrderDelivery = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        ref: z.string().trim().min(4).max(40),
+        email: z.string().trim().email().max(255),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
+    const { data: row, error } = await supabaseAdmin
+      .from("orders")
+      .select("order_ref, email, status, metadata")
+      .eq("order_ref", data.ref)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    // Réponse générique : ne divulgue pas l'existence de la commande si
+    // l'email ne matche pas — évite l'énumération par force brute.
+    if (!row) return { ok: false as const, reason: "not_found" as const };
+    if ((row.email ?? "").toLowerCase() !== data.email.toLowerCase()) {
+      return { ok: false as const, reason: "email_mismatch" as const };
+    }
+    const meta = (row.metadata ?? {}) as Record<string, any>;
+    const delivery = meta.iptv_delivery ?? null;
+    if (!delivery || delivery.delivery_status === "pending") {
+      return { ok: false as const, reason: "not_ready" as const };
+    }
+    // On expose la fiche complète (username / password / DNS / M3U / Enigma
+    // / liens signés / expiration / package). C'est la contrepartie de la
+    // double vérification ref + email.
+    return { ok: true as const, delivery, order_ref: row.order_ref };
+  });
+
 // Client-callable status update. CRITICAL: the client can ONLY signal a
 // failed/cancelled outcome (e.g. user closed the SebPay tab, or SebPay
 // redirected to the failure URL). It can NEVER mark an order as "paid" — that

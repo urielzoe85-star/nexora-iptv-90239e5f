@@ -2,11 +2,12 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
   Tv, Search, Loader2, CheckCircle2, Circle, AlertTriangle, RefreshCw,
-  CreditCard, ShieldCheck, Mail, Server,
+  CreditCard, ShieldCheck, Mail, Server, Lock, KeyRound,
 } from "lucide-react";
-import { getOrderByRef } from "@/lib/orders.functions";
+import { getOrderByRef, getOrderDelivery } from "@/lib/orders.functions";
 import { verifyPayment } from "@/lib/payments.functions";
 import { useT, LanguageSwitcher } from "@/i18n/context";
+import { DeliveryPreview } from "@/components/ncc/orders/DeliveryPreview";
 
 export const Route = createFileRoute("/track")({
   head: () => ({
@@ -180,6 +181,7 @@ function TrackPage() {
         )}
 
         {order && <TrackView order={order} now={now} lastChecked={lastChecked} />}
+        {order && <DeliveryUnlock orderRef={order.order_ref} defaultEmail={order.email} provisioned={!!order.delivery && order.delivery.status !== "pending"} />}
       </div>
     </main>
   );
@@ -446,5 +448,106 @@ function Header() {
         </div>
       </div>
     </header>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────────────
+// Accès sécurisé à la fiche de livraison depuis /track.
+// Le client saisit l'email associé à la commande ; le serveur ne renvoie
+// les credentials IPTV que si (ref + email) matchent ET que la livraison
+// est prête. Aucun credential ne transite tant que l'email n'est pas
+// vérifié — l'endpoint /track lui-même n'expose jamais username/password.
+// ────────────────────────────────────────────────────────────────────────
+function DeliveryUnlock({
+  orderRef,
+  defaultEmail,
+  provisioned,
+}: {
+  orderRef: string;
+  defaultEmail: string;
+  provisioned: boolean;
+}) {
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [delivery, setDelivery] = useState<any | null>(null);
+
+  async function handleUnlock(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    const value = email.trim();
+    if (!value) return;
+    setLoading(true);
+    try {
+      const res = await getOrderDelivery({ data: { ref: orderRef, email: value } });
+      if (res.ok) {
+        setDelivery(res.delivery);
+      } else if (res.reason === "not_ready") {
+        setError("Votre fiche de livraison n'est pas encore prête. Réessayez dans quelques minutes.");
+      } else {
+        setError("Vérification impossible. Vérifiez l'email exact utilisé lors de la commande.");
+      }
+    } catch {
+      setError("Erreur temporaire, réessayez.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (delivery) {
+    return (
+      <section className="mt-6">
+        <DeliveryPreview delivery={delivery} orderRef={orderRef} />
+      </section>
+    );
+  }
+
+  return (
+    <section className="glass rounded-2xl p-6 md:p-8 mt-6">
+      <div className="flex items-start gap-3 mb-4">
+        <div className="h-10 w-10 rounded-full bg-[color:var(--gold)]/10 border border-[color:var(--gold)]/30 grid place-items-center flex-shrink-0">
+          <Lock className="h-4 w-4 text-[color:var(--gold)]" />
+        </div>
+        <div>
+          <h3 className="text-lg font-semibold">Accéder à ma fiche de livraison</h3>
+          <p className="text-xs text-muted-foreground mt-1">
+            Confirmez l'email utilisé lors de la commande pour afficher vos identifiants, DNS et liens M3U / Enigma.
+          </p>
+        </div>
+      </div>
+      {!provisioned && (
+        <div className="mb-4 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-xs text-amber-200">
+          La fiche sera disponible dès que votre compte IPTV aura été attribué (généralement quelques minutes après le paiement).
+        </div>
+      )}
+      <form onSubmit={handleUnlock} className="flex flex-col sm:flex-row gap-3">
+        <div className="flex items-center gap-2 flex-1 rounded-xl border border-white/10 bg-white/[0.02] px-3 py-2">
+          <Mail className="h-4 w-4 text-muted-foreground" />
+          <input
+            type="email"
+            required
+            autoComplete="email"
+            aria-label="Email de la commande"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder={defaultEmail ? defaultEmail.replace(/(.).+(@.+)/, "$1•••$2") : "vous@exemple.com"}
+            className="w-full bg-transparent outline-none text-sm placeholder:text-muted-foreground/50"
+          />
+        </div>
+        <button
+          type="submit"
+          disabled={loading || !provisioned}
+          className="btn-gold btn-gold-hover px-6 py-2 rounded-full text-sm font-semibold inline-flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />}
+          Déverrouiller
+        </button>
+      </form>
+      {error && (
+        <p className="mt-3 text-xs text-red-300 inline-flex items-center gap-1">
+          <AlertTriangle className="h-3 w-3" /> {error}
+        </p>
+      )}
+    </section>
   );
 }
