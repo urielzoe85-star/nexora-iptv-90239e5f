@@ -90,7 +90,6 @@ import { Route as ApiPublicHooksSecretRotationCheckRouteImport } from './routes/
 import { Route as ApiPublicHooksRenewalRemindersRouteImport } from './routes/api/public/hooks/renewal-reminders'
 import { Route as ApiPublicHooksPaymentDunningRouteImport } from './routes/api/public/hooks/payment-dunning'
 import { Route as ApiPublicHooksBackupVerifyRouteImport } from './routes/api/public/hooks/backup-verify'
-import { Route as ApiPublicBinancePayWebhookRouteImport } from './routes/api/public/binance-pay/webhook'
 import { Route as ApiPublicAutomationProcessQueueRouteImport } from './routes/api/public/automation/process-queue'
 import { Route as ApiPublicAutomationEmitTestRouteImport } from './routes/api/public/automation/emit-test'
 
@@ -508,12 +507,6 @@ const ApiPublicHooksBackupVerifyRoute =
     path: '/api/public/hooks/backup-verify',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicBinancePayWebhookRoute =
-  ApiPublicBinancePayWebhookRouteImport.update({
-    id: '/api/public/binance-pay/webhook',
-    path: '/api/public/binance-pay/webhook',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const ApiPublicAutomationProcessQueueRoute =
   ApiPublicAutomationProcessQueueRouteImport.update({
     id: '/api/public/automation/process-queue',
@@ -599,7 +592,6 @@ export interface FileRoutesByFullPath {
   '/ncc/settings/': typeof NccSettingsIndexRoute
   '/api/public/automation/emit-test': typeof ApiPublicAutomationEmitTestRoute
   '/api/public/automation/process-queue': typeof ApiPublicAutomationProcessQueueRoute
-  '/api/public/binance-pay/webhook': typeof ApiPublicBinancePayWebhookRoute
   '/api/public/hooks/backup-verify': typeof ApiPublicHooksBackupVerifyRoute
   '/api/public/hooks/payment-dunning': typeof ApiPublicHooksPaymentDunningRoute
   '/api/public/hooks/renewal-reminders': typeof ApiPublicHooksRenewalRemindersRoute
@@ -679,7 +671,6 @@ export interface FileRoutesByTo {
   '/ncc/settings': typeof NccSettingsIndexRoute
   '/api/public/automation/emit-test': typeof ApiPublicAutomationEmitTestRoute
   '/api/public/automation/process-queue': typeof ApiPublicAutomationProcessQueueRoute
-  '/api/public/binance-pay/webhook': typeof ApiPublicBinancePayWebhookRoute
   '/api/public/hooks/backup-verify': typeof ApiPublicHooksBackupVerifyRoute
   '/api/public/hooks/payment-dunning': typeof ApiPublicHooksPaymentDunningRoute
   '/api/public/hooks/renewal-reminders': typeof ApiPublicHooksRenewalRemindersRoute
@@ -766,7 +757,6 @@ export interface FileRoutesById {
   '/ncc/settings/': typeof NccSettingsIndexRoute
   '/api/public/automation/emit-test': typeof ApiPublicAutomationEmitTestRoute
   '/api/public/automation/process-queue': typeof ApiPublicAutomationProcessQueueRoute
-  '/api/public/binance-pay/webhook': typeof ApiPublicBinancePayWebhookRoute
   '/api/public/hooks/backup-verify': typeof ApiPublicHooksBackupVerifyRoute
   '/api/public/hooks/payment-dunning': typeof ApiPublicHooksPaymentDunningRoute
   '/api/public/hooks/renewal-reminders': typeof ApiPublicHooksRenewalRemindersRoute
@@ -854,7 +844,6 @@ export interface FileRouteTypes {
     | '/ncc/settings/'
     | '/api/public/automation/emit-test'
     | '/api/public/automation/process-queue'
-    | '/api/public/binance-pay/webhook'
     | '/api/public/hooks/backup-verify'
     | '/api/public/hooks/payment-dunning'
     | '/api/public/hooks/renewal-reminders'
@@ -934,7 +923,6 @@ export interface FileRouteTypes {
     | '/ncc/settings'
     | '/api/public/automation/emit-test'
     | '/api/public/automation/process-queue'
-    | '/api/public/binance-pay/webhook'
     | '/api/public/hooks/backup-verify'
     | '/api/public/hooks/payment-dunning'
     | '/api/public/hooks/renewal-reminders'
@@ -1020,7 +1008,6 @@ export interface FileRouteTypes {
     | '/ncc/settings/'
     | '/api/public/automation/emit-test'
     | '/api/public/automation/process-queue'
-    | '/api/public/binance-pay/webhook'
     | '/api/public/hooks/backup-verify'
     | '/api/public/hooks/payment-dunning'
     | '/api/public/hooks/renewal-reminders'
@@ -1062,7 +1049,6 @@ export interface RootRouteChildren {
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ApiPublicAutomationEmitTestRoute: typeof ApiPublicAutomationEmitTestRoute
   ApiPublicAutomationProcessQueueRoute: typeof ApiPublicAutomationProcessQueueRoute
-  ApiPublicBinancePayWebhookRoute: typeof ApiPublicBinancePayWebhookRoute
   ApiPublicHooksBackupVerifyRoute: typeof ApiPublicHooksBackupVerifyRoute
   ApiPublicHooksPaymentDunningRoute: typeof ApiPublicHooksPaymentDunningRoute
   ApiPublicHooksRenewalRemindersRoute: typeof ApiPublicHooksRenewalRemindersRoute
@@ -1646,13 +1632,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksBackupVerifyRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/binance-pay/webhook': {
-      id: '/api/public/binance-pay/webhook'
-      path: '/api/public/binance-pay/webhook'
-      fullPath: '/api/public/binance-pay/webhook'
-      preLoaderRoute: typeof ApiPublicBinancePayWebhookRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/public/automation/process-queue': {
       id: '/api/public/automation/process-queue'
       path: '/api/public/automation/process-queue'
@@ -1858,7 +1837,6 @@ const rootRouteChildren: RootRouteChildren = {
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ApiPublicAutomationEmitTestRoute: ApiPublicAutomationEmitTestRoute,
   ApiPublicAutomationProcessQueueRoute: ApiPublicAutomationProcessQueueRoute,
-  ApiPublicBinancePayWebhookRoute: ApiPublicBinancePayWebhookRoute,
   ApiPublicHooksBackupVerifyRoute: ApiPublicHooksBackupVerifyRoute,
   ApiPublicHooksPaymentDunningRoute: ApiPublicHooksPaymentDunningRoute,
   ApiPublicHooksRenewalRemindersRoute: ApiPublicHooksRenewalRemindersRoute,
@@ -1876,13 +1854,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
