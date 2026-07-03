@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Tv, Search, Loader2, CheckCircle2, Circle, AlertTriangle, RefreshCw,
   CreditCard, ShieldCheck, Mail, Server, Lock, KeyRound,
@@ -67,7 +67,7 @@ function TrackPage() {
   const [notFound, setNotFound] = useState(false);
   const [now, setNow] = useState(() => Date.now());
   const [lastChecked, setLastChecked] = useState<number | null>(null);
-  const [lastKicked, setLastKicked] = useState<number>(0);
+  const lastKickedRef = useRef<number>(0);
 
   // Tick every second for elapsed-time UI.
   useEffect(() => {
@@ -120,9 +120,9 @@ function TrackPage() {
         !order?.delivery &&
         order?.updated_at &&
         Date.now() - new Date(order.updated_at).getTime() > 15_000 &&
-        Date.now() - lastKicked > 15_000
+        Date.now() - lastKickedRef.current > 15_000
       ) {
-        setLastKicked(Date.now());
+        lastKickedRef.current = Date.now();
         kickAutomationQueue({ data: { ref } }).catch(() => null);
       }
     }, 1200);
