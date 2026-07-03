@@ -1,0 +1,40 @@
+name: sprint-3 · bloc-e · résilience
+
+on:
+  push:
+    paths:
+      - "src/routes/api/public/hooks/secret-rotation-check.ts"
+      - "tests/chaos/**"
+      - "docs/releases/sprint-3/bloc-e/**"
+      - ".github/workflows/sprint-3-bloc-e.yml"
+  pull_request:
+    paths:
+      - "src/routes/api/public/hooks/secret-rotation-check.ts"
+      - "tests/chaos/**"
+
+jobs:
+  chaos-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install deps
+        run: bun install --frozen-lockfile
+      - name: Typecheck
+        run: bunx tsgo --noEmit
+      - name: Build
+        env:
+          VITE_SUPABASE_URL: https://example.supabase.co
+          VITE_SUPABASE_PUBLISHABLE_KEY: eyJhbGciOi.example.token
+        run: bun run build
+      - name: Chaos smoke (dry-run)
+        run: |
+          cd tests/chaos
+          python kill_provider.py --dry-run
+          python saturate_queue.py --dry-run
+          python corrupt_webhook.py --dry-run
