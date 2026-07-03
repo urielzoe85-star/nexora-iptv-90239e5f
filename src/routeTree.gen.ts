@@ -86,6 +86,7 @@ import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/em
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as ApiPublicTelegramWebhookRouteImport } from './routes/api/public/telegram/webhook'
 import { Route as ApiPublicSebpayWebhookRouteImport } from './routes/api/public/sebpay/webhook'
+import { Route as ApiPublicIptvPlaylistRouteImport } from './routes/api/public/iptv/playlist'
 import { Route as ApiPublicHooksSloSnapshotRouteImport } from './routes/api/public/hooks/slo-snapshot'
 import { Route as ApiPublicHooksSecretRotationCheckRouteImport } from './routes/api/public/hooks/secret-rotation-check'
 import { Route as ApiPublicHooksRenewalRemindersRouteImport } from './routes/api/public/hooks/renewal-reminders'
@@ -483,6 +484,11 @@ const ApiPublicSebpayWebhookRoute = ApiPublicSebpayWebhookRouteImport.update({
   path: '/api/public/sebpay/webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicIptvPlaylistRoute = ApiPublicIptvPlaylistRouteImport.update({
+  id: '/api/public/iptv/playlist',
+  path: '/api/public/iptv/playlist',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicHooksSloSnapshotRoute =
   ApiPublicHooksSloSnapshotRouteImport.update({
     id: '/api/public/hooks/slo-snapshot',
@@ -604,6 +610,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/renewal-reminders': typeof ApiPublicHooksRenewalRemindersRoute
   '/api/public/hooks/secret-rotation-check': typeof ApiPublicHooksSecretRotationCheckRoute
   '/api/public/hooks/slo-snapshot': typeof ApiPublicHooksSloSnapshotRoute
+  '/api/public/iptv/playlist': typeof ApiPublicIptvPlaylistRoute
   '/api/public/sebpay/webhook': typeof ApiPublicSebpayWebhookRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -684,6 +691,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/renewal-reminders': typeof ApiPublicHooksRenewalRemindersRoute
   '/api/public/hooks/secret-rotation-check': typeof ApiPublicHooksSecretRotationCheckRoute
   '/api/public/hooks/slo-snapshot': typeof ApiPublicHooksSloSnapshotRoute
+  '/api/public/iptv/playlist': typeof ApiPublicIptvPlaylistRoute
   '/api/public/sebpay/webhook': typeof ApiPublicSebpayWebhookRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -771,6 +779,7 @@ export interface FileRoutesById {
   '/api/public/hooks/renewal-reminders': typeof ApiPublicHooksRenewalRemindersRoute
   '/api/public/hooks/secret-rotation-check': typeof ApiPublicHooksSecretRotationCheckRoute
   '/api/public/hooks/slo-snapshot': typeof ApiPublicHooksSloSnapshotRoute
+  '/api/public/iptv/playlist': typeof ApiPublicIptvPlaylistRoute
   '/api/public/sebpay/webhook': typeof ApiPublicSebpayWebhookRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -859,6 +868,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/renewal-reminders'
     | '/api/public/hooks/secret-rotation-check'
     | '/api/public/hooks/slo-snapshot'
+    | '/api/public/iptv/playlist'
     | '/api/public/sebpay/webhook'
     | '/api/public/telegram/webhook'
     | '/lovable/email/auth/preview'
@@ -939,6 +949,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/renewal-reminders'
     | '/api/public/hooks/secret-rotation-check'
     | '/api/public/hooks/slo-snapshot'
+    | '/api/public/iptv/playlist'
     | '/api/public/sebpay/webhook'
     | '/api/public/telegram/webhook'
     | '/lovable/email/auth/preview'
@@ -1025,6 +1036,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/renewal-reminders'
     | '/api/public/hooks/secret-rotation-check'
     | '/api/public/hooks/slo-snapshot'
+    | '/api/public/iptv/playlist'
     | '/api/public/sebpay/webhook'
     | '/api/public/telegram/webhook'
     | '/lovable/email/auth/preview'
@@ -1066,6 +1078,7 @@ export interface RootRouteChildren {
   ApiPublicHooksRenewalRemindersRoute: typeof ApiPublicHooksRenewalRemindersRoute
   ApiPublicHooksSecretRotationCheckRoute: typeof ApiPublicHooksSecretRotationCheckRoute
   ApiPublicHooksSloSnapshotRoute: typeof ApiPublicHooksSloSnapshotRoute
+  ApiPublicIptvPlaylistRoute: typeof ApiPublicIptvPlaylistRoute
   ApiPublicSebpayWebhookRoute: typeof ApiPublicSebpayWebhookRoute
   ApiPublicTelegramWebhookRoute: typeof ApiPublicTelegramWebhookRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
@@ -1616,6 +1629,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicSebpayWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/iptv/playlist': {
+      id: '/api/public/iptv/playlist'
+      path: '/api/public/iptv/playlist'
+      fullPath: '/api/public/iptv/playlist'
+      preLoaderRoute: typeof ApiPublicIptvPlaylistRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/slo-snapshot': {
       id: '/api/public/hooks/slo-snapshot'
       path: '/api/public/hooks/slo-snapshot'
@@ -1874,6 +1894,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksSecretRotationCheckRoute:
     ApiPublicHooksSecretRotationCheckRoute,
   ApiPublicHooksSloSnapshotRoute: ApiPublicHooksSloSnapshotRoute,
+  ApiPublicIptvPlaylistRoute: ApiPublicIptvPlaylistRoute,
   ApiPublicSebpayWebhookRoute: ApiPublicSebpayWebhookRoute,
   ApiPublicTelegramWebhookRoute: ApiPublicTelegramWebhookRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
