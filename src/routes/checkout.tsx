@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 import { createOrder } from "@/lib/orders.functions";
 import { LEGAL_VERSION } from "@/lib/legal-version";
-import { initSebPayCheckout, verifyPayment, initBinancePayCheckout, verifyBinancePayPayment } from "@/lib/payments.functions";
+import { initSebPayCheckout, verifyPayment, submitBinanceProof } from "@/lib/payments.functions";
 import { useT, LanguageSwitcher } from "@/i18n/context";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -43,14 +43,19 @@ export const Route = createFileRoute("/checkout")({
   component: CheckoutPage,
 });
 
-type PendingState = {
-  orderRef: string;
-  transactionId: string;
-  providerLink: string | null;
-  message: string | null;
-  provider: "sebpay" | "binance_pay";
-  qrcodeLink?: string | null;
-};
+type PendingState =
+  | {
+      provider: "sebpay";
+      orderRef: string;
+      transactionId: string;
+      providerLink: string | null;
+      message: string | null;
+    }
+  | {
+      provider: "binance_pay_manual";
+      orderRef: string;
+      submittedAt: string;
+    };
 
 function CheckoutPage() {
   const t = useT();
@@ -177,19 +182,14 @@ function CheckoutPage() {
           provider: "sebpay",
         });
       } else {
-        const result = await initBinancePayCheckout({
-          data: { ref: order.order_ref, successUrl, failureUrl },
-        });
-        if (result.checkoutUrl && typeof window !== "undefined") {
-          window.open(result.checkoutUrl, "_blank", "noopener,noreferrer");
-        }
+        // Crypto : la commande est créée avec le montant en USDT ; le client
+        // remplira le formulaire de preuve dans BinanceQrStep. Il n'y a pas
+        // d'appel API Binance ici — la commande reste en `pending` jusqu'au
+        // submit du formulaire, qui la passe en `awaiting_verification`.
         setPending({
+          provider: "binance_pay_manual",
           orderRef: order.order_ref,
-          transactionId: result.prepayId,
-          providerLink: result.checkoutUrl,
-          qrcodeLink: result.qrcodeLink,
-          message: "Scannez le QR code avec l'app Binance pour payer en BTC, ETH ou USDT.",
-          provider: "binance_pay",
+          submittedAt: new Date().toISOString(),
         });
       }
     } catch (err: any) {
