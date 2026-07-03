@@ -119,3 +119,105 @@ export const emitBusinessEvent = createServerFn({ method: "POST" })
     if (!isBusinessEvent(data.event)) throw new Error(`Événement inconnu : ${data.event}`);
     return automationApi.emit(data.event, data.payload ?? {}, { sync: data.sync, actorId: context.userId });
   });
+
+// ─────────────────────────────────────────────────────────────────────
+// Santé de la file automation + contrôles manuels (admin) + kick public
+// pour /track. Sprint 1.7 — robustesse de l'auto-attribution IPTV.
+// ─────────────────────────────────────────────────────────────────────
+
+/**
+ * Public — appelé par la page /track quand un paiement stagne trop
+ * longtemps. Rate-limité par order_ref pour éviter le spam. Ne renvoie
+ * qu'un ok/booléen : aucune donnée sensible n'est exposée.
+ */
+export const kickAutomationQueue = createServerFn({ method: "POST" })
+  .inputValidator((d) => z.object({ ref: z.string().trim().min(4).max(40) }).parse(d))
+  .handler(async ({ data }) => {
+    const { allow } = await import("@/lib/rate-limit.server");
+    const rl = allow(`kick:${data.ref}`, { limit: 1, windowMs: 10_000 });
+    if (!rl.ok) return { ok: false as const, throttled: true as const };
+    const { kickDrainInBackground } = await import("@/lib/automation-drainer.server");
+    kickDrainInBackground({ batchSize: 5 });
+    return { ok: true as const };
+  });
+
+/** Admin — statistiques temps-réel de la file d'automation. */
+export const getAutomationHealth = createServerFn({ method: "GET" })
+  .middleware([requireAdmin])
+  .handler(async ({ context }) => {
+    const sb = await admin(context.userId);
+    const [queuedRes, procRes, failedRes, oldest, stuckProc] = await Promise.all([
+      sb.from("automation_queue").select("id", { count: "exact", head: true }).eq("status", "queued"),
+      sb.from("automation_queue").select("id", { count: "exact", head: true }).eq("status", "processing"),
+      sb.from("automation_queue").select("id", { count: "exact", head: true }).eq("status", "failed"),
+      sb.from("automation_queue").select("created_at").eq("status", "queued").order("created_at").limit(1).maybeSingle(),
+      sb.from("automation_queue").select("id", { count: "exact", head: true })
+        .eq("status", "processing")
+        .lt("locked_at", new Date(Date.now() - 5 * 60_000).toISOString()),
+    ]);
+    const oldestAgeSec = oldest.data?.created_at
+      ? Math.round((Date.now() - new Date(oldest.data.created_at).getTime()) / 1000)
+      : 0;
+    return {
+      queued: queuedRes.count ?? 0,
+      processing: procRes.count ?? 0,
+      failed: failedRes.count ?? 0,
+      stuckProcessing: stuckProc.count ?? 0,
+      oldestQueuedAgeSec: oldestAgeSec,
+    };
+  });
+
+/** Admin — force un drainage immédiat. */
+export const adminDrainQueueNow = createServerFn({ method: "POST" })
+  .middleware([requireAdmin])
+  .handler(async () => {
+    const { drainAutomationQueue } = await import("@/lib/automation-drainer.server");
+    return drainAutomationQueue({ batchSize: 25 });
+  });
+
+/** Admin — remet les jobs "failed" en "queued" pour retenter (attempts remis à 0). */
+export const adminRetryFailedJobs = createServerFn({ method: "POST" })
+  .middleware([requireAdmin])
+  .inputValidator((d) => z.object({ maxAgeHours: z.number().int().min(1).max(720).optional() }).parse(d ?? {}))
+  .handler(async ({ data, context }) => {
+    const sb = await admin(context.userId);
+    const cutoff = new Date(Date.now() - (data.maxAgeHours ?? 24) * 3600_000).toISOString();
+    const { data: updated, error } = await sb
+      .from("automation_queue")
+      .update({
+        status: "queued",
+        attempts: 0,
+        locked_at: null,
+        scheduled_at: new Date().toISOString(),
+        last_error: null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("status", "failed")
+      .gte("updated_at", cutoff)
+      .select("id");
+    if (error) throw new Error(error.message);
+    // Rattrape immédiatement.
+    const { kickDrainInBackground } = await import("@/lib/automation-drainer.server");
+    kickDrainInBackground({ batchSize: 25 });
+    return { requeued: (updated ?? []).length };
+  });
+
+/**
+ * Admin — force l'attribution + livraison IPTV d'une commande précise, sans
+ * passer par la file. Utile quand :
+ *  - le workflow a échoué et l'admin veut débloquer une commande urgente,
+ *  - un compte a été attribué manuellement et l'admin veut relancer l'envoi.
+ */
+export const adminForceAttributeOrder = createServerFn({ method: "POST" })
+  .middleware([requireAdmin])
+  .inputValidator((d) => z.object({ orderRef: z.string().trim().min(4).max(40) }).parse(d))
+  .handler(async ({ data, context }) => {
+    await import("@/automation");
+    const { automationApi } = await import("@/automation");
+    const r = await automationApi.run(
+      "payment-confirmed",
+      { orderRef: data.orderRef, orderId: data.orderRef, forced: true },
+      context.userId,
+    );
+    return { runId: r.runId, status: r.status, error: r.error ?? null };
+  });
