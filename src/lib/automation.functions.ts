@@ -211,13 +211,13 @@ export const adminRetryFailedJobs = createServerFn({ method: "POST" })
 export const adminForceAttributeOrder = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
   .inputValidator((d) => z.object({ orderRef: z.string().trim().min(4).max(40) }).parse(d))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     await import("@/automation");
     const { automationApi } = await import("@/automation");
-    const r = await automationApi.emit(
-      "payment.confirmed",
+    const r = await automationApi.run(
+      "payment-confirmed",
       { orderRef: data.orderRef, orderId: data.orderRef, forced: true },
-      { sync: true, idempotencyKey: `force:${data.orderRef}:${Date.now()}` },
+      context.userId,
     );
-    return { status: (r as any)?.status ?? "queued", error: (r as any)?.error ?? null };
+    return { runId: r.runId, status: r.status, error: r.error ?? null };
   });
