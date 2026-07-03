@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { createHmac, timingSafeEqual } from "crypto";
 import { convertUsdToLocal } from "@/lib/countries";
+import { LEGAL_VERSION } from "@/lib/legal-version";
 
 // Legacy export kept for any consumer importing it. SebPay charges in the
 // country's local currency now; see `convertUsdToLocal` in `@/lib/countries`.
@@ -18,6 +19,12 @@ const CreateOrderSchema = z.object({
   phone: z.string().trim().min(6).max(20),
   operator: z.string().trim().min(2).max(40),
   country: z.string().trim().length(2).toUpperCase(),
+  // Sprint 3 · Bloc C — the checkout form MUST tick a box accepting the
+  // CGU / CGV / privacy / refund policy before it can call this fn.
+  termsAccepted: z.literal(true, {
+    errorMap: () => ({ message: "Vous devez accepter les CGU et CGV." }),
+  }),
+  termsVersion: z.string().trim().min(4).max(32).optional(),
 });
 
 function genOrderRef() {
@@ -67,6 +74,9 @@ export const createOrder = createServerFn({ method: "POST" })
         operator: data.operator,
         country: data.country,
       },
+      // Proof of acceptance for compliance / dispute handling.
+      terms_version: data.termsVersion ?? LEGAL_VERSION,
+      terms_accepted_at: new Date().toISOString(),
     };
 
     const { data: row, error } = await supabaseAdmin

@@ -5,6 +5,7 @@ import {
   Loader2, Tv, Phone, Globe, Smartphone, ExternalLink, Clock,
 } from "lucide-react";
 import { createOrder } from "@/lib/orders.functions";
+import { LEGAL_VERSION } from "@/lib/legal-version";
 import { initSebPayCheckout, verifyPayment } from "@/lib/payments.functions";
 import { useT, LanguageSwitcher } from "@/i18n/context";
 import { useQuery } from "@tanstack/react-query";
@@ -83,6 +84,7 @@ function CheckoutPage() {
   const [processing, setProcessing] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string>("");
   const [pending, setPending] = useState<PendingState | null>(null);
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   // When the country changes: re-prefix the phone with the new dial code
   // and reset the operator if the previous one isn't offered there.
@@ -112,7 +114,8 @@ function CheckoutPage() {
     email.includes("@") &&
     fullName.trim().length > 1 &&
     phone.replace(/\D/g, "").length >= 8 &&
-    !!operator && !!country;
+    !!operator && !!country &&
+    termsAccepted;
 
   async function handlePay(e: React.FormEvent) {
     e.preventDefault();
@@ -130,6 +133,8 @@ function CheckoutPage() {
           currency: "USD",
           method: "momo",
           phone, operator, country,
+          termsAccepted: true,
+          termsVersion: LEGAL_VERSION,
         },
       });
       if (!order?.order_ref) throw new Error("Could not create order");
@@ -217,6 +222,8 @@ function CheckoutPage() {
                     phone={phone} setPhone={setPhone}
                     operator={operator} setOperator={setOperator}
                     country={country} setCountry={handleCountryChange}
+                    termsAccepted={termsAccepted}
+                    setTermsAccepted={setTermsAccepted}
                     processing={processing}
                     canPay={canPay}
                     total={total}
@@ -329,6 +336,7 @@ function PaymentStep(props: {
   phone: string; setPhone: (v: string) => void;
   operator: Operator; setOperator: (v: Operator) => void;
   country: string; setCountry: (v: string) => void;
+  termsAccepted: boolean; setTermsAccepted: (v: boolean) => void;
   processing: boolean; canPay: boolean; total: number; errorMsg?: string;
   onBack: () => void; onSubmit: (e: React.FormEvent) => void;
 }) {
@@ -336,6 +344,7 @@ function PaymentStep(props: {
   const {
     email, setEmail, fullName, setFullName,
     phone, setPhone, operator, setOperator, country, setCountry,
+    termsAccepted, setTermsAccepted,
     processing, canPay, total, errorMsg, onBack, onSubmit,
   } = props;
   const countryConf = getCountry(country);
@@ -423,6 +432,27 @@ function PaymentStep(props: {
           {errorMsg}
         </div>
       )}
+
+      <label className="flex items-start gap-3 rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3 text-sm cursor-pointer">
+        <input
+          type="checkbox"
+          checked={termsAccepted}
+          onChange={(e) => setTermsAccepted(e.target.checked)}
+          className="mt-0.5 h-4 w-4 accent-[color:var(--gold)]"
+          required
+        />
+        <span className="text-muted-foreground leading-relaxed">
+          J'ai lu et j'accepte les{" "}
+          <a href="/legal/terms" target="_blank" rel="noopener noreferrer" className="text-[color:var(--gold)] hover:underline">CGU</a>,{" "}
+          les{" "}
+          <a href="/legal/sales" target="_blank" rel="noopener noreferrer" className="text-[color:var(--gold)] hover:underline">CGV</a>,{" "}
+          la{" "}
+          <a href="/legal/privacy" target="_blank" rel="noopener noreferrer" className="text-[color:var(--gold)] hover:underline">politique de confidentialité</a>{" "}
+          et la{" "}
+          <a href="/legal/refund" target="_blank" rel="noopener noreferrer" className="text-[color:var(--gold)] hover:underline">politique de remboursement</a>.
+          Je demande la livraison immédiate du service et renonce, à ce titre, à mon droit de rétractation dès l'activation des identifiants.
+        </span>
+      </label>
 
       <div className="flex flex-col-reverse sm:flex-row gap-3 sm:justify-between sm:items-center">
         <button type="button" onClick={onBack} className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
