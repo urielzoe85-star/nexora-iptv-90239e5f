@@ -221,3 +221,12 @@ export async function setIptvSubscriptionStatus(accountId: string, status: "acti
   if (error) return { simulated: true, reason: error.message };
   return { accountId, status, remote: Boolean(c && remoteId) };
 }
+/**
+ * Envoie la fiche de livraison IPTV via email/whatsapp/telegram.
+ * Idempotent (channels_sent). Utilisé par le workflow payment-confirmed.
+ */
+export async function dispatchIptvDelivery(input: { orderRef?: string; force?: boolean }) {
+  if (!input.orderRef) throw new Error("dispatchIptvDelivery: orderRef manquant");
+  const { dispatchIptvDeliveryFor } = await import("@/lib/iptv-dispatch.server");
+  return dispatchIptvDeliveryFor(input.orderRef, { force: input.force });
+}
