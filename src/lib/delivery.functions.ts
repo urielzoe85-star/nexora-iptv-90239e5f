@@ -240,3 +240,24 @@ export const sendEmailAuto = createServerFn({ method: "POST" })
     if (enqueueErr) throw new Error(enqueueErr.message);
     return { ok: true, queued: true, message_id: messageId };
   });
+
+// ────────────────────────────────────────────────────────────────────────────
+// DISPATCH MULTI-CANAL — bouton "Envoyer maintenant" du NCC
+// Utilise le même helper que le workflow payment-confirmed → parité garantie.
+// ────────────────────────────────────────────────────────────────────────────
+export const dispatchIptvDelivery = createServerFn({ method: "POST" })
+  .middleware([requireNccUnlock])
+  .inputValidator((d: unknown) =>
+    z.object({
+      order_id: z.string().uuid(),
+      channels: z.array(z.enum(["email", "whatsapp", "telegram"])).optional(),
+      force: z.boolean().optional(),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const sb = await adminClient(context.userId);
+    const { data: order } = await sb.from("orders").select("order_ref").eq("id", data.order_id).maybeSingle();
+    if (!order) throw new Error("Commande introuvable");
+    const { dispatchIptvDeliveryFor } = await import("@/lib/iptv-dispatch.server");
+    return dispatchIptvDeliveryFor(order.order_ref, { channels: data.channels, force: data.force });
+  });

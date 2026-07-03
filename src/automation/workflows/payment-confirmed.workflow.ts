@@ -1,6 +1,6 @@
 import type { WorkflowDefinition } from "../core/workflow";
 import { fetchOrder, markOrderStatus, generateInvoiceStub } from "../actions/orders.actions";
-import { createIptvSubscription, composeIptvDelivery } from "../actions/iptv.actions";
+import { createIptvSubscription, composeIptvDelivery, dispatchIptvDelivery } from "../actions/iptv.actions";
 import { logToIptvJournal } from "../actions/logs.actions";
 
 export const paymentConfirmedWorkflow: WorkflowDefinition = {
@@ -60,6 +60,18 @@ export const paymentConfirmedWorkflow: WorkflowDefinition = {
       run: async (ctx) => {
         const v = ctx.outputs["validate:order"] as { orderId: string };
         return generateInvoiceStub(v.orderId);
+      },
+    },
+    {
+      // Envoi automatique multi-canal de la fiche de livraison (Email +
+      // Telegram si chat_id + WhatsApp si connecteur configuré). Idempotent :
+      // un canal déjà envoyé n'est pas retenté sauf force=true.
+      name: "delivery:dispatch",
+      when: (ctx) => Boolean((ctx.outputs["validate:order"] as any)?.alreadyCompleted) === false
+                  && Boolean((ctx.outputs["delivery:compose"] as any)?.iptvAccountId),
+      run: async (ctx) => {
+        const v = ctx.outputs["validate:order"] as { orderId: string };
+        return dispatchIptvDelivery({ orderRef: v.orderId });
       },
     },
     {

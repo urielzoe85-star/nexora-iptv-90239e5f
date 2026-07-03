@@ -156,41 +156,21 @@ export async function composeIptvDelivery(input: {
 
   const { data: account } = await sb
     .from("iptv_accounts")
-    .select("id, username, password, expires_at, metadata")
+    .select("*")
     .eq("id", input.accountId)
     .maybeSingle();
   if (!account?.id) throw new Error(`composeIptvDelivery: iptv_account ${input.accountId} introuvable`);
 
-  const accMeta = (account.metadata ?? {}) as Record<string, any>;
   const meta = (order.metadata ?? {}) as Record<string, unknown>;
-  const nowIso = new Date().toISOString();
-  const delivery = {
-    iptv_account_id: account.id,
-    megaott_subscription_id: accMeta.remote_user_id ?? null,
-    username: account.username,
-    package: accMeta.package ?? null,
-    expires_at: account.expires_at ?? null,
-    dns_link: accMeta.dns_link ?? null,
-    dns_link_samsung_lg: accMeta.dns_link_samsung_lg ?? null,
-    portal_link: accMeta.portal_link ?? null,
-    m3u_url: accMeta.m3u_url ?? null,
-    note: null,
-    delivery_status: "ready_to_send" as const,
-    created_at: nowIso,
-    sent_at: null,
-    sent_channel: null,
-  };
+  const { buildDeliveryFromAccount } = await import("@/lib/iptv-delivery.builder");
+  const previous = (meta as any).iptv_delivery ?? null;
+  const delivery = buildDeliveryFromAccount({ account, order: { ...order, metadata: meta }, previous });
   const nextMeta = { ...meta, iptv_delivery: delivery };
   const { error: upErr } = await sb.from("orders").update({ metadata: nextMeta }).eq("id", order.id);
   if (upErr) throw new Error(`orders.metadata update failed: ${upErr.message}`);
 
-  const content = [
-    `Identifiants IPTV — commande ${input.orderRef}`,
-    `Utilisateur : ${account.username}`,
-    `Mot de passe : ${account.password ?? "(voir panneau)"}`,
-    account.expires_at ? `Expire le : ${account.expires_at}` : "",
-    accMeta.m3u_url ? `M3U : ${accMeta.m3u_url}` : "",
-  ].filter(Boolean).join("\n");
+  const { buildPlainTextDeliveryMessage } = await import("@/lib/iptv-delivery.builder");
+  const content = buildPlainTextDeliveryMessage(delivery, { orderRef: input.orderRef });
 
   const { error: dlErr } = await sb.from("delivery_logs").insert({
     order_id: order.id,
@@ -240,4 +220,13 @@ export async function setIptvSubscriptionStatus(accountId: string, status: "acti
   const { error } = await sb.from("iptv_accounts").update({ status }).eq("id", accountId);
   if (error) return { simulated: true, reason: error.message };
   return { accountId, status, remote: Boolean(c && remoteId) };
+}
+/**
+ * Envoie la fiche de livraison IPTV via email/whatsapp/telegram.
+ * Idempotent (channels_sent). Utilisé par le workflow payment-confirmed.
+ */
+export async function dispatchIptvDelivery(input: { orderRef?: string; force?: boolean }) {
+  if (!input.orderRef) throw new Error("dispatchIptvDelivery: orderRef manquant");
+  const { dispatchIptvDeliveryFor } = await import("@/lib/iptv-dispatch.server");
+  return dispatchIptvDeliveryFor(input.orderRef, { force: input.force });
 }
