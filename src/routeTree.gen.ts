@@ -85,6 +85,7 @@ import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/em
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as ApiPublicTelegramWebhookRouteImport } from './routes/api/public/telegram/webhook'
 import { Route as ApiPublicSebpayWebhookRouteImport } from './routes/api/public/sebpay/webhook'
+import { Route as ApiPublicHooksSloSnapshotRouteImport } from './routes/api/public/hooks/slo-snapshot'
 import { Route as ApiPublicHooksSecretRotationCheckRouteImport } from './routes/api/public/hooks/secret-rotation-check'
 import { Route as ApiPublicHooksRenewalRemindersRouteImport } from './routes/api/public/hooks/renewal-reminders'
 import { Route as ApiPublicHooksPaymentDunningRouteImport } from './routes/api/public/hooks/payment-dunning'
@@ -476,6 +477,12 @@ const ApiPublicSebpayWebhookRoute = ApiPublicSebpayWebhookRouteImport.update({
   path: '/api/public/sebpay/webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksSloSnapshotRoute =
+  ApiPublicHooksSloSnapshotRouteImport.update({
+    id: '/api/public/hooks/slo-snapshot',
+    path: '/api/public/hooks/slo-snapshot',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksSecretRotationCheckRoute =
   ApiPublicHooksSecretRotationCheckRouteImport.update({
     id: '/api/public/hooks/secret-rotation-check',
@@ -589,6 +596,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/payment-dunning': typeof ApiPublicHooksPaymentDunningRoute
   '/api/public/hooks/renewal-reminders': typeof ApiPublicHooksRenewalRemindersRoute
   '/api/public/hooks/secret-rotation-check': typeof ApiPublicHooksSecretRotationCheckRoute
+  '/api/public/hooks/slo-snapshot': typeof ApiPublicHooksSloSnapshotRoute
   '/api/public/sebpay/webhook': typeof ApiPublicSebpayWebhookRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -667,6 +675,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/payment-dunning': typeof ApiPublicHooksPaymentDunningRoute
   '/api/public/hooks/renewal-reminders': typeof ApiPublicHooksRenewalRemindersRoute
   '/api/public/hooks/secret-rotation-check': typeof ApiPublicHooksSecretRotationCheckRoute
+  '/api/public/hooks/slo-snapshot': typeof ApiPublicHooksSloSnapshotRoute
   '/api/public/sebpay/webhook': typeof ApiPublicSebpayWebhookRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -752,6 +761,7 @@ export interface FileRoutesById {
   '/api/public/hooks/payment-dunning': typeof ApiPublicHooksPaymentDunningRoute
   '/api/public/hooks/renewal-reminders': typeof ApiPublicHooksRenewalRemindersRoute
   '/api/public/hooks/secret-rotation-check': typeof ApiPublicHooksSecretRotationCheckRoute
+  '/api/public/hooks/slo-snapshot': typeof ApiPublicHooksSloSnapshotRoute
   '/api/public/sebpay/webhook': typeof ApiPublicSebpayWebhookRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -838,6 +848,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/payment-dunning'
     | '/api/public/hooks/renewal-reminders'
     | '/api/public/hooks/secret-rotation-check'
+    | '/api/public/hooks/slo-snapshot'
     | '/api/public/sebpay/webhook'
     | '/api/public/telegram/webhook'
     | '/lovable/email/auth/preview'
@@ -916,6 +927,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/payment-dunning'
     | '/api/public/hooks/renewal-reminders'
     | '/api/public/hooks/secret-rotation-check'
+    | '/api/public/hooks/slo-snapshot'
     | '/api/public/sebpay/webhook'
     | '/api/public/telegram/webhook'
     | '/lovable/email/auth/preview'
@@ -1000,6 +1012,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/payment-dunning'
     | '/api/public/hooks/renewal-reminders'
     | '/api/public/hooks/secret-rotation-check'
+    | '/api/public/hooks/slo-snapshot'
     | '/api/public/sebpay/webhook'
     | '/api/public/telegram/webhook'
     | '/lovable/email/auth/preview'
@@ -1040,6 +1053,7 @@ export interface RootRouteChildren {
   ApiPublicHooksPaymentDunningRoute: typeof ApiPublicHooksPaymentDunningRoute
   ApiPublicHooksRenewalRemindersRoute: typeof ApiPublicHooksRenewalRemindersRoute
   ApiPublicHooksSecretRotationCheckRoute: typeof ApiPublicHooksSecretRotationCheckRoute
+  ApiPublicHooksSloSnapshotRoute: typeof ApiPublicHooksSloSnapshotRoute
   ApiPublicSebpayWebhookRoute: typeof ApiPublicSebpayWebhookRoute
   ApiPublicTelegramWebhookRoute: typeof ApiPublicTelegramWebhookRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
@@ -1583,6 +1597,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicSebpayWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/slo-snapshot': {
+      id: '/api/public/hooks/slo-snapshot'
+      path: '/api/public/hooks/slo-snapshot'
+      fullPath: '/api/public/hooks/slo-snapshot'
+      preLoaderRoute: typeof ApiPublicHooksSloSnapshotRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/secret-rotation-check': {
       id: '/api/public/hooks/secret-rotation-check'
       path: '/api/public/hooks/secret-rotation-check'
@@ -1821,6 +1842,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksRenewalRemindersRoute: ApiPublicHooksRenewalRemindersRoute,
   ApiPublicHooksSecretRotationCheckRoute:
     ApiPublicHooksSecretRotationCheckRoute,
+  ApiPublicHooksSloSnapshotRoute: ApiPublicHooksSloSnapshotRoute,
   ApiPublicSebpayWebhookRoute: ApiPublicSebpayWebhookRoute,
   ApiPublicTelegramWebhookRoute: ApiPublicTelegramWebhookRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
