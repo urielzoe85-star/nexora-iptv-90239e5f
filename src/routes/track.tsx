@@ -2,11 +2,12 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
   Tv, Search, Loader2, CheckCircle2, Circle, AlertTriangle, RefreshCw,
-  CreditCard, ShieldCheck, Mail, Server,
+  CreditCard, ShieldCheck, Mail, Server, Lock, KeyRound,
 } from "lucide-react";
-import { getOrderByRef } from "@/lib/orders.functions";
+import { getOrderByRef, getOrderDelivery } from "@/lib/orders.functions";
 import { verifyPayment } from "@/lib/payments.functions";
 import { useT, LanguageSwitcher } from "@/i18n/context";
+import { DeliveryPreview } from "@/components/ncc/orders/DeliveryPreview";
 
 export const Route = createFileRoute("/track")({
   head: () => ({
@@ -180,6 +181,7 @@ function TrackPage() {
         )}
 
         {order && <TrackView order={order} now={now} lastChecked={lastChecked} />}
+        {order && <DeliveryUnlock orderRef={order.order_ref} defaultEmail={order.email} provisioned={!!order.delivery && order.delivery.status !== "pending"} />}
       </div>
     </main>
   );
