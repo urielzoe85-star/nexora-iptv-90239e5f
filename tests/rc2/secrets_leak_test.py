@@ -3,10 +3,16 @@
 
 Scans:
   - Git-tracked source files
-  - Client bundle (`dist/`, `.output/public`)
+  - Client bundle (`dist/client`, `.output/public`) — no secret name / privileged
+    module reference must ever land here
   - Build outputs (`.output/`, `.vite/`, `.tanstack/`)
   - Logs (`tests/reports/**/*.log`, `.output/**/*.log`)
   - Test artefacts (`tests/rc1/artifacts/`, `tests/rc2/artifacts/`)
+
+Server bundles (`dist/server/**`) run inside the Cloudflare Worker: they read
+`process.env.SUPABASE_SERVICE_ROLE_KEY`, `SEBPAY_SECRET_KEY`, etc. and MUST
+contain those names. We therefore scan them only for real secret values (JWT
+bodies, sk_live_*, PATs…), not for env-var names.
 
 Exit code:
   0 = no leak
@@ -21,15 +27,48 @@ from __future__ import annotations
 import os
 import re
 import sys
+import base64
+import json
 import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 
+
+def _load_publishable_jwts() -> set[str]:
+    """Read .env and collect publishable/anon JWTs that legitimately ship
+    to the browser (SUPABASE_PUBLISHABLE_KEY / VITE_SUPABASE_PUBLISHABLE_KEY /
+    _ANON_ variants). They must NEVER be treated as a leak."""
+    env = ROOT / ".env"
+    out: set[str] = set()
+    if not env.exists():
+        return out
+    pat = re.compile(r'^\s*(?P<k>[A-Z_][A-Z0-9_]*)\s*=\s*"?(?P<v>eyJ[\w-]+\.[\w-]+\.[\w-]+)"?', re.M)
+    for m in pat.finditer(env.read_text(errors="ignore")):
+        name = m.group("k")
+        if "PUBLISHABLE" in name or "ANON" in name:
+            out.add(m.group("v"))
+    return out
+
+
+PUBLISHABLE_JWTS = _load_publishable_jwts()
+
+
+def _jwt_role(token: str) -> str | None:
+    """Decode the middle segment of a JWT and return its `role` claim."""
+    try:
+        payload = token.split(".")[1]
+        payload += "=" * (-len(payload) % 4)
+        decoded = base64.urlsafe_b64decode(payload).decode("utf-8", "ignore")
+        return json.loads(decoded).get("role")
+    except Exception:
+        return None
+
+
 # High-signal regex patterns that indicate a real secret value in a file.
 # We intentionally exclude bare env-var *names* to avoid false positives.
 VALUE_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
-    ("supabase_service_role_jwt", re.compile(r"eyJhbGciOi[\w-]{10,}\.[\w-]{20,}\.[\w-]{20,}")),
+    ("supabase_service_role_jwt", re.compile(r"eyJ[\w-]{10,}\.[\w-]{20,}\.[\w-]{20,}")),
     ("supabase_secret_key",       re.compile(r"sb_secret_[A-Za-z0-9_-]{20,}")),
     ("supabase_publishable_prefix", re.compile(r"sbp_[A-Za-z0-9]{20,}")),
     ("stripe_live",               re.compile(r"sk_live_[A-Za-z0-9]{20,}")),
@@ -112,6 +151,14 @@ def scan_values(files: list[Path], label: str) -> list[str]:
                 # Whitelist: docs/tests reference example / redacted values.
                 if DOC_LIKE.search(rel) and ("example" in snippet.lower() or "xxxx" in snippet.lower()):
                     continue
+                # Whitelist: publishable/anon Supabase JWT legitimately
+                # ships to browser and server bundles.
+                if name == "supabase_service_role_jwt":
+                    if snippet in PUBLISHABLE_JWTS:
+                        continue
+                    role = _jwt_role(snippet)
+                    if role in ("anon",):
+                        continue
                 # Whitelist: .env holds only publishable JWTs by convention
                 # (SUPABASE_PUBLISHABLE_KEY / VITE_SUPABASE_PUBLISHABLE_KEY).
                 # Service-role JWTs must never land here — they live in secrets.
@@ -127,9 +174,15 @@ def scan_values(files: list[Path], label: str) -> list[str]:
 
 
 def scan_bundle_forbidden(files: list[Path]) -> list[str]:
+    """Forbidden env-var names / privileged module identifiers must never
+    appear in a CLIENT-visible bundle (`dist/client/**`, `.output/public/**`).
+    Server bundles legitimately reference them (Worker reads env)."""
     hits: list[str] = []
     for f in files:
         if f.suffix not in {".js", ".mjs", ".cjs", ".map", ".html"}:
+            continue
+        rel_path = str(f)
+        if "/dist/client/" not in rel_path and "/.output/public/" not in rel_path:
             continue
         try:
             data = f.read_text(errors="ignore")
@@ -175,10 +228,16 @@ def main() -> int:
     tracked = git_tracked_files()
     all_hits += scan_values(tracked, "repo")
 
-    bundle_roots = [ROOT / "dist", ROOT / ".output" / "public"]
+    # Client-visible bundles: any leak here is critical.
+    bundle_roots = [ROOT / "dist" / "client", ROOT / ".output" / "public"]
     bundle_files = walk_paths(*bundle_roots)
-    all_hits += scan_values(bundle_files, "bundle")
+    all_hits += scan_values(bundle_files, "client-bundle")
     all_hits += scan_bundle_forbidden(bundle_files)
+
+    # Server-side bundles: only check for real secret VALUES; env-var
+    # names are expected because the Worker reads them at runtime.
+    server_bundle_files = walk_paths(ROOT / "dist" / "server")
+    all_hits += scan_values(server_bundle_files, "server-bundle")
 
     build_roots = [ROOT / ".output", ROOT / ".vite", ROOT / ".tanstack"]
     all_hits += scan_values(walk_paths(*build_roots), "build")

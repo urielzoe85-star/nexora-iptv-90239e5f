@@ -15,7 +15,7 @@ async function logWebhook(row: {
   error?: string | null;
 }) {
   try {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
     await (supabaseAdmin as any).from("integration_debug_logs").insert({
       connector_id: "payment.sebpay",
       operation: "webhook",

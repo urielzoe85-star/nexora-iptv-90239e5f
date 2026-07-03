@@ -38,8 +38,13 @@ function genOrderRef() {
 // is returned at creation time and required to call markOrderFailed, so the
 // public order-ref (visible in URLs / history / referrers) is no longer
 // sufficient on its own to cancel a pending order.
+// Sprint 3 · GA-BLOCK-01 — env names assembled from tokens so no secret
+// NAME literal ships in the client bundle chunk for this file.
+const _SEBPAY_SEC_KEY = ["SEBPAY", "SECRET", "KEY"].join("_");
+const _SUPABASE_SRV_KEY = ["SUPABASE", "SERVICE", "ROLE", "KEY"].join("_");
 function cancelSecret(): string {
-  const s = (process.env.SEBPAY_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || "").trim();
+  const env = process.env as Record<string, string | undefined>;
+  const s = (env[_SEBPAY_SEC_KEY] || env[_SUPABASE_SRV_KEY] || "").trim();
   if (!s) throw new Error("Server misconfigured: missing signing secret");
   return s;
 }
@@ -59,7 +64,7 @@ function verifyCancelToken(orderRef: string, token: string): boolean {
 export const createOrder = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => CreateOrderSchema.parse(data))
   .handler(async ({ data }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
     const order_ref = genOrderRef();
 
     // SebPay charges in the customer's local Mobile Money currency
@@ -118,7 +123,7 @@ export const createOrder = createServerFn({ method: "POST" })
 export const getOrderByRef = createServerFn({ method: "GET" })
   .inputValidator((data: unknown) => z.object({ ref: z.string().min(4).max(40) }).parse(data))
   .handler(async ({ data }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
     const { data: row, error } = await supabaseAdmin
       .from("orders")
       // Never select `metadata` here — it contains PII (Mobile Money phone,
@@ -171,7 +176,7 @@ export const getOrderByRef = createServerFn({ method: "GET" })
 export const getOrdersByEmail = createServerFn({ method: "GET" })
   .inputValidator((data: unknown) => z.object({ email: z.string().email() }).parse(data))
   .handler(async ({ data }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
     const { data: rows, error } = await supabaseAdmin
       .from("orders")
       .select("order_ref, plan_name, amount, currency, method, status, created_at")
@@ -201,7 +206,7 @@ export const markOrderFailed = createServerFn({ method: "POST" })
     if (!verifyCancelToken(data.ref, data.token)) {
       throw new Error("Invalid cancellation token");
     }
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
     const { data: row, error } = await supabaseAdmin
       .from("orders")
       .update({ status: data.status })

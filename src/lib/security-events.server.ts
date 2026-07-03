@@ -74,7 +74,7 @@ async function sendTelegramAlert(
 export async function recordSecurityEvent(evt: SecurityEventInput): Promise<void> {
   const severity: SecuritySeverity = evt.severity ?? "info";
   try {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
     const { error } = await supabaseAdmin.from("security_events").insert({
       event_type: evt.event_type,
       severity,

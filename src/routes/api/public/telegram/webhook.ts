@@ -44,7 +44,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         const text: string | undefined = message?.text;
         if (!chatId) return Response.json({ ok: true, ignored: true });
 
-        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
 
         // /start <order_ref> — bind chat to customer
         const startMatch = text?.match(/^\/start(?:\s+(\S+))?/i);

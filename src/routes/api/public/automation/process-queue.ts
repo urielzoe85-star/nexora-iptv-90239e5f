@@ -26,7 +26,7 @@ export const Route = createFileRoute("/api/public/automation/process-queue")({
 
         await import("@/automation");
         const { automationApi } = await import("@/automation");
-        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
         const sb = supabaseAdmin as any;
 
         // Atomic claim via FOR UPDATE SKIP LOCKED — two concurrent drains

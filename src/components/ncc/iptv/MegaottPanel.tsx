@@ -40,7 +40,7 @@ export function MegaottPanel() {
         <div className="grid grid-cols-2 gap-3 text-sm">
           <div>
             <div className="text-muted-foreground">Bearer Token</div>
-            <div>{s.data?.tokenConfigured ? <span className="text-emerald-600">Configuré (secret serveur)</span> : <span className="text-rose-600">Manquant — MEGAOTT_BEARER_TOKEN</span>}</div>
+            <div>{s.data?.tokenConfigured ? <span className="text-emerald-600">Configuré (secret serveur)</span> : <span className="text-rose-600">Manquant — secret serveur non configuré</span>}</div>
           </div>
           <div>
             <div className="text-muted-foreground">Fournisseur</div>

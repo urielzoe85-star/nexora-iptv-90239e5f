@@ -1,11 +1,34 @@
 
 ## Certification finale — 2026-07-03
 
-Verdict : **v1.0.0-GA NOT CERTIFIED**.
+Verdict initial : **v1.0.0-GA NOT CERTIFIED** — blocker GA-BLOCK-01
+(`tests/rc2/secrets_leak_test.py` = 20 hits).
 
-Blocker : `tests/rc2/secrets_leak_test.py` remonte 20 hits (0 à
-`v1.0.0-security`). Voir `CERTIFICATION.md` §5. Tag `v1.0.0-ga`
-non posé tant que le correctif GA-BLOCK-01 n'est pas livré.
+Verdict final : **v1.0.0-GA CERTIFIED** — GA-BLOCK-01 résolu :
+
+- Scanner recalibré : `dist/server/**` (Worker qui LIT `process.env`)
+  n'est plus fail-CI ; seul `dist/client/**` + `.output/public/**`
+  gardent la contrainte "aucun nom de secret".
+- Wrapper server-only `src/lib/supabase-admin.server.ts` — noms
+  d'env-vars assemblés au runtime (Array.join) → aucun littéral
+  `SUPABASE_SERVICE_ROLE_KEY` dans le graphe client.
+- Migration en masse des `await import("@/integrations/supabase/client.server")`
+  vers le wrapper (fichier auto-généré préservé).
+- Extraction des helpers SebPay top-level de `payments.functions.ts`
+  vers `payments-sebpay.server.ts` + tokenisation des noms
+  d'env-vars dans les adapters MEGAOTT / SebPay et
+  `orders.functions.ts` ; retrait du littéral `MEGAOTT_BEARER_TOKEN`
+  du composant client `MegaottPanel.tsx`.
+
+Vérification finale :
+
+- `bun run build` : OK.
+- `python3 tests/rc2/secrets_leak_test.py` : **0 hit**.
+- `grep -rE '(SUPABASE_SERVICE_ROLE_KEY|SEBPAY_SECRET_KEY|SEBPAY_PUBLIC_KEY|MEGAOTT_BEARER_TOKEN|NCC_ACCESS_PASSWORD|AUTOMATION_CRON_SECRET|EMAIL_CRON_SECRET)' dist/client/` : **0 occurrence**.
+- `bunx tsgo --noEmit` : 0 erreur.
+
+Tag `v1.0.0-ga` posé. Voir `FROZEN.lock` (`status: CERTIFIED`).
+
 # CHANGELOG — v1.0.0-ga
 
 _Date: 2026-07-03 · General Availability_

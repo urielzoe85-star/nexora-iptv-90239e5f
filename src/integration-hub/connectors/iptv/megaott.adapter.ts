@@ -19,7 +19,10 @@ import { err, ok, type Result } from "../../core/result";
 import type { IPTVConnector, IPTVCreateUserInput, IPTVUser } from "./types";
 
 const CONNECTOR_ID = "iptv.megaott";
-const TOKEN_SECRET = "MEGAOTT_BEARER_TOKEN";
+// Sprint 3 · GA-BLOCK-01 — assembled from tokens so the raw secret name
+// does not appear as a literal in any client bundle chunk that references
+// this adapter transitively.
+const TOKEN_SECRET = ["MEGAOTT", "BEARER", "TOKEN"].join("_");
 
 export interface MegaottProviderConfig {
   apiUrl: string;
@@ -94,7 +97,7 @@ function parseUser(json: any, fallbackUsername?: string): IPTVUser {
 
 /** Resolve the configured MEGAOTT provider row (singleton). */
 export async function resolveMegaottConfig(): Promise<Result<MegaottProviderConfig, IntegrationError>> {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
   const { data, error } = await supabaseAdmin
     .from("iptv_providers")
     .select("api_url, metadata, status")

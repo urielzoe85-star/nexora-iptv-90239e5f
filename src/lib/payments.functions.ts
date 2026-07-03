@@ -1,148 +1,16 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
-// =============================================================================
-// SebPay LIVE integration (official endpoints — https://sebpay.bj/our-api)
-// -----------------------------------------------------------------------------
+// Sprint 3 · GA-BLOCK-01 — All top-level SebPay helpers have been moved to
+// `src/lib/payments-sebpay.server.ts` so no SebPay secret NAME literal
+// (SEBPAY_PUBLIC_KEY / SEBPAY_SECRET_KEY) survives in the client bundle.
+// Handlers below dynamic-import those helpers; the server-fn Vite plugin
+// strips handler bodies from client chunks.
+//
+// SebPay LIVE integration — https://sebpay.bj/our-api
 //   POST  {BASE}/api/v1/collections                 — create a Mobile Money collection
 //   GET   {BASE}/api/v1/collections/{id_or_ref}     — verify a collection's status
-//
-// Auth: two custom headers (X-Public-Key + X-Secret-Key). Both keys are
-// server-only secrets and are never exposed to the browser. Diagnostics only
-// log safe metadata (presence, length, prefix, mode), never complete keys.
-// =============================================================================
-const SEBPAY_BASE_URL = "https://newapi.sebpay.bj";
 export const SEBPAY_COLLECTIONS_PATH = "/api/v1/collections";
-
-function cleanSecretValue(value: string): string {
-  return value.trim().replace(/^['"]|['"]$/g, "");
-}
-
-function sebpayKeyMode(key: string): "live" | "test" | "unknown" {
-  if (key.startsWith("pk_live_") || key.startsWith("sk_live_")) return "live";
-  if (key.startsWith("pk_test_") || key.startsWith("sk_test_")) return "test";
-  return "unknown";
-}
-
-function safeKeyDiagnostics(key: string, raw: string) {
-  return {
-    present: key.length > 0,
-    length: key.length,
-    prefix: key.slice(0, 8),
-    mode: sebpayKeyMode(key),
-    trimmed: key.length !== raw.length,
-  };
-}
-
-function maskPhone(value: unknown) {
-  const digits = String(value ?? "").replace(/\D/g, "");
-  if (digits.length <= 4) return digits ? "****" : undefined;
-  return `${"*".repeat(Math.max(0, digits.length - 4))}${digits.slice(-4)}`;
-}
-
-function redactSebpayPayload(payload: unknown) {
-  if (!payload || typeof payload !== "object") return payload;
-  const copy = { ...(payload as Record<string, unknown>) };
-  if ("phone" in copy) copy.phone = maskPhone(copy.phone);
-  return copy;
-}
-
-function normalizePhone(value: string): string {
-  // SebPay expects international format without "+" (e.g. 22990000000)
-  return String(value ?? "").replace(/[^\d]/g, "");
-}
-
-function operatorSlug(value: string): string {
-  const v = String(value ?? "").toLowerCase();
-  if (v.includes("mtn")) return "mtn";
-  if (v.includes("orange")) return "orange";
-  if (v.includes("moov")) return "moov";
-  if (v.includes("wav") || v.includes("wave")) return "wav";
-  return v.trim();
-}
-
-function sebpayHeaders(): Record<string, string> {
-  const rawPub = process.env.SEBPAY_PUBLIC_KEY ?? "";
-  const rawSec = process.env.SEBPAY_SECRET_KEY ?? "";
-  const pub = cleanSecretValue(rawPub);
-  const sec = cleanSecretValue(rawSec);
-
-  console.log("[sebpay] auth keys check", {
-    publicKey: safeKeyDiagnostics(pub, rawPub),
-    secretKey: safeKeyDiagnostics(sec, rawSec),
-    runtime: "server",
-    authHeaderNames: ["X-Public-Key", "X-Secret-Key"],
-  });
-
-  if (!pub) throw new Error("Configuration de paiement indisponible: SEBPAY_PUBLIC_KEY est manquante côté serveur.");
-  if (!sec) throw new Error("Configuration de paiement indisponible: SEBPAY_SECRET_KEY est manquante côté serveur.");
-  if (sec.length < 20) throw new Error("Configuration de paiement indisponible: SEBPAY_SECRET_KEY semble tronquée.");
-  if (pub.length < 20) throw new Error("Configuration de paiement indisponible: SEBPAY_PUBLIC_KEY semble tronquée.");
-
-  const publicMode = sebpayKeyMode(pub);
-  const secretMode = sebpayKeyMode(sec);
-  if (publicMode === "unknown" || secretMode === "unknown") {
-    console.error("[sebpay] unknown key mode", { publicMode, secretMode });
-    throw new Error("Configuration de paiement indisponible: format de clé SebPay invalide (attendu pk_live_/sk_live_ ou pk_test_/sk_test_).");
-  }
-  if (publicMode !== secretMode) {
-    console.error("[sebpay] mismatched key modes", { publicMode, secretMode });
-    throw new Error("Configuration de paiement indisponible: SEBPAY_PUBLIC_KEY et SEBPAY_SECRET_KEY ne sont pas dans le même mode (live/test).");
-  }
-
-  return {
-    "X-Public-Key": pub,
-    "X-Secret-Key": sec,
-    Accept: "application/json",
-  };
-}
-
-async function sebpayFetch(
-  path: string,
-  init: { method: "GET" | "POST"; body?: unknown },
-): Promise<{ status: number; raw: string; json: any }> {
-  const url = `${SEBPAY_BASE_URL}${path}`;
-  const headers: Record<string, string> = sebpayHeaders();
-  if (init.body !== undefined) headers["Content-Type"] = "application/json";
-
-  console.log("[sebpay] →", init.method, url, init.body ? { payload: redactSebpayPayload(init.body) } : "");
-  // Cap upstream latency so a slow SebPay can't blow past the webhook's 5s
-  // budget or hang the success-page poll. GET (verify) is cheaper than POST
-  // (collection creation) so the budgets differ.
-  const timeoutMs = init.method === "GET" ? 8_000 : 20_000;
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
-  let res: Response;
-  try {
-    res = await fetch(url, {
-      method: init.method,
-      headers,
-      body: init.body !== undefined ? JSON.stringify(init.body) : undefined,
-      signal: ctrl.signal,
-    });
-  } catch (e: any) {
-    clearTimeout(timer);
-    const aborted = e?.name === "AbortError";
-    console.error("[sebpay] fetch failed", { url, method: init.method, aborted, message: String(e?.message ?? e) });
-    throw new Error(aborted ? "SebPay timeout" : `SebPay network error: ${String(e?.message ?? e)}`);
-  }
-  clearTimeout(timer);
-  const raw = await res.text();
-  let json: any = null;
-  try { json = raw ? JSON.parse(raw) : null; } catch { /* non-JSON */ }
-  console.log("[sebpay] ←", res.status, url, raw.slice(0, 2000));
-  return { status: res.status, raw, json };
-}
-
-// Map SebPay's documented statuses (approved | rejected | pending) to one of
-// our 4 internal states. Anything unknown is treated as "pending".
-function mapSebpayStatus(s: unknown): "paid" | "failed" | "cancelled" | "pending" {
-  const v = String(s ?? "").toLowerCase();
-  if (["approved", "success", "successful", "succeeded", "paid", "completed"].includes(v)) return "paid";
-  if (["rejected", "failed", "failure", "error", "declined"].includes(v)) return "failed";
-  if (["cancelled", "canceled"].includes(v)) return "cancelled";
-  return "pending";
-}
 
 /**
  * Create a payment with SebPay (POST /api/v1/collections) and return the URL the
@@ -160,7 +28,14 @@ export const initSebPayCheckout = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ data }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
+    const {
+      SEBPAY_BASE_URL,
+      SEBPAY_COLLECTIONS_PATH: PATH,
+      normalizePhone,
+      operatorSlug,
+      sebpayFetch,
+    } = await import("@/lib/payments-sebpay.server");
     const { data: order, error: oErr } = await supabaseAdmin
       .from("orders")
       .select("order_ref, email, full_name, plan_name, amount, currency, method, status, metadata")
@@ -184,14 +59,11 @@ export const initSebPayCheckout = createServerFn({ method: "POST" })
       );
     }
 
-    // Documented webhook receiver — always the /api/public/* TSS route so
-    // SebPay's POST is not blocked by Lovable's published-site auth.
     const callbackUrl = `${new URL(data.successUrl).origin}/api/public/sebpay/webhook`;
 
-    // Documented payload for POST /api/v1/collections.
     const payload: Record<string, any> = {
       amount: Number(order.amount),
-      currency: order.currency, // "XOF"
+      currency: order.currency,
       phone: normalizePhone(momo.phone),
       operator: operatorSlug(momo.operator),
       country: momo.country,
@@ -199,40 +71,27 @@ export const initSebPayCheckout = createServerFn({ method: "POST" })
       callback_url: callbackUrl,
     };
 
-    const endpoint = `${SEBPAY_BASE_URL}${SEBPAY_COLLECTIONS_PATH}`;
-    const { status, raw, json } = await sebpayFetch(SEBPAY_COLLECTIONS_PATH, {
-      method: "POST",
-      body: payload,
-    });
+    const endpoint = `${SEBPAY_BASE_URL}${PATH}`;
+    const { status, raw, json } = await sebpayFetch(PATH, { method: "POST", body: payload });
     if (status < 200 || status >= 300 || !json) {
-      // Log provider details server-side, but only return a generic error to
-      // the browser so endpoints/payloads/internal diagnostics stay hidden.
       const detail =
         (json && (json.message || json.error || json.detail)) ||
         raw.slice(0, 500) ||
         "(empty response body)";
       const fieldErrors =
-        json && json.errors
-          ? ` — fields: ${JSON.stringify(json.errors).slice(0, 400)}`
-          : "";
+        json && json.errors ? ` — fields: ${JSON.stringify(json.errors).slice(0, 400)}` : "";
       console.error("[sebpay] create collection failed", { status, endpoint, detail, fieldErrors });
       throw new Error("Le paiement n'a pas pu être initialisé. Veuillez réessayer ou contacter le support.");
     }
 
-    // Documented response fields: transaction_id, status, external_reference,
-    // provider_link, message. provider_link is the operator's payment page
-    // (when SebPay can't push USSD directly) and must be opened in a new tab.
     const d = json.data ?? json;
-    const sebpayId: string | undefined =
-      d.transaction_id ?? d.id ?? d.reference;
+    const sebpayId: string | undefined = d.transaction_id ?? d.id ?? d.reference;
     const providerLink: string | undefined =
       d.provider_link ?? d.payment_url ?? d.checkout_url ?? d.url ?? undefined;
     const sebMessage: string | undefined = d.message ?? json.message;
     const sebStatus: string | undefined = d.status ?? json.status;
     if (!sebpayId) {
-      throw new Error(
-        `SebPay did not return a transaction_id. Raw response: ${raw.slice(0, 500)}`,
-      );
+      throw new Error(`SebPay did not return a transaction_id. Raw response: ${raw.slice(0, 500)}`);
     }
 
     await supabaseAdmin
@@ -260,17 +119,19 @@ export const initSebPayCheckout = createServerFn({ method: "POST" })
   });
 
 /**
- * Verify a payment with SebPay (GET /api/v1/collections/{id}). The order status is
- * only updated when SebPay returns a terminal state.
+ * Verify a payment with SebPay (GET /api/v1/collections/{id}).
  */
 export const verifyPayment = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) =>
-    z.object({ ref: z.string().min(4).max(40) }).parse(data),
-  )
+  .inputValidator((data: unknown) => z.object({ ref: z.string().min(4).max(40) }).parse(data))
   .handler(async ({ data }) => verifyPaymentInternal(data.ref));
 
 export async function verifyPaymentInternal(ref: string): Promise<{ status: string }> {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
+  const {
+    SEBPAY_COLLECTIONS_PATH: PATH,
+    sebpayFetch,
+    mapSebpayStatus,
+  } = await import("@/lib/payments-sebpay.server");
   const { data: order, error } = await supabaseAdmin
     .from("orders")
     .select("order_ref, status, sebpay_reference, metadata")
@@ -279,7 +140,6 @@ export async function verifyPaymentInternal(ref: string): Promise<{ status: stri
   if (error) throw new Error(error.message);
   if (!order) return { status: "not_found" };
 
-  // Already finalized → don't re-query SebPay.
   if (["paid", "failed", "cancelled"].includes(order.status)) {
     return { status: order.status };
   }
@@ -288,12 +148,12 @@ export async function verifyPaymentInternal(ref: string): Promise<{ status: stri
   }
 
   const { status: httpStatus, raw, json } = await sebpayFetch(
-    `${SEBPAY_COLLECTIONS_PATH}/${encodeURIComponent(order.sebpay_reference)}`,
+    `${PATH}/${encodeURIComponent(order.sebpay_reference)}`,
     { method: "GET" },
   );
   if (httpStatus < 200 || httpStatus >= 300 || !json) {
     console.error("[sebpay] verify failed", { ref, httpStatus, raw: raw.slice(0, 300) });
-    return { status: order.status }; // unchanged
+    return { status: order.status };
   }
 
   const d = json.data ?? json;
@@ -301,11 +161,6 @@ export async function verifyPaymentInternal(ref: string): Promise<{ status: stri
   const mapped = mapSebpayStatus(sebStatus);
   if (mapped === "pending") return { status: "processing" };
 
-  // Atomic transition: only the row whose status is still pending/processing
-  // is updated. `select()` returns it so we know whether THIS call actually
-  // moved the order — only then do we emit the business event, ensuring the
-  // payment-confirmed workflow runs exactly once even if the webhook and the
-  // success-page poll both race to verify.
   const { data: updatedRows } = await supabaseAdmin
     .from("orders")
     .update({
@@ -324,12 +179,9 @@ export async function verifyPaymentInternal(ref: string): Promise<{ status: stri
   const transitioned = Array.isArray(updatedRows) && updatedRows.length > 0;
   if (transitioned) {
     const row = updatedRows[0]!;
-    // Auto-reactivate any IPTV accounts previously suspended for this order.
     if (mapped === "paid") {
       try {
         const { reactivateAccountsForOrder } = await import("@/lib/billing.server");
-        // orders.order_ref is the customer-facing reference; iptv_accounts.order_id
-        // stores the internal orders.id. Resolve it before reactivating.
         const { data: internal } = await supabaseAdmin
           .from("orders").select("id").eq("order_ref", ref).maybeSingle();
         if (internal?.id) {
@@ -359,8 +211,7 @@ export async function verifyPaymentInternal(ref: string): Promise<{ status: stri
 /**
  * Emit a business event into the automation queue. Failures are logged and
  * swallowed — payment processing must never fail because the automation
- * queue is temporarily unavailable. The cron drain (`/api/public/automation/
- * process-queue`) will pick the job up on its next tick.
+ * queue is temporarily unavailable.
  */
 export async function emitBusinessEvent(
   event: "payment.confirmed" | "payment.failed" | "order.created" | null,
@@ -368,11 +219,8 @@ export async function emitBusinessEvent(
 ): Promise<void> {
   if (!event) return;
   try {
-    await import("@/automation"); // ensure workflows are registered
+    await import("@/automation");
     const { automationApi } = await import("@/automation");
-    // Idempotency scope: one workflow run per (event, order_ref). Prevents
-    // the webhook + success-page poll from queuing the same IPTV creation
-    // twice when both race to verify the same payment.
     const ref = String((payload as any).orderRef ?? (payload as any).orderId ?? "");
     const idempotencyKey = ref ? `${event}:${ref}` : null;
     await automationApi.emit(event, payload, { sync: false, idempotencyKey });

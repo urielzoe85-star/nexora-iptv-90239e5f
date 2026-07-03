@@ -2,7 +2,7 @@
 
 export async function logToIptvJournal(action: string, message: string, payload: Record<string, unknown> = {}) {
   try {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
     await (supabaseAdmin as any).from("iptv_logs").insert({
       action: `automation:${action}`,
       message,

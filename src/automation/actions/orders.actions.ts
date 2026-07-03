@@ -2,7 +2,7 @@
 // `orders` pour qu'aucun workflow ne dépende d'un fichier métier précis.
 
 async function admin() {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
   return supabaseAdmin as any;
 }
 
