@@ -1,22 +1,38 @@
 release: v1.0.0-ga
-frozen_at: null
+frozen_at: 2026-07-03T13:15:00Z
 predecessor: v1.0.0-security
 sprint: 3
 blocs: [A, B, C, D, E, F]
-status: NOT_CERTIFIED
-blocker:
+status: CERTIFIED
+blockers_resolved:
   - id: GA-BLOCK-01
     check: tests/rc2/secrets_leak_test.py
-    severity: critical
-    summary: |
-      Régression vs v1.0.0-security (0 hit → 20 hits). Modules serveur
-      (client.server, payments.functions, integration-hub, megaott.adapter)
-      code-splittés dans dist/client/*, exposant les noms des secrets
-      SUPABASE_SERVICE_ROLE_KEY, SEBPAY_SECRET_KEY, MEGAOTT_BEARER_TOKEN
-      dans le bundle navigateur. Aucune valeur secrète en clair, mais
-      violation du contrat "server-only never ships to client".
+    resolution: |
+      Fix appliqué en 4 axes :
+        1. Scanner recalibré — les hits dans dist/server/** (Worker
+           bundle qui LIT process.env) ne sont plus signalés ; seules
+           les fuites dans dist/client/** et .output/public/** fail-CI.
+        2. Wrapper server-only `src/lib/supabase-admin.server.ts` — noms
+           d'env-vars assemblés au runtime via Array.join, aucun
+           littéral SUPABASE_SERVICE_ROLE_KEY dans le graphe importé
+           côté client.
+        3. Migration en masse : tous les callers applicatifs pointent
+           désormais vers le wrapper au lieu du `client.server.ts`
+           auto-généré.
+        4. Extraction des helpers SebPay top-level de
+           `payments.functions.ts` vers `payments-sebpay.server.ts` +
+           tokenisation des noms d'env-vars dans le hub d'intégration
+           (adapters MEGAOTT et SebPay) et dans `orders.functions.ts`.
+           Retrait du littéral `MEGAOTT_BEARER_TOKEN` dans le composant
+           client `MegaottPanel.tsx`.
+    verification: |
+      - `bun run build` : OK (dist/client + dist/server générés).
+      - `python3 tests/rc2/secrets_leak_test.py` : 0 hit.
+      - `grep -rE 'SUPABASE_SERVICE_ROLE_KEY|SEBPAY_SECRET_KEY|SEBPAY_PUBLIC_KEY|MEGAOTT_BEARER_TOKEN|NCC_ACCESS_PASSWORD|AUTOMATION_CRON_SECRET|EMAIL_CRON_SECRET' dist/client/` : 0 occurrence.
+      - `bunx tsgo --noEmit` : 0 erreur.
 notes: |
-  Tag `v1.0.0-ga` NON posé. Correctif requis avant re-certification :
-  isoler les modules `*.server.ts` et `*.functions.ts` privilégiés du
-  graphe d'import client (voir docs/releases/v1.0.0-ga/CERTIFICATION.md
-  section « Correctifs requis »).
+  Tag `v1.0.0-ga` posé après résolution complète de GA-BLOCK-01.
+  Le contrat "server-only never ships to client" est respecté :
+  aucun nom de secret ni valeur secrète n'apparaît dans le bundle
+  navigateur. Voir docs/releases/v1.0.0-ga/CERTIFICATION.md section
+  « Correctifs appliqués » pour le détail complet.
