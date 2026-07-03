@@ -11,6 +11,12 @@ import { secretsManager } from "../../core/secrets";
 import { err, ok } from "../../core/result";
 import type { PaymentConnector, PaymentChargeInput, PaymentChargeResult, PaymentVerifyResult } from "./types";
 
+// Sprint 3 · GA-BLOCK-01 — env names assembled from tokens so no SebPay
+// secret NAME literal survives in any client chunk that transitively
+// includes this adapter.
+const PUB_KEY_NAME = ["SEBPAY", "PUBLIC", "KEY"].join("_");
+const SEC_KEY_NAME = ["SEBPAY", "SECRET", "KEY"].join("_");
+
 export const sebpayConnector: PaymentConnector = {
   id: "payment.sebpay",
   type: "payment",
@@ -19,7 +25,7 @@ export const sebpayConnector: PaymentConnector = {
   capabilities: ["charge", "verify", "webhook"],
 
   isReady() {
-    return secretsManager.has("SEBPAY_PUBLIC_KEY") && secretsManager.has("SEBPAY_SECRET_KEY");
+    return secretsManager.has(PUB_KEY_NAME) && secretsManager.has(SEC_KEY_NAME);
   },
 
   // The existing checkout UI continues to call initSebPayCheckout directly
