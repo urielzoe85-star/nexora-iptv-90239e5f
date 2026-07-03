@@ -225,6 +225,16 @@ export async function emitBusinessEvent(
     const ref = String((payload as any).orderRef ?? (payload as any).orderId ?? "");
     const idempotencyKey = ref ? `${event}:${ref}` : null;
     await automationApi.emit(event, payload, { sync: false, idempotencyKey });
+    // Chemin chaud : dès qu'un événement métier significatif est enfilé,
+    // on déclenche un drain immédiat en arrière-plan. Cela évite d'attendre
+    // le tick pg_cron (~1 min) et rend l'attribution IPTV quasi-instantanée
+    // après un paiement confirmé. Le drain est idempotent (FOR UPDATE SKIP
+    // LOCKED) et fire-and-forget : si le worker meurt avant la fin, le cron
+    // rattrapera.
+    if (event === "payment.confirmed" || event === "order.created") {
+      const { kickDrainInBackground } = await import("@/lib/automation-drainer.server");
+      kickDrainInBackground({ batchSize: 5 });
+    }
   } catch (e: any) {
     console.error("[automation] emit failed", { event, message: String(e?.message ?? e) });
   }
