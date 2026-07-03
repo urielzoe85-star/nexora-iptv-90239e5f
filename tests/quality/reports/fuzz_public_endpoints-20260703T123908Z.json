@@ -1,0 +1,7 @@
+{
+  "scenario": "fuzz_public_endpoints",
+  "generated_at": "2026-07-03T12:39:08.961014+00:00",
+  "mode": "dry-run",
+  "ok": true,
+  "payloads": 8
+}

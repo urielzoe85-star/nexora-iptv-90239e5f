@@ -1,0 +1,10 @@
+{
+  "scenario": "checkout_100rps",
+  "generated_at": "2026-07-03T12:39:09.042987+00:00",
+  "mode": "dry-run",
+  "ok": true,
+  "rps": 100,
+  "duration_s": 60,
+  "target_p95_ms": 800,
+  "target_error_rate_pct": 0.5
+}
