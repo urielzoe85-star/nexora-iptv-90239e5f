@@ -5,6 +5,7 @@ import {
   Loader2, Tv, Phone, Globe, Smartphone, ExternalLink, Clock,
 } from "lucide-react";
 import { createOrder } from "@/lib/orders.functions";
+import { LEGAL_VERSION } from "@/lib/legal-version";
 import { initSebPayCheckout, verifyPayment } from "@/lib/payments.functions";
 import { useT, LanguageSwitcher } from "@/i18n/context";
 import { useQuery } from "@tanstack/react-query";
@@ -83,6 +84,7 @@ function CheckoutPage() {
   const [processing, setProcessing] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string>("");
   const [pending, setPending] = useState<PendingState | null>(null);
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   // When the country changes: re-prefix the phone with the new dial code
   // and reset the operator if the previous one isn't offered there.
@@ -112,7 +114,8 @@ function CheckoutPage() {
     email.includes("@") &&
     fullName.trim().length > 1 &&
     phone.replace(/\D/g, "").length >= 8 &&
-    !!operator && !!country;
+    !!operator && !!country &&
+    termsAccepted;
 
   async function handlePay(e: React.FormEvent) {
     e.preventDefault();
@@ -130,6 +133,8 @@ function CheckoutPage() {
           currency: "USD",
           method: "momo",
           phone, operator, country,
+          termsAccepted: true,
+          termsVersion: LEGAL_VERSION,
         },
       });
       if (!order?.order_ref) throw new Error("Could not create order");
@@ -217,6 +222,8 @@ function CheckoutPage() {
                     phone={phone} setPhone={setPhone}
                     operator={operator} setOperator={setOperator}
                     country={country} setCountry={handleCountryChange}
+                    termsAccepted={termsAccepted}
+                    setTermsAccepted={setTermsAccepted}
                     processing={processing}
                     canPay={canPay}
                     total={total}
