@@ -6,7 +6,7 @@
 // touching the business code.
 
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNccUnlock } from "@/lib/require-ncc-unlock";
 import { z } from "zod";
 import "@/integration-hub"; // ensure connectors are registered
 import { connectorRegistry } from "@/integration-hub/core/registry";
@@ -68,7 +68,7 @@ async function debugTrace(sb: any, actorId: string, operation: string, t: {
 // ─── Status / Health ───────────────────────────────────────────────────
 
 export const megaottStatus = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNccUnlock])
   .handler(async ({ context }) => {
     await admin(context.userId);
     const c = getConnector();
@@ -86,7 +86,7 @@ export const megaottStatus = createServerFn({ method: "GET" })
   });
 
 export const megaottPing = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNccUnlock])
   .inputValidator((d: unknown) => z.object({ url: z.string().url().optional() }).parse(d ?? {}))
   .handler(async ({ data, context }) => {
     const sb = await admin(context.userId);
@@ -100,7 +100,7 @@ export const megaottPing = createServerFn({ method: "POST" })
 
 /** Provision a remote MEGAOTT user from a local iptv_accounts row. */
 export const megaottCreateRemote = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNccUnlock])
   .inputValidator((d: unknown) => z.object({
     account_id: z.string().uuid(),
     package_id: z.string().trim().max(120).optional(),
@@ -127,7 +127,7 @@ export const megaottCreateRemote = createServerFn({ method: "POST" })
   });
 
 export const megaottSuspendRemote = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNccUnlock])
   .inputValidator((d: unknown) => z.object({ account_id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const sb = await admin(context.userId);
@@ -142,7 +142,7 @@ export const megaottSuspendRemote = createServerFn({ method: "POST" })
   });
 
 export const megaottReactivateRemote = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNccUnlock])
   .inputValidator((d: unknown) => z.object({ account_id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const sb = await admin(context.userId);
@@ -157,7 +157,7 @@ export const megaottReactivateRemote = createServerFn({ method: "POST" })
   });
 
 export const megaottExtendRemote = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNccUnlock])
   .inputValidator((d: unknown) => z.object({
     account_id: z.string().uuid(),
     days: z.number().int().min(1).max(3650).default(30),
@@ -178,7 +178,7 @@ export const megaottExtendRemote = createServerFn({ method: "POST" })
   });
 
 export const megaottSyncRemote = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNccUnlock])
   .inputValidator((d: unknown) => z.object({ account_id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const sb = await admin(context.userId);
@@ -218,7 +218,7 @@ const SubscriptionSchema = z.object({
 });
 
 export const megaottCreateSubscription = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNccUnlock])
   .inputValidator((d: unknown) => SubscriptionSchema.parse(d))
   .handler(async ({ data, context }) => {
     const sb = await admin(context.userId);
@@ -316,7 +316,7 @@ export const megaottCreateSubscription = createServerFn({ method: "POST" })
 // ─── Debug log reader ────────────────────────────────────────────────
 
 export const listIntegrationDebugLogs = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNccUnlock])
   .inputValidator((d: unknown) => z.object({
     connector_id: z.string().max(80).optional(),
     limit: z.number().int().min(1).max(500).default(100),
@@ -337,7 +337,7 @@ export const listIntegrationDebugLogs = createServerFn({ method: "POST" })
 
 /** Renvoie l'URL d'origine du panel MEGAOTT (sans `/api/v1`) pour `window.open`. */
 export const getMegaottPanelUrl = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNccUnlock])
   .handler(async ({ context }) => {
     await admin(context.userId);
     const cfg = await resolveMegaottConfig();
@@ -369,7 +369,7 @@ const DeliverySchema = z.object({
  * commande (metadata.iptv_delivery).
  */
 export const saveMegaottDelivery = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNccUnlock])
   .inputValidator((d: unknown) => DeliverySchema.parse(d))
   .handler(async ({ data, context }) => {
     const sb = await admin(context.userId);
@@ -438,7 +438,7 @@ export const saveMegaottDelivery = createServerFn({ method: "POST" })
 
 /** Marque la livraison comme envoyée par un canal (Email / WhatsApp / Telegram). */
 export const markIptvDeliverySent = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNccUnlock])
   .inputValidator((d: unknown) => z.object({
     order_id: z.string().uuid(),
     channel: z.enum(["email", "whatsapp", "telegram"]),

@@ -2,7 +2,7 @@
 // Tous les handlers exigent une session admin (has_role admin).
 
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNccUnlock } from "@/lib/require-ncc-unlock";
 import { z } from "zod";
 
 async function admin(userId: string) {
@@ -79,7 +79,7 @@ function base64ToUint8(b64: string): Uint8Array {
 }
 
 export const parseIptvImportFile = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNccUnlock])
   .inputValidator((d: unknown) => ParseSchema.parse(d))
   .handler(async ({ data, context }) => {
     await admin(context.userId);
@@ -165,7 +165,7 @@ function parseDate(v: string | null): string | null {
 }
 
 export const commitIptvImport = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNccUnlock])
   .inputValidator((d: unknown) => CommitSchema.parse(d))
   .handler(async ({ data, context }) => {
     const sb = await admin(context.userId);
@@ -270,7 +270,7 @@ export const commitIptvImport = createServerFn({ method: "POST" })
 // ─── Import batches ────────────────────────────────────────────────────
 
 export const listImportBatches = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNccUnlock])
   .handler(async ({ context }) => {
     const sb = await admin(context.userId);
     const { data, error } = await sb.from("iptv_import_batches")
@@ -282,7 +282,7 @@ export const listImportBatches = createServerFn({ method: "GET" })
 // ─── Mappings ──────────────────────────────────────────────────────────
 
 export const listImportMappings = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNccUnlock])
   .handler(async ({ context }) => {
     const sb = await admin(context.userId);
     const { data, error } = await sb.from("iptv_import_mappings")
@@ -292,7 +292,7 @@ export const listImportMappings = createServerFn({ method: "GET" })
   });
 
 export const saveImportMapping = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNccUnlock])
   .inputValidator((d: unknown) => z.object({
     id: z.string().uuid().optional(),
     name: z.string().trim().min(1).max(120),
@@ -314,7 +314,7 @@ export const saveImportMapping = createServerFn({ method: "POST" })
   });
 
 export const deleteImportMapping = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNccUnlock])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const sb = await admin(context.userId);
@@ -326,7 +326,7 @@ export const deleteImportMapping = createServerFn({ method: "POST" })
 // ─── Inventory / KPIs ──────────────────────────────────────────────────
 
 export const iptvInventoryKpis = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNccUnlock])
   .handler(async ({ context }) => {
     const sb = await admin(context.userId);
     const { data, error } = await sb.from("iptv_accounts").select("status, package, account_type, expires_at, paid, trial");
@@ -354,7 +354,7 @@ export const iptvInventoryKpis = createServerFn({ method: "GET" })
   });
 
 export const listInventoryAccounts = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNccUnlock])
   .inputValidator((d: unknown) => z.object({
     status: z.string().optional(),
     account_type: z.enum(["trial", "premium"]).optional(),
@@ -390,7 +390,7 @@ export const listInventoryAccounts = createServerFn({ method: "POST" })
 // ─── Assignment ────────────────────────────────────────────────────────
 
 export const assignIptvAccountToOrder = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNccUnlock])
   .inputValidator((d: unknown) => z.object({
     order_id: z.string().uuid(),
     account_id: z.string().uuid(),
@@ -457,7 +457,7 @@ export const assignIptvAccountToOrder = createServerFn({ method: "POST" })
   });
 
 export const releaseIptvAccount = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNccUnlock])
   .inputValidator((d: unknown) => z.object({ account_id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const sb = await admin(context.userId);

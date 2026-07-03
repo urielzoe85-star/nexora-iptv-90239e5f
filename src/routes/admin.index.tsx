@@ -108,7 +108,6 @@ function NccAccessCard() {
         setError("Mot de passe incorrect.");
         return;
       }
-      sessionStorage.setItem("ncc.unlocked", "1");
       setOpen(false);
       setPassword("");
       navigate({ to: "/ncc" });

@@ -6,7 +6,7 @@
 // load `client.server`.
 
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNccUnlock } from "@/lib/require-ncc-unlock";
 import { z } from "zod";
 import {
   ORDER_TRANSITIONS,
@@ -49,7 +49,7 @@ const CustomerUpdateSchema = CustomerCreateSchema.partial().extend({
 });
 
 export const listCustomers = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNccUnlock])
   .inputValidator((d: unknown) =>
     PaginationSchema.extend({
       search: z.string().trim().max(200).optional(),
@@ -75,7 +75,7 @@ export const listCustomers = createServerFn({ method: "POST" })
   });
 
 export const getCustomer = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNccUnlock])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const sb = await getAdminContext(context.userId);
@@ -93,7 +93,7 @@ export const getCustomer = createServerFn({ method: "POST" })
   });
 
 export const createCustomer = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNccUnlock])
   .inputValidator((d: unknown) => CustomerCreateSchema.parse(d))
   .handler(async ({ data, context }) => {
     const sb = await getAdminContext(context.userId);
@@ -116,7 +116,7 @@ export const createCustomer = createServerFn({ method: "POST" })
   });
 
 export const updateCustomer = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNccUnlock])
   .inputValidator((d: unknown) => CustomerUpdateSchema.parse(d))
   .handler(async ({ data, context }) => {
     const sb = await getAdminContext(context.userId);
@@ -135,7 +135,7 @@ export const updateCustomer = createServerFn({ method: "POST" })
   });
 
 export const setCustomerStatus = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNccUnlock])
   .inputValidator((d: unknown) =>
     z.object({ id: z.string().uuid(), status: z.enum(["active", "disabled"]) }).parse(d),
   )
@@ -165,7 +165,7 @@ const ProductCreateSchema = z.object({
 const ProductUpdateSchema = ProductCreateSchema.partial().extend({ id: z.string().uuid() });
 
 export const listProducts = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNccUnlock])
   .inputValidator((d: unknown) =>
     z.object({
       category: z.enum(PRODUCT_CATEGORIES as [string, ...string[]]).optional(),
@@ -188,7 +188,7 @@ export const listProducts = createServerFn({ method: "POST" })
   });
 
 export const createProduct = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNccUnlock])
   .inputValidator((d: unknown) => ProductCreateSchema.parse(d))
   .handler(async ({ data, context }) => {
     const sb = await getAdminContext(context.userId);
@@ -198,7 +198,7 @@ export const createProduct = createServerFn({ method: "POST" })
   });
 
 export const updateProduct = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNccUnlock])
   .inputValidator((d: unknown) => ProductUpdateSchema.parse(d))
   .handler(async ({ data, context }) => {
     const sb = await getAdminContext(context.userId);
@@ -211,7 +211,7 @@ export const updateProduct = createServerFn({ method: "POST" })
 // ─── ORDERS ─────────────────────────────────────────────────────────────
 
 export const listOrders = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNccUnlock])
   .inputValidator((d: unknown) =>
     PaginationSchema.extend({
       status: z.string().max(40).optional(),
@@ -235,7 +235,7 @@ export const listOrders = createServerFn({ method: "POST" })
   });
 
 export const getOrder = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNccUnlock])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const sb = await getAdminContext(context.userId);
@@ -251,7 +251,7 @@ export const getOrder = createServerFn({ method: "POST" })
   });
 
 export const transitionOrderStatus = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNccUnlock])
   .inputValidator((d: unknown) =>
     z.object({
       id: z.string().uuid(),
@@ -273,7 +273,7 @@ export const transitionOrderStatus = createServerFn({ method: "POST" })
   });
 
 export const linkOrderToCustomer = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNccUnlock])
   .inputValidator((d: unknown) =>
     z.object({ id: z.string().uuid(), customer_id: z.string().uuid().nullable() }).parse(d),
   )
@@ -287,7 +287,7 @@ export const linkOrderToCustomer = createServerFn({ method: "POST" })
 // ─── PAYMENTS (read-only view of orders for now) ────────────────────────
 
 export const listPayments = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNccUnlock])
   .inputValidator((d: unknown) =>
     PaginationSchema.extend({
       status: z.string().max(40).optional(),
@@ -308,7 +308,7 @@ export const listPayments = createServerFn({ method: "POST" })
 // ─── TRIALS ─────────────────────────────────────────────────────────────
 
 export const listTrials = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNccUnlock])
   .handler(async ({ context }) => {
     const sb = await getAdminContext(context.userId);
     const { data, error } = await sb
@@ -320,7 +320,7 @@ export const listTrials = createServerFn({ method: "POST" })
   });
 
 export const createTrial = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNccUnlock])
   .inputValidator((d: unknown) =>
     z.object({
       customer_id: z.string().uuid(),
@@ -346,7 +346,7 @@ export const createTrial = createServerFn({ method: "POST" })
   });
 
 export const setTrialStatus = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNccUnlock])
   .inputValidator((d: unknown) =>
     z.object({
       id: z.string().uuid(),
@@ -363,7 +363,7 @@ export const setTrialStatus = createServerFn({ method: "POST" })
 // ─── SUBSCRIPTIONS (IPTV) ───────────────────────────────────────────────
 
 export const listSubscriptions = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNccUnlock])
   .handler(async ({ context }) => {
     const sb = await getAdminContext(context.userId);
     const { data, error } = await sb
@@ -375,7 +375,7 @@ export const listSubscriptions = createServerFn({ method: "POST" })
   });
 
 export const createSubscription = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNccUnlock])
   .inputValidator((d: unknown) =>
     z.object({
       customer_id: z.string().uuid(),
@@ -399,7 +399,7 @@ export const createSubscription = createServerFn({ method: "POST" })
   });
 
 export const transitionSubscription = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNccUnlock])
   .inputValidator((d: unknown) =>
     z.object({
       id: z.string().uuid(),
@@ -444,7 +444,7 @@ export const transitionSubscription = createServerFn({ method: "POST" })
 // ─── NOTIFICATIONS CENTER ───────────────────────────────────────────────
 
 export const listNotifications = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNccUnlock])
   .inputValidator((d: unknown) =>
     z.object({
       channel: z.enum(NOTIFICATION_CHANNELS as [string, ...string[]]).optional(),
@@ -462,7 +462,7 @@ export const listNotifications = createServerFn({ method: "POST" })
   });
 
 export const sendNotification = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNccUnlock])
   .inputValidator((d: unknown) =>
     z.object({
       channel: z.enum(NOTIFICATION_CHANNELS as [string, ...string[]]),
@@ -501,7 +501,7 @@ export const sendNotification = createServerFn({ method: "POST" })
 // ─── DASHBOARD KPIs ─────────────────────────────────────────────────────
 
 export const getDashboardKpis = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNccUnlock])
   .handler(async ({ context }): Promise<DashboardKpis> => {
     const sb = await getAdminContext(context.userId);
     const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
