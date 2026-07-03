@@ -23,6 +23,29 @@ export const verifyNccAccess = createServerFn({ method: "POST" })
     if (!timingSafeEqual(a, b)) {
       return { ok: false as const };
     }
+    const { setNccGateCookie } = await import("@/lib/ncc-gate.server");
+    const { expiresAt } = await setNccGateCookie(context.userId);
+    return { ok: true as const, expiresAt };
+  });
+
+// Vérifie côté serveur si le cookie NCC (2e facteur) est encore valide
+// pour l'admin courant. Utilisé par le layout /ncc pour éviter de faire
+// confiance à un flag stocké dans le navigateur.
+export const getNccUnlockStatus = createServerFn({ method: "GET" })
+  .middleware([requireAdmin])
+  .handler(async ({ context }) => {
+    const { readNccGateCookie, verifyNccToken } = await import("@/lib/ncc-gate.server");
+    const token = await readNccGateCookie();
+    return { unlocked: verifyNccToken(token, context.userId) };
+  });
+
+// Efface le cookie NCC (déverrouillage). Appelé au sign-out ou depuis
+// l'écran admin lorsque l'opérateur souhaite verrouiller manuellement.
+export const lockNccAccess = createServerFn({ method: "POST" })
+  .middleware([requireAdmin])
+  .handler(async () => {
+    const { clearNccGateCookie } = await import("@/lib/ncc-gate.server");
+    await clearNccGateCookie();
     return { ok: true as const };
   });
 
