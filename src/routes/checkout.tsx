@@ -246,6 +246,8 @@ function CheckoutPage() {
                     phone={phone} setPhone={setPhone}
                     operator={operator} setOperator={setOperator}
                     country={country} setCountry={handleCountryChange}
+                    paymentMethod={paymentMethod}
+                    setPaymentMethod={setPaymentMethod}
                     termsAccepted={termsAccepted}
                     setTermsAccepted={setTermsAccepted}
                     processing={processing}
