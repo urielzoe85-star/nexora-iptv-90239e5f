@@ -77,6 +77,13 @@ export function AdminShell({ children, email }: { children: ReactNode; email?: s
           <header className="h-14 border-b border-border/60 flex items-center px-4 gap-2">
             <SidebarTrigger />
             <span className="text-sm text-muted-foreground">Tableau de bord administrateur</span>
+            <div className="ml-auto">
+              <Button asChild variant="outline" size="sm" title="File d'attente & drainage IPTV">
+                <Link to="/ncc/automation">
+                  <Workflow className="h-4 w-4 mr-2" /> NCC · Automation
+                </Link>
+              </Button>
+            </div>
           </header>
           <main className="flex-1 p-6 overflow-x-hidden">{children}</main>
         </div>
