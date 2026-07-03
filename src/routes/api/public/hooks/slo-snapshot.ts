@@ -33,7 +33,7 @@ export const Route = createFileRoute("/api/public/hooks/slo-snapshot")({
 
         try {
           const { supabaseAdmin } = await import(
-            "@/integrations/supabase/client.server"
+            "@/lib/supabase-admin.server"
           );
           const sb = supabaseAdmin as any;
           const since = new Date(Date.now() - WINDOW_MS).toISOString();

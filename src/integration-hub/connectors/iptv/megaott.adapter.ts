@@ -97,7 +97,7 @@ function parseUser(json: any, fallbackUsername?: string): IPTVUser {
 
 /** Resolve the configured MEGAOTT provider row (singleton). */
 export async function resolveMegaottConfig(): Promise<Result<MegaottProviderConfig, IntegrationError>> {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
   const { data, error } = await supabaseAdmin
     .from("iptv_providers")
     .select("api_url, metadata, status")

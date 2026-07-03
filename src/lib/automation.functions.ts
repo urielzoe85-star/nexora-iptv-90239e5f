@@ -7,7 +7,7 @@ import { z } from "zod";
 // Le middleware `requireAdmin` a déjà vérifié le rôle ; ce helper ne fait
 // que renvoyer le client service_role prêt à l'emploi.
 async function admin(_userId: string) {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
   return supabaseAdmin as any;
 }
 

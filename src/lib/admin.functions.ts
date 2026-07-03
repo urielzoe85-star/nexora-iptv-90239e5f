@@ -52,7 +52,7 @@ export const lockNccAccess = createServerFn({ method: "POST" })
 // ─── Bootstrap & identity ────────────────────────────────────────────────
 
 export const hasAnyAdmin = createServerFn({ method: "GET" }).handler(async () => {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
   const { count, error } = await supabaseAdmin
     .from("user_roles")
     .select("id", { count: "exact", head: true })
@@ -66,7 +66,7 @@ export const bootstrapFirstAdmin = createServerFn({ method: "POST" })
     z.object({ email: z.string().email(), password: z.string().min(8).max(128) }).parse(d),
   )
   .handler(async ({ data }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
     const { count } = await supabaseAdmin
       .from("user_roles")
       .select("id", { count: "exact", head: true })
@@ -91,7 +91,7 @@ export const bootstrapFirstAdmin = createServerFn({ method: "POST" })
 export const getMyAdminStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
     const { data } = await supabaseAdmin.rpc("has_role", {
       _user_id: context.userId,
       _role: "admin",
@@ -130,7 +130,7 @@ export const adminSignIn = createServerFn({ method: "POST" })
       });
       throw new Error("Identifiants invalides ou accès refusé.");
     }
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
     const { data: isAdmin } = await supabaseAdmin.rpc("has_role", {
       _user_id: signIn.user.id,
       _role: "admin",
@@ -173,7 +173,7 @@ export const adminSignIn = createServerFn({ method: "POST" })
 export const getAdminStats = createServerFn({ method: "GET" })
   .middleware([requireAdmin])
   .handler(async ({ context }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
     const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
     const { data: orders, error } = await supabaseAdmin
       .from("orders")
@@ -222,7 +222,7 @@ export const adminListOrders = createServerFn({ method: "GET" })
     }).parse(d ?? {}),
   )
   .handler(async ({ context, data }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
     let q = supabaseAdmin
       .from("orders")
       .select("id, order_ref, email, full_name, plan_name, amount, currency, method, status, sebpay_reference, metadata, created_at, updated_at, admin_notes")
@@ -248,7 +248,7 @@ export const adminUpdateOrder = createServerFn({ method: "POST" })
     }).parse(d),
   )
   .handler(async ({ context, data }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
     const patch: Record<string, unknown> = {};
     if (data.status) patch.status = data.status;
     if (data.admin_notes !== undefined) patch.admin_notes = data.admin_notes;
@@ -267,7 +267,7 @@ export const adminConfirmPayment = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
 
     const { data: row, error } = await (supabaseAdmin as any)
       .from("orders")
@@ -364,7 +364,7 @@ const PlanInput = z.object({
 export const adminListPlans = createServerFn({ method: "GET" })
   .middleware([requireAdmin])
   .handler(async ({ context }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
     const { data, error } = await (supabaseAdmin as any)
       .from("plans").select("*").order("sort_order");
     if (error) throw new Error(error.message);
@@ -377,7 +377,7 @@ export const adminUpsertPlan = createServerFn({ method: "POST" })
     z.object({ id: z.string().uuid().optional(), data: PlanInput }).parse(d),
   )
   .handler(async ({ context, data }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
     const sb = supabaseAdmin as any;
     if (data.id) {
       const { error } = await sb.from("plans").update(data.data).eq("id", data.id);
@@ -393,7 +393,7 @@ export const adminDeletePlan = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
     const { error } = await (supabaseAdmin as any).from("plans").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -404,7 +404,7 @@ export const adminDeletePlan = createServerFn({ method: "POST" })
 export const adminListSettings = createServerFn({ method: "GET" })
   .middleware([requireAdmin])
   .handler(async ({ context }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
     const { data, error } = await (supabaseAdmin as any)
       .from("site_settings").select("*").order("key");
     if (error) throw new Error(error.message);
@@ -417,7 +417,7 @@ export const adminUpsertSetting = createServerFn({ method: "POST" })
     z.object({ key: z.string().min(1).max(64), value: z.any() }).parse(d),
   )
   .handler(async ({ context, data }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
     const { error } = await (supabaseAdmin as any)
       .from("site_settings").upsert({ key: data.key, value: data.value });
     if (error) throw new Error(error.message);
@@ -429,7 +429,7 @@ export const adminUpsertSetting = createServerFn({ method: "POST" })
 export const adminListAdmins = createServerFn({ method: "GET" })
   .middleware([requireAdmin])
   .handler(async ({ context }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
     const { data: roles, error } = await supabaseAdmin
       .from("user_roles").select("user_id, created_at").eq("role", "admin");
     if (error) throw new Error(error.message);
@@ -447,7 +447,7 @@ export const adminAddAdmin = createServerFn({ method: "POST" })
     z.object({ email: z.string().email(), password: z.string().min(8).max(128) }).parse(d),
   )
   .handler(async ({ context, data }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
     const { recordSecurityEvent } = await import("@/lib/security-events.server");
     const requestId = (context as any).requestId ?? null;
 
@@ -508,7 +508,7 @@ export const adminRemoveAdmin = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
   .inputValidator((d: unknown) => z.object({ user_id: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
     const { recordSecurityEvent } = await import("@/lib/security-events.server");
     const requestId = (context as any).requestId ?? null;
     const { data: result, error } = await supabaseAdmin.rpc("admin_change_role", {

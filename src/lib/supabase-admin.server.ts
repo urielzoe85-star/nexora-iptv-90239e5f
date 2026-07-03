@@ -9,7 +9,7 @@
 // they never appear as literals in any bundle, and (b) exposes the same
 // `supabaseAdmin` symbol shape. All server-side callers (server
 // functions, server routes, automation actions) should import from this
-// module INSTEAD of `@/integrations/supabase/client.server`.
+// module INSTEAD of `@/lib/supabase-admin.server`.
 
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";

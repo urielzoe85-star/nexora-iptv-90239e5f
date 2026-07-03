@@ -6,7 +6,7 @@
 // this module ships in a client-reachable graph via `*.server.ts` naming
 // guard but callers should still await `import()` when possible.
 
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { supabaseAdmin } from "@/lib/supabase-admin.server";
 
 type Actor = "system" | "webhook" | "cron" | "admin";
 

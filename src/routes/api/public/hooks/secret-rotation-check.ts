@@ -38,7 +38,7 @@ export const Route = createFileRoute(
 
         try {
           const { supabaseAdmin } = await import(
-            "@/integrations/supabase/client.server"
+            "@/lib/supabase-admin.server"
           );
           const sb = supabaseAdmin as any;
           const { data, error } = await sb.rpc("secret_registry_scan");

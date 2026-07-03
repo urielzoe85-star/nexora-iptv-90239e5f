@@ -18,7 +18,7 @@ import {
 // ─── helpers ────────────────────────────────────────────────────────────
 
 async function getAdminContext(userId: string) {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
   const { data: ok, error } = await supabaseAdmin.rpc("has_role", {
     _user_id: userId,
     _role: "admin",

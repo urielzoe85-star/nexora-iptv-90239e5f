@@ -34,7 +34,7 @@ export const Route = createFileRoute("/api/public/hooks/renewal-reminders")({
           return new Response("Unauthorized", { status: 401 });
         }
 
-        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
         const sb = supabaseAdmin as any;
 
         const results: Array<{ milestone: Milestone; scanned: number; enqueued: number }> = [];

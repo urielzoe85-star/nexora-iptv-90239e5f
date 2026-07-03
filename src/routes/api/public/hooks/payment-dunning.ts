@@ -27,7 +27,7 @@ export const Route = createFileRoute("/api/public/hooks/payment-dunning")({
         const token = auth.toLowerCase().startsWith("bearer ") ? auth.slice(7).trim() : "";
         if (!token || token !== expected) return new Response("Unauthorized", { status: 401 });
 
-        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
         const { suspendAccount } = await import("@/lib/billing.server");
         const sb = supabaseAdmin as any;
 

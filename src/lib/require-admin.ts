@@ -13,7 +13,7 @@ export const requireAdmin = createMiddleware({ type: "function" })
     // donc avec le client admin (service_role) déjà autorisé.
     const { newRequestId } = await import("@/lib/security-events.server");
     const requestId = newRequestId("adm");
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
     const { data, error } = await supabaseAdmin.rpc("has_role", {
       _user_id: context.userId,
       _role: "admin",

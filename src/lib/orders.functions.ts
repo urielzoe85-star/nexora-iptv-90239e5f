@@ -64,7 +64,7 @@ function verifyCancelToken(orderRef: string, token: string): boolean {
 export const createOrder = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => CreateOrderSchema.parse(data))
   .handler(async ({ data }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
     const order_ref = genOrderRef();
 
     // SebPay charges in the customer's local Mobile Money currency
@@ -123,7 +123,7 @@ export const createOrder = createServerFn({ method: "POST" })
 export const getOrderByRef = createServerFn({ method: "GET" })
   .inputValidator((data: unknown) => z.object({ ref: z.string().min(4).max(40) }).parse(data))
   .handler(async ({ data }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
     const { data: row, error } = await supabaseAdmin
       .from("orders")
       // Never select `metadata` here — it contains PII (Mobile Money phone,
@@ -176,7 +176,7 @@ export const getOrderByRef = createServerFn({ method: "GET" })
 export const getOrdersByEmail = createServerFn({ method: "GET" })
   .inputValidator((data: unknown) => z.object({ email: z.string().email() }).parse(data))
   .handler(async ({ data }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
     const { data: rows, error } = await supabaseAdmin
       .from("orders")
       .select("order_ref, plan_name, amount, currency, method, status, created_at")
@@ -206,7 +206,7 @@ export const markOrderFailed = createServerFn({ method: "POST" })
     if (!verifyCancelToken(data.ref, data.token)) {
       throw new Error("Invalid cancellation token");
     }
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
     const { data: row, error } = await supabaseAdmin
       .from("orders")
       .update({ status: data.status })

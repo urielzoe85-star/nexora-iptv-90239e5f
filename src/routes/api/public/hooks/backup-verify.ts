@@ -71,7 +71,7 @@ export const Route = createFileRoute("/api/public/hooks/backup-verify")({
         const mode: Mode = body.mode ?? "verify";
 
         const { supabaseAdmin } = await import(
-          "@/integrations/supabase/client.server"
+          "@/lib/supabase-admin.server"
         );
         const { recordSecurityEvent } = await import(
           "@/lib/security-events.server"

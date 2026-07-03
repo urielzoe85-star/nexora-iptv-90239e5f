@@ -25,7 +25,7 @@ if (!connectorRegistry.has("iptv.megaott")) {
 const CONNECTOR_ID = "iptv.megaott";
 
 async function admin(userId: string) {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
   const { data: ok, error } = await supabaseAdmin.rpc("has_role", { _user_id: userId, _role: "admin" });
   if (error) throw new Error(error.message);
   if (!ok) throw new Error("Forbidden");

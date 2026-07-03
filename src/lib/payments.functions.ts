@@ -28,7 +28,7 @@ export const initSebPayCheckout = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ data }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
     const {
       SEBPAY_BASE_URL,
       SEBPAY_COLLECTIONS_PATH: PATH,
@@ -126,7 +126,7 @@ export const verifyPayment = createServerFn({ method: "POST" })
   .handler(async ({ data }) => verifyPaymentInternal(data.ref));
 
 export async function verifyPaymentInternal(ref: string): Promise<{ status: string }> {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
   const {
     SEBPAY_COLLECTIONS_PATH: PATH,
     sebpayFetch,
