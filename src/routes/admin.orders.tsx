@@ -20,6 +20,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Loader2, Search, CheckCircle2, MessageCircle, Mail } from "lucide-react";
+import { AutomationHealthBanner } from "@/components/admin/AutomationHealthBanner";
 
 export const Route = createFileRoute("/admin/orders")({ component: OrdersPage });
 
@@ -121,6 +122,8 @@ function OrdersPage() {
         <h1 className="text-2xl font-semibold">Commandes</h1>
         <p className="text-sm text-muted-foreground">Gérez les commandes clients et leur statut.</p>
       </div>
+
+      <AutomationHealthBanner />
 
       <Card>
         <CardContent className="p-4 flex flex-col sm:flex-row gap-3">
