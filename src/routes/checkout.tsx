@@ -559,22 +559,31 @@ function PaymentStep(props: {
 }
 
 function PendingPanel({ pending }: { pending: PendingState }) {
+  if (pending.provider === "binance_pay_manual") {
+    return <BinanceManualPanel pending={pending} />;
+  }
+  return <SebPayPendingPanel pending={pending} />;
+}
+
+function SebPayPendingPanel({
+  pending,
+}: {
+  pending: Extract<PendingState, { provider: "sebpay" }>;
+}) {
   const [status, setStatus] = useState<string>("processing");
   const [tries, setTries] = useState(0);
 
-  // Poll payment status server-side every 4s for up to ~3min. We never mark
-  // "paid" client-side — the verify server fn updates the DB only after
-  // the upstream provider (SebPay or Binance Pay) confirms.
+  // Poll SebPay verify every 4s for ~3min. We never mark "paid" client-side —
+  // verifyPayment updates the DB only after SebPay confirms.
   useEffect(() => {
     let cancelled = false;
     let attempts = 0;
-    const verify = pending.provider === "binance_pay" ? verifyBinancePayPayment : verifyPayment;
     async function poll() {
       while (!cancelled && attempts < 45) {
         attempts++;
         setTries(attempts);
         try {
-          const v = await verify({ data: { ref: pending.orderRef } });
+          const v = await verifyPayment({ data: { ref: pending.orderRef } });
           if (cancelled) return;
           setStatus(v.status);
           if (v.status === "paid") {
@@ -593,7 +602,7 @@ function PendingPanel({ pending }: { pending: PendingState }) {
     }
     poll();
     return () => { cancelled = true; };
-  }, [pending.orderRef, pending.provider]);
+  }, [pending.orderRef]);
 
   return (
     <section className="max-w-2xl mx-auto glass rounded-2xl p-8 md:p-12 text-center">
@@ -602,21 +611,13 @@ function PendingPanel({ pending }: { pending: PendingState }) {
       </div>
       <h1 className="text-2xl font-bold mb-2">Paiement en attente</h1>
       <p className="text-muted-foreground mb-6">
-        {pending.provider === "binance_pay"
-          ? "Scannez le QR code avec l'app Binance pour finaliser le paiement."
-          : `Confirmez la transaction sur votre téléphone (${pending.message ?? "USSD / page opérateur"}).`}
+        Confirmez la transaction sur votre téléphone ({pending.message ?? "USSD / page opérateur"}).
         Cette page se met à jour automatiquement.
       </p>
 
-      {pending.qrcodeLink && (
-        <div className="mx-auto mb-6 inline-block rounded-xl bg-white p-3">
-          <img src={pending.qrcodeLink} alt="Binance Pay QR" className="h-56 w-56" />
-        </div>
-      )}
-
       <div className="text-left mx-auto max-w-md rounded-xl border border-white/10 divide-y divide-white/5 mb-6">
         <Row label="Référence commande" value={<span className="font-mono">{pending.orderRef}</span>} />
-        <Row label={pending.provider === "binance_pay" ? "Prepay ID" : "Référence transaction"} value={<span className="font-mono text-xs">{pending.transactionId}</span>} />
+        <Row label="Référence transaction" value={<span className="font-mono text-xs">{pending.transactionId}</span>} />
         <Row label="Statut" value={<span className="text-amber-400">{status}</span>} />
         <Row label="Vérifications" value={`${tries} / 45`} />
       </div>
@@ -629,13 +630,217 @@ function PendingPanel({ pending }: { pending: PendingState }) {
           className="inline-flex items-center gap-2 px-6 py-3 rounded-full glass hover:border-[color:var(--gold)]/40 transition text-sm font-medium"
         >
           <ExternalLink className="h-4 w-4 text-[color:var(--gold)]" />
-          {pending.provider === "binance_pay" ? "Ouvrir Binance Pay" : "Ouvrir la page opérateur"}
+          Ouvrir la page opérateur
         </a>
       )}
 
       <p className="text-xs text-muted-foreground mt-6">
         Aucun paiement n'est validé tant que la confirmation n'a pas été reçue.
       </p>
+    </section>
+  );
+}
+
+// -------------------------------------------------------------------------
+// Binance Pay — semi-automatique (QR statique + preuve client + admin)
+// -------------------------------------------------------------------------
+const BINANCE_QR_SRC = "/binance-pay-qr.png"; // Déposez votre QR dans /public
+const BINANCE_RECIPIENT = "Nexora Smart Services";
+
+function BinanceManualPanel({
+  pending,
+}: {
+  pending: Extract<PendingState, { provider: "binance_pay_manual" }>;
+}) {
+  const [phase, setPhase] = useState<"qr" | "submitted">("qr");
+  const [accountName, setAccountName] = useState("");
+  const [binanceUid, setBinanceUid] = useState("");
+  const [transactionId, setTransactionId] = useState("");
+  const [screenshotDataUrl, setScreenshotDataUrl] = useState<string | null>(null);
+  const [screenshotName, setScreenshotName] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string>("");
+
+  const amountLabel = `${pending.amount.toFixed(2)} ${pending.currency}`;
+
+  async function handleScreenshot(file: File | null) {
+    if (!file) { setScreenshotDataUrl(null); setScreenshotName(null); return; }
+    if (file.size > 3 * 1024 * 1024) {
+      setErrorMsg("La capture d'écran doit peser moins de 3 Mo.");
+      return;
+    }
+    if (!/^image\/(png|jpe?g|webp)$/i.test(file.type)) {
+      setErrorMsg("Format non supporté (utilisez PNG, JPEG ou WEBP).");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setScreenshotDataUrl(String(reader.result ?? ""));
+      setScreenshotName(file.name);
+      setErrorMsg("");
+    };
+    reader.readAsDataURL(file);
+  }
+
+  const canSubmit =
+    accountName.trim().length >= 2 &&
+    transactionId.trim().length >= 4 &&
+    !submitting;
+
+  async function handleSubmitProof(e: React.FormEvent) {
+    e.preventDefault();
+    if (!canSubmit) return;
+    setErrorMsg("");
+    setSubmitting(true);
+    try {
+      await submitBinanceProof({
+        data: {
+          ref: pending.orderRef,
+          accountName: accountName.trim(),
+          binanceUid: binanceUid.trim() || undefined,
+          transactionId: transactionId.trim(),
+          screenshotDataUrl: screenshotDataUrl ?? undefined,
+        },
+      });
+      setPhase("submitted");
+    } catch (err: any) {
+      console.error("[checkout] binance proof submit failed", err);
+      setErrorMsg(err?.message ?? "Impossible d'envoyer la preuve. Réessayez.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  if (phase === "submitted") {
+    return (
+      <section className="max-w-2xl mx-auto glass rounded-2xl p-8 md:p-12 text-center">
+        <div className="mx-auto h-16 w-16 rounded-full bg-amber-500/15 border border-amber-500/40 grid place-items-center mb-5">
+          <Clock className="h-7 w-7 text-amber-400" />
+        </div>
+        <h1 className="text-2xl font-bold mb-2">Paiement Binance en attente de vérification</h1>
+        <p className="text-muted-foreground mb-6">
+          Merci ! Nous avons bien reçu votre preuve de paiement. Un administrateur
+          va vérifier la transaction sur Binance et activer votre abonnement IPTV
+          dès validation. Vous recevrez un email de confirmation à <span className="text-foreground font-medium">{pending.customerEmail}</span>.
+        </p>
+        <div className="text-left mx-auto max-w-md rounded-xl border border-white/10 divide-y divide-white/5 mb-6">
+          <Row label="Référence commande" value={<span className="font-mono">{pending.orderRef}</span>} />
+          <Row label="Statut" value={<span className="text-amber-400">Paiement Binance en attente de vérification</span>} />
+          <Row label="Montant" value={<span className="font-mono">{amountLabel}</span>} />
+        </div>
+        <Link
+          to="/track"
+          className="inline-flex items-center gap-2 px-6 py-3 rounded-full glass hover:border-[color:var(--gold)]/40 transition text-sm font-medium"
+        >
+          Suivre ma commande
+        </Link>
+      </section>
+    );
+  }
+
+  return (
+    <section className="max-w-3xl mx-auto glass rounded-2xl p-6 md:p-10">
+      <div className="text-center mb-6">
+        <div className="mx-auto h-14 w-14 rounded-full bg-[image:var(--gradient-gold)] grid place-items-center mb-3">
+          <Bitcoin className="h-6 w-6 text-black" />
+        </div>
+        <h1 className="text-2xl font-bold">Payer avec Binance Pay</h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          Scannez le QR code avec votre app Binance, puis envoyez la preuve du paiement ci-dessous.
+        </p>
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-6">
+        <div className="glass rounded-xl p-5 text-center flex flex-col items-center">
+          <div className="rounded-xl bg-white p-3 mb-4 inline-block">
+            <img
+              src={BINANCE_QR_SRC}
+              alt="QR Binance Pay — Nexora Smart Services"
+              className="h-56 w-56 object-contain"
+              onError={(e) => { (e.currentTarget as HTMLImageElement).style.opacity = "0.3"; }}
+            />
+          </div>
+          <p className="text-sm">
+            <span className="text-muted-foreground">Destinataire :</span>{" "}
+            <span className="font-semibold">{BINANCE_RECIPIENT}</span>
+          </p>
+          <p className="text-2xl font-bold text-gradient-gold mt-2">{amountLabel}</p>
+          <p className="text-xs text-muted-foreground mt-1">Réf. : <span className="font-mono">{pending.orderRef}</span></p>
+          <a
+            href="binancepay://"
+            className="mt-4 inline-flex items-center gap-2 px-5 py-2 rounded-full btn-gold btn-gold-hover text-sm font-semibold"
+          >
+            <ExternalLink className="h-4 w-4" /> Ouvrir Binance
+          </a>
+          <p className="text-[11px] text-muted-foreground mt-2">
+            (Sur mobile — sinon scannez le QR depuis l'app.)
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmitProof} className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Après avoir effectué votre paiement, veuillez renseigner les informations
+            ci-dessous afin que nous puissions vérifier votre transaction.
+          </p>
+          <Field icon={<User className="h-4 w-4" />} label="Nom du compte Binance utilisé">
+            <input
+              required value={accountName} onChange={(e) => setAccountName(e.target.value)}
+              placeholder="Ex. John Doe" maxLength={120}
+              className="w-full bg-transparent outline-none text-sm placeholder:text-muted-foreground"
+            />
+          </Field>
+          <Field icon={<User className="h-4 w-4" />} label="UID Binance (optionnel)">
+            <input
+              value={binanceUid} onChange={(e) => setBinanceUid(e.target.value)}
+              placeholder="Ex. 123456789" maxLength={40}
+              className="w-full bg-transparent outline-none text-sm placeholder:text-muted-foreground"
+            />
+          </Field>
+          <Field icon={<Lock className="h-4 w-4" />} label="ID / Référence de la transaction Binance *">
+            <input
+              required value={transactionId} onChange={(e) => setTransactionId(e.target.value)}
+              placeholder="Ex. 987654321012345678" maxLength={120}
+              className="w-full bg-transparent outline-none text-sm placeholder:text-muted-foreground font-mono"
+            />
+          </Field>
+          <label className="block">
+            <span className="text-xs uppercase tracking-wider text-muted-foreground">Capture d'écran du paiement (optionnelle)</span>
+            <div className="mt-1 rounded-xl border border-dashed border-white/15 bg-white/[0.02] px-3 py-4 text-sm">
+              <input
+                type="file" accept="image/png,image/jpeg,image/webp"
+                onChange={(e) => handleScreenshot(e.target.files?.[0] ?? null)}
+                className="block w-full text-xs file:mr-3 file:rounded-full file:border-0 file:bg-[color:var(--gold)]/20 file:px-3 file:py-1.5 file:text-[color:var(--gold)] file:font-medium"
+              />
+              {screenshotName && (
+                <p className="text-xs text-muted-foreground mt-2">
+                  Sélectionné : <span className="text-foreground">{screenshotName}</span>
+                </p>
+              )}
+              <p className="text-[11px] text-muted-foreground mt-2">
+                PNG, JPEG ou WEBP — 3 Mo max.
+              </p>
+            </div>
+          </label>
+
+          {errorMsg && (
+            <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+              {errorMsg}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={!canSubmit}
+            className="btn-gold btn-gold-hover w-full py-3 rounded-full font-semibold inline-flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {submitting ? (<><Loader2 className="h-4 w-4 animate-spin" /> Envoi…</>)
+                        : (<><Check className="h-4 w-4" /> J'ai effectué le paiement</>)}
+          </button>
+          <p className="text-[11px] text-muted-foreground text-center">
+            Votre commande sera livrée dès qu'un administrateur aura validé votre paiement.
+          </p>
+        </form>
+      </div>
     </section>
   );
 }
