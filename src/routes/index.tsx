@@ -588,11 +588,22 @@ function Support() {
 
 function Footer() {
   const t = useT();
-  const cols = [
+  const cols: { title: string; links: { label: string; href: string }[] }[] = [
     { title: t("footer.company"), links: [t("footer.about"), t("footer.blog"), t("footer.careers"), t("footer.contact")] },
     { title: t("footer.support"), links: [t("footer.help"), "WhatsApp", "Telegram", "Email"] },
     { title: t("footer.legal"),   links: [t("footer.terms"), t("footer.privacy"), t("footer.refund"), t("footer.cookies")] },
-  ];
+  ].map((c) => ({ title: c.title, links: c.links.map((l) => ({ label: l, href: "#" })) }));
+  // Sprint 3 · Bloc C — surface the real compliance pages.
+  const legalCol = cols.find((c) => c.title === t("footer.legal"));
+  if (legalCol) {
+    legalCol.links = [
+      { label: t("footer.terms"),   href: "/legal/terms" },
+      { label: "CGV",               href: "/legal/sales" },
+      { label: t("footer.privacy"), href: "/legal/privacy" },
+      { label: t("footer.refund"),  href: "/legal/refund" },
+      { label: "Mentions légales",  href: "/legal/notice" },
+    ];
+  }
   return (
     <footer className="border-t border-[color:var(--gold)]/10 pt-16 pb-10">
       <div className="max-w-7xl mx-auto px-6 grid md:grid-cols-4 gap-10">
@@ -607,7 +618,7 @@ function Footer() {
           <div key={c.title}>
             <h3 className="font-semibold mb-4 text-sm tracking-wide">{c.title}</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              {c.links.map(l => <li key={l}><a href="#" className="hover:text-[color:var(--gold)] transition">{l}</a></li>)}
+              {c.links.map(l => <li key={l.label}><a href={l.href} className="hover:text-[color:var(--gold)] transition">{l.label}</a></li>)}
             </ul>
           </div>
         ))}
