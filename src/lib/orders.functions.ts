@@ -15,17 +15,23 @@ const CreateOrderSchema = z.object({
   planName: z.string().trim().min(1).max(80),
   amount: z.number().positive().max(100000),
   currency: z.string().trim().length(3).default("USD"),
-  method: z.literal("momo"),
-  phone: z.string().trim().min(6).max(20),
-  operator: z.string().trim().min(2).max(40),
-  country: z.string().trim().length(2).toUpperCase(),
+  method: z.enum(["momo", "crypto"]),
+  // Mobile Money fields — required only when method === "momo".
+  phone: z.string().trim().min(6).max(20).optional(),
+  operator: z.string().trim().min(2).max(40).optional(),
+  country: z.string().trim().length(2).toUpperCase().optional(),
+  // Crypto fields — the selected Binance Pay currency (BTC / ETH / USDT).
+  crypto_currency: z.enum(["USDT", "BTC", "ETH"]).optional(),
   // Sprint 3 · Bloc C — the checkout form MUST tick a box accepting the
   // CGU / CGV / privacy / refund policy before it can call this fn.
   termsAccepted: z.literal(true, {
     errorMap: () => ({ message: "Vous devez accepter les CGU et CGV." }),
   }),
   termsVersion: z.string().trim().min(4).max(32).optional(),
-});
+}).refine(
+  (v) => v.method !== "momo" || (!!v.phone && !!v.operator && !!v.country),
+  { message: "Mobile Money order requires phone, operator and country" },
+);
 
 function genOrderRef() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -67,22 +73,34 @@ export const createOrder = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
     const order_ref = genOrderRef();
 
-    // SebPay charges in the customer's local Mobile Money currency
-    // (XOF, XAF, GNF, CDF…). Convert the USD plan price using the country
-    // map and keep the original USD amount in metadata for accounting.
-    const { amount, currency } = convertUsdToLocal(data.amount, data.country);
+    // MoMo: SebPay charges in local currency (XOF, XAF, GNF, CDF…). Convert
+    // the USD plan price. Crypto: Binance Pay is billed in USDT so we keep
+    // USD as the settlement currency and let Binance auto-convert.
+    let amount: number;
+    let currency: string;
     const metadata: Record<string, any> = {
       usd_amount: data.amount,
-      usd_to_local_rate: amount / data.amount,
-      momo: {
-        phone: data.phone,
-        operator: data.operator,
-        country: data.country,
-      },
-      // Proof of acceptance for compliance / dispute handling.
       terms_version: data.termsVersion ?? LEGAL_VERSION,
       terms_accepted_at: new Date().toISOString(),
     };
+    if (data.method === "momo") {
+      const conv = convertUsdToLocal(data.amount, data.country!);
+      amount = conv.amount;
+      currency = conv.currency;
+      metadata.usd_to_local_rate = amount / data.amount;
+      metadata.momo = {
+        phone: data.phone,
+        operator: data.operator,
+        country: data.country,
+      };
+    } else {
+      amount = data.amount;
+      currency = "USD";
+      metadata.crypto = {
+        provider: "binance_pay",
+        display_currency: data.crypto_currency ?? "USDT",
+      };
+    }
 
     const { data: row, error } = await supabaseAdmin
       .from("orders")

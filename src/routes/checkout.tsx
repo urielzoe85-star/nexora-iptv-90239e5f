@@ -2,11 +2,11 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
   Check, Lock, ShieldCheck, ChevronLeft, Mail, User,
-  Loader2, Tv, Phone, Globe, Smartphone, ExternalLink, Clock,
+  Loader2, Tv, Phone, Globe, Smartphone, ExternalLink, Clock, Bitcoin,
 } from "lucide-react";
 import { createOrder } from "@/lib/orders.functions";
 import { LEGAL_VERSION } from "@/lib/legal-version";
-import { initSebPayCheckout, verifyPayment } from "@/lib/payments.functions";
+import { initSebPayCheckout, verifyPayment, initBinancePayCheckout, verifyBinancePayPayment } from "@/lib/payments.functions";
 import { useT, LanguageSwitcher } from "@/i18n/context";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -48,6 +48,8 @@ type PendingState = {
   transactionId: string;
   providerLink: string | null;
   message: string | null;
+  provider: "sebpay" | "binance_pay";
+  qrcodeLink?: string | null;
 };
 
 function CheckoutPage() {
@@ -85,6 +87,7 @@ function CheckoutPage() {
   const [errorMsg, setErrorMsg] = useState<string>("");
   const [pending, setPending] = useState<PendingState | null>(null);
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<"momo" | "crypto">("momo");
 
   // When the country changes: re-prefix the phone with the new dial code
   // and reset the operator if the previous one isn't offered there.
@@ -113,8 +116,8 @@ function CheckoutPage() {
     !!selected &&
     email.includes("@") &&
     fullName.trim().length > 1 &&
-    phone.replace(/\D/g, "").length >= 8 &&
-    !!operator && !!country &&
+    (paymentMethod === "crypto" ||
+      (phone.replace(/\D/g, "").length >= 8 && !!operator && !!country)) &&
     termsAccepted;
 
   async function handlePay(e: React.FormEvent) {
@@ -123,20 +126,27 @@ function CheckoutPage() {
     setErrorMsg("");
     setProcessing(true);
     try {
-      const order = await createOrder({
-        data: {
-          email: email.toLowerCase(),
-          fullName,
-          planId: selected.id,
-          planName: selected.name,
-          amount: total,
-          currency: "USD",
-          method: "momo",
-          phone, operator, country,
-          termsAccepted: true,
-          termsVersion: LEGAL_VERSION,
-        },
-      });
+      const orderData =
+        paymentMethod === "momo"
+          ? {
+              email: email.toLowerCase(), fullName,
+              planId: selected.id, planName: selected.name,
+              amount: total, currency: "USD",
+              method: "momo" as const,
+              phone, operator, country,
+              termsAccepted: true as const,
+              termsVersion: LEGAL_VERSION,
+            }
+          : {
+              email: email.toLowerCase(), fullName,
+              planId: selected.id, planName: selected.name,
+              amount: total, currency: "USD",
+              method: "crypto" as const,
+              crypto_currency: "USDT" as const,
+              termsAccepted: true as const,
+              termsVersion: LEGAL_VERSION,
+            };
+      const order = await createOrder({ data: orderData });
       if (!order?.order_ref) throw new Error("Could not create order");
 
       // Stash the per-order cancellation token so the failure page can call
@@ -149,25 +159,39 @@ function CheckoutPage() {
       }
 
       const origin = typeof window !== "undefined" ? window.location.origin : "";
-      const result = await initSebPayCheckout({
-        data: {
-          ref: order.order_ref,
-          successUrl: `${origin}/payment/success?ref=${order.order_ref}`,
-          failureUrl: `${origin}/payment/failed?ref=${order.order_ref}`,
-        },
-      });
-      // If the payment provider returns a confirmation page, open it in a new
-      // tab so the customer can complete the payment.
-      if (result.providerLink && typeof window !== "undefined") {
-        window.open(result.providerLink, "_blank", "noopener,noreferrer");
-      }
+      const successUrl = `${origin}/payment/success?ref=${order.order_ref}`;
+      const failureUrl = `${origin}/payment/failed?ref=${order.order_ref}`;
 
-      setPending({
-        orderRef: order.order_ref,
-        transactionId: result.transactionId,
-        providerLink: result.providerLink,
-        message: result.message,
-      });
+      if (paymentMethod === "momo") {
+        const result = await initSebPayCheckout({
+          data: { ref: order.order_ref, successUrl, failureUrl },
+        });
+        if (result.providerLink && typeof window !== "undefined") {
+          window.open(result.providerLink, "_blank", "noopener,noreferrer");
+        }
+        setPending({
+          orderRef: order.order_ref,
+          transactionId: result.transactionId,
+          providerLink: result.providerLink,
+          message: result.message,
+          provider: "sebpay",
+        });
+      } else {
+        const result = await initBinancePayCheckout({
+          data: { ref: order.order_ref, successUrl, failureUrl },
+        });
+        if (result.checkoutUrl && typeof window !== "undefined") {
+          window.open(result.checkoutUrl, "_blank", "noopener,noreferrer");
+        }
+        setPending({
+          orderRef: order.order_ref,
+          transactionId: result.prepayId,
+          providerLink: result.checkoutUrl,
+          qrcodeLink: result.qrcodeLink,
+          message: "Scannez le QR code avec l'app Binance pour payer en BTC, ETH ou USDT.",
+          provider: "binance_pay",
+        });
+      }
     } catch (err: any) {
       console.error("[checkout] payment init failed", err);
       setErrorMsg(err?.message ?? t("co.err.generic"));
@@ -222,6 +246,8 @@ function CheckoutPage() {
                     phone={phone} setPhone={setPhone}
                     operator={operator} setOperator={setOperator}
                     country={country} setCountry={handleCountryChange}
+                    paymentMethod={paymentMethod}
+                    setPaymentMethod={setPaymentMethod}
                     termsAccepted={termsAccepted}
                     setTermsAccepted={setTermsAccepted}
                     processing={processing}
@@ -336,6 +362,7 @@ function PaymentStep(props: {
   phone: string; setPhone: (v: string) => void;
   operator: Operator; setOperator: (v: Operator) => void;
   country: string; setCountry: (v: string) => void;
+  paymentMethod: "momo" | "crypto"; setPaymentMethod: (v: "momo" | "crypto") => void;
   termsAccepted: boolean; setTermsAccepted: (v: boolean) => void;
   processing: boolean; canPay: boolean; total: number; errorMsg?: string;
   onBack: () => void; onSubmit: (e: React.FormEvent) => void;
@@ -344,6 +371,7 @@ function PaymentStep(props: {
   const {
     email, setEmail, fullName, setFullName,
     phone, setPhone, operator, setOperator, country, setCountry,
+    paymentMethod, setPaymentMethod,
     termsAccepted, setTermsAccepted,
     processing, canPay, total, errorMsg, onBack, onSubmit,
   } = props;
@@ -374,6 +402,37 @@ function PaymentStep(props: {
         </div>
       </section>
 
+      <section className="glass rounded-2xl p-6 md:p-8">
+        <h2 className="text-xl font-bold mb-4">Choix du moyen de paiement</h2>
+        <div className="grid sm:grid-cols-2 gap-3">
+          <button
+            type="button"
+            onClick={() => setPaymentMethod("momo")}
+            className={`text-left rounded-xl p-4 border transition ${paymentMethod === "momo"
+              ? "border-[color:var(--gold)] bg-white/[0.04] shadow-[var(--shadow-gold)]"
+              : "border-white/10 hover:border-white/20 bg-white/[0.02]"}`}
+          >
+            <div className="flex items-center gap-2 font-semibold">
+              <Smartphone className="h-4 w-4 text-[color:var(--gold)]" /> Mobile Money
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">MTN, Orange, Moov, Wave — Afrique de l'Ouest & Centrale.</p>
+          </button>
+          <button
+            type="button"
+            onClick={() => setPaymentMethod("crypto")}
+            className={`text-left rounded-xl p-4 border transition ${paymentMethod === "crypto"
+              ? "border-[color:var(--gold)] bg-white/[0.04] shadow-[var(--shadow-gold)]"
+              : "border-white/10 hover:border-white/20 bg-white/[0.02]"}`}
+          >
+            <div className="flex items-center gap-2 font-semibold">
+              <Bitcoin className="h-4 w-4 text-[color:var(--gold)]" /> Crypto (Binance Pay)
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">BTC, ETH, USDT — paiement instantané via l'app Binance.</p>
+          </button>
+        </div>
+      </section>
+
+      {paymentMethod === "momo" ? (
       <section className="glass rounded-2xl p-6 md:p-8">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold">Paiement Mobile Money</h2>
@@ -425,6 +484,28 @@ function PaymentStep(props: {
         </div>
 
       </section>
+      ) : (
+      <section className="glass rounded-2xl p-6 md:p-8">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-bold">Paiement Crypto — Binance Pay</h2>
+          <span className="text-xs text-muted-foreground flex items-center gap-1">
+              <ShieldCheck className="h-4 w-4 text-[color:var(--gold)]" /> Sécurisé
+          </span>
+        </div>
+        <div className="space-y-3 text-sm text-muted-foreground">
+          <p>
+            Après validation, un QR code Binance Pay s'affichera. Ouvrez l'app
+            Binance sur votre téléphone, scannez le code et confirmez le paiement
+            en <span className="text-foreground font-medium">BTC, ETH ou USDT</span>.
+          </p>
+          <ul className="list-disc pl-5 space-y-1">
+            <li>Montant facturé : <span className="font-mono text-foreground">{total.toFixed(2)} USDT</span> (≈ ${total.toFixed(2)}).</li>
+            <li>Confirmation automatique dès que Binance valide la transaction.</li>
+            <li>Aucun frais caché — conversion auto en fiat côté marchand.</li>
+          </ul>
+        </div>
+      </section>
+      )}
 
       {errorMsg && (
         <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200 whitespace-pre-wrap break-words">
@@ -476,16 +557,18 @@ function PendingPanel({ pending }: { pending: PendingState }) {
   const [tries, setTries] = useState(0);
 
   // Poll payment status server-side every 4s for up to ~3min. We never mark
-  // "paid" client-side — verifyPayment updates the DB only after confirmation.
+  // "paid" client-side — the verify server fn updates the DB only after
+  // the upstream provider (SebPay or Binance Pay) confirms.
   useEffect(() => {
     let cancelled = false;
     let attempts = 0;
+    const verify = pending.provider === "binance_pay" ? verifyBinancePayPayment : verifyPayment;
     async function poll() {
       while (!cancelled && attempts < 45) {
         attempts++;
         setTries(attempts);
         try {
-          const v = await verifyPayment({ data: { ref: pending.orderRef } });
+          const v = await verify({ data: { ref: pending.orderRef } });
           if (cancelled) return;
           setStatus(v.status);
           if (v.status === "paid") {
@@ -504,7 +587,7 @@ function PendingPanel({ pending }: { pending: PendingState }) {
     }
     poll();
     return () => { cancelled = true; };
-  }, [pending.orderRef]);
+  }, [pending.orderRef, pending.provider]);
 
   return (
     <section className="max-w-2xl mx-auto glass rounded-2xl p-8 md:p-12 text-center">
@@ -513,13 +596,21 @@ function PendingPanel({ pending }: { pending: PendingState }) {
       </div>
       <h1 className="text-2xl font-bold mb-2">Paiement en attente</h1>
       <p className="text-muted-foreground mb-6">
-        Confirmez la transaction sur votre téléphone ({pending.message ?? "USSD / page opérateur"}).
+        {pending.provider === "binance_pay"
+          ? "Scannez le QR code avec l'app Binance pour finaliser le paiement."
+          : `Confirmez la transaction sur votre téléphone (${pending.message ?? "USSD / page opérateur"}).`}
         Cette page se met à jour automatiquement.
       </p>
 
+      {pending.qrcodeLink && (
+        <div className="mx-auto mb-6 inline-block rounded-xl bg-white p-3">
+          <img src={pending.qrcodeLink} alt="Binance Pay QR" className="h-56 w-56" />
+        </div>
+      )}
+
       <div className="text-left mx-auto max-w-md rounded-xl border border-white/10 divide-y divide-white/5 mb-6">
         <Row label="Référence commande" value={<span className="font-mono">{pending.orderRef}</span>} />
-        <Row label="Référence transaction" value={<span className="font-mono text-xs">{pending.transactionId}</span>} />
+        <Row label={pending.provider === "binance_pay" ? "Prepay ID" : "Référence transaction"} value={<span className="font-mono text-xs">{pending.transactionId}</span>} />
         <Row label="Statut" value={<span className="text-amber-400">{status}</span>} />
         <Row label="Vérifications" value={`${tries} / 45`} />
       </div>
@@ -532,7 +623,7 @@ function PendingPanel({ pending }: { pending: PendingState }) {
           className="inline-flex items-center gap-2 px-6 py-3 rounded-full glass hover:border-[color:var(--gold)]/40 transition text-sm font-medium"
         >
           <ExternalLink className="h-4 w-4 text-[color:var(--gold)]" />
-          Ouvrir la page opérateur
+          {pending.provider === "binance_pay" ? "Ouvrir Binance Pay" : "Ouvrir la page opérateur"}
         </a>
       )}
 

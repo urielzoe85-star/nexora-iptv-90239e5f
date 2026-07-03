@@ -1,95 +1,64 @@
-# Certification RC1 — Plan
+# Plan — Paiement Crypto via Binance Pay
 
-Objectif : produire une certification reproductible qui atteste, ou refuse, que la version courante est **RC1 CERTIFIED – READY FOR PRODUCTION**. Tout est scripté sous `tests/rc1/` pour rejouer la certification à volonté.
+## Choix technique
+Binance ne propose pas d'API "checkout crypto générique" grand public : leur produit merchant s'appelle **Binance Pay Merchant API**. C'est ce qu'on va intégrer.
 
-## Livrables
+- Cryptos acceptées au checkout : **BTC, ETH, USDT (TRC20/ERC20)** — restreintes côté UI, mais Binance Pay laisse le payeur choisir dans son wallet Binance.
+- **Conversion auto en fiat** : activée côté compte marchand Binance (`Auto-Convert to USDT/BUSD`) → NEXORA reçoit du stable, comptabilité simple. Rien à coder côté app pour la conversion, c'est un réglage sur le dashboard Binance Merchant.
+- **Prérequis marchand** : compte **Binance Merchant** vérifié (KYB). Sans ce compte, l'API refuse les ordres. On code l'intégration, mais l'activation live dépend de la validation KYB de Binance (comme SebPay).
 
-1. Suite E2E RC1 (Playwright + Python) sous `tests/rc1/`.
-2. Rapport HTML Playwright (`tests/rc1/report/index.html`) : screenshots, logs, durées, étapes.
-3. Rapport DB `tests/rc1/out/db-integrity.json` + section markdown.
-4. Rapport logs `tests/rc1/out/logs-check.json`.
-5. Rapport perf `tests/rc1/out/perf.json` (chrono par étape + total).
-6. **Rapport final** `tests/rc1/out/RC1-REPORT.md` avec verdict `RC1 CERTIFIED` / `RC1 NOT CERTIFIED`.
+## Secrets requis
+À demander via `add_secret` une fois le plan approuvé :
+- `BINANCE_PAY_API_KEY` (fournie dans Binance Merchant → API Management)
+- `BINANCE_PAY_API_SECRET`
+- `BINANCE_PAY_WEBHOOK_PUBLIC_KEY` (pour vérifier la signature RSA des webhooks Binance)
 
-## Structure
+## Ce qui sera construit
 
-```text
-tests/rc1/
-  README.md
-  run-certification.sh         # orchestrateur unique
-  playwright.config.ts         # reporter=html, screenshots on, trace on
-  package.json                 # @playwright/test seulement (workspace isolé)
-  scenarios/
-    01-checkout-to-track.spec.ts     # parcours complet UI + assertions
-    02-idempotence.spec.ts           # double webhook, 1 seul compte
-    03-provider-fallback.spec.ts     # MEGAOTT off → adapter simulé
-  checks/
-    db-integrity.py            # orphelins, doublons, FK, états
-    workflow-chain.py          # chaîne Checkout→…→Track par ref
-    logs-audit.py              # scan iptv_logs + automation_steps + runs
-    perf-collector.py          # agrège perf.json depuis Playwright
-    build-report.py            # assemble RC1-REPORT.md + verdict
-  helpers/                     # réutilise tests/e2e/sprint-1.5/helpers/
-```
+### 1. Provider crypto — `src/lib/payments/providers/binance-pay.server.ts`
+- `createBinancePayOrder({ orderId, amount, currency, buyerEmail })` → appelle `POST https://bpay.binanceapi.com/binancepay/openapi/v3/order` avec :
+  - signature HMAC-SHA512 (`BinancePay-Timestamp`, `BinancePay-Nonce`, `BinancePay-Certificate-SN`, `BinancePay-Signature`)
+  - `merchantTradeNo` = ref commande NEXORA
+  - `orderAmount`, `currency` (USDT par défaut si conversion auto activée)
+  - `webhookUrl` = `https://nexora-iptv.com/api/public/binance-pay/webhook`
+  - `returnUrl` = page `/payment/callback?provider=binance`
+- Retourne `{ checkoutUrl, qrcodeLink, prepayId }`
+- Helpers : `queryBinancePayOrder(prepayId)`, `verifyBinancePayWebhook(rawBody, headers)`
 
-## Contenu des vérifications
+### 2. Server function — `src/lib/payments.functions.ts`
+- Nouvelle server fn `initBinancePayCheckout({ orderId })` (public, comme SebPay) :
+  - Recharge la commande, calcule le montant, appelle le provider, met `orders.payment_provider = 'binance_pay'` + `payment_intent_id = prepayId`.
+  - Retourne `{ checkoutUrl, qrcodeLink }` au front.
 
-### DB (`db-integrity.py`)
-Table par table :
+### 3. Route publique webhook — `src/routes/api/public/binance-pay/webhook.ts`
+- Vérifie la signature RSA Binance sur le raw body (clé publique en secret).
+- Sur `PAY_SUCCESS` → confirme la commande + déclenche le workflow de livraison IPTV existant (même chemin que SebPay).
+- Sur `PAY_CLOSED` / `PAY_FAIL` → `markOrderFailed`.
+- Idempotent via `orders.payment_intent_id`.
 
-- `orders` — pas de doublon `order_ref`, `status` ∈ enum, `amount>0`, `email` non nul.
-- `iptv_accounts` — `metadata->>order_ref` référence un `orders.order_ref` existant (orphelins), pas de duplicata `(username, provider_id)`.
-- `automation_runs` — chaque run `completed` a ≥1 step `succeeded`, aucun step `failed` non retenté, `payload->>orderRef` référence un order.
-- `delivery_logs` — `order_ref` existe dans `orders`, `channel` connu, pas de doublon `(order_ref, channel, sent_at)`.
-- `notifications` — FK `customer_id` valide quand renseignée.
-- `customer_events` — `order_ref` valide quand renseigné.
-- FK invalides / colonnes NULL interdites signalées.
+### 4. UI Checkout — `src/routes/checkout.tsx` (ou composant équivalent)
+- Ajoute une carte "Payer en crypto (Binance Pay)" à côté de SebPay, avec logos BTC/ETH/USDT et mention "Conversion automatique en USDT".
+- Sur clic → appelle `initBinancePayCheckout`, redirige vers `checkoutUrl` (ou affiche le QR code pour scan mobile Binance).
 
-Note : `payments` et `audit_logs` ne sont pas des tables du projet. On les mappe explicitement : `payments` → `orders` (colonnes `sebpay_reference`, `method`, `amount`, `currency`) ; `audit_logs` → `iptv_logs` + `automation_steps` + `integration_debug_logs`. C'est écrit noir sur blanc dans le rapport.
+### 5. Page callback
+- Étendre `/payment/callback` pour lire `?provider=binance&prepayId=...`, appeler `queryBinancePayOrder`, afficher succès/attente/échec (le webhook reste la source de vérité).
 
-### Chaîne de workflow (`workflow-chain.py`)
-Pour chaque `order_ref` de test, vérifie l'ordre chronologique :
-`orders.created_at` < `automation_runs(payment-confirmed).started_at` < `automation_runs.completed_at` < `iptv_accounts.created_at` < `delivery_logs.sent_at`, et que `/track?ref=…` répond 200 avec le ref affiché.
+### 6. Admin
+- Filtre "Binance Pay" dans la liste des commandes.
+- Badge crypto + montant reçu (USDT après conversion) dans la vue détail commande.
 
-### Logs (`logs-audit.py`)
-Scanne `iptv_logs`, `automation_steps`, `integration_debug_logs`, `automation_queue`, `automation_runs` sur la fenêtre du run pour détecter :
-`level=error`, `status=failed`, exceptions, `promise rejection`, warnings marqués bloquants, jobs `dead_letter`. Retourne 0 anomalie ou la liste précise.
+### 7. Tests E2E (Playwright)
+- Checkout : sélection Binance Pay → redirection Binance sandbox.
+- Webhook : POST simulé signé → commande passe à `paid` → livraison IPTV déclenchée.
+- Webhook signature invalide → 401, commande inchangée.
+- Idempotence : 2 webhooks `PAY_SUCCESS` → 1 seule livraison.
 
-### Performances (`perf-collector.py`)
-Chaque scénario Playwright émet un `perf-<ref>.json` avec les timers :
-`t_checkout`, `t_payment`, `t_workflow`, `t_delivery`, `t_tracking`, `t_total`. Agrégés en médiane + p95.
+## Hors périmètre
+- Pas d'intégration d'autres providers crypto (NOWPayments, Coinbase Commerce) — Binance uniquement, comme demandé.
+- Pas de wallet non-custodial / paiement on-chain direct : tout passe par Binance Pay.
+- La bascule sandbox → live dépend de la validation KYB Binance Merchant côté utilisateur.
 
-## Rapport final `RC1-REPORT.md`
-
-Sections : tests exécutés / réussis / échoués, modules couverts (checkout, paiement, workflow, IPTV, delivery, tracking, notifications), couverture fonctionnelle (checklist des scénarios), tableau des perfs, tableau des anomalies DB/logs, verdict final.
-
-Verdict = `RC1 CERTIFIED – READY FOR PRODUCTION` si et seulement si :
-- tous les scénarios Playwright pass,
-- 0 anomalie DB critique,
-- 0 anomalie logs critique,
-- chaîne de workflow OK pour chaque ref,
-- perf totale médiane < seuil configurable (défaut 30 s).
-
-Sinon `RC1 NOT CERTIFIED` avec la liste précise des blocages.
-
-## Exécution
-
-```bash
-bash tests/rc1/run-certification.sh
-# → tests/rc1/report/index.html  (Playwright)
-# → tests/rc1/out/RC1-REPORT.md   (verdict)
-```
-
-Le script : (1) installe `@playwright/test` local à `tests/rc1/`, (2) lance Playwright avec `--reporter=html`, (3) chaîne les 4 checks Python, (4) construit le rapport final, (5) sort en code ≠ 0 si `NOT CERTIFIED` pour bloquer un pipeline CI.
-
-## Détails techniques
-
-- Aucun changement du code applicatif (`src/**`) — la certification est purement additive.
-- Réutilise `tests/e2e/sprint-1.5/helpers/{db,http,cleanup}.py` déjà validés.
-- Toutes les données de test créées avec préfixe `NXR-RC1-<ts>` et nettoyées en `finally`.
-- `run-certification.sh` détecte l'absence de `SUPABASE_SERVICE_ROLE_KEY` et l'annonce clairement (obligatoire).
-- Aucune modification de schéma DB. Aucun tag Git côté agent (le tag reste une action humaine explicite).
-
-## Hors périmètre (Sprint 2)
-
-Durcissement sécurité, IA, ERP, SaaS — non touchés ici.
+## Ordre d'exécution après approbation
+1. Demander les 3 secrets Binance Pay.
+2. Coder provider + server fn + webhook + UI + admin.
+3. Lancer les tests E2E en mode sandbox (mocké si secrets pas encore fournis).
