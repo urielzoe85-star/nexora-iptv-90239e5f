@@ -1,0 +1,45 @@
+name: sprint-3 · bloc-d · defense-in-depth
+
+on:
+  push:
+    paths:
+      - "src/start.ts"
+      - "src/routes/api/public/csp-report.ts"
+      - "src/lib/sri.ts"
+      - "scripts/sign-artifacts.mjs"
+      - "docs/releases/sprint-3/bloc-d/**"
+      - ".github/workflows/sprint-3-bloc-d.yml"
+  pull_request:
+    paths:
+      - "src/start.ts"
+      - "src/routes/api/public/csp-report.ts"
+      - "scripts/sign-artifacts.mjs"
+
+jobs:
+  csp-and-signing:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+      - name: Install deps
+        run: bun install --frozen-lockfile
+      - name: Typecheck
+        run: bunx tsgo --noEmit
+      - name: Build
+        env:
+          VITE_SUPABASE_URL: https://example.supabase.co
+          VITE_SUPABASE_PUBLISHABLE_KEY: eyJhbGciOi.example.token
+        run: bun run build
+      - name: Sign build artifacts
+        env:
+          RELEASE_TAG: ${{ github.sha }}
+        run: node scripts/sign-artifacts.mjs --dir dist --out artifacts
+      - name: Upload SHA256SUMS
+        uses: actions/upload-artifact@v4
+        with:
+          name: sha256sums
+          path: |
+            artifacts/SHA256SUMS
+            artifacts/manifest.json

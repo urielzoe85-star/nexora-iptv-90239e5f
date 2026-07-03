@@ -77,6 +77,7 @@ import { Route as NccIptvDebugRouteImport } from './routes/ncc.iptv.debug'
 import { Route as NccIptvAccountsRouteImport } from './routes/ncc.iptv.accounts'
 import { Route as NccClientsIdRouteImport } from './routes/ncc.clients.$id'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
+import { Route as ApiPublicCspReportRouteImport } from './routes/api/public/csp-report'
 import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
@@ -430,6 +431,11 @@ const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
   path: '/lovable/email/suppression',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicCspReportRoute = ApiPublicCspReportRouteImport.update({
+  id: '/api/public/csp-report',
+  path: '/api/public/csp-report',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LovableEmailTransactionalSendRoute =
   LovableEmailTransactionalSendRouteImport.update({
     id: '/lovable/email/transactional/send',
@@ -551,6 +557,7 @@ export interface FileRoutesByFullPath {
   '/en/': typeof EnIndexRoute
   '/fr/': typeof FrIndexRoute
   '/ncc/': typeof NccIndexRoute
+  '/api/public/csp-report': typeof ApiPublicCspReportRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/ncc/clients/$id': typeof NccClientsIdRoute
   '/ncc/iptv/accounts': typeof NccIptvAccountsRoute
@@ -627,6 +634,7 @@ export interface FileRoutesByTo {
   '/en': typeof EnIndexRoute
   '/fr': typeof FrIndexRoute
   '/ncc': typeof NccIndexRoute
+  '/api/public/csp-report': typeof ApiPublicCspReportRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/ncc/clients/$id': typeof NccClientsIdRoute
   '/ncc/iptv/accounts': typeof NccIptvAccountsRoute
@@ -710,6 +718,7 @@ export interface FileRoutesById {
   '/en/': typeof EnIndexRoute
   '/fr/': typeof FrIndexRoute
   '/ncc/': typeof NccIndexRoute
+  '/api/public/csp-report': typeof ApiPublicCspReportRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/ncc/clients/$id': typeof NccClientsIdRoute
   '/ncc/iptv/accounts': typeof NccIptvAccountsRoute
@@ -794,6 +803,7 @@ export interface FileRouteTypes {
     | '/en/'
     | '/fr/'
     | '/ncc/'
+    | '/api/public/csp-report'
     | '/lovable/email/suppression'
     | '/ncc/clients/$id'
     | '/ncc/iptv/accounts'
@@ -870,6 +880,7 @@ export interface FileRouteTypes {
     | '/en'
     | '/fr'
     | '/ncc'
+    | '/api/public/csp-report'
     | '/lovable/email/suppression'
     | '/ncc/clients/$id'
     | '/ncc/iptv/accounts'
@@ -952,6 +963,7 @@ export interface FileRouteTypes {
     | '/en/'
     | '/fr/'
     | '/ncc/'
+    | '/api/public/csp-report'
     | '/lovable/email/suppression'
     | '/ncc/clients/$id'
     | '/ncc/iptv/accounts'
@@ -1007,6 +1019,7 @@ export interface RootRouteChildren {
   LegalTermsRoute: typeof LegalTermsRoute
   PaymentFailedRoute: typeof PaymentFailedRoute
   PaymentSuccessRoute: typeof PaymentSuccessRoute
+  ApiPublicCspReportRoute: typeof ApiPublicCspReportRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ApiPublicAutomationEmitTestRoute: typeof ApiPublicAutomationEmitTestRoute
   ApiPublicAutomationProcessQueueRoute: typeof ApiPublicAutomationProcessQueueRoute
@@ -1500,6 +1513,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableEmailSuppressionRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/csp-report': {
+      id: '/api/public/csp-report'
+      path: '/api/public/csp-report'
+      fullPath: '/api/public/csp-report'
+      preLoaderRoute: typeof ApiPublicCspReportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/lovable/email/transactional/send': {
       id: '/lovable/email/transactional/send'
       path: '/lovable/email/transactional/send'
@@ -1771,6 +1791,7 @@ const rootRouteChildren: RootRouteChildren = {
   LegalTermsRoute: LegalTermsRoute,
   PaymentFailedRoute: PaymentFailedRoute,
   PaymentSuccessRoute: PaymentSuccessRoute,
+  ApiPublicCspReportRoute: ApiPublicCspReportRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ApiPublicAutomationEmitTestRoute: ApiPublicAutomationEmitTestRoute,
   ApiPublicAutomationProcessQueueRoute: ApiPublicAutomationProcessQueueRoute,
