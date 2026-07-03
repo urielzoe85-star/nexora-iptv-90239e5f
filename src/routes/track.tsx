@@ -15,6 +15,7 @@ export const Route = createFileRoute("/track")({
       { name: "description", content: "Real-time payment and activation status for your Nexora IPTV subscription." },
       { property: "og:title", content: "Track Your Order — Nexora IPTV" },
       { property: "og:description", content: "Live payment and activation status for your Nexora IPTV order." },
+      { property: "og:url", content: "https://nexora-iptv.com/track" },
       { name: "robots", content: "noindex" },
     ],
     links: [{ rel: "canonical", href: "https://nexora-iptv.com/track" }],
@@ -147,6 +148,8 @@ function TrackPage() {
           <div className="flex items-center gap-2 flex-1 rounded-xl border border-white/10 bg-white/[0.02] px-3 py-2">
             <Search className="h-4 w-4 text-muted-foreground" />
             <input
+              id="order-reference"
+              aria-label="Order reference"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="NX-XXXXXXXXXX"
