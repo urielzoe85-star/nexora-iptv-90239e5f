@@ -237,7 +237,7 @@ function TrackView({ order, now, lastChecked }: { order: Order; now: number; las
       desc: t("track.step.confirmed.desc"),
       state:
         isConfirmed(s) ? "done" :
-        s === "processing" ? "active" :
+        (s === "processing" || s === "awaiting_verification") ? "active" :
         s === "failed" || s === "cancelled" ? "failed" :
         "pending",
     },
@@ -405,6 +405,7 @@ function StatusBadge({ status }: { status: string }) {
     paid: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
     completed: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
     processing: "bg-sky-500/15 text-sky-300 border-sky-500/30",
+    awaiting_verification: "bg-amber-500/15 text-amber-300 border-amber-500/30",
     pending: "bg-amber-500/15 text-amber-300 border-amber-500/30",
     failed: "bg-red-500/15 text-red-300 border-red-500/30",
     cancelled: "bg-zinc-500/15 text-zinc-300 border-zinc-500/30",

@@ -62,6 +62,7 @@ import { Route as AdminAdminsRouteImport } from './routes/admin.admins'
 import { Route as NccSettingsIndexRouteImport } from './routes/ncc.settings.index'
 import { Route as NccIptvIndexRouteImport } from './routes/ncc.iptv.index'
 import { Route as NccSettingsSectionRouteImport } from './routes/ncc.settings.$section'
+import { Route as NccPaymentsBinanceRouteImport } from './routes/ncc.payments.binance'
 import { Route as NccOrdersIdRouteImport } from './routes/ncc.orders.$id'
 import { Route as NccIptvTrialsRouteImport } from './routes/ncc.iptv.trials'
 import { Route as NccIptvSuspendedRouteImport } from './routes/ncc.iptv.suspended'
@@ -90,7 +91,6 @@ import { Route as ApiPublicHooksSecretRotationCheckRouteImport } from './routes/
 import { Route as ApiPublicHooksRenewalRemindersRouteImport } from './routes/api/public/hooks/renewal-reminders'
 import { Route as ApiPublicHooksPaymentDunningRouteImport } from './routes/api/public/hooks/payment-dunning'
 import { Route as ApiPublicHooksBackupVerifyRouteImport } from './routes/api/public/hooks/backup-verify'
-import { Route as ApiPublicBinancePayWebhookRouteImport } from './routes/api/public/binance-pay/webhook'
 import { Route as ApiPublicAutomationProcessQueueRouteImport } from './routes/api/public/automation/process-queue'
 import { Route as ApiPublicAutomationEmitTestRouteImport } from './routes/api/public/automation/emit-test'
 
@@ -359,6 +359,11 @@ const NccSettingsSectionRoute = NccSettingsSectionRouteImport.update({
   path: '/$section',
   getParentRoute: () => NccSettingsRoute,
 } as any)
+const NccPaymentsBinanceRoute = NccPaymentsBinanceRouteImport.update({
+  id: '/binance',
+  path: '/binance',
+  getParentRoute: () => NccPaymentsRoute,
+} as any)
 const NccOrdersIdRoute = NccOrdersIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -508,12 +513,6 @@ const ApiPublicHooksBackupVerifyRoute =
     path: '/api/public/hooks/backup-verify',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicBinancePayWebhookRoute =
-  ApiPublicBinancePayWebhookRouteImport.update({
-    id: '/api/public/binance-pay/webhook',
-    path: '/api/public/binance-pay/webhook',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const ApiPublicAutomationProcessQueueRoute =
   ApiPublicAutomationProcessQueueRouteImport.update({
     id: '/api/public/automation/process-queue',
@@ -565,7 +564,7 @@ export interface FileRoutesByFullPath {
   '/ncc/logs': typeof NccLogsRoute
   '/ncc/notifications': typeof NccNotificationsRoute
   '/ncc/orders': typeof NccOrdersRouteWithChildren
-  '/ncc/payments': typeof NccPaymentsRoute
+  '/ncc/payments': typeof NccPaymentsRouteWithChildren
   '/ncc/products': typeof NccProductsRoute
   '/ncc/settings': typeof NccSettingsRouteWithChildren
   '/ncc/support': typeof NccSupportRoute
@@ -594,12 +593,12 @@ export interface FileRoutesByFullPath {
   '/ncc/iptv/suspended': typeof NccIptvSuspendedRoute
   '/ncc/iptv/trials': typeof NccIptvTrialsRoute
   '/ncc/orders/$id': typeof NccOrdersIdRoute
+  '/ncc/payments/binance': typeof NccPaymentsBinanceRoute
   '/ncc/settings/$section': typeof NccSettingsSectionRoute
   '/ncc/iptv/': typeof NccIptvIndexRoute
   '/ncc/settings/': typeof NccSettingsIndexRoute
   '/api/public/automation/emit-test': typeof ApiPublicAutomationEmitTestRoute
   '/api/public/automation/process-queue': typeof ApiPublicAutomationProcessQueueRoute
-  '/api/public/binance-pay/webhook': typeof ApiPublicBinancePayWebhookRoute
   '/api/public/hooks/backup-verify': typeof ApiPublicHooksBackupVerifyRoute
   '/api/public/hooks/payment-dunning': typeof ApiPublicHooksPaymentDunningRoute
   '/api/public/hooks/renewal-reminders': typeof ApiPublicHooksRenewalRemindersRoute
@@ -646,7 +645,7 @@ export interface FileRoutesByTo {
   '/ncc/logs': typeof NccLogsRoute
   '/ncc/notifications': typeof NccNotificationsRoute
   '/ncc/orders': typeof NccOrdersRouteWithChildren
-  '/ncc/payments': typeof NccPaymentsRoute
+  '/ncc/payments': typeof NccPaymentsRouteWithChildren
   '/ncc/products': typeof NccProductsRoute
   '/ncc/support': typeof NccSupportRoute
   '/ncc/telegram': typeof NccTelegramRoute
@@ -674,12 +673,12 @@ export interface FileRoutesByTo {
   '/ncc/iptv/suspended': typeof NccIptvSuspendedRoute
   '/ncc/iptv/trials': typeof NccIptvTrialsRoute
   '/ncc/orders/$id': typeof NccOrdersIdRoute
+  '/ncc/payments/binance': typeof NccPaymentsBinanceRoute
   '/ncc/settings/$section': typeof NccSettingsSectionRoute
   '/ncc/iptv': typeof NccIptvIndexRoute
   '/ncc/settings': typeof NccSettingsIndexRoute
   '/api/public/automation/emit-test': typeof ApiPublicAutomationEmitTestRoute
   '/api/public/automation/process-queue': typeof ApiPublicAutomationProcessQueueRoute
-  '/api/public/binance-pay/webhook': typeof ApiPublicBinancePayWebhookRoute
   '/api/public/hooks/backup-verify': typeof ApiPublicHooksBackupVerifyRoute
   '/api/public/hooks/payment-dunning': typeof ApiPublicHooksPaymentDunningRoute
   '/api/public/hooks/renewal-reminders': typeof ApiPublicHooksRenewalRemindersRoute
@@ -732,7 +731,7 @@ export interface FileRoutesById {
   '/ncc/logs': typeof NccLogsRoute
   '/ncc/notifications': typeof NccNotificationsRoute
   '/ncc/orders': typeof NccOrdersRouteWithChildren
-  '/ncc/payments': typeof NccPaymentsRoute
+  '/ncc/payments': typeof NccPaymentsRouteWithChildren
   '/ncc/products': typeof NccProductsRoute
   '/ncc/settings': typeof NccSettingsRouteWithChildren
   '/ncc/support': typeof NccSupportRoute
@@ -761,12 +760,12 @@ export interface FileRoutesById {
   '/ncc/iptv/suspended': typeof NccIptvSuspendedRoute
   '/ncc/iptv/trials': typeof NccIptvTrialsRoute
   '/ncc/orders/$id': typeof NccOrdersIdRoute
+  '/ncc/payments/binance': typeof NccPaymentsBinanceRoute
   '/ncc/settings/$section': typeof NccSettingsSectionRoute
   '/ncc/iptv/': typeof NccIptvIndexRoute
   '/ncc/settings/': typeof NccSettingsIndexRoute
   '/api/public/automation/emit-test': typeof ApiPublicAutomationEmitTestRoute
   '/api/public/automation/process-queue': typeof ApiPublicAutomationProcessQueueRoute
-  '/api/public/binance-pay/webhook': typeof ApiPublicBinancePayWebhookRoute
   '/api/public/hooks/backup-verify': typeof ApiPublicHooksBackupVerifyRoute
   '/api/public/hooks/payment-dunning': typeof ApiPublicHooksPaymentDunningRoute
   '/api/public/hooks/renewal-reminders': typeof ApiPublicHooksRenewalRemindersRoute
@@ -849,12 +848,12 @@ export interface FileRouteTypes {
     | '/ncc/iptv/suspended'
     | '/ncc/iptv/trials'
     | '/ncc/orders/$id'
+    | '/ncc/payments/binance'
     | '/ncc/settings/$section'
     | '/ncc/iptv/'
     | '/ncc/settings/'
     | '/api/public/automation/emit-test'
     | '/api/public/automation/process-queue'
-    | '/api/public/binance-pay/webhook'
     | '/api/public/hooks/backup-verify'
     | '/api/public/hooks/payment-dunning'
     | '/api/public/hooks/renewal-reminders'
@@ -929,12 +928,12 @@ export interface FileRouteTypes {
     | '/ncc/iptv/suspended'
     | '/ncc/iptv/trials'
     | '/ncc/orders/$id'
+    | '/ncc/payments/binance'
     | '/ncc/settings/$section'
     | '/ncc/iptv'
     | '/ncc/settings'
     | '/api/public/automation/emit-test'
     | '/api/public/automation/process-queue'
-    | '/api/public/binance-pay/webhook'
     | '/api/public/hooks/backup-verify'
     | '/api/public/hooks/payment-dunning'
     | '/api/public/hooks/renewal-reminders'
@@ -1015,12 +1014,12 @@ export interface FileRouteTypes {
     | '/ncc/iptv/suspended'
     | '/ncc/iptv/trials'
     | '/ncc/orders/$id'
+    | '/ncc/payments/binance'
     | '/ncc/settings/$section'
     | '/ncc/iptv/'
     | '/ncc/settings/'
     | '/api/public/automation/emit-test'
     | '/api/public/automation/process-queue'
-    | '/api/public/binance-pay/webhook'
     | '/api/public/hooks/backup-verify'
     | '/api/public/hooks/payment-dunning'
     | '/api/public/hooks/renewal-reminders'
@@ -1062,7 +1061,6 @@ export interface RootRouteChildren {
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ApiPublicAutomationEmitTestRoute: typeof ApiPublicAutomationEmitTestRoute
   ApiPublicAutomationProcessQueueRoute: typeof ApiPublicAutomationProcessQueueRoute
-  ApiPublicBinancePayWebhookRoute: typeof ApiPublicBinancePayWebhookRoute
   ApiPublicHooksBackupVerifyRoute: typeof ApiPublicHooksBackupVerifyRoute
   ApiPublicHooksPaymentDunningRoute: typeof ApiPublicHooksPaymentDunningRoute
   ApiPublicHooksRenewalRemindersRoute: typeof ApiPublicHooksRenewalRemindersRoute
@@ -1450,6 +1448,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof NccSettingsSectionRouteImport
       parentRoute: typeof NccSettingsRoute
     }
+    '/ncc/payments/binance': {
+      id: '/ncc/payments/binance'
+      path: '/binance'
+      fullPath: '/ncc/payments/binance'
+      preLoaderRoute: typeof NccPaymentsBinanceRouteImport
+      parentRoute: typeof NccPaymentsRoute
+    }
     '/ncc/orders/$id': {
       id: '/ncc/orders/$id'
       path: '/$id'
@@ -1646,13 +1651,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksBackupVerifyRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/binance-pay/webhook': {
-      id: '/api/public/binance-pay/webhook'
-      path: '/api/public/binance-pay/webhook'
-      fullPath: '/api/public/binance-pay/webhook'
-      preLoaderRoute: typeof ApiPublicBinancePayWebhookRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/public/automation/process-queue': {
       id: '/api/public/automation/process-queue'
       path: '/api/public/automation/process-queue'
@@ -1773,6 +1771,18 @@ const NccOrdersRouteWithChildren = NccOrdersRoute._addFileChildren(
   NccOrdersRouteChildren,
 )
 
+interface NccPaymentsRouteChildren {
+  NccPaymentsBinanceRoute: typeof NccPaymentsBinanceRoute
+}
+
+const NccPaymentsRouteChildren: NccPaymentsRouteChildren = {
+  NccPaymentsBinanceRoute: NccPaymentsBinanceRoute,
+}
+
+const NccPaymentsRouteWithChildren = NccPaymentsRoute._addFileChildren(
+  NccPaymentsRouteChildren,
+)
+
 interface NccSettingsRouteChildren {
   NccSettingsSectionRoute: typeof NccSettingsSectionRoute
   NccSettingsIndexRoute: typeof NccSettingsIndexRoute
@@ -1798,7 +1808,7 @@ interface NccRouteChildren {
   NccLogsRoute: typeof NccLogsRoute
   NccNotificationsRoute: typeof NccNotificationsRoute
   NccOrdersRoute: typeof NccOrdersRouteWithChildren
-  NccPaymentsRoute: typeof NccPaymentsRoute
+  NccPaymentsRoute: typeof NccPaymentsRouteWithChildren
   NccProductsRoute: typeof NccProductsRoute
   NccSettingsRoute: typeof NccSettingsRouteWithChildren
   NccSupportRoute: typeof NccSupportRoute
@@ -1819,7 +1829,7 @@ const NccRouteChildren: NccRouteChildren = {
   NccLogsRoute: NccLogsRoute,
   NccNotificationsRoute: NccNotificationsRoute,
   NccOrdersRoute: NccOrdersRouteWithChildren,
-  NccPaymentsRoute: NccPaymentsRoute,
+  NccPaymentsRoute: NccPaymentsRouteWithChildren,
   NccProductsRoute: NccProductsRoute,
   NccSettingsRoute: NccSettingsRouteWithChildren,
   NccSupportRoute: NccSupportRoute,
@@ -1858,7 +1868,6 @@ const rootRouteChildren: RootRouteChildren = {
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ApiPublicAutomationEmitTestRoute: ApiPublicAutomationEmitTestRoute,
   ApiPublicAutomationProcessQueueRoute: ApiPublicAutomationProcessQueueRoute,
-  ApiPublicBinancePayWebhookRoute: ApiPublicBinancePayWebhookRoute,
   ApiPublicHooksBackupVerifyRoute: ApiPublicHooksBackupVerifyRoute,
   ApiPublicHooksPaymentDunningRoute: ApiPublicHooksPaymentDunningRoute,
   ApiPublicHooksRenewalRemindersRoute: ApiPublicHooksRenewalRemindersRoute,

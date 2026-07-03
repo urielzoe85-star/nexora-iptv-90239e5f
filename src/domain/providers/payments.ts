@@ -8,7 +8,8 @@ export type PaymentProviderId =
   | "paypal"
   | "orange_money"
   | "mtn_momo"
-  | "crypto";
+  | "crypto"
+  | "binance_pay_manual";
 
 export interface PaymentChargeInput {
   amount: number;
@@ -52,6 +53,19 @@ class SebPayMarkerProvider implements PaymentProvider {
   }
 }
 
+// Binance Pay semi-automatique : le client paie via QR statique, envoie
+// une preuve, un admin valide dans la NCC → livraison IPTV déclenchée.
+// Ce marqueur permet le remplacement futur par la Merchant API officielle
+// sans changer le reste du système.
+class BinancePayManualMarkerProvider implements PaymentProvider {
+  readonly id = "binance_pay_manual" as const;
+  readonly label = "Binance Pay (QR + validation manuelle)";
+  readonly enabled = true;
+  async createCharge(input: PaymentChargeInput): Promise<PaymentChargeResult> {
+    return { providerReference: input.orderRef, status: "pending" };
+  }
+}
+
 export const PAYMENT_PROVIDERS: Record<PaymentProviderId, PaymentProvider> = {
   sebpay:       new SebPayMarkerProvider(),
   stripe:       new NotImplementedProvider("stripe", "Stripe"),
@@ -59,6 +73,7 @@ export const PAYMENT_PROVIDERS: Record<PaymentProviderId, PaymentProvider> = {
   orange_money: new NotImplementedProvider("orange_money", "Orange Money"),
   mtn_momo:     new NotImplementedProvider("mtn_momo", "MTN Mobile Money"),
   crypto:       new NotImplementedProvider("crypto", "Crypto"),
+  binance_pay_manual: new BinancePayManualMarkerProvider(),
 };
 
 export const PAYMENT_PROVIDER_LIST: PaymentProvider[] = Object.values(PAYMENT_PROVIDERS);
