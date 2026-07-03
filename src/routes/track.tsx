@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { getOrderByRef, getOrderDelivery } from "@/lib/orders.functions";
 import { verifyPayment } from "@/lib/payments.functions";
+import { kickAutomationQueue } from "@/lib/automation.functions";
 import { useT, LanguageSwitcher } from "@/i18n/context";
 import { DeliveryPreview } from "@/components/ncc/orders/DeliveryPreview";
 
@@ -66,6 +67,7 @@ function TrackPage() {
   const [notFound, setNotFound] = useState(false);
   const [now, setNow] = useState(() => Date.now());
   const [lastChecked, setLastChecked] = useState<number | null>(null);
+  const [lastKicked, setLastKicked] = useState<number>(0);
 
   // Tick every second for elapsed-time UI.
   useEffect(() => {
@@ -108,6 +110,21 @@ function TrackPage() {
       // On ne re-vérifie SebPay que tant que le paiement n'est pas confirmé.
       const needsSebpayCheck = !status || !isConfirmed(status);
       fetchOnce({ verify: needsSebpayCheck && tickCount % 5 === 0 });
+
+      // Rattrapage automatique : si le paiement est confirmé mais la
+      // livraison n'est toujours pas prête après 15 s, on relance le
+      // drainage de la file d'automation. Rate-limité côté serveur (1/10s
+      // par order_ref) et côté client (1/15s local) pour éviter le spam.
+      if (
+        isConfirmed(status ?? "") &&
+        !order?.delivery &&
+        order?.updated_at &&
+        Date.now() - new Date(order.updated_at).getTime() > 15_000 &&
+        Date.now() - lastKicked > 15_000
+      ) {
+        setLastKicked(Date.now());
+        kickAutomationQueue({ data: { ref } }).catch(() => null);
+      }
     }, 1200);
 
     // Refetch immédiat quand l'onglet redevient visible / reçoit le focus.
