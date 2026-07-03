@@ -404,7 +404,8 @@ export const assignIptvAccountToOrder = createServerFn({ method: "POST" })
     if (!order) throw new Error("Commande introuvable");
 
     const meta = (order.metadata ?? {}) as Record<string, any>;
-    if (meta.iptv_delivery?.iptv_account_id) {
+    const existingDelivery = meta.iptv_delivery ?? null;
+    if (existingDelivery?.iptv_account_id && existingDelivery.delivery_status !== "failed") {
       throw new Error("Un abonnement est déjà affecté à cette commande");
     }
 
@@ -422,27 +423,9 @@ export const assignIptvAccountToOrder = createServerFn({ method: "POST" })
     }).eq("id", data.account_id);
     if (uErr) throw new Error(uErr.message);
 
-    const nextMeta = {
-      ...meta,
-      iptv_delivery: {
-        iptv_account_id: acc.id,
-        megaott_subscription_id: acc.megaott_subscription_id ?? (acc.metadata as any)?.remote_user_id ?? null,
-        username: acc.username,
-        package: acc.package ?? acc.bouquet ?? null,
-        expires_at: acc.expires_at,
-        dns_link: acc.dns_link ?? (acc.metadata as any)?.dns_link ?? null,
-        dns_link_samsung_lg: acc.dns_link_samsung_lg ?? (acc.metadata as any)?.dns_link_for_samsung_lg ?? null,
-        portal_link: acc.portal_link ?? (acc.metadata as any)?.portal_link ?? null,
-        mac_address: acc.mac_address ?? null,
-        password: acc.password ?? null,
-        max_connections: acc.max_connections ?? null,
-        note: acc.notes ?? null,
-        delivery_status: "ready_to_send",
-        created_at: new Date().toISOString(),
-        sent_at: null,
-        sent_channel: null,
-      },
-    };
+    const { buildDeliveryFromAccount } = await import("@/lib/iptv-delivery.builder");
+    const delivery = buildDeliveryFromAccount({ account: acc, order, previous: existingDelivery });
+    const nextMeta = { ...meta, iptv_delivery: delivery };
     await sb.from("orders").update({ metadata: nextMeta }).eq("id", data.order_id);
 
     try {
