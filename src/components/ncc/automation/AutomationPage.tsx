@@ -4,16 +4,18 @@ import { useServerFn } from "@tanstack/react-start";
 import {
   listWorkflows, toggleWorkflow, runWorkflowManually,
   listRuns, getRun, replayRunFn, getAutomationKpis,
+  getAutomationHealth, adminDrainQueueNow, adminRetryFailedJobs, adminForceAttributeOrder,
 } from "@/lib/automation.functions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Play, RefreshCw, Loader2 } from "lucide-react";
+import { Play, RefreshCw, Loader2, Zap, RotateCcw, AlertTriangle, CheckCircle2, Wrench } from "lucide-react";
 
 function statusColor(s: string) {
   switch (s) {
@@ -52,15 +54,153 @@ function AutomationKpis() {
   ];
   if (isLoading) return <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />;
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-      {items.map((k) => (
-        <Card key={k.label}>
-          <CardContent className="pt-6">
-            <div className="text-xs uppercase tracking-wider text-muted-foreground">{k.label}</div>
-            <div className="text-2xl font-semibold mt-2">{k.value}</div>
-          </CardContent>
-        </Card>
-      ))}
+    <div className="space-y-6">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        {items.map((k) => (
+          <Card key={k.label}>
+            <CardContent className="pt-6">
+              <div className="text-xs uppercase tracking-wider text-muted-foreground">{k.label}</div>
+              <div className="text-2xl font-semibold mt-2">{k.value}</div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+      <QueueHealthCard />
+    </div>
+  );
+}
+
+function QueueHealthCard() {
+  const qc = useQueryClient();
+  const healthFn = useServerFn(getAutomationHealth);
+  const drainFn = useServerFn(adminDrainQueueNow);
+  const retryFn = useServerFn(adminRetryFailedJobs);
+  const forceFn = useServerFn(adminForceAttributeOrder);
+  const { data, isLoading, refetch } = useQuery({
+    queryKey: ["automation", "health"],
+    queryFn: () => healthFn(),
+    refetchInterval: 5_000,
+  });
+
+  const drain = useMutation({
+    mutationFn: () => drainFn(),
+    onSuccess: (r: any) => {
+      toast.success(`File drainée`, {
+        description: `${r.processed?.length ?? 0} job(s) traité(s), ${r.reclaimed ?? 0} rattrapé(s).`,
+      });
+      qc.invalidateQueries({ queryKey: ["automation"] });
+    },
+    onError: (e: any) => toast.error("Drainage échoué", { description: String(e?.message ?? e) }),
+  });
+  const retry = useMutation({
+    mutationFn: () => retryFn({ data: { maxAgeHours: 24 } }),
+    onSuccess: (r: any) => {
+      toast.success(`${r.requeued ?? 0} job(s) remis en file`);
+      qc.invalidateQueries({ queryKey: ["automation"] });
+    },
+    onError: (e: any) => toast.error("Requeue échoué", { description: String(e?.message ?? e) }),
+  });
+  const [orderRef, setOrderRef] = useState("");
+  const force = useMutation({
+    mutationFn: () => forceFn({ data: { orderRef: orderRef.trim().toUpperCase() } }),
+    onSuccess: (r: any) => {
+      if (r.status === "success") toast.success(`Attribution forcée : run ${r.status}`);
+      else toast.error(`Attribution ${r.status}`, { description: r.error ?? undefined });
+      setOrderRef("");
+      qc.invalidateQueries({ queryKey: ["automation"] });
+    },
+    onError: (e: any) => toast.error("Attribution échouée", { description: String(e?.message ?? e) }),
+  });
+
+  const oldestSec = data?.oldestQueuedAgeSec ?? 0;
+  const oldestBadge =
+    oldestSec === 0 ? { text: "aucun", cls: "text-muted-foreground" } :
+    oldestSec > 300 ? { text: `${Math.round(oldestSec / 60)} min`, cls: "text-red-500 font-semibold" } :
+    oldestSec > 60 ? { text: `${Math.round(oldestSec / 60)} min`, cls: "text-amber-500" } :
+    { text: `${oldestSec}s`, cls: "text-emerald-500" };
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <div>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Wrench className="h-4 w-4" /> Santé de la file
+          </CardTitle>
+          <p className="text-xs text-muted-foreground mt-1">
+            Diagnostic temps-réel — rafraîchi toutes les 5 s. Utilisez les actions ci-dessous en cas d'attribution IPTV bloquée.
+          </p>
+        </div>
+        <Button size="sm" variant="ghost" onClick={() => refetch()}>
+          <RefreshCw className="h-3 w-3 mr-1" /> Rafraîchir
+        </Button>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {isLoading ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+            <Stat label="Queued" value={data?.queued ?? 0} tone={(data?.queued ?? 0) > 5 ? "warn" : "ok"} />
+            <Stat label="Processing" value={data?.processing ?? 0} tone={(data?.stuckProcessing ?? 0) > 0 ? "warn" : "ok"} />
+            <Stat label="Failed" value={data?.failed ?? 0} tone={(data?.failed ?? 0) > 0 ? "warn" : "ok"} />
+            <div>
+              <div className="text-xs uppercase tracking-wider text-muted-foreground">Plus vieux queued</div>
+              <div className={"text-2xl font-semibold mt-1 " + oldestBadge.cls}>{oldestBadge.text}</div>
+            </div>
+          </div>
+        )}
+        {(data?.stuckProcessing ?? 0) > 0 && (
+          <div className="flex items-start gap-2 rounded border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-800 dark:text-amber-200">
+            <AlertTriangle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+            <span>
+              {data!.stuckProcessing} job(s) coincé(s) en <code>processing</code> depuis &gt; 5 min. Ils seront remis en file au prochain drain.
+            </span>
+          </div>
+        )}
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" onClick={() => drain.mutate()} disabled={drain.isPending}>
+            {drain.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Zap className="h-4 w-4 mr-2" />}
+            Drainer maintenant
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => retry.mutate()} disabled={retry.isPending}>
+            {retry.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RotateCcw className="h-4 w-4 mr-2" />}
+            Réessayer les failed (24h)
+          </Button>
+        </div>
+        <div className="border-t border-border/60 pt-4">
+          <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
+            Forcer l'attribution IPTV d'une commande
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Input
+              value={orderRef}
+              onChange={(e) => setOrderRef(e.target.value)}
+              placeholder="NX-XXXXXXXXXX"
+              className="max-w-[220px] font-mono text-xs uppercase"
+            />
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={!orderRef.trim() || force.isPending}
+              onClick={() => force.mutate()}
+            >
+              {force.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <CheckCircle2 className="h-4 w-4 mr-2" />}
+              Attribuer maintenant
+            </Button>
+          </div>
+          <p className="text-[11px] text-muted-foreground mt-2">
+            Exécute synchronement le workflow <code>payment-confirmed</code> pour la commande — utilisez quand la file est bloquée ou pour renvoyer la fiche IPTV.
+          </p>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function Stat({ label, value, tone }: { label: string; value: number; tone: "ok" | "warn" }) {
+  return (
+    <div>
+      <div className="text-xs uppercase tracking-wider text-muted-foreground">{label}</div>
+      <div className={"text-2xl font-semibold mt-1 " + (tone === "warn" ? "text-amber-500" : "")}>{value}</div>
     </div>
   );
 }
