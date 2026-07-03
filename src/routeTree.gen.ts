@@ -58,6 +58,7 @@ import { Route as AdminPlansRouteImport } from './routes/admin.plans'
 import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as AdminContentRouteImport } from './routes/admin.content'
+import { Route as AdminAutomationRouteImport } from './routes/admin.automation'
 import { Route as AdminAdminsRouteImport } from './routes/admin.admins'
 import { Route as NccSettingsIndexRouteImport } from './routes/ncc.settings.index'
 import { Route as NccIptvIndexRouteImport } from './routes/ncc.iptv.index'
@@ -340,6 +341,11 @@ const AdminContentRoute = AdminContentRouteImport.update({
   path: '/content',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminAutomationRoute = AdminAutomationRouteImport.update({
+  id: '/automation',
+  path: '/automation',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminAdminsRoute = AdminAdminsRouteImport.update({
   id: '/admins',
   path: '/admins',
@@ -547,6 +553,7 @@ export interface FileRoutesByFullPath {
   '/track': typeof TrackRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/admin/admins': typeof AdminAdminsRoute
+  '/admin/automation': typeof AdminAutomationRoute
   '/admin/content': typeof AdminContentRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/orders': typeof AdminOrdersRoute
@@ -630,6 +637,7 @@ export interface FileRoutesByTo {
   '/track': typeof TrackRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/admin/admins': typeof AdminAdminsRoute
+  '/admin/automation': typeof AdminAutomationRoute
   '/admin/content': typeof AdminContentRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/orders': typeof AdminOrdersRoute
@@ -716,6 +724,7 @@ export interface FileRoutesById {
   '/track': typeof TrackRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/admin/admins': typeof AdminAdminsRoute
+  '/admin/automation': typeof AdminAutomationRoute
   '/admin/content': typeof AdminContentRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/orders': typeof AdminOrdersRoute
@@ -805,6 +814,7 @@ export interface FileRouteTypes {
     | '/track'
     | '/unsubscribe'
     | '/admin/admins'
+    | '/admin/automation'
     | '/admin/content'
     | '/admin/login'
     | '/admin/orders'
@@ -888,6 +898,7 @@ export interface FileRouteTypes {
     | '/track'
     | '/unsubscribe'
     | '/admin/admins'
+    | '/admin/automation'
     | '/admin/content'
     | '/admin/login'
     | '/admin/orders'
@@ -973,6 +984,7 @@ export interface FileRouteTypes {
     | '/track'
     | '/unsubscribe'
     | '/admin/admins'
+    | '/admin/automation'
     | '/admin/content'
     | '/admin/login'
     | '/admin/orders'
@@ -1433,6 +1445,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminContentRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/automation': {
+      id: '/admin/automation'
+      path: '/automation'
+      fullPath: '/admin/automation'
+      preLoaderRoute: typeof AdminAutomationRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/admins': {
       id: '/admin/admins'
       path: '/admins'
@@ -1690,6 +1709,7 @@ declare module '@tanstack/react-router' {
 
 interface AdminRouteChildren {
   AdminAdminsRoute: typeof AdminAdminsRoute
+  AdminAutomationRoute: typeof AdminAutomationRoute
   AdminContentRoute: typeof AdminContentRoute
   AdminLoginRoute: typeof AdminLoginRoute
   AdminOrdersRoute: typeof AdminOrdersRoute
@@ -1699,6 +1719,7 @@ interface AdminRouteChildren {
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminAdminsRoute: AdminAdminsRoute,
+  AdminAutomationRoute: AdminAutomationRoute,
   AdminContentRoute: AdminContentRoute,
   AdminLoginRoute: AdminLoginRoute,
   AdminOrdersRoute: AdminOrdersRoute,

@@ -16,6 +16,7 @@ const items = [
   { to: "/admin", label: "Vue d'ensemble", icon: LayoutDashboard, exact: true },
   { to: "/admin/orders", label: "Commandes", icon: ShoppingBag },
   { to: "/admin/plans", label: "Plans & tarifs", icon: Package },
+  { to: "/admin/automation", label: "Automation", icon: Workflow },
   { to: "/admin/content", label: "Contenu du site", icon: Settings },
   { to: "/admin/admins", label: "Administrateurs", icon: Shield },
 ];
@@ -79,8 +80,8 @@ export function AdminShell({ children, email }: { children: ReactNode; email?: s
             <span className="text-sm text-muted-foreground">Tableau de bord administrateur</span>
             <div className="ml-auto">
               <Button asChild variant="outline" size="sm" title="File d'attente & drainage IPTV">
-                <Link to="/ncc/automation">
-                  <Workflow className="h-4 w-4 mr-2" /> NCC · Automation
+                <Link to="/admin/automation">
+                  <Workflow className="h-4 w-4 mr-2" /> Automation
                 </Link>
               </Button>
             </div>

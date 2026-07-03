@@ -61,7 +61,7 @@ export function AutomationHealthBanner() {
           Drainer maintenant
         </Button>
         <Button asChild size="sm" variant="outline">
-          <Link to="/ncc/automation">
+          <Link to="/admin/automation">
             <ExternalLink className="h-4 w-4 mr-2" /> Tableau de bord
           </Link>
         </Button>
