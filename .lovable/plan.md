@@ -1,71 +1,40 @@
-## Diagnostic
+# Rendre la santé de la file d'automation accessible depuis /admin
 
-La file `automation_queue` contient **7 jobs `queued` avec 0 tentatives**, dont un `payment-confirmed` du 3 juillet 22:45 et un autre du même jour à 13:37. Résultat : les commandes `paid` récentes (NX-26X8KWHZ89, NX-LB6UV2822A) n'ont **jamais** été traitées → `orders.metadata.iptv_delivery` reste vide → l'écran client reste bloqué sur "compte pas encore attribué".
+## Contexte
 
-La logique métier est saine (workflow `payment-confirmed` bien câblé : create-subscription → compose delivery → dispatch multi-canal). Le problème est purement opérationnel : **le drainage de la file ne se déclenche pas de façon fiable**.
+Le bouton **« Drainer maintenant »** existe déjà — il se trouve dans le back-office NCC :
 
-L'endpoint `/api/public/automation/process-queue` existe et fonctionne, mais il dépend uniquement d'un pg_cron externe protégé par `AUTOMATION_CRON_SECRET`. Si le cron est en panne / mal programmé / secret désynchronisé, **rien ne rattrape la file** — d'où l'accumulation observée.
+`/ncc/automation` → onglet **Tableau de bord** → carte **Santé de la file**
 
-## Objectif
+Vous êtes actuellement sur `/admin/orders` (l'ancien back-office admin), qui n'a aucun lien vers `/ncc/automation`. C'est pour ça que vous ne le voyez pas.
 
-Que "paiement confirmé → livraison IPTV visible sur /track" soit **quasi-instantané** (≤ 5 s en conditions normales) et **auto-récupérable** en cas de panne du cron.
+## Ce que je vais faire
 
-## Plan
+### 1. Ajouter un raccourci visible depuis `/admin`
+Dans `src/components/admin/AdminShell.tsx` (barre du haut), ajouter un bouton **« NCC · Automation »** qui ouvre `/ncc/automation` dans un nouvel onglet. Icône `Workflow`, tooltip « File d'attente & drainage IPTV ».
 
-### 1. Déclenchement immédiat après paiement (chemin chaud)
-Dans `src/lib/payments.functions.ts` (`verifyPayment` + validation manuelle Binance dans `src/routes/ncc.payments.binance.tsx`), **juste après avoir marqué la commande `paid`** et enqueue `payment-confirmed`, faire un `fetch()` fire-and-forget vers `/api/public/automation/process-queue` avec le `AUTOMATION_CRON_SECRET`. Cela draine la file dans la seconde qui suit le paiement, sans attendre le tick cron.
+### 2. Bandeau d'alerte sur `/admin/orders` quand la file est bloquée
+Sur la page `/admin/orders`, afficher discrètement un bandeau ambré en haut **seulement si** :
+- il existe des jobs `queued` avec `attempts = 0` de plus de 2 min, OU
+- des jobs `processing` bloqués > 5 min, OU
+- des jobs `failed` sur les dernières 24 h.
 
-- Aucun blocage : `catch` silencieux, la file sera de toute façon rattrapée plus tard.
-- Le secret est lu server-side (`process.env.AUTOMATION_CRON_SECRET`) ; jamais exposé au client.
+Le bandeau contient : « X job(s) d'automation en attente » + bouton **« Drainer maintenant »** (appelle directement `adminDrainQueueNow` via `useServerFn`, mêmes toasts qu'ailleurs) + lien « Ouvrir le tableau de bord ».
 
-### 2. Rattrapage périodique côté client sur /track
-`src/routes/track.tsx` fait déjà du polling toutes les 1.2 s tant que la livraison n'est pas `sent`. Ajouter : si `order.status === "paid"` **et** aucune `delivery` après 15 s, appeler une **nouvelle serverFn `kickAutomationQueue(orderRef)`** qui, côté serveur, POST vers le drainer avec le secret. Idempotent (RPC `automation_claim_jobs` déjà `FOR UPDATE SKIP LOCKED`), rate-limité à 1 appel/10s par ref via `rate-limit.server.ts`.
+Rafraîchi toutes les 10 s via `useQuery` sur `getAutomationHealth` (déjà existant, aucun nouveau serveur nécessaire).
 
-### 3. NCC : panneau "Santé de la file automation"
-Nouvelle carte dans `src/routes/ncc.automation.tsx` (ou `ncc.index.tsx` si déjà présent) affichant :
-- Nombre de jobs `queued`, `processing`, `failed`
-- Âge du plus vieux job `queued` (rouge si > 5 min)
-- Bouton **"Drainer maintenant"** → serverFn admin qui POST vers le drainer
-- Bouton **"Réessayer les failed"** → repasse les `failed` (ou seulement ceux < 24 h) en `queued`
-- Bouton **"Attribuer maintenant"** sur chaque commande `paid` sans `iptv_delivery` (raccourci vers `composeIptvDelivery` + `dispatchIptvDelivery` en direct)
+### 3. Rien d'autre
+Aucune modification de la logique de drainage, ni des workflows, ni de la DB. Uniquement de l'exposition UI.
 
-### 4. Requeue automatique des runs bloqués en `processing`
-Le drainer courant ne libère jamais un job resté `processing` (crash du worker après claim). Ajouter une fonction SQL `automation_reclaim_stuck(_older_than_seconds int default 300)` qui remet `processing → queued` quand `locked_at < now() - interval`. Appelée en tête du drainer.
+## Fichiers touchés
 
-### 5. Backfill immédiat pour les 7 jobs actuellement bloqués
-Une fois le déploiement effectué, un simple appel manuel au drainer (via le nouveau bouton NCC ou la CLI) rattrape toutes les commandes en attente : NX-26X8KWHZ89, NX-LB6UV2822A et les autres reçoivent leur fiche IPTV.
+- `src/components/admin/AdminShell.tsx` — ajout du bouton raccourci.
+- `src/routes/admin.orders.tsx` (ou le composant de la page Commandes) — ajout du bandeau conditionnel + hook `useQuery(getAutomationHealth)`.
+- Nouveau composant `src/components/admin/AutomationHealthBanner.tsx` — encapsule le bandeau + action de drainage pour rester réutilisable.
 
-### 6. Tests
-- E2E `tests/e2e/sprint-1.6/08_auto_dispatch_speed.py` : paiement simulé → assertion que `iptv_delivery` est présent en < 10 s (sans dépendre du cron).
-- E2E `tests/e2e/sprint-1.6/09_queue_recovery.py` : simuler un job `processing` figé → vérifier qu'il repasse `queued` puis se termine.
+## Vérification
 
-## Détails techniques
-
-**Fichiers créés**
-- Migration SQL : fonction `automation_reclaim_stuck` + grant
-- `src/lib/automation-kick.server.ts` : helper `kickAutomationQueue()` (POST interne avec secret)
-- `src/components/admin/AutomationHealthCard.tsx`
-- 2 scripts E2E Python
-
-**Fichiers modifiés**
-- `src/lib/payments.functions.ts` : kick après enqueue
-- `src/routes/ncc.payments.binance.tsx` : idem après validation manuelle
-- `src/routes/track.tsx` : appel `kickAutomationQueue` si paiement stagne
-- `src/lib/automation.functions.ts` : serverFn `adminDrainQueue`, `adminRetryFailed`, `adminForceAttribute(orderRef)`
-- `src/routes/api/public/automation/process-queue.ts` : appel `automation_reclaim_stuck` en tête + limite d'attempts remise à 3
-- `src/routes/ncc.automation.tsx` : intégration du panneau santé
-
-**Hors périmètre** (déjà OK, on n'y touche pas)
-- Le workflow `payment-confirmed` lui-même
-- La logique de dispatch (`iptv-dispatch.server.ts`)
-- La builder de fiche (`iptv-delivery.builder.ts`)
-- La page `/track` UI (juste ajout du kick)
-
-## Résultat attendu
-
-Après ce plan :
-- Un paiement confirmé déclenche l'attribution IPTV **en moins de 5 s** (chemin chaud).
-- Si le chemin chaud échoue, le polling `/track` relance le drain **au bout de 15 s**.
-- Si tout échoue, le cron rattrape à la minute suivante.
-- L'admin voit l'état de la file en un coup d'œil dans NCC et peut débloquer manuellement en un clic.
-- Les 7 jobs actuellement coincés sont rejoués dès le premier drain.
+Après build :
+1. Aller sur `/admin/orders` → voir le bandeau (si des jobs sont bloqués) et le raccourci en haut.
+2. Cliquer **« Drainer maintenant »** → toast de succès, bandeau disparaît au refresh suivant.
+3. Cliquer **« NCC · Automation »** → arrive directement sur `/ncc/automation` avec la carte santé complète.

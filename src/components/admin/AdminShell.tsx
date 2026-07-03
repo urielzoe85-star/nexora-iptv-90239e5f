@@ -2,7 +2,7 @@ import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  LayoutDashboard, ShoppingBag, Users, Package, Settings, Shield, LogOut,
+  LayoutDashboard, ShoppingBag, Users, Package, Settings, Shield, LogOut, Workflow,
 } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
@@ -77,6 +77,13 @@ export function AdminShell({ children, email }: { children: ReactNode; email?: s
           <header className="h-14 border-b border-border/60 flex items-center px-4 gap-2">
             <SidebarTrigger />
             <span className="text-sm text-muted-foreground">Tableau de bord administrateur</span>
+            <div className="ml-auto">
+              <Button asChild variant="outline" size="sm" title="File d'attente & drainage IPTV">
+                <Link to="/ncc/automation">
+                  <Workflow className="h-4 w-4 mr-2" /> NCC · Automation
+                </Link>
+              </Button>
+            </div>
           </header>
           <main className="flex-1 p-6 overflow-x-hidden">{children}</main>
         </div>
