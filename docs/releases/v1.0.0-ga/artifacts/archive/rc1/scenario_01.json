@@ -1,0 +1,55 @@
+{
+  "id": "RC1-01",
+  "name": "Full journey \u2014 Checkout \u2192 Payment \u2192 Workflow \u2192 IPTV \u2192 Delivery \u2192 Track",
+  "ref": "NXR-E2E-RC1-1783012270",
+  "steps": [
+    {
+      "name": "disable_megaott",
+      "ok": true,
+      "count": 1
+    },
+    {
+      "name": "checkout_seed",
+      "ok": true,
+      "order_ref": "NXR-E2E-RC1-1783012270",
+      "duration_ms": 214
+    },
+    {
+      "name": "payment_emit",
+      "ok": true,
+      "http": 200,
+      "duration_ms": 276
+    },
+    {
+      "name": "workflow_drain",
+      "ok": true,
+      "iterations": 2,
+      "duration_ms": 1759
+    },
+    {
+      "name": "delivery_ready",
+      "ok": true,
+      "delivery_status": "ready_to_send",
+      "iptv_accounts": 1,
+      "delivery_logs": 1,
+      "duration_ms": 215
+    },
+    {
+      "name": "tracking_visible",
+      "ok": true,
+      "screenshot": "rc1_01_track_NXR-E2E-RC1-1783012270.png",
+      "url": "http://localhost:8080/track?ref=NXR-E2E-RC1-1783012270",
+      "duration_ms": 2033
+    }
+  ],
+  "ok": true,
+  "perf_ms": {
+    "ref": "NXR-E2E-RC1-1783012270",
+    "t_checkout": 214,
+    "t_payment": 276,
+    "t_workflow": 1759,
+    "t_delivery": 215,
+    "t_tracking": 2033,
+    "t_total": 6548
+  }
+}

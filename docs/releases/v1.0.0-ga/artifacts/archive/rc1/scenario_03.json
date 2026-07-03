@@ -1,0 +1,21 @@
+{
+  "id": "RC1-03",
+  "name": "Provider fallback (MEGAOTT off)",
+  "ref": "NXR-E2E-RC1-1783012279-fb",
+  "steps": [
+    {
+      "name": "disable_megaott",
+      "ok": true,
+      "count": 1
+    },
+    {
+      "name": "fallback_account_created",
+      "ok": true,
+      "provider": null
+    }
+  ],
+  "ok": true,
+  "perf_ms": {
+    "t_total": 1924
+  }
+}

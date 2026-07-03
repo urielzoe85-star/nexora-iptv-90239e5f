@@ -1,0 +1,7 @@
+
+FAILURES:
+ - GET / (HTTP 200): missing ['X-Content-Type-Options', 'X-Frame-Options', 'Referrer-Policy', 'Permissions-Policy']
+ - GET /en (HTTP 200): missing ['X-Content-Type-Options', 'X-Frame-Options', 'Referrer-Policy', 'Permissions-Policy']
+ - GET /catalog (HTTP 200): missing ['X-Content-Type-Options', 'X-Frame-Options', 'Referrer-Policy', 'Permissions-Policy']
+ - GET /sitemap.xml (HTTP 200): missing ['X-Content-Type-Options', 'X-Frame-Options', 'Referrer-Policy', 'Permissions-Policy']
+ - POST /api/public/sebpay/webhook (HTTP 401): missing ['X-Content-Type-Options', 'X-Frame-Options', 'Referrer-Policy', 'Permissions-Policy']
