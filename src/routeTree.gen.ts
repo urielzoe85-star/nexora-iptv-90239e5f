@@ -47,6 +47,7 @@ import { Route as NccAutomationRouteImport } from './routes/ncc.automation'
 import { Route as NccAnalyticsRouteImport } from './routes/ncc.analytics'
 import { Route as LegalTermsRouteImport } from './routes/legal.terms'
 import { Route as LegalSalesRouteImport } from './routes/legal.sales'
+import { Route as LegalRefundRouteImport } from './routes/legal.refund'
 import { Route as LegalPrivacyRouteImport } from './routes/legal.privacy'
 import { Route as FrGuideIptvRouteImport } from './routes/fr.guide-iptv'
 import { Route as EnGuideIptvRouteImport } from './routes/en.guide-iptv'
@@ -276,6 +277,11 @@ const LegalTermsRoute = LegalTermsRouteImport.update({
 const LegalSalesRoute = LegalSalesRouteImport.update({
   id: '/legal/sales',
   path: '/legal/sales',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LegalRefundRoute = LegalRefundRouteImport.update({
+  id: '/legal/refund',
+  path: '/legal/refund',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LegalPrivacyRoute = LegalPrivacyRouteImport.update({
@@ -512,6 +518,7 @@ export interface FileRoutesByFullPath {
   '/en/guide-iptv': typeof EnGuideIptvRoute
   '/fr/guide-iptv': typeof FrGuideIptvRoute
   '/legal/privacy': typeof LegalPrivacyRoute
+  '/legal/refund': typeof LegalRefundRoute
   '/legal/sales': typeof LegalSalesRoute
   '/legal/terms': typeof LegalTermsRoute
   '/ncc/analytics': typeof NccAnalyticsRoute
@@ -588,6 +595,7 @@ export interface FileRoutesByTo {
   '/en/guide-iptv': typeof EnGuideIptvRoute
   '/fr/guide-iptv': typeof FrGuideIptvRoute
   '/legal/privacy': typeof LegalPrivacyRoute
+  '/legal/refund': typeof LegalRefundRoute
   '/legal/sales': typeof LegalSalesRoute
   '/legal/terms': typeof LegalTermsRoute
   '/ncc/analytics': typeof NccAnalyticsRoute
@@ -667,6 +675,7 @@ export interface FileRoutesById {
   '/en/guide-iptv': typeof EnGuideIptvRoute
   '/fr/guide-iptv': typeof FrGuideIptvRoute
   '/legal/privacy': typeof LegalPrivacyRoute
+  '/legal/refund': typeof LegalRefundRoute
   '/legal/sales': typeof LegalSalesRoute
   '/legal/terms': typeof LegalTermsRoute
   '/ncc/analytics': typeof NccAnalyticsRoute
@@ -749,6 +758,7 @@ export interface FileRouteTypes {
     | '/en/guide-iptv'
     | '/fr/guide-iptv'
     | '/legal/privacy'
+    | '/legal/refund'
     | '/legal/sales'
     | '/legal/terms'
     | '/ncc/analytics'
@@ -825,6 +835,7 @@ export interface FileRouteTypes {
     | '/en/guide-iptv'
     | '/fr/guide-iptv'
     | '/legal/privacy'
+    | '/legal/refund'
     | '/legal/sales'
     | '/legal/terms'
     | '/ncc/analytics'
@@ -903,6 +914,7 @@ export interface FileRouteTypes {
     | '/en/guide-iptv'
     | '/fr/guide-iptv'
     | '/legal/privacy'
+    | '/legal/refund'
     | '/legal/sales'
     | '/legal/terms'
     | '/ncc/analytics'
@@ -977,6 +989,7 @@ export interface RootRouteChildren {
   BlogBestIptv2026Route: typeof BlogBestIptv2026Route
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   LegalPrivacyRoute: typeof LegalPrivacyRoute
+  LegalRefundRoute: typeof LegalRefundRoute
   LegalSalesRoute: typeof LegalSalesRoute
   LegalTermsRoute: typeof LegalTermsRoute
   PaymentFailedRoute: typeof PaymentFailedRoute
@@ -1262,6 +1275,13 @@ declare module '@tanstack/react-router' {
       path: '/legal/sales'
       fullPath: '/legal/sales'
       preLoaderRoute: typeof LegalSalesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/legal/refund': {
+      id: '/legal/refund'
+      path: '/legal/refund'
+      fullPath: '/legal/refund'
+      preLoaderRoute: typeof LegalRefundRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/legal/privacy': {
@@ -1725,6 +1745,7 @@ const rootRouteChildren: RootRouteChildren = {
   BlogBestIptv2026Route: BlogBestIptv2026Route,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   LegalPrivacyRoute: LegalPrivacyRoute,
+  LegalRefundRoute: LegalRefundRoute,
   LegalSalesRoute: LegalSalesRoute,
   LegalTermsRoute: LegalTermsRoute,
   PaymentFailedRoute: PaymentFailedRoute,
