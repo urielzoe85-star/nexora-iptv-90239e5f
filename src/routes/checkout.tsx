@@ -55,6 +55,9 @@ type PendingState =
       provider: "binance_pay_manual";
       orderRef: string;
       submittedAt: string;
+      amount: number;
+      currency: string;
+      customerEmail: string;
     };
 
 function CheckoutPage() {
