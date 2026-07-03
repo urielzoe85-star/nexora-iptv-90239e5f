@@ -237,7 +237,7 @@ function TrackView({ order, now, lastChecked }: { order: Order; now: number; las
       desc: t("track.step.confirmed.desc"),
       state:
         isConfirmed(s) ? "done" :
-        s === "processing" ? "active" :
+        (s === "processing" || s === "awaiting_verification") ? "active" :
         s === "failed" || s === "cancelled" ? "failed" :
         "pending",
     },
