@@ -1457,6 +1457,10 @@ export type Database = {
           workflow_key: string
         }[]
       }
+      automation_reclaim_stuck: {
+        Args: { _older_than_seconds?: number }
+        Returns: number
+      }
       backup_capture_integrity: { Args: { _run_id: string }; Returns: Json }
       backup_restore_drill: { Args: { _table: string }; Returns: Json }
       delete_email: {
