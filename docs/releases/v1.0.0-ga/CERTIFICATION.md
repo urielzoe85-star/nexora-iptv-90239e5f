@@ -7,11 +7,13 @@ _Run: certification finale demandée par le PO_
 
 ## Verdict
 
-**v1.0.0-GA NOT CERTIFIED** — 1 régression sécurité critique par rapport
-à `v1.0.0-security`. Le tag `v1.0.0-ga` n'est **pas** posé.
+**v1.0.0-GA CERTIFIED** — GA-BLOCK-01 résolu, `secrets_leak_test.py`
+repasse à 0 hit et aucun nom de secret n'apparaît dans `dist/client/**`.
+Tag `v1.0.0-ga` posé (voir `FROZEN.lock`, `status: CERTIFIED`).
 
-Voir « Correctifs requis » plus bas ; tout le reste (typecheck, build,
-livrables Sprint 3 A→F, suites smoke) passe.
+Verdict initial (2026-07-03, matin) : `NOT CERTIFIED` sur
+GA-BLOCK-01. Historique conservé plus bas pour traçabilité. Le
+correctif est décrit dans `§6 — Correctifs appliqués`.
 
 ## 1. Résumé exécutif
 
@@ -20,7 +22,7 @@ livrables Sprint 3 A→F, suites smoke) passe.
 | Typecheck (`tsgo --noEmit`) | ✅ | 0 erreur |
 | Build production (`bun run build`) | ✅ | dist/client + dist/server générés |
 | Lint (Prettier/ESLint) | ⚠ | Style-only (formatage), non bloquant |
-| RC2 · secrets leak (`tests/rc2/secrets_leak_test.py`) | ❌ | 20 hits — **régression vs security (0 hit)** |
+| RC2 · secrets leak (`tests/rc2/secrets_leak_test.py`) | ✅ | 0 hit (après GA-BLOCK-01) |
 | RC2 · admins role change | ✅ | Toutes garanties Bloc E |
 | RC2 · no admin top-level import | ✅ | 0 import top-level de `admin.functions` |
 | RC2 · security headers | dry-run | Headers vérifiés en live seulement |
