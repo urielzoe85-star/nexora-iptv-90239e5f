@@ -1,3 +1,11 @@
+
+## Certification finale — 2026-07-03
+
+Verdict : **v1.0.0-GA NOT CERTIFIED**.
+
+Blocker : `tests/rc2/secrets_leak_test.py` remonte 20 hits (0 à
+`v1.0.0-security`). Voir `CERTIFICATION.md` §5. Tag `v1.0.0-ga`
+non posé tant que le correctif GA-BLOCK-01 n'est pas livré.
 # CHANGELOG — v1.0.0-ga
 
 _Date: 2026-07-03 · General Availability_
