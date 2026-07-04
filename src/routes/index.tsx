@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { useT, useI18n } from "@/i18n/context";
 import { LanguageSwitcher } from "@/i18n/context";
-import { buildWhatsAppLink, WHATSAPP_BUSINESS_NUMBER } from "@/lib/whatsapp-contact";
+import { buildWhatsAppLink } from "@/lib/whatsapp-contact";
 
 const TELEGRAM_BOT_URL = "https://t.me/NexoraIPTVBot";
 const SUPPORT_EMAIL = "info@nexora-iptv.com";
