@@ -103,6 +103,11 @@ async function sendEmailChannel(args: {
       },
     });
     if (error) throw new Error(error.message);
+    try {
+      await sb.rpc("email_queue_dispatch");
+    } catch (wakeError) {
+      console.warn("email_queue_dispatch wake failed", (wakeError as any)?.message ?? wakeError);
+    }
     await insertDeliveryLog({
       order_id: args.order.id, customer_id: args.order.customer_id ?? null,
       channel: "email", status: "automatic", content: args.text, recipient, subject,
