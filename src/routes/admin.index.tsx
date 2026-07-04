@@ -110,7 +110,8 @@ function NccAccessCard() {
       }
       setOpen(false);
       setPassword("");
-      navigate({ to: "/ncc" });
+      await new Promise((resolve) => window.setTimeout(resolve, 150));
+      navigate({ to: "/ncc", replace: true });
     } catch (err: any) {
       setError(err?.message ?? "Erreur de vérification.");
     } finally {
