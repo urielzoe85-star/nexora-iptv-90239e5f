@@ -6,7 +6,7 @@ import { NccPageHeader } from "@/components/ncc/NccPageHeader";
 import { NccStatCard } from "@/components/ncc/NccStatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { BarChart3, DollarSign, ShoppingBag, Percent, Users, Tv2 } from "lucide-react";
+import { BarChart3, Tv2 } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { getAnalyticsSnapshot } from "@/lib/analytics.functions";
 
@@ -37,10 +37,10 @@ function AnalyticsPage() {
       />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
-        <NccStatCard label="Revenus" value={`${(d?.revenue ?? 0).toLocaleString("fr-FR", { maximumFractionDigits: 0 })} XOF`} icon={DollarSign} />
-        <NccStatCard label="Commandes payées" value={String(d?.ordersPaid ?? 0)} icon={ShoppingBag} hint={`sur ${d?.ordersTotal ?? 0} totales`} />
-        <NccStatCard label="Conversion" value={`${d?.conversion ?? 0}%`} icon={Percent} />
-        <NccStatCard label="Nouveaux clients" value={String(d?.newCustomers ?? 0)} icon={Users} />
+        <NccStatCard label="Revenus" value={`${(d?.revenue ?? 0).toLocaleString("fr-FR", { maximumFractionDigits: 0 })} XOF`} />
+        <NccStatCard label="Commandes payées" value={`${d?.ordersPaid ?? 0} / ${d?.ordersTotal ?? 0}`} />
+        <NccStatCard label="Conversion" value={`${d?.conversion ?? 0}%`} />
+        <NccStatCard label="Nouveaux clients" value={String(d?.newCustomers ?? 0)} />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
