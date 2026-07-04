@@ -181,23 +181,48 @@ export async function requirePortalSessionFromCookie(cookieHeader: string | null
 }
 
 export async function sendOtpEmail(email: string, code: string): Promise<void> {
-  // Store an email delivery row so the operator can see the outgoing OTP
-  // in the NCC delivery log, and if Lovable Emails is wired the queue will
-  // pick it up. Also send to Telegram admin for visibility.
   const subject = `Nexora IPTV — Code de vérification ${code}`;
-  const content = [
-    "Bonjour,",
-    "",
-    `Votre code de vérification pour l'Espace Client Nexora IPTV est :`,
-    "",
-    `  ${code}`,
-    "",
-    "Ce code est valable 10 minutes.",
-    "",
-    "Si vous n'êtes pas à l'origine de cette demande, ignorez simplement cet e-mail.",
-    "",
-    "— L'équipe Nexora IPTV",
-  ].join("\n");
+  const content = `Votre code Espace Client Nexora IPTV : ${code} (valable 10 minutes).`;
+  // 1) Enqueue the email through the Lovable Emails queue so it is actually sent.
+  try {
+    const React = await import("react");
+    const { render } = await import("react-email");
+    const { template } = await import("@/lib/email-templates/portal-otp");
+    const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
+    const el = React.createElement(template.component as any, { code, email });
+    const html = await render(el);
+    const text = await render(el, { plainText: true });
+    const messageId = crypto.randomUUID();
+    await (supabaseAdmin as any).from("email_send_log").insert({
+      message_id: messageId,
+      template_name: "portal-otp",
+      recipient_email: email,
+      status: "pending",
+    });
+    const { error } = await (supabaseAdmin as any).rpc("enqueue_email", {
+      queue_name: "transactional_emails",
+      payload: {
+        message_id: messageId,
+        to: email,
+        from: "Nexora IPTV <noreply@nexora-iptv.com>",
+        sender_domain: "notify.nexora-iptv.com",
+        subject,
+        html,
+        text,
+        purpose: "transactional",
+        label: "portal-otp",
+        idempotency_key: `portal-otp-${email}-${code}`,
+        queued_at: new Date().toISOString(),
+      },
+    });
+    if (error) throw new Error(error.message);
+    try {
+      await (supabaseAdmin as any).rpc("email_queue_dispatch");
+    } catch { /* best effort */ }
+  } catch (e) {
+    console.error("[portal] otp email enqueue failed", e);
+  }
+  // 2) Delivery log for operators.
   try {
     const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
     await (supabaseAdmin as any).from("delivery_logs").insert({
