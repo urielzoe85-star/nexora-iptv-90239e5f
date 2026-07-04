@@ -44,6 +44,18 @@ export async function createIptvSubscription(input: {
 }) {
   const sb = await admin();
 
+  // Resolve the parent order first so every provisioning path can attach the
+  // account to the command and the public tracking page can see the delivery.
+  let orderRow: { id: string; customer_id: string | null; email?: string | null; metadata?: any } | null = null;
+  if (input.orderId) {
+    const { data } = await sb
+      .from("orders")
+      .select("id, customer_id, email, metadata")
+      .eq("order_ref", input.orderId)
+      .maybeSingle();
+    orderRow = (data as any) ?? null;
+  }
+
   // Idempotency at the action level: if an account was already provisioned
   // for this order, return it instead of creating a duplicate. The queue's
   // idempotency_key normally prevents this, but a manual replay of a failed
@@ -51,15 +63,27 @@ export async function createIptvSubscription(input: {
   if (input.orderId) {
     const { data: existing } = await sb
       .from("iptv_accounts")
-      .select("id, username, metadata")
+      .select("id, username, password, order_id, customer_id, metadata")
       .eq("metadata->>order_ref", input.orderId)
       .maybeSingle();
-    if (existing?.id) {
+    let row = existing as any;
+    if (!row?.id && orderRow?.id) {
+      const { data: byOrder } = await sb
+        .from("iptv_accounts")
+        .select("id, username, password, order_id, customer_id, metadata")
+        .eq("order_id", orderRow.id)
+        .maybeSingle();
+      row = byOrder as any;
+    }
+    if (row?.id) {
       return {
-        accountId: existing.id,
-        username: existing.username,
+        accountId: row.id,
+        username: row.username,
+        password: row.password ?? null,
         simulated: false,
-        remoteUserId: (existing.metadata as any)?.remote_user_id ?? null,
+        remoteUserId: (row.metadata as any)?.remote_user_id ?? null,
+        orderId: row.order_id ?? orderRow?.id ?? null,
+        customerId: row.customer_id ?? orderRow?.customer_id ?? null,
         deduplicated: true,
       };
     }
@@ -71,6 +95,68 @@ export async function createIptvSubscription(input: {
     ? new Date(Date.now() + input.durationMonths * 30 * 86_400_000).toISOString()
     : null;
 
+  async function assignLocalAvailableAccount(reason: string) {
+    const { data: candidates, error } = await sb
+      .from("iptv_accounts")
+      .select("*")
+      .eq("status", "available")
+      .is("order_id", null)
+      .limit(50);
+    if (error) throw new Error(`iptv_accounts local pool lookup failed: ${error.message}`);
+    const now = Date.now();
+    const pool = ((candidates ?? []) as any[]).filter((a) => !a.expires_at || new Date(a.expires_at).getTime() > now).sort((a, b) => {
+      const ax = a.expires_at ? new Date(a.expires_at).getTime() : Number.POSITIVE_INFINITY;
+      const bx = b.expires_at ? new Date(b.expires_at).getTime() : Number.POSITIVE_INFINITY;
+      return bx - ax;
+    });
+    const picked = pool[0];
+    if (!picked?.id) return null;
+
+    const meta = (picked.metadata ?? {}) as Record<string, unknown>;
+    const nextExpiresAt = picked.expires_at ?? expiresAt;
+    const { data: assigned, error: upErr } = await sb
+      .from("iptv_accounts")
+      .update({
+        status: "active",
+        order_id: orderRow?.id ?? null,
+        customer_id: orderRow?.customer_id ?? null,
+        expires_at: nextExpiresAt,
+        metadata: {
+          ...meta,
+          source: meta.source ?? "local_pool",
+          assignment_source: reason,
+          assigned_at: new Date().toISOString(),
+          duration_months: input.durationMonths ?? null,
+          order_ref: input.orderId ?? null,
+          customer_email: input.customerEmail ?? orderRow?.email ?? null,
+        },
+      })
+      .eq("id", picked.id)
+      .eq("status", "available")
+      .select("*")
+      .maybeSingle();
+    if (upErr) throw new Error(`iptv_accounts local pool assign failed: ${upErr.message}`);
+    if (!assigned?.id) return null;
+    return {
+      accountId: assigned.id,
+      username: assigned.username,
+      password: assigned.password ?? null,
+      simulated: false,
+      localPool: true,
+      fallbackReason: reason,
+      orderId: orderRow?.id ?? null,
+      customerId: orderRow?.customer_id ?? null,
+      m3uUrl: (assigned.metadata as any)?.m3u_url ?? null,
+      remoteUserId: (assigned.metadata as any)?.remote_user_id ?? null,
+    };
+  }
+
+  // Prefer the imported local inventory: those are real credentials already
+  // present in the platform, and they keep deliveries working when MEGAOTT's
+  // create endpoint is unavailable or misconfigured.
+  const localFirst = await assignLocalAvailableAccount("local_pool_first");
+  if (localFirst) return localFirst;
+
   let remoteMeta: Record<string, unknown> = {};
   const c = await megaott();
   if (c) {
@@ -78,25 +164,14 @@ export async function createIptvSubscription(input: {
     if (r.ok) {
       remoteMeta = { provider: "megaott", remote_user_id: r.value.providerUserId, m3u_url: r.value.m3uUrl ?? null };
     } else {
-      // Throw so the workflow is marked failed and retried with backoff.
-      // Include upstream status + body snippet so the failed-run UI surfaces
-      // a real diagnostic (e.g. "username taken", "invalid package_id")
-      // instead of an opaque "Upstream returned 422".
+      const fallback = await assignLocalAvailableAccount(`megaott_failed:${r.error.kind}`);
+      if (fallback) return fallback;
+      // No local inventory remains: throw so the workflow is marked failed
+      // and retried with backoff. Include upstream status + body snippet so
+      // the failed-run UI surfaces a real diagnostic.
       const status = r.error.status ? ` [${r.error.status}]` : "";
       throw new Error(`megaott.createUser failed (${r.error.kind}${status}): ${r.error.message}`);
     }
-  }
-
-  // Resolve the parent order (by order_ref) so we can populate the FKs.
-  // Tolerated to fail — legacy callers may not have an orderId.
-  let orderRow: { id: string; customer_id: string | null } | null = null;
-  if (input.orderId) {
-    const { data } = await sb
-      .from("orders")
-      .select("id, customer_id")
-      .eq("order_ref", input.orderId)
-      .maybeSingle();
-    orderRow = (data as any) ?? null;
   }
 
   const { data, error } = await sb.from("iptv_accounts").insert({
@@ -104,7 +179,7 @@ export async function createIptvSubscription(input: {
     password,
     order_id: orderRow?.id ?? null,
     customer_id: orderRow?.customer_id ?? null,
-    status: c ? "active" : "available",
+    status: "active",
     expires_at: expiresAt,
     metadata: {
       source: "automation",

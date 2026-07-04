@@ -277,13 +277,13 @@ export const adminConfirmPayment = createServerFn({ method: "POST" })
       .single();
     if (error) throw new Error(error.message);
 
-    // Déclenche la chaîne d'attribution IPTV (provisioning + composition
-    // de la fiche + dispatch email/WhatsApp/Telegram). Sans cet appel, le
-    // client reçoit uniquement l'accusé de réception ci-dessous mais
-    // jamais ses identifiants d'accès.
+    // Déclenche la chaîne d'attribution IPTV immédiatement. On n'utilise pas
+    // l'enqueue idempotent ici : d'anciennes exécutions "done" peuvent avoir
+    // été enregistrées sans fiche IPTV, et elles bloqueraient le rattrapage.
     try {
-      const { emitBusinessEvent } = await import("@/lib/payments.functions");
-      await emitBusinessEvent("payment.confirmed", {
+      await import("@/automation");
+      const { automationApi } = await import("@/automation");
+      await automationApi.run("payment-confirmed", {
         orderId: row.order_ref,
         orderRef: row.order_ref,
         email: row.email,
@@ -291,9 +291,10 @@ export const adminConfirmPayment = createServerFn({ method: "POST" })
         amount: row.amount,
         currency: row.currency,
         provider: "admin_manual_confirm",
-      });
+        forced: true,
+      }, context.userId);
     } catch (e) {
-      console.error("[admin] emit payment.confirmed failed", e);
+      console.error("[admin] run payment-confirmed failed", e);
     }
 
     // Construit le lien WhatsApp pré-rempli vers le numéro du client.

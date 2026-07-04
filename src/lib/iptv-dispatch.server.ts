@@ -103,6 +103,11 @@ async function sendEmailChannel(args: {
       },
     });
     if (error) throw new Error(error.message);
+    try {
+      await sb.rpc("email_queue_dispatch");
+    } catch (wakeError) {
+      console.warn("email_queue_dispatch wake failed", (wakeError as any)?.message ?? wakeError);
+    }
     await insertDeliveryLog({
       order_id: args.order.id, customer_id: args.order.customer_id ?? null,
       channel: "email", status: "automatic", content: args.text, recipient, subject,
@@ -168,7 +173,7 @@ async function sendWhatsAppChannel(args: {
   // "skipped" avec une raison explicite. La preuve de vie (numéro client)
   // et la trace dans delivery_logs sont conservées pour l'exploitation
   // manuelle depuis le NCC (bouton "Ouvrir WhatsApp" du DeliveryComposer).
-  const phone = args.customer?.phone ?? args.order.phone;
+  const phone = args.customer?.phone ?? args.order.phone ?? args.order?.metadata?.momo?.phone ?? null;
   const LOVABLE_API_KEY = process.env.LOVABLE_API_KEY;
   const WA_KEY = process.env.WHATSAPP_API_KEY || process.env.WABA_API_KEY;
   if (!phone) return { ok: false, skipped: true, reason: "whatsapp_phone_missing" };

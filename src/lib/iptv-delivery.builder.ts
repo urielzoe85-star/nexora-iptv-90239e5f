@@ -46,12 +46,13 @@ function siteOrigin(): string {
 
 function extractHostPort(dns: string | null): string | null {
   if (!dns) return null;
+  const normalized = /^https?:\/\//i.test(dns) ? dns : `http://${dns}`;
   try {
-    const u = new URL(dns);
+    const u = new URL(normalized);
     return `${u.protocol}//${u.host}`;
   } catch {
     // dns like "http://host:port" already handled ; fallback: strip trailing path
-    return dns.replace(/\/+$/, "");
+    return normalized.replace(/\/+$/, "");
   }
 }
 

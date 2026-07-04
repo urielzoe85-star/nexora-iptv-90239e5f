@@ -1,40 +1,43 @@
-# Rendre la santé de la file d'automation accessible depuis /admin
+## Constats
 
-## Contexte
+- La commande récente `NX-26X8KWHZ89` est `completed`, mais `metadata.iptv_delivery` est vide : côté client, le suivi reste donc bloqué à l’étape “identifiants envoyés”.
+- Le workflow `payment-confirmed` peut se terminer en “success” sans rien attribuer quand la commande est déjà `completed`, même si aucune fiche IPTV n’existe.
+- La commande `NX-LB6UV2822A` échoue sur MEGAOTT : `POST /api/v1/user` retourne 405. Comme le provider MEGAOTT est actif, le système tente l’API distante au lieu d’utiliser le stock local disponible.
+- Il existe pourtant des comptes IPTV `available` en base, utilisables immédiatement pour attribuer des accès au client.
+- L’accès `/ncc` dépend d’un cookie HttpOnly de déverrouillage ; après saisie du mot de passe, la navigation peut repartir sur l’identification si le cookie n’est pas encore pris en compte ou si le layout vérifie trop tôt.
 
-Le bouton **« Drainer maintenant »** existe déjà — il se trouve dans le back-office NCC :
+## Plan de correction
 
-`/ncc/automation` → onglet **Tableau de bord** → carte **Santé de la file**
+1. **Rendre l’attribution IPTV robuste**
+   - Modifier `createIptvSubscription` pour chercher d’abord un compte IPTV local `available` adapté.
+   - Si un compte est disponible, l’assigner à la commande, passer son statut à `active`, remplir `order_id`, `customer_id`, `expires_at` et `metadata.order_ref`.
+   - Ne tenter MEGAOTT que si aucun compte local disponible n’est trouvé, ou si le stock local est vide.
+   - En cas d’erreur MEGAOTT 4xx/5xx, basculer automatiquement vers le stock local au lieu de bloquer toute la livraison.
 
-Vous êtes actuellement sur `/admin/orders` (l'ancien back-office admin), qui n'a aucun lien vers `/ncc/automation`. C'est pour ça que vous ne le voyez pas.
+2. **Corriger le garde du workflow `payment-confirmed`**
+   - Remplacer le calcul “déjà traité” par une condition stricte : ne sauter le workflow que si `metadata.iptv_delivery.delivery_status === 'sent'` avec un `iptv_account_id` réel.
+   - Ainsi, une commande `completed` mais sans fiche IPTV sera reprovisionnée et envoyée.
 
-## Ce que je vais faire
+3. **Forcer une vraie composition + dispatch des identifiants**
+   - Garantir que `delivery:compose` écrit `orders.metadata.iptv_delivery`.
+   - Garantir que `delivery:dispatch` met `delivery_status: sent` dès qu’au moins l’email est mis en file.
+   - Le suivi client passera alors de “en attente” à “identifiants envoyés”.
 
-### 1. Ajouter un raccourci visible depuis `/admin`
-Dans `src/components/admin/AdminShell.tsx` (barre du haut), ajouter un bouton **« NCC · Automation »** qui ouvre `/ncc/automation` dans un nouvel onglet. Icône `Workflow`, tooltip « File d'attente & drainage IPTV ».
+4. **Corriger la confirmation admin**
+   - Faire pointer `adminConfirmPayment` vers le bon émetteur automation et éviter les doublons silencieux.
+   - Après confirmation, déclencher le workflow en mode fiable, puis invalider l’affichage admin.
 
-### 2. Bandeau d'alerte sur `/admin/orders` quand la file est bloquée
-Sur la page `/admin/orders`, afficher discrètement un bandeau ambré en haut **seulement si** :
-- il existe des jobs `queued` avec `attempts = 0` de plus de 2 min, OU
-- des jobs `processing` bloqués > 5 min, OU
-- des jobs `failed` sur les dernières 24 h.
+5. **Réparer l’accès NCC après mot de passe**
+   - Après `verifyNccAccess`, naviguer vers `/ncc/` avec `replace: true` et invalider/rafraîchir l’état route si nécessaire.
+   - Dans le layout `/ncc`, ajouter une courte revérification du cookie si la première lecture retourne “locked” juste après le déverrouillage.
+   - Conserver la sécurité : pas de retour à `sessionStorage` comme preuve d’accès.
 
-Le bandeau contient : « X job(s) d'automation en attente » + bouton **« Drainer maintenant »** (appelle directement `adminDrainQueueNow` via `useServerFn`, mêmes toasts qu'ailleurs) + lien « Ouvrir le tableau de bord ».
+6. **Ajouter une action admin de rattrapage visible**
+   - Sur `/admin/automation`, faire de “Attribuer maintenant” une action qui attribue + compose + envoie directement pour une référence `NX-...`.
+   - Afficher un message clair si MEGAOTT est indisponible mais qu’un compte local a été utilisé.
 
-Rafraîchi toutes les 10 s via `useQuery` sur `getAutomationHealth` (déjà existant, aucun nouveau serveur nécessaire).
-
-### 3. Rien d'autre
-Aucune modification de la logique de drainage, ni des workflows, ni de la DB. Uniquement de l'exposition UI.
-
-## Fichiers touchés
-
-- `src/components/admin/AdminShell.tsx` — ajout du bouton raccourci.
-- `src/routes/admin.orders.tsx` (ou le composant de la page Commandes) — ajout du bandeau conditionnel + hook `useQuery(getAutomationHealth)`.
-- Nouveau composant `src/components/admin/AutomationHealthBanner.tsx` — encapsule le bandeau + action de drainage pour rester réutilisable.
-
-## Vérification
-
-Après build :
-1. Aller sur `/admin/orders` → voir le bandeau (si des jobs sont bloqués) et le raccourci en haut.
-2. Cliquer **« Drainer maintenant »** → toast de succès, bandeau disparaît au refresh suivant.
-3. Cliquer **« NCC · Automation »** → arrive directement sur `/ncc/automation` avec la carte santé complète.
+7. **Validation**
+   - Vérifier en base qu’une commande corrigée contient `metadata.iptv_delivery` avec `delivery_status: sent`.
+   - Vérifier qu’un `delivery_logs` email existe et qu’un `email_send_log` est créé.
+   - Vérifier que `/track?ref=...` affiche les identifiants comme envoyés.
+   - Vérifier que le bouton “Accéder au NCC” ouvre `/ncc/` après le mot de passe sans revenir à l’identification.

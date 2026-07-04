@@ -19,7 +19,10 @@ export const paymentConfirmedWorkflow: WorkflowDefinition = {
         // Ne considérer comme "déjà traité" QUE si la fiche IPTV a été
         // effectivement envoyée. Un simple status='completed' sans livraison
         // (ex. adminConfirmPayment mobile money) doit re-déclencher la chaîne.
+        // Les rattrapages manuels (`forced`) ne doivent jamais être bloqués
+        // par une ancienne exécution "done" restée incohérente.
         const alreadyDelivered =
+          !ctx.payload.forced &&
           order.status === "completed" &&
           delivery?.delivery_status === "sent" &&
           Boolean(delivery?.iptv_account_id);

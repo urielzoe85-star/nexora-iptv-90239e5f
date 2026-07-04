@@ -136,6 +136,42 @@ export const kickAutomationQueue = createServerFn({ method: "POST" })
     const { allow } = await import("@/lib/rate-limit.server");
     const rl = allow(`kick:${data.ref}`, { limit: 1, windowMs: 10_000 });
     if (!rl.ok) return { ok: false as const, throttled: true as const };
+
+    // If a paid/completed order has no delivery sheet, merely draining the
+    // queue is insufficient: an old idempotent queue row may already be
+    // marked done. Run the workflow directly in forced mode so public tracking
+    // can self-heal without exposing credentials in the response.
+    try {
+      const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
+      const { data: order } = await supabaseAdmin
+        .from("orders")
+        .select("order_ref, status, email, plan_name, amount, currency, metadata")
+        .eq("order_ref", data.ref)
+        .maybeSingle();
+      const delivery = ((order?.metadata as any)?.iptv_delivery ?? null) as any;
+      const needsForcedRun =
+        order &&
+        (order.status === "paid" || order.status === "completed") &&
+        !(delivery?.delivery_status === "sent" && delivery?.iptv_account_id);
+      if (needsForcedRun) {
+        await import("@/automation");
+        const { automationApi } = await import("@/automation");
+        const r = await automationApi.run("payment-confirmed", {
+          orderId: order.order_ref,
+          orderRef: order.order_ref,
+          email: order.email,
+          planName: order.plan_name,
+          amount: order.amount,
+          currency: order.currency,
+          provider: "track_self_heal",
+          forced: true,
+        }, null);
+        return { ok: r.status === "success", forced: true as const };
+      }
+    } catch (e) {
+      console.warn("[automation] track self-heal failed", (e as any)?.message ?? e);
+    }
+
     const { kickDrainInBackground } = await import("@/lib/automation-drainer.server");
     kickDrainInBackground({ batchSize: 5 });
     return { ok: true as const };
