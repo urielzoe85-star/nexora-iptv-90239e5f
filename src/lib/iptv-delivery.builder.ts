@@ -178,6 +178,9 @@ export function buildPlainTextDeliveryMessage(d: IptvDelivery, opts?: { orderRef
     d.max_connections ? `👥 Connexions max : ${d.max_connections}` : "",
     d.expires_at ? `⏳ Expire le : ${new Date(d.expires_at).toLocaleDateString()}` : "",
     ``,
+    opts?.orderRef
+      ? `📲 Recevoir aussi sur Telegram : https://t.me/NexoraIPTVBot?start=${opts.orderRef}`
+      : "",
     `Merci de votre confiance — Nexora IPTV`,
   ];
   return lines.filter(Boolean).join("\n");
