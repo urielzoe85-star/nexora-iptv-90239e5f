@@ -83,6 +83,7 @@ import { Route as NccIptvDebugRouteImport } from './routes/ncc.iptv.debug'
 import { Route as NccIptvAccountsRouteImport } from './routes/ncc.iptv.accounts'
 import { Route as NccClientsIdRouteImport } from './routes/ncc.clients.$id'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
+import { Route as EspaceClientSuccessRefRouteImport } from './routes/espace-client.success.$ref'
 import { Route as EspaceClientPayRefRouteImport } from './routes/espace-client.pay.$ref'
 import { Route as ApiPublicCspReportRouteImport } from './routes/api/public/csp-report'
 import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
@@ -471,6 +472,11 @@ const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
   path: '/lovable/email/suppression',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EspaceClientSuccessRefRoute = EspaceClientSuccessRefRouteImport.update({
+  id: '/success/$ref',
+  path: '/success/$ref',
+  getParentRoute: () => EspaceClientRoute,
+} as any)
 const EspaceClientPayRefRoute = EspaceClientPayRefRouteImport.update({
   id: '/pay/$ref',
   path: '/pay/$ref',
@@ -626,6 +632,7 @@ export interface FileRoutesByFullPath {
   '/ncc/': typeof NccIndexRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
   '/espace-client/pay/$ref': typeof EspaceClientPayRefRoute
+  '/espace-client/success/$ref': typeof EspaceClientSuccessRefRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/ncc/clients/$id': typeof NccClientsIdRoute
   '/ncc/iptv/accounts': typeof NccIptvAccountsRoute
@@ -712,6 +719,7 @@ export interface FileRoutesByTo {
   '/ncc': typeof NccIndexRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
   '/espace-client/pay/$ref': typeof EspaceClientPayRefRoute
+  '/espace-client/success/$ref': typeof EspaceClientSuccessRefRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/ncc/clients/$id': typeof NccClientsIdRoute
   '/ncc/iptv/accounts': typeof NccIptvAccountsRoute
@@ -806,6 +814,7 @@ export interface FileRoutesById {
   '/ncc/': typeof NccIndexRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
   '/espace-client/pay/$ref': typeof EspaceClientPayRefRoute
+  '/espace-client/success/$ref': typeof EspaceClientSuccessRefRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/ncc/clients/$id': typeof NccClientsIdRoute
   '/ncc/iptv/accounts': typeof NccIptvAccountsRoute
@@ -901,6 +910,7 @@ export interface FileRouteTypes {
     | '/ncc/'
     | '/api/public/csp-report'
     | '/espace-client/pay/$ref'
+    | '/espace-client/success/$ref'
     | '/lovable/email/suppression'
     | '/ncc/clients/$id'
     | '/ncc/iptv/accounts'
@@ -987,6 +997,7 @@ export interface FileRouteTypes {
     | '/ncc'
     | '/api/public/csp-report'
     | '/espace-client/pay/$ref'
+    | '/espace-client/success/$ref'
     | '/lovable/email/suppression'
     | '/ncc/clients/$id'
     | '/ncc/iptv/accounts'
@@ -1080,6 +1091,7 @@ export interface FileRouteTypes {
     | '/ncc/'
     | '/api/public/csp-report'
     | '/espace-client/pay/$ref'
+    | '/espace-client/success/$ref'
     | '/lovable/email/suppression'
     | '/ncc/clients/$id'
     | '/ncc/iptv/accounts'
@@ -1679,6 +1691,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableEmailSuppressionRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/espace-client/success/$ref': {
+      id: '/espace-client/success/$ref'
+      path: '/success/$ref'
+      fullPath: '/espace-client/success/$ref'
+      preLoaderRoute: typeof EspaceClientSuccessRefRouteImport
+      parentRoute: typeof EspaceClientRoute
+    }
     '/espace-client/pay/$ref': {
       id: '/espace-client/pay/$ref'
       path: '/pay/$ref'
@@ -1840,6 +1859,7 @@ interface EspaceClientRouteChildren {
   EspaceClientRenewRoute: typeof EspaceClientRenewRoute
   EspaceClientIndexRoute: typeof EspaceClientIndexRoute
   EspaceClientPayRefRoute: typeof EspaceClientPayRefRoute
+  EspaceClientSuccessRefRoute: typeof EspaceClientSuccessRefRoute
 }
 
 const EspaceClientRouteChildren: EspaceClientRouteChildren = {
@@ -1847,6 +1867,7 @@ const EspaceClientRouteChildren: EspaceClientRouteChildren = {
   EspaceClientRenewRoute: EspaceClientRenewRoute,
   EspaceClientIndexRoute: EspaceClientIndexRoute,
   EspaceClientPayRefRoute: EspaceClientPayRefRoute,
+  EspaceClientSuccessRefRoute: EspaceClientSuccessRefRoute,
 }
 
 const EspaceClientRouteWithChildren = EspaceClientRoute._addFileChildren(
