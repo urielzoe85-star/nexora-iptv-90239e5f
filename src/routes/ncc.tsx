@@ -46,7 +46,14 @@ function NccLayout() {
           setState({ kind: "forbidden", email: s.session.user.email ?? null });
           return;
         }
-        const gate = await getUnlock();
+        let gate = await getUnlock();
+        // Immediately after verifyNccAccess(), the Set-Cookie response can lag
+        // one navigation tick in the browser. Retry once before locking the
+        // operator out; the cookie remains HttpOnly and server-verified.
+        if (!gate.unlocked) {
+          await new Promise((resolve) => window.setTimeout(resolve, 250));
+          gate = await getUnlock();
+        }
         if (!gate.unlocked) {
           try { sessionStorage.removeItem("ncc.unlocked"); } catch { /* noop */ }
           navigate({ to: "/admin", replace: true });
