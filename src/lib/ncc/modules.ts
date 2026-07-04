@@ -40,7 +40,7 @@ export const NCC_MODULES: NccModule[] = [
   { id: "trials", label: "Essais gratuits", description: "Gestion des comptes de démonstration.", icon: Gift, to: "/ncc/trials", group: "sales", status: "ready" },
 
   { id: "iptv", label: "IPTV Manager", description: "Abonnements IPTV, lignes, renouvellements.", icon: Tv2, to: "/ncc/iptv", group: "services", status: "ready" },
-  { id: "bots", label: "Bots", description: "Orchestration des assistants automatisés.", icon: Bot, to: "/ncc/bots", group: "services", status: "preparing" },
+  { id: "bots", label: "Bots", description: "Orchestration des assistants automatisés.", icon: Bot, to: "/ncc/bots", group: "services", status: "ready" },
   { id: "notifications", label: "Notifications", description: "Centre multi-canal (email, WhatsApp, Telegram, SMS, in-app).", icon: Bell, to: "/ncc/notifications", group: "services", status: "ready" },
   { id: "whatsapp", label: "WhatsApp", description: "Conversations & campagnes WhatsApp.", icon: MessageCircle, to: "/ncc/whatsapp", group: "services", status: "ready" },
   { id: "telegram", label: "Telegram", description: "Bots et diffusions Telegram.", icon: Send, to: "/ncc/telegram", group: "services", status: "ready" },
