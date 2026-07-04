@@ -30,8 +30,7 @@ export const Route = createFileRoute("/track")({
 
 type Order = {
   order_ref: string;
-  email: string;
-  full_name: string;
+  email_masked: string | null;
   plan_name: string;
   amount: number;
   currency: string;
