@@ -53,6 +53,7 @@ import { Route as LegalRefundRouteImport } from './routes/legal.refund'
 import { Route as LegalPrivacyRouteImport } from './routes/legal.privacy'
 import { Route as LegalNoticeRouteImport } from './routes/legal.notice'
 import { Route as FrGuideIptvRouteImport } from './routes/fr.guide-iptv'
+import { Route as EspaceClientRenewRouteImport } from './routes/espace-client.renew'
 import { Route as EspaceClientDashboardRouteImport } from './routes/espace-client.dashboard'
 import { Route as EnGuideIptvRouteImport } from './routes/en.guide-iptv'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
@@ -319,6 +320,11 @@ const FrGuideIptvRoute = FrGuideIptvRouteImport.update({
   path: '/guide-iptv',
   getParentRoute: () => FrRoute,
 } as any)
+const EspaceClientRenewRoute = EspaceClientRenewRouteImport.update({
+  id: '/renew',
+  path: '/renew',
+  getParentRoute: () => EspaceClientRoute,
+} as any)
 const EspaceClientDashboardRoute = EspaceClientDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -581,6 +587,7 @@ export interface FileRoutesByFullPath {
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/en/guide-iptv': typeof EnGuideIptvRoute
   '/espace-client/dashboard': typeof EspaceClientDashboardRoute
+  '/espace-client/renew': typeof EspaceClientRenewRoute
   '/fr/guide-iptv': typeof FrGuideIptvRoute
   '/legal/notice': typeof LegalNoticeRoute
   '/legal/privacy': typeof LegalPrivacyRoute
@@ -667,6 +674,7 @@ export interface FileRoutesByTo {
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/en/guide-iptv': typeof EnGuideIptvRoute
   '/espace-client/dashboard': typeof EspaceClientDashboardRoute
+  '/espace-client/renew': typeof EspaceClientRenewRoute
   '/fr/guide-iptv': typeof FrGuideIptvRoute
   '/legal/notice': typeof LegalNoticeRoute
   '/legal/privacy': typeof LegalPrivacyRoute
@@ -757,6 +765,7 @@ export interface FileRoutesById {
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/en/guide-iptv': typeof EnGuideIptvRoute
   '/espace-client/dashboard': typeof EspaceClientDashboardRoute
+  '/espace-client/renew': typeof EspaceClientRenewRoute
   '/fr/guide-iptv': typeof FrGuideIptvRoute
   '/legal/notice': typeof LegalNoticeRoute
   '/legal/privacy': typeof LegalPrivacyRoute
@@ -850,6 +859,7 @@ export interface FileRouteTypes {
     | '/email/unsubscribe'
     | '/en/guide-iptv'
     | '/espace-client/dashboard'
+    | '/espace-client/renew'
     | '/fr/guide-iptv'
     | '/legal/notice'
     | '/legal/privacy'
@@ -936,6 +946,7 @@ export interface FileRouteTypes {
     | '/email/unsubscribe'
     | '/en/guide-iptv'
     | '/espace-client/dashboard'
+    | '/espace-client/renew'
     | '/fr/guide-iptv'
     | '/legal/notice'
     | '/legal/privacy'
@@ -1025,6 +1036,7 @@ export interface FileRouteTypes {
     | '/email/unsubscribe'
     | '/en/guide-iptv'
     | '/espace-client/dashboard'
+    | '/espace-client/renew'
     | '/fr/guide-iptv'
     | '/legal/notice'
     | '/legal/privacy'
@@ -1445,6 +1457,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FrGuideIptvRouteImport
       parentRoute: typeof FrRoute
     }
+    '/espace-client/renew': {
+      id: '/espace-client/renew'
+      path: '/renew'
+      fullPath: '/espace-client/renew'
+      preLoaderRoute: typeof EspaceClientRenewRouteImport
+      parentRoute: typeof EspaceClientRoute
+    }
     '/espace-client/dashboard': {
       id: '/espace-client/dashboard'
       path: '/dashboard'
@@ -1799,11 +1818,13 @@ const EnRouteWithChildren = EnRoute._addFileChildren(EnRouteChildren)
 
 interface EspaceClientRouteChildren {
   EspaceClientDashboardRoute: typeof EspaceClientDashboardRoute
+  EspaceClientRenewRoute: typeof EspaceClientRenewRoute
   EspaceClientIndexRoute: typeof EspaceClientIndexRoute
 }
 
 const EspaceClientRouteChildren: EspaceClientRouteChildren = {
   EspaceClientDashboardRoute: EspaceClientDashboardRoute,
+  EspaceClientRenewRoute: EspaceClientRenewRoute,
   EspaceClientIndexRoute: EspaceClientIndexRoute,
 }
 
