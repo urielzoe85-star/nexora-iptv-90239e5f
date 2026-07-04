@@ -1,6 +1,18 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createHash, timingSafeEqual } from "crypto";
 
+const HELP_TEXT = [
+  "🤖 *Nexora IPTV Bot*",
+  "",
+  "Commandes disponibles :",
+  "• /start <référence> — lier votre chat à une commande",
+  "• /status <référence> — consulter le statut d'une commande",
+  "• /help — afficher cette aide",
+  "",
+  "Support : contact@nexora-iptv.com",
+  "Site : https://nexora-iptv.com",
+].join("\n");
+
 function deriveSecret(apiKey: string) {
   return createHash("sha256").update(`telegram-webhook:${apiKey}`).digest("base64url");
 }
@@ -22,7 +34,7 @@ async function tgSend(chatId: number | string, text: string) {
         "X-Connection-Api-Key": process.env.TELEGRAM_API_KEY!,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ chat_id: chatId, text, disable_web_page_preview: true }),
+      body: JSON.stringify({ chat_id: chatId, text, disable_web_page_preview: true, parse_mode: "Markdown" }),
     });
   } catch { /* swallow — webhook must always 200 */ }
 }
@@ -79,10 +91,46 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         }
 
         if (text?.match(/^\/help/i)) {
-          await tgSend(chatId, "Support Nexora IPTV : contact@nexora-iptv.com\nSite : https://nexora-iptv.com");
+          await tgSend(chatId, HELP_TEXT);
           return Response.json({ ok: true });
         }
 
+        // /status <ref> — statut public d'une commande
+        const statusMatch = text?.match(/^\/status(?:\s+(\S+))?/i);
+        if (statusMatch) {
+          const ref = statusMatch[1]?.trim();
+          if (!ref) {
+            await tgSend(chatId, "Usage : /status VOTRE_REFERENCE");
+            return Response.json({ ok: true });
+          }
+          const { data: order } = await supabaseAdmin
+            .from("orders")
+            .select("order_ref, status, plan_name, amount, currency, created_at, metadata")
+            .eq("order_ref", ref)
+            .maybeSingle();
+          if (!order) {
+            await tgSend(chatId, `❌ Commande *${ref}* introuvable.`);
+            return Response.json({ ok: true });
+          }
+          const delivery = (order.metadata as any)?.iptv_delivery ?? null;
+          const delivered = delivery?.delivery_status === "sent";
+          const lines = [
+            `📦 *Commande ${order.order_ref}*`,
+            `Plan : ${order.plan_name}`,
+            `Montant : ${order.amount} ${order.currency}`,
+            `Statut : \`${order.status}\``,
+            delivered ? "✅ Accès IPTV envoyés" : "⏳ Livraison en cours",
+            "",
+            `🔎 Suivi complet : https://nexora-iptv.com/track?ref=${encodeURIComponent(order.order_ref)}`,
+          ];
+          await tgSend(chatId, lines.join("\n"));
+          return Response.json({ ok: true });
+        }
+
+        // Fallback pour message inconnu
+        if (text?.startsWith("/")) {
+          await tgSend(chatId, HELP_TEXT);
+        }
         return Response.json({ ok: true });
       },
     },
