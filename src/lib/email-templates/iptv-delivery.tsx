@@ -3,6 +3,7 @@ import {
   Body, Button, Container, Head, Heading, Hr, Html, Preview, Section, Text,
 } from '@react-email/components'
 import type { TemplateEntry } from './registry'
+import { buildWhatsAppLink } from '../whatsapp-contact'
 
 interface DeliveryProps {
   iptv_account_id?: string
@@ -86,6 +87,11 @@ ${d.dns_link ? `🔗 DNS : ${d.dns_link}\n` : ''}${d.dns_link_samsung_lg ? `📺
                 <Text style={text}>
                   Référence commande : <strong>{p.order_ref || '—'}</strong>
                 </Text>
+                <Hr style={hr} />
+                <Text style={text}>Besoin d'aide ? Écrivez-nous sur WhatsApp :</Text>
+                <Button href={buildWhatsAppLink({ orderRef: p.order_ref ?? null })} style={ctaWa}>
+                  💬 Contacter le support WhatsApp
+                </Button>
               </>
             ) : (
               <>
@@ -102,6 +108,9 @@ ${d.dns_link ? `🔗 DNS : ${d.dns_link}\n` : ''}${d.dns_link_samsung_lg ? `📺
                 <Text style={text}>
                   Référence commande&nbsp;: <strong>{p.order_ref || '—'}</strong>
                 </Text>
+                <Button href={buildWhatsAppLink({ orderRef: p.order_ref ?? null })} style={ctaWa}>
+                  💬 Contacter le support WhatsApp
+                </Button>
               </>
             )}
             <Hr style={hr} />
@@ -151,3 +160,4 @@ const hr = { borderColor: '#e2e8f0', margin: '20px 0' }
 const footer = { fontSize: 12, color: '#64748b', textAlign: 'center' as const, margin: 0 }
 const cta = { backgroundColor: '#3B82F6', color: '#ffffff', borderRadius: 8, padding: '12px 20px', display: 'inline-block', textDecoration: 'none', fontSize: 14, fontWeight: 600, margin: '4px 8px 4px 0' }
 const ctaAlt = { ...cta, backgroundColor: '#0f172a' }
+const ctaWa = { ...cta, backgroundColor: '#25D366' }
