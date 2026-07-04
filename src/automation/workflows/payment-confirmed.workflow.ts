@@ -97,5 +97,16 @@ export const paymentConfirmedWorkflow: WorkflowDefinition = {
       name: "log:done",
       run: async (ctx) => logToIptvJournal("payment-confirmed", "Workflow terminé", { runId: ctx.runId, outputs: ctx.outputs }),
     },
+    {
+      name: "notify:admin",
+      run: async (ctx) => {
+        const v = ctx.outputs["validate:order"] as { orderId: string; email: string; plan: string } | undefined;
+        if (!v) return { skipped: true };
+        const { notifyAdminTelegram } = await import("@/lib/telegram.server");
+        return notifyAdminTelegram(
+          `✅ Paiement confirmé\nCommande : ${v.orderId}\nPlan : ${v.plan}\nClient : ${v.email}`,
+        );
+      },
+    },
   ],
 };

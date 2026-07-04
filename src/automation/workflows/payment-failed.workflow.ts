@@ -17,5 +17,16 @@ export const paymentFailedWorkflow: WorkflowDefinition = {
       name: "log:incident",
       run: async (ctx) => logToIptvJournal("payment-failed", "Paiement échoué", ctx.payload),
     },
+    {
+      name: "notify:admin",
+      run: async (ctx) => {
+        const { notifyAdminTelegram } = await import("@/lib/telegram.server");
+        const ref = String(ctx.payload.orderId ?? ctx.payload.orderRef ?? "?");
+        const reason = String((ctx.payload as any).reason ?? "");
+        return notifyAdminTelegram(
+          `⚠️ Paiement échoué\nCommande : ${ref}${reason ? `\nMotif : ${reason}` : ""}`,
+        );
+      },
+    },
   ],
 };
