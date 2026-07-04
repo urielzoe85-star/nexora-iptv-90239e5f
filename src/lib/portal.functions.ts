@@ -262,8 +262,17 @@ export const createRenewalOrder = createServerFn({ method: "POST" })
       .object({
         planId: z.string().uuid(),
         accountId: z.string().uuid(),
-        method: z.enum(["sebpay", "binance_pay_manual"]),
+        method: z.enum(["momo", "crypto"]),
+        // momo details
+        phone: z.string().trim().min(6).max(20).optional(),
+        operator: z.string().trim().min(2).max(40).optional(),
+        country: z.string().trim().length(2).toUpperCase().optional(),
+        crypto_currency: z.enum(["USDT", "BTC", "ETH"]).optional(),
       })
+      .refine(
+        (v) => v.method !== "momo" || (!!v.phone && !!v.operator && !!v.country),
+        { message: "Mobile Money : téléphone, opérateur et pays requis." },
+      )
       .parse(data),
   )
   .handler(async ({ data }) => {
@@ -292,13 +301,29 @@ export const createRenewalOrder = createServerFn({ method: "POST" })
     let ref = "NX-";
     for (let i = 0; i < 10; i++) ref += chars[Math.floor(Math.random() * chars.length)];
 
-    const metadata = {
+    const metadata: Record<string, any> = {
       kind: "renewal",
       renewal_account_id: acc.id,
       renewal_username: acc.username,
       duration_months: plan.duration_months,
       via: "portal",
     };
+    let amount = Number(plan.price);
+    let currency = plan.currency;
+    if (data.method === "momo") {
+      const { convertUsdToLocal } = await import("@/lib/countries");
+      const conv = convertUsdToLocal(Number(plan.price), data.country!);
+      amount = conv.amount;
+      currency = conv.currency;
+      metadata.usd_amount = Number(plan.price);
+      metadata.usd_to_local_rate = amount / Number(plan.price);
+      metadata.momo = { phone: data.phone, operator: data.operator, country: data.country };
+    } else {
+      metadata.crypto = {
+        provider: "binance_pay",
+        display_currency: data.crypto_currency ?? "USDT",
+      };
+    }
 
     const { data: order, error } = await sb
       .from("orders")
@@ -309,8 +334,8 @@ export const createRenewalOrder = createServerFn({ method: "POST" })
         customer_id: s.customerId,
         plan_id: plan.id,
         plan_name: `Renouvellement ${plan.name}`,
-        amount: Number(plan.price),
-        currency: plan.currency,
+        amount,
+        currency,
         method: data.method,
         status: "pending",
         metadata,
@@ -325,6 +350,25 @@ export const createRenewalOrder = createServerFn({ method: "POST" })
       currency: order.currency,
       method: data.method,
     };
+  });
+
+// Récupère les détails minimaux d'une commande de renouvellement pour
+// afficher la page de paiement et la confirmation.
+export const getPortalOrderStatus = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) =>
+    z.object({ orderRef: z.string().trim().min(4).max(40) }).parse(data),
+  )
+  .handler(async ({ data }) => {
+    const s = await requireSession();
+    const sb = await admin();
+    const { data: row } = await sb
+      .from("orders")
+      .select("order_ref, plan_name, amount, currency, method, status, sebpay_reference, metadata, created_at, updated_at")
+      .eq("order_ref", data.orderRef)
+      .eq("customer_id", s.customerId)
+      .maybeSingle();
+    if (!row) throw new Error("Commande introuvable.");
+    return row;
   });
 
 // ---------------------------------------------------------------------------
