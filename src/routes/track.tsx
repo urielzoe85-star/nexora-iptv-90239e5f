@@ -30,8 +30,7 @@ export const Route = createFileRoute("/track")({
 
 type Order = {
   order_ref: string;
-  email: string;
-  full_name: string;
+  email_masked: string | null;
   plan_name: string;
   amount: number;
   currency: string;
@@ -198,7 +197,7 @@ function TrackPage() {
         )}
 
         {order && <TrackView order={order} now={now} lastChecked={lastChecked} />}
-        {order && <DeliveryUnlock orderRef={order.order_ref} defaultEmail={order.email} provisioned={!!order.delivery && order.delivery.status !== "pending"} />}
+        {order && <DeliveryUnlock orderRef={order.order_ref} defaultEmail={order.email_masked ?? ""} provisioned={!!order.delivery && order.delivery.status !== "pending"} />}
         {order && (
           <a
             href={`https://wa.me/237698608808?text=${encodeURIComponent(`Bonjour Nexora, ma commande ${order.order_ref} — j'ai besoin d'aide 🙏`)}`}
@@ -403,7 +402,7 @@ function TrackView({ order, now, lastChecked }: { order: Order; now: number; las
           <DetailRow label={t("ok.row.plan")} value={order.plan_name} />
           <DetailRow label={t("ok.row.amount")} value={`$${Number(order.amount).toFixed(2)} ${order.currency}`} />
           <DetailRow label={t("ok.row.method")} value={order.method.toUpperCase()} />
-          <DetailRow label={t("ok.row.email")} value={order.email} />
+          <DetailRow label={t("ok.row.email")} value={order.email_masked ?? "—"} />
           <DetailRow label={t("track.placedAt")} value={new Date(order.created_at).toLocaleString()} />
           {order.sebpay_reference && (
             <DetailRow label={t("ok.row.ref")} value={<span className="font-mono text-xs break-all">{order.sebpay_reference}</span>} />
@@ -414,7 +413,7 @@ function TrackView({ order, now, lastChecked }: { order: Order; now: number; las
           <Link to="/" className="px-5 py-2 rounded-full glass hover:border-[color:var(--gold)]/40 transition text-xs font-medium">
             {t("ok.home")}
           </Link>
-          <Link to="/dashboard" search={{ email: order.email }} className="px-5 py-2 rounded-full glass hover:border-[color:var(--gold)]/40 transition text-xs font-medium">
+          <Link to="/dashboard" search={{ email: "" }} className="px-5 py-2 rounded-full glass hover:border-[color:var(--gold)]/40 transition text-xs font-medium">
             {t("ok.orders")}
           </Link>
           {terminal && (
