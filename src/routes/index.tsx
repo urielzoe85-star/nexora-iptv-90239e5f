@@ -15,6 +15,10 @@ import {
 } from "lucide-react";
 import { useT, useI18n } from "@/i18n/context";
 import { LanguageSwitcher } from "@/i18n/context";
+import { buildWhatsAppLink } from "@/lib/whatsapp-contact";
+
+const TELEGRAM_BOT_URL = "https://t.me/NexoraIPTVBot";
+const SUPPORT_EMAIL = "info@nexora-iptv.com";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -575,9 +579,9 @@ function Support() {
             <h2 className="text-4xl md:text-5xl font-bold mb-4">{t("support.title.a")}<span className="text-gradient-gold">{t("support.title.b")}</span></h2>
             <p className="text-muted-foreground max-w-xl mx-auto mb-10">{t("support.sub")}</p>
             <div className="flex flex-wrap justify-center gap-4">
-              <a href="https://wa.me/message/GQTLOGZU367XJ1" className="btn-gold btn-gold-hover px-6 py-3 rounded-full font-semibold inline-flex items-center gap-2"><MessageCircle className="h-5 w-5" />WhatsApp</a>
-              <a href="https://t.me/" className="glass px-6 py-3 rounded-full font-semibold inline-flex items-center gap-2 hover:border-[color:var(--gold)]/40 transition"><Send className="h-5 w-5" />Telegram</a>
-              <a href="mailto:info@nexora-iptv.com" className="glass px-6 py-3 rounded-full font-semibold inline-flex items-center gap-2 hover:border-[color:var(--gold)]/40 transition"><Mail className="h-5 w-5" />Email</a>
+              <a href={buildWhatsAppLink()} target="_blank" rel="noopener noreferrer" className="btn-gold btn-gold-hover px-6 py-3 rounded-full font-semibold inline-flex items-center gap-2"><MessageCircle className="h-5 w-5" />WhatsApp</a>
+              <a href={TELEGRAM_BOT_URL} target="_blank" rel="noopener noreferrer" className="glass px-6 py-3 rounded-full font-semibold inline-flex items-center gap-2 hover:border-[color:var(--gold)]/40 transition"><Send className="h-5 w-5" />Telegram</a>
+              <a href={`mailto:${SUPPORT_EMAIL}`} className="glass px-6 py-3 rounded-full font-semibold inline-flex items-center gap-2 hover:border-[color:var(--gold)]/40 transition"><Mail className="h-5 w-5" />Email</a>
             </div>
           </div>
         </div>
@@ -602,6 +606,25 @@ function Footer() {
       { label: t("footer.privacy"), href: "/legal/privacy" },
       { label: t("footer.refund"),  href: "/legal/refund" },
       { label: "Mentions légales",  href: "/legal/notice" },
+    ];
+  }
+  // Wire real contact channels (WhatsApp Business, Telegram bot, email).
+  const supportCol = cols.find((c) => c.title === t("footer.support"));
+  if (supportCol) {
+    supportCol.links = [
+      { label: t("footer.help"), href: "#support" },
+      { label: "WhatsApp",       href: buildWhatsAppLink() },
+      { label: "Telegram",       href: TELEGRAM_BOT_URL },
+      { label: "Email",          href: `mailto:${SUPPORT_EMAIL}` },
+    ];
+  }
+  const companyCol = cols.find((c) => c.title === t("footer.company"));
+  if (companyCol) {
+    companyCol.links = [
+      { label: t("footer.about"),   href: "#features" },
+      { label: t("footer.blog"),    href: "/blog/best-iptv-2026" },
+      { label: t("footer.careers"), href: `mailto:${SUPPORT_EMAIL}?subject=Careers` },
+      { label: t("footer.contact"), href: buildWhatsAppLink() },
     ];
   }
   return (
@@ -636,7 +659,7 @@ function Footer() {
 
 function FloatingWhatsApp() {
   return (
-    <a href="https://wa.me/message/GQTLOGZU367XJ1" aria-label="Chat on WhatsApp"
+    <a href={buildWhatsAppLink()} target="_blank" rel="noopener noreferrer" aria-label="Chat on WhatsApp"
        className="fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full btn-gold btn-gold-hover grid place-items-center shadow-[var(--shadow-gold)]">
       <MessageCircle className="h-6 w-6" />
     </a>
