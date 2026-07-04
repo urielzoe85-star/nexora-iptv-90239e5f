@@ -36,6 +36,7 @@ import { Route as NccTelegramRouteImport } from './routes/ncc.telegram'
 import { Route as NccSupportRouteImport } from './routes/ncc.support'
 import { Route as NccSettingsRouteImport } from './routes/ncc.settings'
 import { Route as NccProductsRouteImport } from './routes/ncc.products'
+import { Route as NccPortalRouteImport } from './routes/ncc.portal'
 import { Route as NccPaymentsRouteImport } from './routes/ncc.payments'
 import { Route as NccOrdersRouteImport } from './routes/ncc.orders'
 import { Route as NccNotificationsRouteImport } from './routes/ncc.notifications'
@@ -240,6 +241,11 @@ const NccSettingsRoute = NccSettingsRouteImport.update({
 const NccProductsRoute = NccProductsRouteImport.update({
   id: '/products',
   path: '/products',
+  getParentRoute: () => NccRoute,
+} as any)
+const NccPortalRoute = NccPortalRouteImport.update({
+  id: '/portal',
+  path: '/portal',
   getParentRoute: () => NccRoute,
 } as any)
 const NccPaymentsRoute = NccPaymentsRouteImport.update({
@@ -653,6 +659,7 @@ export interface FileRoutesByFullPath {
   '/ncc/notifications': typeof NccNotificationsRoute
   '/ncc/orders': typeof NccOrdersRouteWithChildren
   '/ncc/payments': typeof NccPaymentsRouteWithChildren
+  '/ncc/portal': typeof NccPortalRoute
   '/ncc/products': typeof NccProductsRoute
   '/ncc/settings': typeof NccSettingsRouteWithChildren
   '/ncc/support': typeof NccSupportRoute
@@ -746,6 +753,7 @@ export interface FileRoutesByTo {
   '/ncc/notifications': typeof NccNotificationsRoute
   '/ncc/orders': typeof NccOrdersRouteWithChildren
   '/ncc/payments': typeof NccPaymentsRouteWithChildren
+  '/ncc/portal': typeof NccPortalRoute
   '/ncc/products': typeof NccProductsRoute
   '/ncc/support': typeof NccSupportRoute
   '/ncc/telegram': typeof NccTelegramRoute
@@ -845,6 +853,7 @@ export interface FileRoutesById {
   '/ncc/notifications': typeof NccNotificationsRoute
   '/ncc/orders': typeof NccOrdersRouteWithChildren
   '/ncc/payments': typeof NccPaymentsRouteWithChildren
+  '/ncc/portal': typeof NccPortalRoute
   '/ncc/products': typeof NccProductsRoute
   '/ncc/settings': typeof NccSettingsRouteWithChildren
   '/ncc/support': typeof NccSupportRoute
@@ -946,6 +955,7 @@ export interface FileRouteTypes {
     | '/ncc/notifications'
     | '/ncc/orders'
     | '/ncc/payments'
+    | '/ncc/portal'
     | '/ncc/products'
     | '/ncc/settings'
     | '/ncc/support'
@@ -1039,6 +1049,7 @@ export interface FileRouteTypes {
     | '/ncc/notifications'
     | '/ncc/orders'
     | '/ncc/payments'
+    | '/ncc/portal'
     | '/ncc/products'
     | '/ncc/support'
     | '/ncc/telegram'
@@ -1137,6 +1148,7 @@ export interface FileRouteTypes {
     | '/ncc/notifications'
     | '/ncc/orders'
     | '/ncc/payments'
+    | '/ncc/portal'
     | '/ncc/products'
     | '/ncc/settings'
     | '/ncc/support'
@@ -1421,6 +1433,13 @@ declare module '@tanstack/react-router' {
       path: '/products'
       fullPath: '/ncc/products'
       preLoaderRoute: typeof NccProductsRouteImport
+      parentRoute: typeof NccRoute
+    }
+    '/ncc/portal': {
+      id: '/ncc/portal'
+      path: '/portal'
+      fullPath: '/ncc/portal'
+      preLoaderRoute: typeof NccPortalRouteImport
       parentRoute: typeof NccRoute
     }
     '/ncc/payments': {
@@ -2089,6 +2108,7 @@ interface NccRouteChildren {
   NccNotificationsRoute: typeof NccNotificationsRoute
   NccOrdersRoute: typeof NccOrdersRouteWithChildren
   NccPaymentsRoute: typeof NccPaymentsRouteWithChildren
+  NccPortalRoute: typeof NccPortalRoute
   NccProductsRoute: typeof NccProductsRoute
   NccSettingsRoute: typeof NccSettingsRouteWithChildren
   NccSupportRoute: typeof NccSupportRoute
@@ -2110,6 +2130,7 @@ const NccRouteChildren: NccRouteChildren = {
   NccNotificationsRoute: NccNotificationsRoute,
   NccOrdersRoute: NccOrdersRouteWithChildren,
   NccPaymentsRoute: NccPaymentsRouteWithChildren,
+  NccPortalRoute: NccPortalRoute,
   NccProductsRoute: NccProductsRoute,
   NccSettingsRoute: NccSettingsRouteWithChildren,
   NccSupportRoute: NccSupportRoute,
