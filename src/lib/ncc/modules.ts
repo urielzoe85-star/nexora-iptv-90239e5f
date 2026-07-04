@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, Users, Package, ShoppingBag, CreditCard, Tv2, Gift,
   Bot, MessageCircle, Send, Mail, Bell, LifeBuoy, BarChart3, UserCog, Workflow,
-  ScrollText, Settings,
+  ScrollText, Settings, UserCircle,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -49,6 +49,7 @@ export const NCC_MODULES: NccModule[] = [
   { id: "support", label: "Support", description: "Tickets et helpdesk client.", icon: LifeBuoy, to: "/ncc/support", group: "ops", status: "ready" },
   { id: "employees", label: "Employés", description: "Comptes internes, rôles, permissions.", icon: UserCog, to: "/ncc/employees", group: "ops", status: "ready" },
   { id: "automation", label: "Automatisation", description: "Workflows, déclencheurs, file d'attente et historique.", icon: Workflow, to: "/ncc/automation", group: "ops", status: "ready" },
+  { id: "portal", label: "Espace client", description: "Offres de renouvellement, annonces, sessions du portail.", icon: UserCircle, to: "/ncc/portal", group: "ops", status: "ready" },
 
   { id: "settings", label: "Paramètres", description: "Configuration globale de la plateforme.", icon: Settings, to: "/ncc/settings", group: "system", status: "preparing" },
 ];
