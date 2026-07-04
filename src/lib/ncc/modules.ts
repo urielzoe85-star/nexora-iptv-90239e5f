@@ -29,8 +29,8 @@ export const GROUP_LABELS: Record<ModuleGroup, string> = {
 
 export const NCC_MODULES: NccModule[] = [
   { id: "dashboard", label: "Dashboard", description: "Vue d'ensemble en temps réel de l'activité.", icon: LayoutDashboard, to: "/ncc", group: "cockpit", status: "ready" },
-  { id: "analytics", label: "Analytics", description: "Indicateurs de performance et tendances.", icon: BarChart3, to: "/ncc/analytics", group: "cockpit", status: "preparing", upcoming: ["Cohortes & rétention", "Funnel de conversion", "Sources de trafic"] },
-  { id: "logs", label: "Journal système", description: "Tous les événements de la plateforme.", icon: ScrollText, to: "/ncc/logs", group: "cockpit", status: "preparing" },
+  { id: "analytics", label: "Analytics", description: "Indicateurs de performance et tendances.", icon: BarChart3, to: "/ncc/analytics", group: "cockpit", status: "ready" },
+  { id: "logs", label: "Journal système", description: "Tous les événements de la plateforme.", icon: ScrollText, to: "/ncc/logs", group: "cockpit", status: "ready" },
 
   { id: "clients", label: "Clients", description: "Base clients unifiée et CRM léger.", icon: Users, to: "/ncc/clients", group: "sales", status: "ready" },
   { id: "products", label: "Produits", description: "Catalogue, plans et bundles.", icon: Package, to: "/ncc/products", group: "sales", status: "ready" },
@@ -46,8 +46,8 @@ export const NCC_MODULES: NccModule[] = [
   { id: "telegram", label: "Telegram", description: "Bots et diffusions Telegram.", icon: Send, to: "/ncc/telegram", group: "services", status: "ready" },
   { id: "emails", label: "Emails", description: "Historique des emails transactionnels.", icon: Mail, to: "/ncc/emails", group: "services", status: "ready" },
 
-  { id: "support", label: "Support", description: "Tickets et helpdesk client.", icon: LifeBuoy, to: "/ncc/support", group: "ops", status: "preparing" },
-  { id: "employees", label: "Employés", description: "Comptes internes, rôles, permissions.", icon: UserCog, to: "/ncc/employees", group: "ops", status: "preparing" },
+  { id: "support", label: "Support", description: "Tickets et helpdesk client.", icon: LifeBuoy, to: "/ncc/support", group: "ops", status: "ready" },
+  { id: "employees", label: "Employés", description: "Comptes internes, rôles, permissions.", icon: UserCog, to: "/ncc/employees", group: "ops", status: "ready" },
   { id: "automation", label: "Automatisation", description: "Workflows, déclencheurs, file d'attente et historique.", icon: Workflow, to: "/ncc/automation", group: "ops", status: "ready" },
 
   { id: "settings", label: "Paramètres", description: "Configuration globale de la plateforme.", icon: Settings, to: "/ncc/settings", group: "system", status: "preparing" },
