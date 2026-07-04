@@ -166,7 +166,7 @@ export const kickAutomationQueue = createServerFn({ method: "POST" })
           provider: "track_self_heal",
           forced: true,
         }, null);
-        return { ok: r.status === "success" as const, forced: true as const };
+        return { ok: r.status === "success", forced: true as const };
       }
     } catch (e) {
       console.warn("[automation] track self-heal failed", (e as any)?.message ?? e);
