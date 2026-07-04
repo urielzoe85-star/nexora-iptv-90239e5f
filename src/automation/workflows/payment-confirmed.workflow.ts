@@ -15,11 +15,19 @@ export const paymentConfirmedWorkflow: WorkflowDefinition = {
         const orderId = String(ctx.payload.orderId ?? ctx.payload.orderRef ?? "");
         if (!orderId) throw new Error("orderId/orderRef manquant dans le payload");
         const order = await fetchOrder(orderId);
+        const delivery = (order.metadata as any)?.iptv_delivery ?? null;
+        // Ne considérer comme "déjà traité" QUE si la fiche IPTV a été
+        // effectivement envoyée. Un simple status='completed' sans livraison
+        // (ex. adminConfirmPayment mobile money) doit re-déclencher la chaîne.
+        const alreadyDelivered =
+          order.status === "completed" &&
+          delivery?.delivery_status === "sent" &&
+          Boolean(delivery?.iptv_account_id);
         return {
           orderId,
           email: order.email,
           plan: order.plan_name,
-          alreadyCompleted: order.status === "completed",
+          alreadyCompleted: alreadyDelivered,
         };
       },
     },
