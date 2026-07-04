@@ -199,6 +199,16 @@ function TrackPage() {
 
         {order && <TrackView order={order} now={now} lastChecked={lastChecked} />}
         {order && <DeliveryUnlock orderRef={order.order_ref} defaultEmail={order.email} provisioned={!!order.delivery && order.delivery.status !== "pending"} />}
+        {order && (
+          <a
+            href={`https://wa.me/237698608808?text=${encodeURIComponent(`Bonjour Nexora, ma commande ${order.order_ref} — j'ai besoin d'aide 🙏`)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#25D366] px-5 py-3 font-medium text-white shadow-sm transition hover:opacity-90"
+          >
+            💬 Contacter le support WhatsApp
+          </a>
+        )}
       </div>
     </main>
   );
