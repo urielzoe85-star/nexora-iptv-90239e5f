@@ -104,12 +104,12 @@ export async function createIptvSubscription(input: {
       .limit(50);
     if (error) throw new Error(`iptv_accounts local pool lookup failed: ${error.message}`);
     const now = Date.now();
-    const pool = ((candidates ?? []) as any[]).sort((a, b) => {
+    const pool = ((candidates ?? []) as any[]).filter((a) => !a.expires_at || new Date(a.expires_at).getTime() > now).sort((a, b) => {
       const ax = a.expires_at ? new Date(a.expires_at).getTime() : Number.POSITIVE_INFINITY;
       const bx = b.expires_at ? new Date(b.expires_at).getTime() : Number.POSITIVE_INFINITY;
       return bx - ax;
     });
-    const picked = pool.find((a) => !a.expires_at || new Date(a.expires_at).getTime() > now) ?? pool[0];
+    const picked = pool[0];
     if (!picked?.id) return null;
 
     const meta = (picked.metadata ?? {}) as Record<string, unknown>;
