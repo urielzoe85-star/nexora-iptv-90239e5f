@@ -30,7 +30,7 @@ function RenewPage() {
 
   const activeAccount = d.data?.activeSubscription;
   const plans = plansQ.data ?? [];
-  const selectedPlan = plans.find((p) => p.id === planId);
+  const selectedPlan = plans.find((p: any) => p.id === planId);
   const countryCfg = COUNTRIES.find((c) => c.code === country);
 
   async function submit(e: React.FormEvent) {
@@ -90,7 +90,7 @@ function RenewPage() {
           <section className="glass rounded-2xl p-6">
             <div className="text-xs uppercase tracking-widest text-muted-foreground mb-3">1. Choisir la durée</div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {plans.map((p) => (
+              {plans.map((p: any) => (
                 <button
                   key={p.id} type="button"
                   onClick={() => setPlanId(p.id)}
@@ -143,7 +143,7 @@ function RenewPage() {
                     className="mt-1 w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm"
                   >
                     {COUNTRIES.map((c) => (
-                      <option key={c.code} value={c.code}>{c.name}</option>
+                      <option key={c.code} value={c.code}>{c.label}</option>
                     ))}
                   </select>
                 </label>
