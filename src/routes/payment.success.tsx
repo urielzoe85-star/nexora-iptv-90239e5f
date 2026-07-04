@@ -99,7 +99,7 @@ function SuccessPage() {
               <Row label={t("ok.row.plan")} value={order.plan_name} />
               <Row label={t("ok.row.amount")} value={`$${Number(order.amount).toFixed(2)} ${order.currency}`} />
               <Row label={t("ok.row.method")} value={order.method.toUpperCase()} />
-              <Row label={t("ok.row.email")} value={order.email} />
+              <Row label={t("ok.row.email")} value={order.email_masked ?? "—"} />
               <Row label={t("ok.row.status")} value={<span className="text-[color:var(--gold)]">{t(`status.${order.status}`)}</span>} />
               {order.sebpay_reference && <Row label={t("ok.row.ref")} value={<span className="font-mono text-xs">{order.sebpay_reference}</span>} />}
             </div>
@@ -115,7 +115,7 @@ function SuccessPage() {
           <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
             <Link to="/" className="px-6 py-3 rounded-full glass hover:border-[color:var(--gold)]/40 transition text-sm font-medium">{t("ok.home")}</Link>
             <Link to="/track" search={{ ref: order?.order_ref ?? "" }} className="px-6 py-3 rounded-full glass hover:border-[color:var(--gold)]/40 transition text-sm font-medium">{t("ok.track")}</Link>
-            <Link to="/dashboard" search={{ email: order?.email ?? "" }} className="btn-gold btn-gold-hover px-6 py-3 rounded-full text-sm font-semibold">{t("ok.orders")}</Link>
+            <Link to="/dashboard" search={{ email: "" }} className="btn-gold btn-gold-hover px-6 py-3 rounded-full text-sm font-semibold">{t("ok.orders")}</Link>
           </div>
         </section>
       </div>
