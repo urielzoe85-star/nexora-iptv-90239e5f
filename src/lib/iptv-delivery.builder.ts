@@ -7,6 +7,7 @@
 // ────────────────────────────────────────────────────────────────────────────
 
 import { createHmac, timingSafeEqual } from "crypto";
+import { buildWhatsAppLink } from "./whatsapp-contact";
 
 export type IptvDeliveryChannel = "email" | "whatsapp" | "telegram";
 
@@ -181,6 +182,7 @@ export function buildPlainTextDeliveryMessage(d: IptvDelivery, opts?: { orderRef
     opts?.orderRef
       ? `📲 Recevoir aussi sur Telegram : https://t.me/NexoraIPTVBot?start=${opts.orderRef}`
       : "",
+    `💬 Nous joindre sur WhatsApp : ${buildWhatsAppLink({ orderRef: opts?.orderRef ?? null })}`,
     `Merci de votre confiance — Nexora IPTV`,
   ];
   return lines.filter(Boolean).join("\n");
