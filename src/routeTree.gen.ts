@@ -25,6 +25,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as NccIndexRouteImport } from './routes/ncc.index'
 import { Route as FrIndexRouteImport } from './routes/fr.index'
+import { Route as EspaceClientIndexRouteImport } from './routes/espace-client.index'
 import { Route as EnIndexRouteImport } from './routes/en.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as PaymentSuccessRouteImport } from './routes/payment.success'
@@ -176,6 +177,11 @@ const FrIndexRoute = FrIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => FrRoute,
+} as any)
+const EspaceClientIndexRoute = EspaceClientIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => EspaceClientRoute,
 } as any)
 const EnIndexRoute = EnIndexRouteImport.update({
   id: '/',
@@ -552,7 +558,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRoute
   '/de': typeof DeRoute
   '/en': typeof EnRouteWithChildren
-  '/espace-client': typeof EspaceClientRoute
+  '/espace-client': typeof EspaceClientRouteWithChildren
   '/fr': typeof FrRouteWithChildren
   '/legal-guide': typeof LegalGuideRoute
   '/ncc': typeof NccRouteWithChildren
@@ -595,6 +601,7 @@ export interface FileRoutesByFullPath {
   '/payment/success': typeof PaymentSuccessRoute
   '/admin/': typeof AdminIndexRoute
   '/en/': typeof EnIndexRoute
+  '/espace-client/': typeof EspaceClientIndexRoute
   '/fr/': typeof FrIndexRoute
   '/ncc/': typeof NccIndexRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
@@ -639,7 +646,6 @@ export interface FileRoutesByTo {
   '/checkout': typeof CheckoutRoute
   '/dashboard': typeof DashboardRoute
   '/de': typeof DeRoute
-  '/espace-client': typeof EspaceClientRoute
   '/legal-guide': typeof LegalGuideRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/track': typeof TrackRoute
@@ -678,6 +684,7 @@ export interface FileRoutesByTo {
   '/payment/success': typeof PaymentSuccessRoute
   '/admin': typeof AdminIndexRoute
   '/en': typeof EnIndexRoute
+  '/espace-client': typeof EspaceClientIndexRoute
   '/fr': typeof FrIndexRoute
   '/ncc': typeof NccIndexRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
@@ -725,7 +732,7 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/de': typeof DeRoute
   '/en': typeof EnRouteWithChildren
-  '/espace-client': typeof EspaceClientRoute
+  '/espace-client': typeof EspaceClientRouteWithChildren
   '/fr': typeof FrRouteWithChildren
   '/legal-guide': typeof LegalGuideRoute
   '/ncc': typeof NccRouteWithChildren
@@ -768,6 +775,7 @@ export interface FileRoutesById {
   '/payment/success': typeof PaymentSuccessRoute
   '/admin/': typeof AdminIndexRoute
   '/en/': typeof EnIndexRoute
+  '/espace-client/': typeof EspaceClientIndexRoute
   '/fr/': typeof FrIndexRoute
   '/ncc/': typeof NccIndexRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
@@ -859,6 +867,7 @@ export interface FileRouteTypes {
     | '/payment/success'
     | '/admin/'
     | '/en/'
+    | '/espace-client/'
     | '/fr/'
     | '/ncc/'
     | '/api/public/csp-report'
@@ -903,7 +912,6 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/dashboard'
     | '/de'
-    | '/espace-client'
     | '/legal-guide'
     | '/sitemap.xml'
     | '/track'
@@ -942,6 +950,7 @@ export interface FileRouteTypes {
     | '/payment/success'
     | '/admin'
     | '/en'
+    | '/espace-client'
     | '/fr'
     | '/ncc'
     | '/api/public/csp-report'
@@ -1031,6 +1040,7 @@ export interface FileRouteTypes {
     | '/payment/success'
     | '/admin/'
     | '/en/'
+    | '/espace-client/'
     | '/fr/'
     | '/ncc/'
     | '/api/public/csp-report'
@@ -1078,7 +1088,7 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   DeRoute: typeof DeRoute
   EnRoute: typeof EnRouteWithChildren
-  EspaceClientRoute: typeof EspaceClientRoute
+  EspaceClientRoute: typeof EspaceClientRouteWithChildren
   FrRoute: typeof FrRouteWithChildren
   LegalGuideRoute: typeof LegalGuideRoute
   NccRoute: typeof NccRouteWithChildren
@@ -1226,6 +1236,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/fr/'
       preLoaderRoute: typeof FrIndexRouteImport
       parentRoute: typeof FrRoute
+    }
+    '/espace-client/': {
+      id: '/espace-client/'
+      path: '/'
+      fullPath: '/espace-client/'
+      preLoaderRoute: typeof EspaceClientIndexRouteImport
+      parentRoute: typeof EspaceClientRoute
     }
     '/en/': {
       id: '/en/'
@@ -1761,6 +1778,18 @@ const EnRouteChildren: EnRouteChildren = {
 
 const EnRouteWithChildren = EnRoute._addFileChildren(EnRouteChildren)
 
+interface EspaceClientRouteChildren {
+  EspaceClientIndexRoute: typeof EspaceClientIndexRoute
+}
+
+const EspaceClientRouteChildren: EspaceClientRouteChildren = {
+  EspaceClientIndexRoute: EspaceClientIndexRoute,
+}
+
+const EspaceClientRouteWithChildren = EspaceClientRoute._addFileChildren(
+  EspaceClientRouteChildren,
+)
+
 interface FrRouteChildren {
   FrGuideIptvRoute: typeof FrGuideIptvRoute
   FrIndexRoute: typeof FrIndexRoute
@@ -1910,7 +1939,7 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   DeRoute: DeRoute,
   EnRoute: EnRouteWithChildren,
-  EspaceClientRoute: EspaceClientRoute,
+  EspaceClientRoute: EspaceClientRouteWithChildren,
   FrRoute: FrRouteWithChildren,
   LegalGuideRoute: LegalGuideRoute,
   NccRoute: NccRouteWithChildren,
