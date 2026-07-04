@@ -1,54 +1,108 @@
+# Espace Client Nexora IPTV
 
-# Activation Journal · Analytics · Support · Employés
+Portail personnel pour chaque abonné, accessible depuis le menu principal, avec renouvellement autonome.
 
-## Journal système (`/ncc/logs`)
+## 1. Accès & authentification
 
-Brancher la table existante `security_events` (+ agrège `automation_runs` et `iptv_logs` récents en source unifiée).
+- Nouvelle route publique `/espace-client` (lien ajouté au menu principal).
+- Identification par **numéro de commande / username IPTV / email**.
+- Envoi d'un **code OTP à 6 chiffres** par email (valide 10 min, table `client_portal_otps`).
+- Après vérification, création d'une **session portail** (cookie httpOnly signé, 30 jours, table `client_portal_sessions`) — pas de mot de passe, pas de compte Supabase Auth requis (les clients ne sont pas des `auth.users`).
+- Rate-limit sur envoi OTP (3/heure/email/IP).
 
-- Server fn `getSystemLogs({search, severity, source, limit})` (requireAdmin) — fusionne les 3 sources en `{ ts, severity, source, message, actor, ref }`, tri desc, limite 200.
-- Remplacer `LogsTable.tsx` par un tableau live (search, filtre severity, filtre source, bouton "Rafraîchir" et export CSV).
-- Retirer le badge "Collecte à venir" de la page.
+## 2. Tableau de bord `/espace-client/dashboard`
 
-## Analytics (`/ncc/analytics`)
+Affiche :
+- Nom, email, statut abonnement (Actif/Expiré), date d'expiration, jours restants
+- Identifiant IPTV (username, masqué → révélable)
+- Historique commandes (`orders`)
+- Historique paiements (référence, méthode, montant, date)
+- Factures téléchargeables (PDF généré à la volée depuis `orders`)
 
-Vue KPI sur 30 j depuis `orders`, `customers`, `subscriptions`.
+## 3. Renouvellement `/espace-client/renew`
 
-- Server fn `getAnalyticsSnapshot({ days: 7|30|90 })` (requireAdmin) : revenu total, nb commandes, panier moyen, taux de conversion (paid/total), nouveaux clients, abonnements actifs, top plans, série journalière (revenu + orders).
-- Page dédiée : 4 stat cards + graph (recharts, déjà utilisé) + top plans + selecteur période.
-- Statut du module → `ready`.
+- Bouton "Renouveler" → sélection durée (1/3/6/12 mois)
+- Tarifs récupérés dynamiquement depuis la table `plans` existante (filtrés par durée)
+- Choix moyen de paiement parmi les providers **activés** (SebPay, Binance Pay manuel, + futurs)
+- Création d'une commande de type `renewal` liée à l'`iptv_account_id` existant
 
-## Support (`/ncc/support`) — mini helpdesk
+## 4. Réactivation automatique
 
-Migration :
-- `support_tickets` (id, customer_id nullable, email, subject, status: `open|pending|resolved|closed`, priority: `low|normal|high|urgent`, assigned_to nullable, last_message_at, created_at, updated_at)
-- `support_messages` (id, ticket_id, author_type: `customer|admin`, author_user_id nullable, body, created_at)
-- GRANT + RLS : admins (has_role) full ; `authenticated` : lit/écrit uniquement ses propres tickets via customer_id/email.
+- Nouveau workflow `subscription-renewal-portal` (déclenché par `payment.confirmed` sur commande `renewal`)
+- Étapes :
+  1. Résoudre `iptv_account_id` depuis la commande
+  2. Appeler `renewIptvSubscription(accountId, months)` (déjà existant → MEGAOTT extend + update `expires_at`)
+  3. Écrire événement dans `iptv_lifecycle_events`
+  4. Envoyer email confirmation + WhatsApp/Telegram si configuré
+- **Aucun nouveau compte IPTV** : mêmes credentials, expiration prolongée
 
-Server fns (requireAdmin) : list, get(id), createTicket, addMessage, updateStatus, assign.
-UI : liste (filtres statut/priorité) + drawer/route détail avec fil de messages et actions rapides.
-Statut → `ready`. Pas encore de portail client (à voir plus tard).
+## 5. Confirmation `/espace-client/renew/success`
 
-## Employés (`/ncc/employees`) — gestion des admins
+Affiche : nouvelle date d'expiration, offre, réf paiement + confirme envoi email/WhatsApp.
 
-Utilise `user_roles` existant + `admin_change_role` RPC.
+## 6. Fonctionnalités additionnelles (architecture évolutive)
 
-Server fns (requireAdmin) :
-- `listEmployees()` : join `auth.users` (via supabaseAdmin) × `user_roles`, retourne email, dernière connexion, rôle.
-- `inviteEmployee({email, role})` : `supabaseAdmin.auth.admin.inviteUserByEmail` puis insert `user_roles`.
-- `grantAdmin({user_id})` / `revokeAdmin({user_id})` : appelle `admin_change_role` (déjà safe, empêche perte du dernier admin).
+Layout `/espace-client/_portal` avec sidebar :
+- Tableau de bord
+- Mes abonnements
+- Renouveler
+- Commandes
+- Paiements & factures
+- Profil (nom, téléphone, pays)
+- Support (crée un `support_ticket` avec `customer_id`)
+- Téléchargements (guides installation — page statique)
+- Annonces (table `portal_announcements`, admin peut publier)
+- Déconnexion
 
-UI : tableau + bouton Inviter (dialog email + role) + toggle admin par ligne + confirmation. Statut → `ready`.
+## 7. Administration `/ncc/portal`
 
-## Divers
+Nouveau module NCC :
+- **Offres de renouvellement** : CRUD sur `renewal_plans` (durée, prix, actif/inactif)
+- **Renouvellements** : liste filtrable (client / date / statut)
+- **Remboursements** : action sur commande renewal
+- **Sessions portail** : voir connexions récentes (email, IP, dernière activité)
 
-- `modules.ts` : passer `logs`, `analytics`, `support`, `employees` à `status: "ready"`.
-- Ajouter un log Telegram admin (best-effort) sur `inviteEmployee` et `grantAdmin/revokeAdmin` (déjà loggé côté security_events par `admin_change_role`, on garde la notif).
+## 8. Design
 
-## Technique
+Réutilise identité Nexora IPTV existante (composants shadcn, tokens design system).
+Layout responsive : sidebar desktop → drawer mobile.
+Parcours : Connexion → Dashboard → Renouveler → Payer → Confirmation.
 
-- Toutes les server fns dans `src/lib/{logs,analytics,support,employees}.functions.ts` avec `requireAdmin`.
-- Charts : `recharts` (déjà dans `package.json`).
-- Migration Support unique : CREATE TABLE + GRANT authenticated/service_role + RLS + policies (admin via `has_role`, client via `auth.uid()`/email match).
-- Aucun changement front public.
+---
 
-Ordre d'implémentation : Logs → Analytics → Employés → Support (Support = plus lourd car migration + drawer).
+## Détails techniques
+
+**Migration DB** :
+- `client_portal_otps` (email, code_hash, expires_at, used_at, ip)
+- `client_portal_sessions` (token_hash, customer_id, expires_at, last_seen_at, ip, user_agent)
+- `renewal_plans` (duration_months, price, currency, active, sort_order)
+- `portal_announcements` (title, body, published_at, active)
+- GRANT + RLS : sessions/otps accessibles uniquement via service_role (server functions) ; `renewal_plans` lisible par `anon` (public) ; `portal_announcements` lisible `anon` si `active`.
+
+**Server functions** (`src/lib/portal.functions.ts`) :
+- `requestPortalOtp({identifier})` — résout customer via order_ref / iptv_username / email, envoie OTP
+- `verifyPortalOtp({email, code})` — retourne session token
+- `getPortalSession()` — middleware `requirePortalSession` lit cookie
+- `getPortalDashboard()`, `getPortalOrders()`, `getPortalPayments()`, `getPortalSubscription()`
+- `listRenewalPlans()`, `createRenewalOrder({planId, method})`
+- `updateProfile()`, `createSupportTicketPortal()`, `signOutPortal()`
+
+**Server routes** :
+- `/api/portal/session` (GET/POST/DELETE) pour cookie
+- `/api/portal/invoice/$orderRef` (GET PDF)
+
+**Workflow** : `src/automation/workflows/subscription-renewal-portal.workflow.ts` enregistré dans `src/automation/index.ts`, déclenché après `payment.confirmed` si `orders.metadata.kind === "renewal"`.
+
+**Génération facture** : lib légère (`@react-pdf/renderer` déjà utilisable, sinon HTML→print côté client via nouvelle route imprimable).
+
+**Menu principal** : ajout item "Espace Client" dans le header du site public.
+
+## Ordre d'implémentation
+
+1. Migration DB + types
+2. Auth OTP + session (server fns + route API cookie)
+3. Layout `/espace-client/_portal` + login + dashboard
+4. Renouvellement + workflow + confirmation
+5. Onglets secondaires (commandes, paiements, factures, profil, support, annonces, téléchargements)
+6. Module NCC `/ncc/portal`
+7. Lien menu principal + polish responsive

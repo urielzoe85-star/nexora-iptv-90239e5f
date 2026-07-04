@@ -15,6 +15,7 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as NccRouteImport } from './routes/ncc'
 import { Route as LegalGuideRouteImport } from './routes/legal-guide'
 import { Route as FrRouteImport } from './routes/fr'
+import { Route as EspaceClientRouteImport } from './routes/espace-client'
 import { Route as EnRouteImport } from './routes/en'
 import { Route as DeRouteImport } from './routes/de'
 import { Route as DashboardRouteImport } from './routes/dashboard'
@@ -24,6 +25,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as NccIndexRouteImport } from './routes/ncc.index'
 import { Route as FrIndexRouteImport } from './routes/fr.index'
+import { Route as EspaceClientIndexRouteImport } from './routes/espace-client.index'
 import { Route as EnIndexRouteImport } from './routes/en.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as PaymentSuccessRouteImport } from './routes/payment.success'
@@ -34,6 +36,7 @@ import { Route as NccTelegramRouteImport } from './routes/ncc.telegram'
 import { Route as NccSupportRouteImport } from './routes/ncc.support'
 import { Route as NccSettingsRouteImport } from './routes/ncc.settings'
 import { Route as NccProductsRouteImport } from './routes/ncc.products'
+import { Route as NccPortalRouteImport } from './routes/ncc.portal'
 import { Route as NccPaymentsRouteImport } from './routes/ncc.payments'
 import { Route as NccOrdersRouteImport } from './routes/ncc.orders'
 import { Route as NccNotificationsRouteImport } from './routes/ncc.notifications'
@@ -51,6 +54,13 @@ import { Route as LegalRefundRouteImport } from './routes/legal.refund'
 import { Route as LegalPrivacyRouteImport } from './routes/legal.privacy'
 import { Route as LegalNoticeRouteImport } from './routes/legal.notice'
 import { Route as FrGuideIptvRouteImport } from './routes/fr.guide-iptv'
+import { Route as EspaceClientSupportRouteImport } from './routes/espace-client.support'
+import { Route as EspaceClientRenewRouteImport } from './routes/espace-client.renew'
+import { Route as EspaceClientProfileRouteImport } from './routes/espace-client.profile'
+import { Route as EspaceClientOrdersRouteImport } from './routes/espace-client.orders'
+import { Route as EspaceClientDownloadsRouteImport } from './routes/espace-client.downloads'
+import { Route as EspaceClientDashboardRouteImport } from './routes/espace-client.dashboard'
+import { Route as EspaceClientAnnouncementsRouteImport } from './routes/espace-client.announcements'
 import { Route as EnGuideIptvRouteImport } from './routes/en.guide-iptv'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as BlogBestIptv2026RouteImport } from './routes/blog.best-iptv-2026'
@@ -79,6 +89,8 @@ import { Route as NccIptvDebugRouteImport } from './routes/ncc.iptv.debug'
 import { Route as NccIptvAccountsRouteImport } from './routes/ncc.iptv.accounts'
 import { Route as NccClientsIdRouteImport } from './routes/ncc.clients.$id'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
+import { Route as EspaceClientSuccessRefRouteImport } from './routes/espace-client.success.$ref'
+import { Route as EspaceClientPayRefRouteImport } from './routes/espace-client.pay.$ref'
 import { Route as ApiPublicCspReportRouteImport } from './routes/api/public/csp-report'
 import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
@@ -126,6 +138,11 @@ const FrRoute = FrRouteImport.update({
   path: '/fr',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EspaceClientRoute = EspaceClientRouteImport.update({
+  id: '/espace-client',
+  path: '/espace-client',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const EnRoute = EnRouteImport.update({
   id: '/en',
   path: '/en',
@@ -170,6 +187,11 @@ const FrIndexRoute = FrIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => FrRoute,
+} as any)
+const EspaceClientIndexRoute = EspaceClientIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => EspaceClientRoute,
 } as any)
 const EnIndexRoute = EnIndexRouteImport.update({
   id: '/',
@@ -219,6 +241,11 @@ const NccSettingsRoute = NccSettingsRouteImport.update({
 const NccProductsRoute = NccProductsRouteImport.update({
   id: '/products',
   path: '/products',
+  getParentRoute: () => NccRoute,
+} as any)
+const NccPortalRoute = NccPortalRouteImport.update({
+  id: '/portal',
+  path: '/portal',
   getParentRoute: () => NccRoute,
 } as any)
 const NccPaymentsRoute = NccPaymentsRouteImport.update({
@@ -306,6 +333,42 @@ const FrGuideIptvRoute = FrGuideIptvRouteImport.update({
   path: '/guide-iptv',
   getParentRoute: () => FrRoute,
 } as any)
+const EspaceClientSupportRoute = EspaceClientSupportRouteImport.update({
+  id: '/support',
+  path: '/support',
+  getParentRoute: () => EspaceClientRoute,
+} as any)
+const EspaceClientRenewRoute = EspaceClientRenewRouteImport.update({
+  id: '/renew',
+  path: '/renew',
+  getParentRoute: () => EspaceClientRoute,
+} as any)
+const EspaceClientProfileRoute = EspaceClientProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => EspaceClientRoute,
+} as any)
+const EspaceClientOrdersRoute = EspaceClientOrdersRouteImport.update({
+  id: '/orders',
+  path: '/orders',
+  getParentRoute: () => EspaceClientRoute,
+} as any)
+const EspaceClientDownloadsRoute = EspaceClientDownloadsRouteImport.update({
+  id: '/downloads',
+  path: '/downloads',
+  getParentRoute: () => EspaceClientRoute,
+} as any)
+const EspaceClientDashboardRoute = EspaceClientDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => EspaceClientRoute,
+} as any)
+const EspaceClientAnnouncementsRoute =
+  EspaceClientAnnouncementsRouteImport.update({
+    id: '/announcements',
+    path: '/announcements',
+    getParentRoute: () => EspaceClientRoute,
+  } as any)
 const EnGuideIptvRoute = EnGuideIptvRouteImport.update({
   id: '/guide-iptv',
   path: '/guide-iptv',
@@ -446,6 +509,16 @@ const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
   path: '/lovable/email/suppression',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EspaceClientSuccessRefRoute = EspaceClientSuccessRefRouteImport.update({
+  id: '/success/$ref',
+  path: '/success/$ref',
+  getParentRoute: () => EspaceClientRoute,
+} as any)
+const EspaceClientPayRefRoute = EspaceClientPayRefRouteImport.update({
+  id: '/pay/$ref',
+  path: '/pay/$ref',
+  getParentRoute: () => EspaceClientRoute,
+} as any)
 const ApiPublicCspReportRoute = ApiPublicCspReportRouteImport.update({
   id: '/api/public/csp-report',
   path: '/api/public/csp-report',
@@ -546,6 +619,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRoute
   '/de': typeof DeRoute
   '/en': typeof EnRouteWithChildren
+  '/espace-client': typeof EspaceClientRouteWithChildren
   '/fr': typeof FrRouteWithChildren
   '/legal-guide': typeof LegalGuideRoute
   '/ncc': typeof NccRouteWithChildren
@@ -561,6 +635,13 @@ export interface FileRoutesByFullPath {
   '/blog/best-iptv-2026': typeof BlogBestIptv2026Route
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/en/guide-iptv': typeof EnGuideIptvRoute
+  '/espace-client/announcements': typeof EspaceClientAnnouncementsRoute
+  '/espace-client/dashboard': typeof EspaceClientDashboardRoute
+  '/espace-client/downloads': typeof EspaceClientDownloadsRoute
+  '/espace-client/orders': typeof EspaceClientOrdersRoute
+  '/espace-client/profile': typeof EspaceClientProfileRoute
+  '/espace-client/renew': typeof EspaceClientRenewRoute
+  '/espace-client/support': typeof EspaceClientSupportRoute
   '/fr/guide-iptv': typeof FrGuideIptvRoute
   '/legal/notice': typeof LegalNoticeRoute
   '/legal/privacy': typeof LegalPrivacyRoute
@@ -578,6 +659,7 @@ export interface FileRoutesByFullPath {
   '/ncc/notifications': typeof NccNotificationsRoute
   '/ncc/orders': typeof NccOrdersRouteWithChildren
   '/ncc/payments': typeof NccPaymentsRouteWithChildren
+  '/ncc/portal': typeof NccPortalRoute
   '/ncc/products': typeof NccProductsRoute
   '/ncc/settings': typeof NccSettingsRouteWithChildren
   '/ncc/support': typeof NccSupportRoute
@@ -588,9 +670,12 @@ export interface FileRoutesByFullPath {
   '/payment/success': typeof PaymentSuccessRoute
   '/admin/': typeof AdminIndexRoute
   '/en/': typeof EnIndexRoute
+  '/espace-client/': typeof EspaceClientIndexRoute
   '/fr/': typeof FrIndexRoute
   '/ncc/': typeof NccIndexRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
+  '/espace-client/pay/$ref': typeof EspaceClientPayRefRoute
+  '/espace-client/success/$ref': typeof EspaceClientSuccessRefRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/ncc/clients/$id': typeof NccClientsIdRoute
   '/ncc/iptv/accounts': typeof NccIptvAccountsRoute
@@ -645,6 +730,13 @@ export interface FileRoutesByTo {
   '/blog/best-iptv-2026': typeof BlogBestIptv2026Route
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/en/guide-iptv': typeof EnGuideIptvRoute
+  '/espace-client/announcements': typeof EspaceClientAnnouncementsRoute
+  '/espace-client/dashboard': typeof EspaceClientDashboardRoute
+  '/espace-client/downloads': typeof EspaceClientDownloadsRoute
+  '/espace-client/orders': typeof EspaceClientOrdersRoute
+  '/espace-client/profile': typeof EspaceClientProfileRoute
+  '/espace-client/renew': typeof EspaceClientRenewRoute
+  '/espace-client/support': typeof EspaceClientSupportRoute
   '/fr/guide-iptv': typeof FrGuideIptvRoute
   '/legal/notice': typeof LegalNoticeRoute
   '/legal/privacy': typeof LegalPrivacyRoute
@@ -661,6 +753,7 @@ export interface FileRoutesByTo {
   '/ncc/notifications': typeof NccNotificationsRoute
   '/ncc/orders': typeof NccOrdersRouteWithChildren
   '/ncc/payments': typeof NccPaymentsRouteWithChildren
+  '/ncc/portal': typeof NccPortalRoute
   '/ncc/products': typeof NccProductsRoute
   '/ncc/support': typeof NccSupportRoute
   '/ncc/telegram': typeof NccTelegramRoute
@@ -670,9 +763,12 @@ export interface FileRoutesByTo {
   '/payment/success': typeof PaymentSuccessRoute
   '/admin': typeof AdminIndexRoute
   '/en': typeof EnIndexRoute
+  '/espace-client': typeof EspaceClientIndexRoute
   '/fr': typeof FrIndexRoute
   '/ncc': typeof NccIndexRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
+  '/espace-client/pay/$ref': typeof EspaceClientPayRefRoute
+  '/espace-client/success/$ref': typeof EspaceClientSuccessRefRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/ncc/clients/$id': typeof NccClientsIdRoute
   '/ncc/iptv/accounts': typeof NccIptvAccountsRoute
@@ -717,6 +813,7 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/de': typeof DeRoute
   '/en': typeof EnRouteWithChildren
+  '/espace-client': typeof EspaceClientRouteWithChildren
   '/fr': typeof FrRouteWithChildren
   '/legal-guide': typeof LegalGuideRoute
   '/ncc': typeof NccRouteWithChildren
@@ -732,6 +829,13 @@ export interface FileRoutesById {
   '/blog/best-iptv-2026': typeof BlogBestIptv2026Route
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/en/guide-iptv': typeof EnGuideIptvRoute
+  '/espace-client/announcements': typeof EspaceClientAnnouncementsRoute
+  '/espace-client/dashboard': typeof EspaceClientDashboardRoute
+  '/espace-client/downloads': typeof EspaceClientDownloadsRoute
+  '/espace-client/orders': typeof EspaceClientOrdersRoute
+  '/espace-client/profile': typeof EspaceClientProfileRoute
+  '/espace-client/renew': typeof EspaceClientRenewRoute
+  '/espace-client/support': typeof EspaceClientSupportRoute
   '/fr/guide-iptv': typeof FrGuideIptvRoute
   '/legal/notice': typeof LegalNoticeRoute
   '/legal/privacy': typeof LegalPrivacyRoute
@@ -749,6 +853,7 @@ export interface FileRoutesById {
   '/ncc/notifications': typeof NccNotificationsRoute
   '/ncc/orders': typeof NccOrdersRouteWithChildren
   '/ncc/payments': typeof NccPaymentsRouteWithChildren
+  '/ncc/portal': typeof NccPortalRoute
   '/ncc/products': typeof NccProductsRoute
   '/ncc/settings': typeof NccSettingsRouteWithChildren
   '/ncc/support': typeof NccSupportRoute
@@ -759,9 +864,12 @@ export interface FileRoutesById {
   '/payment/success': typeof PaymentSuccessRoute
   '/admin/': typeof AdminIndexRoute
   '/en/': typeof EnIndexRoute
+  '/espace-client/': typeof EspaceClientIndexRoute
   '/fr/': typeof FrIndexRoute
   '/ncc/': typeof NccIndexRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
+  '/espace-client/pay/$ref': typeof EspaceClientPayRefRoute
+  '/espace-client/success/$ref': typeof EspaceClientSuccessRefRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/ncc/clients/$id': typeof NccClientsIdRoute
   '/ncc/iptv/accounts': typeof NccIptvAccountsRoute
@@ -807,6 +915,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/de'
     | '/en'
+    | '/espace-client'
     | '/fr'
     | '/legal-guide'
     | '/ncc'
@@ -822,6 +931,13 @@ export interface FileRouteTypes {
     | '/blog/best-iptv-2026'
     | '/email/unsubscribe'
     | '/en/guide-iptv'
+    | '/espace-client/announcements'
+    | '/espace-client/dashboard'
+    | '/espace-client/downloads'
+    | '/espace-client/orders'
+    | '/espace-client/profile'
+    | '/espace-client/renew'
+    | '/espace-client/support'
     | '/fr/guide-iptv'
     | '/legal/notice'
     | '/legal/privacy'
@@ -839,6 +955,7 @@ export interface FileRouteTypes {
     | '/ncc/notifications'
     | '/ncc/orders'
     | '/ncc/payments'
+    | '/ncc/portal'
     | '/ncc/products'
     | '/ncc/settings'
     | '/ncc/support'
@@ -849,9 +966,12 @@ export interface FileRouteTypes {
     | '/payment/success'
     | '/admin/'
     | '/en/'
+    | '/espace-client/'
     | '/fr/'
     | '/ncc/'
     | '/api/public/csp-report'
+    | '/espace-client/pay/$ref'
+    | '/espace-client/success/$ref'
     | '/lovable/email/suppression'
     | '/ncc/clients/$id'
     | '/ncc/iptv/accounts'
@@ -906,6 +1026,13 @@ export interface FileRouteTypes {
     | '/blog/best-iptv-2026'
     | '/email/unsubscribe'
     | '/en/guide-iptv'
+    | '/espace-client/announcements'
+    | '/espace-client/dashboard'
+    | '/espace-client/downloads'
+    | '/espace-client/orders'
+    | '/espace-client/profile'
+    | '/espace-client/renew'
+    | '/espace-client/support'
     | '/fr/guide-iptv'
     | '/legal/notice'
     | '/legal/privacy'
@@ -922,6 +1049,7 @@ export interface FileRouteTypes {
     | '/ncc/notifications'
     | '/ncc/orders'
     | '/ncc/payments'
+    | '/ncc/portal'
     | '/ncc/products'
     | '/ncc/support'
     | '/ncc/telegram'
@@ -931,9 +1059,12 @@ export interface FileRouteTypes {
     | '/payment/success'
     | '/admin'
     | '/en'
+    | '/espace-client'
     | '/fr'
     | '/ncc'
     | '/api/public/csp-report'
+    | '/espace-client/pay/$ref'
+    | '/espace-client/success/$ref'
     | '/lovable/email/suppression'
     | '/ncc/clients/$id'
     | '/ncc/iptv/accounts'
@@ -977,6 +1108,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/de'
     | '/en'
+    | '/espace-client'
     | '/fr'
     | '/legal-guide'
     | '/ncc'
@@ -992,6 +1124,13 @@ export interface FileRouteTypes {
     | '/blog/best-iptv-2026'
     | '/email/unsubscribe'
     | '/en/guide-iptv'
+    | '/espace-client/announcements'
+    | '/espace-client/dashboard'
+    | '/espace-client/downloads'
+    | '/espace-client/orders'
+    | '/espace-client/profile'
+    | '/espace-client/renew'
+    | '/espace-client/support'
     | '/fr/guide-iptv'
     | '/legal/notice'
     | '/legal/privacy'
@@ -1009,6 +1148,7 @@ export interface FileRouteTypes {
     | '/ncc/notifications'
     | '/ncc/orders'
     | '/ncc/payments'
+    | '/ncc/portal'
     | '/ncc/products'
     | '/ncc/settings'
     | '/ncc/support'
@@ -1019,9 +1159,12 @@ export interface FileRouteTypes {
     | '/payment/success'
     | '/admin/'
     | '/en/'
+    | '/espace-client/'
     | '/fr/'
     | '/ncc/'
     | '/api/public/csp-report'
+    | '/espace-client/pay/$ref'
+    | '/espace-client/success/$ref'
     | '/lovable/email/suppression'
     | '/ncc/clients/$id'
     | '/ncc/iptv/accounts'
@@ -1066,6 +1209,7 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   DeRoute: typeof DeRoute
   EnRoute: typeof EnRouteWithChildren
+  EspaceClientRoute: typeof EspaceClientRouteWithChildren
   FrRoute: typeof FrRouteWithChildren
   LegalGuideRoute: typeof LegalGuideRoute
   NccRoute: typeof NccRouteWithChildren
@@ -1144,6 +1288,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FrRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/espace-client': {
+      id: '/espace-client'
+      path: '/espace-client'
+      fullPath: '/espace-client'
+      preLoaderRoute: typeof EspaceClientRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/en': {
       id: '/en'
       path: '/en'
@@ -1206,6 +1357,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/fr/'
       preLoaderRoute: typeof FrIndexRouteImport
       parentRoute: typeof FrRoute
+    }
+    '/espace-client/': {
+      id: '/espace-client/'
+      path: '/'
+      fullPath: '/espace-client/'
+      preLoaderRoute: typeof EspaceClientIndexRouteImport
+      parentRoute: typeof EspaceClientRoute
     }
     '/en/': {
       id: '/en/'
@@ -1275,6 +1433,13 @@ declare module '@tanstack/react-router' {
       path: '/products'
       fullPath: '/ncc/products'
       preLoaderRoute: typeof NccProductsRouteImport
+      parentRoute: typeof NccRoute
+    }
+    '/ncc/portal': {
+      id: '/ncc/portal'
+      path: '/portal'
+      fullPath: '/ncc/portal'
+      preLoaderRoute: typeof NccPortalRouteImport
       parentRoute: typeof NccRoute
     }
     '/ncc/payments': {
@@ -1395,6 +1560,55 @@ declare module '@tanstack/react-router' {
       fullPath: '/fr/guide-iptv'
       preLoaderRoute: typeof FrGuideIptvRouteImport
       parentRoute: typeof FrRoute
+    }
+    '/espace-client/support': {
+      id: '/espace-client/support'
+      path: '/support'
+      fullPath: '/espace-client/support'
+      preLoaderRoute: typeof EspaceClientSupportRouteImport
+      parentRoute: typeof EspaceClientRoute
+    }
+    '/espace-client/renew': {
+      id: '/espace-client/renew'
+      path: '/renew'
+      fullPath: '/espace-client/renew'
+      preLoaderRoute: typeof EspaceClientRenewRouteImport
+      parentRoute: typeof EspaceClientRoute
+    }
+    '/espace-client/profile': {
+      id: '/espace-client/profile'
+      path: '/profile'
+      fullPath: '/espace-client/profile'
+      preLoaderRoute: typeof EspaceClientProfileRouteImport
+      parentRoute: typeof EspaceClientRoute
+    }
+    '/espace-client/orders': {
+      id: '/espace-client/orders'
+      path: '/orders'
+      fullPath: '/espace-client/orders'
+      preLoaderRoute: typeof EspaceClientOrdersRouteImport
+      parentRoute: typeof EspaceClientRoute
+    }
+    '/espace-client/downloads': {
+      id: '/espace-client/downloads'
+      path: '/downloads'
+      fullPath: '/espace-client/downloads'
+      preLoaderRoute: typeof EspaceClientDownloadsRouteImport
+      parentRoute: typeof EspaceClientRoute
+    }
+    '/espace-client/dashboard': {
+      id: '/espace-client/dashboard'
+      path: '/dashboard'
+      fullPath: '/espace-client/dashboard'
+      preLoaderRoute: typeof EspaceClientDashboardRouteImport
+      parentRoute: typeof EspaceClientRoute
+    }
+    '/espace-client/announcements': {
+      id: '/espace-client/announcements'
+      path: '/announcements'
+      fullPath: '/espace-client/announcements'
+      preLoaderRoute: typeof EspaceClientAnnouncementsRouteImport
+      parentRoute: typeof EspaceClientRoute
     }
     '/en/guide-iptv': {
       id: '/en/guide-iptv'
@@ -1592,6 +1806,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableEmailSuppressionRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/espace-client/success/$ref': {
+      id: '/espace-client/success/$ref'
+      path: '/success/$ref'
+      fullPath: '/espace-client/success/$ref'
+      preLoaderRoute: typeof EspaceClientSuccessRefRouteImport
+      parentRoute: typeof EspaceClientRoute
+    }
+    '/espace-client/pay/$ref': {
+      id: '/espace-client/pay/$ref'
+      path: '/pay/$ref'
+      fullPath: '/espace-client/pay/$ref'
+      preLoaderRoute: typeof EspaceClientPayRefRouteImport
+      parentRoute: typeof EspaceClientRoute
+    }
     '/api/public/csp-report': {
       id: '/api/public/csp-report'
       path: '/api/public/csp-report'
@@ -1741,6 +1969,36 @@ const EnRouteChildren: EnRouteChildren = {
 
 const EnRouteWithChildren = EnRoute._addFileChildren(EnRouteChildren)
 
+interface EspaceClientRouteChildren {
+  EspaceClientAnnouncementsRoute: typeof EspaceClientAnnouncementsRoute
+  EspaceClientDashboardRoute: typeof EspaceClientDashboardRoute
+  EspaceClientDownloadsRoute: typeof EspaceClientDownloadsRoute
+  EspaceClientOrdersRoute: typeof EspaceClientOrdersRoute
+  EspaceClientProfileRoute: typeof EspaceClientProfileRoute
+  EspaceClientRenewRoute: typeof EspaceClientRenewRoute
+  EspaceClientSupportRoute: typeof EspaceClientSupportRoute
+  EspaceClientIndexRoute: typeof EspaceClientIndexRoute
+  EspaceClientPayRefRoute: typeof EspaceClientPayRefRoute
+  EspaceClientSuccessRefRoute: typeof EspaceClientSuccessRefRoute
+}
+
+const EspaceClientRouteChildren: EspaceClientRouteChildren = {
+  EspaceClientAnnouncementsRoute: EspaceClientAnnouncementsRoute,
+  EspaceClientDashboardRoute: EspaceClientDashboardRoute,
+  EspaceClientDownloadsRoute: EspaceClientDownloadsRoute,
+  EspaceClientOrdersRoute: EspaceClientOrdersRoute,
+  EspaceClientProfileRoute: EspaceClientProfileRoute,
+  EspaceClientRenewRoute: EspaceClientRenewRoute,
+  EspaceClientSupportRoute: EspaceClientSupportRoute,
+  EspaceClientIndexRoute: EspaceClientIndexRoute,
+  EspaceClientPayRefRoute: EspaceClientPayRefRoute,
+  EspaceClientSuccessRefRoute: EspaceClientSuccessRefRoute,
+}
+
+const EspaceClientRouteWithChildren = EspaceClientRoute._addFileChildren(
+  EspaceClientRouteChildren,
+)
+
 interface FrRouteChildren {
   FrGuideIptvRoute: typeof FrGuideIptvRoute
   FrIndexRoute: typeof FrIndexRoute
@@ -1850,6 +2108,7 @@ interface NccRouteChildren {
   NccNotificationsRoute: typeof NccNotificationsRoute
   NccOrdersRoute: typeof NccOrdersRouteWithChildren
   NccPaymentsRoute: typeof NccPaymentsRouteWithChildren
+  NccPortalRoute: typeof NccPortalRoute
   NccProductsRoute: typeof NccProductsRoute
   NccSettingsRoute: typeof NccSettingsRouteWithChildren
   NccSupportRoute: typeof NccSupportRoute
@@ -1871,6 +2130,7 @@ const NccRouteChildren: NccRouteChildren = {
   NccNotificationsRoute: NccNotificationsRoute,
   NccOrdersRoute: NccOrdersRouteWithChildren,
   NccPaymentsRoute: NccPaymentsRouteWithChildren,
+  NccPortalRoute: NccPortalRoute,
   NccProductsRoute: NccProductsRoute,
   NccSettingsRoute: NccSettingsRouteWithChildren,
   NccSupportRoute: NccSupportRoute,
@@ -1890,6 +2150,7 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   DeRoute: DeRoute,
   EnRoute: EnRouteWithChildren,
+  EspaceClientRoute: EspaceClientRouteWithChildren,
   FrRoute: FrRouteWithChildren,
   LegalGuideRoute: LegalGuideRoute,
   NccRoute: NccRouteWithChildren,
@@ -1927,13 +2188,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

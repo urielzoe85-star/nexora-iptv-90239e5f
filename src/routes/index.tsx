@@ -99,6 +99,7 @@ function Nav() {
           <Link to="/catalog" className="hover:text-foreground transition">{t("nav.catalog")}</Link>
           <a href="#faq" className="hover:text-foreground transition">{t("nav.faq")}</a>
           <a href="#support" className="hover:text-foreground transition">{t("nav.support")}</a>
+          <Link to="/espace-client" className="hover:text-foreground transition">Espace client</Link>
           {locale === "fr" && (
             <Link to="/fr/guide-iptv" className="hover:text-foreground transition">Guide d'installation</Link>
           )}
@@ -129,6 +130,7 @@ function Nav() {
             <Link to="/catalog" onClick={close} className="hover:text-foreground transition">{t("nav.catalog")}</Link>
             <a href="#faq" onClick={close} className="hover:text-foreground transition">{t("nav.faq")}</a>
             <a href="#support" onClick={close} className="hover:text-foreground transition">{t("nav.support")}</a>
+            <Link to="/espace-client" onClick={close} className="hover:text-foreground transition">Espace client</Link>
             {locale === "fr" && (
               <Link to="/fr/guide-iptv" onClick={close} className="hover:text-foreground transition">Guide d'installation</Link>
             )}
