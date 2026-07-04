@@ -19,5 +19,15 @@ export const orderCreatedWorkflow: WorkflowDefinition = {
       name: "log:workflow-complete",
       run: async (ctx) => logToIptvJournal("order-created", "Workflow terminé", { runId: ctx.runId }),
     },
+    {
+      name: "notify:admin",
+      run: async (ctx) => {
+        const { notifyAdminTelegram } = await import("@/lib/telegram.server");
+        const p: any = ctx.payload ?? {};
+        return notifyAdminTelegram(
+          `🛒 Nouvelle commande\nRéf : ${p.orderId ?? p.orderRef ?? "?"}\nPlan : ${p.planName ?? "?"}\nEmail : ${p.email ?? "?"}`,
+        );
+      },
+    },
   ],
 };
