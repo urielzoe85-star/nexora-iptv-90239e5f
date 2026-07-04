@@ -15,6 +15,7 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as NccRouteImport } from './routes/ncc'
 import { Route as LegalGuideRouteImport } from './routes/legal-guide'
 import { Route as FrRouteImport } from './routes/fr'
+import { Route as EspaceClientRouteImport } from './routes/espace-client'
 import { Route as EnRouteImport } from './routes/en'
 import { Route as DeRouteImport } from './routes/de'
 import { Route as DashboardRouteImport } from './routes/dashboard'
@@ -124,6 +125,11 @@ const LegalGuideRoute = LegalGuideRouteImport.update({
 const FrRoute = FrRouteImport.update({
   id: '/fr',
   path: '/fr',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EspaceClientRoute = EspaceClientRouteImport.update({
+  id: '/espace-client',
+  path: '/espace-client',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EnRoute = EnRouteImport.update({
@@ -546,6 +552,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRoute
   '/de': typeof DeRoute
   '/en': typeof EnRouteWithChildren
+  '/espace-client': typeof EspaceClientRoute
   '/fr': typeof FrRouteWithChildren
   '/legal-guide': typeof LegalGuideRoute
   '/ncc': typeof NccRouteWithChildren
@@ -632,6 +639,7 @@ export interface FileRoutesByTo {
   '/checkout': typeof CheckoutRoute
   '/dashboard': typeof DashboardRoute
   '/de': typeof DeRoute
+  '/espace-client': typeof EspaceClientRoute
   '/legal-guide': typeof LegalGuideRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/track': typeof TrackRoute
@@ -717,6 +725,7 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/de': typeof DeRoute
   '/en': typeof EnRouteWithChildren
+  '/espace-client': typeof EspaceClientRoute
   '/fr': typeof FrRouteWithChildren
   '/legal-guide': typeof LegalGuideRoute
   '/ncc': typeof NccRouteWithChildren
@@ -807,6 +816,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/de'
     | '/en'
+    | '/espace-client'
     | '/fr'
     | '/legal-guide'
     | '/ncc'
@@ -893,6 +903,7 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/dashboard'
     | '/de'
+    | '/espace-client'
     | '/legal-guide'
     | '/sitemap.xml'
     | '/track'
@@ -977,6 +988,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/de'
     | '/en'
+    | '/espace-client'
     | '/fr'
     | '/legal-guide'
     | '/ncc'
@@ -1066,6 +1078,7 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   DeRoute: typeof DeRoute
   EnRoute: typeof EnRouteWithChildren
+  EspaceClientRoute: typeof EspaceClientRoute
   FrRoute: typeof FrRouteWithChildren
   LegalGuideRoute: typeof LegalGuideRoute
   NccRoute: typeof NccRouteWithChildren
@@ -1142,6 +1155,13 @@ declare module '@tanstack/react-router' {
       path: '/fr'
       fullPath: '/fr'
       preLoaderRoute: typeof FrRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/espace-client': {
+      id: '/espace-client'
+      path: '/espace-client'
+      fullPath: '/espace-client'
+      preLoaderRoute: typeof EspaceClientRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/en': {
@@ -1890,6 +1910,7 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   DeRoute: DeRoute,
   EnRoute: EnRouteWithChildren,
+  EspaceClientRoute: EspaceClientRoute,
   FrRoute: FrRouteWithChildren,
   LegalGuideRoute: LegalGuideRoute,
   NccRoute: NccRouteWithChildren,
