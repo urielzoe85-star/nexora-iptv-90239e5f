@@ -144,11 +144,11 @@ export const getOrderByRef = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
     const { data: row, error } = await supabaseAdmin
       .from("orders")
-      // Never select `metadata` here — it contains PII (Mobile Money phone,
-      // operator, country) and raw SebPay request/response payloads. Anyone
-      // with the order reference can hit this endpoint. We surface only a
-      // sanitised `failure_reason` string for the failure page.
-      .select("order_ref, email, full_name, plan_name, amount, currency, method, status, sebpay_reference, metadata, created_at, updated_at")
+      // Public endpoint: anyone holding the order ref can call this. We
+      // deliberately omit PII (raw email, full_name) and surface only a
+      // masked email plus non-sensitive delivery/failure fields. Full
+      // credentials require the double-check ref+email via getOrderDelivery.
+      .select("order_ref, email, plan_name, amount, currency, method, status, sebpay_reference, metadata, created_at, updated_at")
       .eq("order_ref", data.ref)
       .maybeSingle();
     if (error) throw new Error(error.message);
@@ -174,10 +174,21 @@ export const getOrderByRef = createServerFn({ method: "GET" })
           sent_at: rawDelivery.sent_at ?? null,
         }
       : null;
+    // Mask the email: keep the first char and the domain's first char, e.g.
+    // "alice@example.com" -> "a***@e***.com". Prevents PII harvest via ref
+    // enumeration while still letting the buyer recognise their own order.
+    const maskEmail = (raw: string | null | undefined): string | null => {
+      if (!raw) return null;
+      const [local, domain] = raw.split("@");
+      if (!local || !domain) return null;
+      const dotIdx = domain.lastIndexOf(".");
+      const tld = dotIdx >= 0 ? domain.slice(dotIdx) : "";
+      const dHead = dotIdx >= 0 ? domain.slice(0, dotIdx) : domain;
+      return `${local[0]}***@${dHead[0] ?? ""}***${tld}`;
+    };
     return {
       order_ref: row.order_ref,
-      email: row.email,
-      full_name: row.full_name,
+      email_masked: maskEmail(row.email),
       plan_name: row.plan_name,
       amount: row.amount,
       currency: row.currency,
