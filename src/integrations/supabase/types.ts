@@ -278,6 +278,86 @@ export type Database = {
         }
         Relationships: []
       }
+      client_portal_otps: {
+        Row: {
+          attempts: number
+          code_hash: string
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          ip: string | null
+          used_at: string | null
+        }
+        Insert: {
+          attempts?: number
+          code_hash: string
+          created_at?: string
+          email: string
+          expires_at: string
+          id?: string
+          ip?: string | null
+          used_at?: string | null
+        }
+        Update: {
+          attempts?: number
+          code_hash?: string
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          ip?: string | null
+          used_at?: string | null
+        }
+        Relationships: []
+      }
+      client_portal_sessions: {
+        Row: {
+          created_at: string
+          customer_id: string
+          email: string
+          expires_at: string
+          id: string
+          ip: string | null
+          last_seen_at: string
+          revoked_at: string | null
+          token_hash: string
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          email: string
+          expires_at: string
+          id?: string
+          ip?: string | null
+          last_seen_at?: string
+          revoked_at?: string | null
+          token_hash: string
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          ip?: string | null
+          last_seen_at?: string
+          revoked_at?: string | null
+          token_hash?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_portal_sessions_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customer_events: {
         Row: {
           actor_id: string | null
@@ -1091,6 +1171,39 @@ export type Database = {
         }
         Relationships: []
       }
+      portal_announcements: {
+        Row: {
+          active: boolean
+          body: string
+          created_at: string
+          id: string
+          published_at: string
+          severity: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          body: string
+          created_at?: string
+          id?: string
+          published_at?: string
+          severity?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          body?: string
+          created_at?: string
+          id?: string
+          published_at?: string
+          severity?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       products: {
         Row: {
           category: string
@@ -1132,6 +1245,45 @@ export type Database = {
           price?: number
           sku?: string
           status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      renewal_plans: {
+        Row: {
+          active: boolean
+          created_at: string
+          currency: string
+          description: string | null
+          duration_months: number
+          id: string
+          name: string
+          price: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          currency?: string
+          description?: string | null
+          duration_months: number
+          id?: string
+          name: string
+          price: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          currency?: string
+          description?: string | null
+          duration_months?: number
+          id?: string
+          name?: string
+          price?: number
+          sort_order?: number
           updated_at?: string
         }
         Relationships: []
