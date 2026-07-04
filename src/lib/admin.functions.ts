@@ -277,6 +277,25 @@ export const adminConfirmPayment = createServerFn({ method: "POST" })
       .single();
     if (error) throw new Error(error.message);
 
+    // Déclenche la chaîne d'attribution IPTV (provisioning + composition
+    // de la fiche + dispatch email/WhatsApp/Telegram). Sans cet appel, le
+    // client reçoit uniquement l'accusé de réception ci-dessous mais
+    // jamais ses identifiants d'accès.
+    try {
+      const { emitBusinessEvent } = await import("@/lib/payments.functions");
+      await emitBusinessEvent("payment.confirmed", {
+        orderId: row.order_ref,
+        orderRef: row.order_ref,
+        email: row.email,
+        planName: row.plan_name,
+        amount: row.amount,
+        currency: row.currency,
+        provider: "admin_manual_confirm",
+      });
+    } catch (e) {
+      console.error("[admin] emit payment.confirmed failed", e);
+    }
+
     // Construit le lien WhatsApp pré-rempli vers le numéro du client.
     // WhatsApp exige un numéro international SANS "+" ni espaces. Si le
     // numéro local ne contient pas l'indicatif pays, on le préfixe à
