@@ -1,43 +1,54 @@
-## Constats
 
-- La commande récente `NX-26X8KWHZ89` est `completed`, mais `metadata.iptv_delivery` est vide : côté client, le suivi reste donc bloqué à l’étape “identifiants envoyés”.
-- Le workflow `payment-confirmed` peut se terminer en “success” sans rien attribuer quand la commande est déjà `completed`, même si aucune fiche IPTV n’existe.
-- La commande `NX-LB6UV2822A` échoue sur MEGAOTT : `POST /api/v1/user` retourne 405. Comme le provider MEGAOTT est actif, le système tente l’API distante au lieu d’utiliser le stock local disponible.
-- Il existe pourtant des comptes IPTV `available` en base, utilisables immédiatement pour attribuer des accès au client.
-- L’accès `/ncc` dépend d’un cookie HttpOnly de déverrouillage ; après saisie du mot de passe, la navigation peut repartir sur l’identification si le cookie n’est pas encore pris en compte ou si le layout vérifie trop tôt.
+# Activation Journal · Analytics · Support · Employés
 
-## Plan de correction
+## Journal système (`/ncc/logs`)
 
-1. **Rendre l’attribution IPTV robuste**
-   - Modifier `createIptvSubscription` pour chercher d’abord un compte IPTV local `available` adapté.
-   - Si un compte est disponible, l’assigner à la commande, passer son statut à `active`, remplir `order_id`, `customer_id`, `expires_at` et `metadata.order_ref`.
-   - Ne tenter MEGAOTT que si aucun compte local disponible n’est trouvé, ou si le stock local est vide.
-   - En cas d’erreur MEGAOTT 4xx/5xx, basculer automatiquement vers le stock local au lieu de bloquer toute la livraison.
+Brancher la table existante `security_events` (+ agrège `automation_runs` et `iptv_logs` récents en source unifiée).
 
-2. **Corriger le garde du workflow `payment-confirmed`**
-   - Remplacer le calcul “déjà traité” par une condition stricte : ne sauter le workflow que si `metadata.iptv_delivery.delivery_status === 'sent'` avec un `iptv_account_id` réel.
-   - Ainsi, une commande `completed` mais sans fiche IPTV sera reprovisionnée et envoyée.
+- Server fn `getSystemLogs({search, severity, source, limit})` (requireAdmin) — fusionne les 3 sources en `{ ts, severity, source, message, actor, ref }`, tri desc, limite 200.
+- Remplacer `LogsTable.tsx` par un tableau live (search, filtre severity, filtre source, bouton "Rafraîchir" et export CSV).
+- Retirer le badge "Collecte à venir" de la page.
 
-3. **Forcer une vraie composition + dispatch des identifiants**
-   - Garantir que `delivery:compose` écrit `orders.metadata.iptv_delivery`.
-   - Garantir que `delivery:dispatch` met `delivery_status: sent` dès qu’au moins l’email est mis en file.
-   - Le suivi client passera alors de “en attente” à “identifiants envoyés”.
+## Analytics (`/ncc/analytics`)
 
-4. **Corriger la confirmation admin**
-   - Faire pointer `adminConfirmPayment` vers le bon émetteur automation et éviter les doublons silencieux.
-   - Après confirmation, déclencher le workflow en mode fiable, puis invalider l’affichage admin.
+Vue KPI sur 30 j depuis `orders`, `customers`, `subscriptions`.
 
-5. **Réparer l’accès NCC après mot de passe**
-   - Après `verifyNccAccess`, naviguer vers `/ncc/` avec `replace: true` et invalider/rafraîchir l’état route si nécessaire.
-   - Dans le layout `/ncc`, ajouter une courte revérification du cookie si la première lecture retourne “locked” juste après le déverrouillage.
-   - Conserver la sécurité : pas de retour à `sessionStorage` comme preuve d’accès.
+- Server fn `getAnalyticsSnapshot({ days: 7|30|90 })` (requireAdmin) : revenu total, nb commandes, panier moyen, taux de conversion (paid/total), nouveaux clients, abonnements actifs, top plans, série journalière (revenu + orders).
+- Page dédiée : 4 stat cards + graph (recharts, déjà utilisé) + top plans + selecteur période.
+- Statut du module → `ready`.
 
-6. **Ajouter une action admin de rattrapage visible**
-   - Sur `/admin/automation`, faire de “Attribuer maintenant” une action qui attribue + compose + envoie directement pour une référence `NX-...`.
-   - Afficher un message clair si MEGAOTT est indisponible mais qu’un compte local a été utilisé.
+## Support (`/ncc/support`) — mini helpdesk
 
-7. **Validation**
-   - Vérifier en base qu’une commande corrigée contient `metadata.iptv_delivery` avec `delivery_status: sent`.
-   - Vérifier qu’un `delivery_logs` email existe et qu’un `email_send_log` est créé.
-   - Vérifier que `/track?ref=...` affiche les identifiants comme envoyés.
-   - Vérifier que le bouton “Accéder au NCC” ouvre `/ncc/` après le mot de passe sans revenir à l’identification.
+Migration :
+- `support_tickets` (id, customer_id nullable, email, subject, status: `open|pending|resolved|closed`, priority: `low|normal|high|urgent`, assigned_to nullable, last_message_at, created_at, updated_at)
+- `support_messages` (id, ticket_id, author_type: `customer|admin`, author_user_id nullable, body, created_at)
+- GRANT + RLS : admins (has_role) full ; `authenticated` : lit/écrit uniquement ses propres tickets via customer_id/email.
+
+Server fns (requireAdmin) : list, get(id), createTicket, addMessage, updateStatus, assign.
+UI : liste (filtres statut/priorité) + drawer/route détail avec fil de messages et actions rapides.
+Statut → `ready`. Pas encore de portail client (à voir plus tard).
+
+## Employés (`/ncc/employees`) — gestion des admins
+
+Utilise `user_roles` existant + `admin_change_role` RPC.
+
+Server fns (requireAdmin) :
+- `listEmployees()` : join `auth.users` (via supabaseAdmin) × `user_roles`, retourne email, dernière connexion, rôle.
+- `inviteEmployee({email, role})` : `supabaseAdmin.auth.admin.inviteUserByEmail` puis insert `user_roles`.
+- `grantAdmin({user_id})` / `revokeAdmin({user_id})` : appelle `admin_change_role` (déjà safe, empêche perte du dernier admin).
+
+UI : tableau + bouton Inviter (dialog email + role) + toggle admin par ligne + confirmation. Statut → `ready`.
+
+## Divers
+
+- `modules.ts` : passer `logs`, `analytics`, `support`, `employees` à `status: "ready"`.
+- Ajouter un log Telegram admin (best-effort) sur `inviteEmployee` et `grantAdmin/revokeAdmin` (déjà loggé côté security_events par `admin_change_role`, on garde la notif).
+
+## Technique
+
+- Toutes les server fns dans `src/lib/{logs,analytics,support,employees}.functions.ts` avec `requireAdmin`.
+- Charts : `recharts` (déjà dans `package.json`).
+- Migration Support unique : CREATE TABLE + GRANT authenticated/service_role + RLS + policies (admin via `has_role`, client via `auth.uid()`/email match).
+- Aucun changement front public.
+
+Ordre d'implémentation : Logs → Analytics → Employés → Support (Support = plus lourd car migration + drawer).
