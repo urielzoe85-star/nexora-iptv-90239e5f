@@ -92,7 +92,7 @@ export const adminReplyTicket = createServerFn({ method: "POST" })
     if (mErr) throw new Error(mErr.message);
     const patch: Record<string, unknown> = { last_message_at: new Date().toISOString() };
     if (data.newStatus) patch.status = data.newStatus;
-    const { error: uErr } = await supabaseAdmin.from("support_tickets").update(patch).eq("id", data.ticket_id);
+    const { error: uErr } = await (supabaseAdmin as any).from("support_tickets").update(patch).eq("id", data.ticket_id);
     if (uErr) throw new Error(uErr.message);
     return { ok: true };
   });
@@ -113,7 +113,7 @@ export const adminUpdateTicket = createServerFn({ method: "POST" })
     if (data.status) patch.status = data.status;
     if (data.priority) patch.priority = data.priority;
     if (data.assigned_to !== undefined) patch.assigned_to = data.assigned_to;
-    const { error } = await supabaseAdmin.from("support_tickets").update(patch).eq("id", data.id);
+    const { error } = await (supabaseAdmin as any).from("support_tickets").update(patch).eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
