@@ -53,6 +53,7 @@ import { Route as LegalRefundRouteImport } from './routes/legal.refund'
 import { Route as LegalPrivacyRouteImport } from './routes/legal.privacy'
 import { Route as LegalNoticeRouteImport } from './routes/legal.notice'
 import { Route as FrGuideIptvRouteImport } from './routes/fr.guide-iptv'
+import { Route as EspaceClientSupportRouteImport } from './routes/espace-client.support'
 import { Route as EspaceClientRenewRouteImport } from './routes/espace-client.renew'
 import { Route as EspaceClientProfileRouteImport } from './routes/espace-client.profile'
 import { Route as EspaceClientOrdersRouteImport } from './routes/espace-client.orders'
@@ -323,6 +324,11 @@ const FrGuideIptvRoute = FrGuideIptvRouteImport.update({
   id: '/guide-iptv',
   path: '/guide-iptv',
   getParentRoute: () => FrRoute,
+} as any)
+const EspaceClientSupportRoute = EspaceClientSupportRouteImport.update({
+  id: '/support',
+  path: '/support',
+  getParentRoute: () => EspaceClientRoute,
 } as any)
 const EspaceClientRenewRoute = EspaceClientRenewRouteImport.update({
   id: '/renew',
@@ -614,6 +620,7 @@ export interface FileRoutesByFullPath {
   '/espace-client/orders': typeof EspaceClientOrdersRoute
   '/espace-client/profile': typeof EspaceClientProfileRoute
   '/espace-client/renew': typeof EspaceClientRenewRoute
+  '/espace-client/support': typeof EspaceClientSupportRoute
   '/fr/guide-iptv': typeof FrGuideIptvRoute
   '/legal/notice': typeof LegalNoticeRoute
   '/legal/privacy': typeof LegalPrivacyRoute
@@ -705,6 +712,7 @@ export interface FileRoutesByTo {
   '/espace-client/orders': typeof EspaceClientOrdersRoute
   '/espace-client/profile': typeof EspaceClientProfileRoute
   '/espace-client/renew': typeof EspaceClientRenewRoute
+  '/espace-client/support': typeof EspaceClientSupportRoute
   '/fr/guide-iptv': typeof FrGuideIptvRoute
   '/legal/notice': typeof LegalNoticeRoute
   '/legal/privacy': typeof LegalPrivacyRoute
@@ -800,6 +808,7 @@ export interface FileRoutesById {
   '/espace-client/orders': typeof EspaceClientOrdersRoute
   '/espace-client/profile': typeof EspaceClientProfileRoute
   '/espace-client/renew': typeof EspaceClientRenewRoute
+  '/espace-client/support': typeof EspaceClientSupportRoute
   '/fr/guide-iptv': typeof FrGuideIptvRoute
   '/legal/notice': typeof LegalNoticeRoute
   '/legal/privacy': typeof LegalPrivacyRoute
@@ -898,6 +907,7 @@ export interface FileRouteTypes {
     | '/espace-client/orders'
     | '/espace-client/profile'
     | '/espace-client/renew'
+    | '/espace-client/support'
     | '/fr/guide-iptv'
     | '/legal/notice'
     | '/legal/privacy'
@@ -989,6 +999,7 @@ export interface FileRouteTypes {
     | '/espace-client/orders'
     | '/espace-client/profile'
     | '/espace-client/renew'
+    | '/espace-client/support'
     | '/fr/guide-iptv'
     | '/legal/notice'
     | '/legal/privacy'
@@ -1083,6 +1094,7 @@ export interface FileRouteTypes {
     | '/espace-client/orders'
     | '/espace-client/profile'
     | '/espace-client/renew'
+    | '/espace-client/support'
     | '/fr/guide-iptv'
     | '/legal/notice'
     | '/legal/privacy'
@@ -1505,6 +1517,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FrGuideIptvRouteImport
       parentRoute: typeof FrRoute
     }
+    '/espace-client/support': {
+      id: '/espace-client/support'
+      path: '/support'
+      fullPath: '/espace-client/support'
+      preLoaderRoute: typeof EspaceClientSupportRouteImport
+      parentRoute: typeof EspaceClientRoute
+    }
     '/espace-client/renew': {
       id: '/espace-client/renew'
       path: '/renew'
@@ -1897,6 +1916,7 @@ interface EspaceClientRouteChildren {
   EspaceClientOrdersRoute: typeof EspaceClientOrdersRoute
   EspaceClientProfileRoute: typeof EspaceClientProfileRoute
   EspaceClientRenewRoute: typeof EspaceClientRenewRoute
+  EspaceClientSupportRoute: typeof EspaceClientSupportRoute
   EspaceClientIndexRoute: typeof EspaceClientIndexRoute
   EspaceClientPayRefRoute: typeof EspaceClientPayRefRoute
   EspaceClientSuccessRefRoute: typeof EspaceClientSuccessRefRoute
@@ -1907,6 +1927,7 @@ const EspaceClientRouteChildren: EspaceClientRouteChildren = {
   EspaceClientOrdersRoute: EspaceClientOrdersRoute,
   EspaceClientProfileRoute: EspaceClientProfileRoute,
   EspaceClientRenewRoute: EspaceClientRenewRoute,
+  EspaceClientSupportRoute: EspaceClientSupportRoute,
   EspaceClientIndexRoute: EspaceClientIndexRoute,
   EspaceClientPayRefRoute: EspaceClientPayRefRoute,
   EspaceClientSuccessRefRoute: EspaceClientSuccessRefRoute,
