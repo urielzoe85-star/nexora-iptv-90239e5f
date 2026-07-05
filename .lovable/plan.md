@@ -1,108 +1,54 @@
-# Espace Client Nexora IPTV
+## Objectif
 
-Portail personnel pour chaque abonné, accessible depuis le menu principal, avec renouvellement autonome.
+Fournir une URL de callback stable pour que Meta / WhatsApp Business API (WABA) puisse configurer un webhook vers Nexora IPTV, avec la vérification GET (`hub.challenge`) et la réception POST signée (`X-Hub-Signature-256`) exigées par Meta.
 
-## 1. Accès & authentification
+## URL de callback à fournir à WABA
 
-- Nouvelle route publique `/espace-client` (lien ajouté au menu principal).
-- Identification par **numéro de commande / username IPTV / email**.
-- Envoi d'un **code OTP à 6 chiffres** par email (valide 10 min, table `client_portal_otps`).
-- Après vérification, création d'une **session portail** (cookie httpOnly signé, 30 jours, table `client_portal_sessions`) — pas de mot de passe, pas de compte Supabase Auth requis (les clients ne sont pas des `auth.users`).
-- Rate-limit sur envoi OTP (3/heure/email/IP).
+```
+https://project--0416ff55-1348-453a-b816-d3632a19f8ae.lovable.app/api/public/whatsapp/webhook
+```
 
-## 2. Tableau de bord `/espace-client/dashboard`
+(URL stable, immuable même si le projet est renommé. Le domaine `nexora-iptv.com` pourra aussi être utilisé une fois le custom domain rattaché : `https://nexora-iptv.com/api/public/whatsapp/webhook`.)
 
-Affiche :
-- Nom, email, statut abonnement (Actif/Expiré), date d'expiration, jours restants
-- Identifiant IPTV (username, masqué → révélable)
-- Historique commandes (`orders`)
-- Historique paiements (référence, méthode, montant, date)
-- Factures téléchargeables (PDF généré à la volée depuis `orders`)
+- **Verify Token** à saisir côté Meta : valeur libre que tu choisis, stockée en secret projet `WHATSAPP_VERIFY_TOKEN`.
+- **App Secret** de l'app Meta : stocké en secret projet `WHATSAPP_APP_SECRET` (sert à valider `X-Hub-Signature-256`).
 
-## 3. Renouvellement `/espace-client/renew`
+## Implémentation
 
-- Bouton "Renouveler" → sélection durée (1/3/6/12 mois)
-- Tarifs récupérés dynamiquement depuis la table `plans` existante (filtrés par durée)
-- Choix moyen de paiement parmi les providers **activés** (SebPay, Binance Pay manuel, + futurs)
-- Création d'une commande de type `renewal` liée à l'`iptv_account_id` existant
+### 1. Secrets à ajouter (via `add_secret`)
+- `WHATSAPP_VERIFY_TOKEN` — chaîne aléatoire, à recopier dans le champ "Verify token" côté Meta.
+- `WHATSAPP_APP_SECRET` — App Secret de l'application Meta (Settings → Basic).
 
-## 4. Réactivation automatique
+### 2. Nouvelle route publique `src/routes/api/public/whatsapp/webhook.ts`
 
-- Nouveau workflow `subscription-renewal-portal` (déclenché par `payment.confirmed` sur commande `renewal`)
-- Étapes :
-  1. Résoudre `iptv_account_id` depuis la commande
-  2. Appeler `renewIptvSubscription(accountId, months)` (déjà existant → MEGAOTT extend + update `expires_at`)
-  3. Écrire événement dans `iptv_lifecycle_events`
-  4. Envoyer email confirmation + WhatsApp/Telegram si configuré
-- **Aucun nouveau compte IPTV** : mêmes credentials, expiration prolongée
+Deux handlers, conformes à la spec Meta Cloud API :
 
-## 5. Confirmation `/espace-client/renew/success`
+- **GET** — handshake de vérification :
+  - Lit `hub.mode`, `hub.verify_token`, `hub.challenge` en query.
+  - Si `hub.mode === "subscribe"` et `hub.verify_token === WHATSAPP_VERIFY_TOKEN` → renvoie `hub.challenge` en `text/plain` 200.
+  - Sinon → 403.
 
-Affiche : nouvelle date d'expiration, offre, réf paiement + confirme envoi email/WhatsApp.
+- **POST** — réception d'événements :
+  - Lit le body brut (`request.text()`).
+  - Recalcule `sha256=HMAC(WHATSAPP_APP_SECRET, rawBody)` et compare en temps constant à l'en-tête `X-Hub-Signature-256`. Rejet 401 si mismatch.
+  - Parse le JSON, log l'update (message entrant, statut de livraison), et renvoie **toujours 200** rapidement (Meta réessaie sinon).
+  - Traitement métier minimal pour ce premier jet : journalisation via `logger` du hub d'intégration + insertion best-effort dans une future table `whatsapp_events` (non créée dans ce plan — juste log pour l'instant).
 
-## 6. Fonctionnalités additionnelles (architecture évolutive)
+### 3. Détails techniques
+- Route sous `/api/public/*` → bypass de l'auth de site publié (obligatoire pour webhooks externes).
+- `createFileRoute` avec `server.handlers.{GET, POST}` (pas d'export nommé).
+- HMAC via `node:crypto` (`createHmac`, `timingSafeEqual`), même pattern que la route Telegram existante et `src/integration-hub/webhooks/signatures.ts`.
+- Réponse POST : `Response.json({ ok: true })` même en cas d'erreur applicative interne (on log, mais on 200 pour éviter les retries agressifs Meta). Seule la signature invalide renvoie 401.
+- Aucun changement UI, aucune migration, aucun secret exposé dans le code.
 
-Layout `/espace-client/_portal` avec sidebar :
-- Tableau de bord
-- Mes abonnements
-- Renouveler
-- Commandes
-- Paiements & factures
-- Profil (nom, téléphone, pays)
-- Support (crée un `support_ticket` avec `customer_id`)
-- Téléchargements (guides installation — page statique)
-- Annonces (table `portal_announcements`, admin peut publier)
-- Déconnexion
+## Ce que tu fais côté Meta
 
-## 7. Administration `/ncc/portal`
+1. Meta for Developers → ton app WhatsApp → **Configuration → Webhooks**.
+2. Callback URL : `https://project--0416ff55-1348-453a-b816-d3632a19f8ae.lovable.app/api/public/whatsapp/webhook`
+3. Verify token : la valeur que tu m'as demandé de stocker dans `WHATSAPP_VERIFY_TOKEN`.
+4. Souscrire aux champs `messages` (et `message_template_status_update` si besoin).
 
-Nouveau module NCC :
-- **Offres de renouvellement** : CRUD sur `renewal_plans` (durée, prix, actif/inactif)
-- **Renouvellements** : liste filtrable (client / date / statut)
-- **Remboursements** : action sur commande renewal
-- **Sessions portail** : voir connexions récentes (email, IP, dernière activité)
-
-## 8. Design
-
-Réutilise identité Nexora IPTV existante (composants shadcn, tokens design system).
-Layout responsive : sidebar desktop → drawer mobile.
-Parcours : Connexion → Dashboard → Renouveler → Payer → Confirmation.
-
----
-
-## Détails techniques
-
-**Migration DB** :
-- `client_portal_otps` (email, code_hash, expires_at, used_at, ip)
-- `client_portal_sessions` (token_hash, customer_id, expires_at, last_seen_at, ip, user_agent)
-- `renewal_plans` (duration_months, price, currency, active, sort_order)
-- `portal_announcements` (title, body, published_at, active)
-- GRANT + RLS : sessions/otps accessibles uniquement via service_role (server functions) ; `renewal_plans` lisible par `anon` (public) ; `portal_announcements` lisible `anon` si `active`.
-
-**Server functions** (`src/lib/portal.functions.ts`) :
-- `requestPortalOtp({identifier})` — résout customer via order_ref / iptv_username / email, envoie OTP
-- `verifyPortalOtp({email, code})` — retourne session token
-- `getPortalSession()` — middleware `requirePortalSession` lit cookie
-- `getPortalDashboard()`, `getPortalOrders()`, `getPortalPayments()`, `getPortalSubscription()`
-- `listRenewalPlans()`, `createRenewalOrder({planId, method})`
-- `updateProfile()`, `createSupportTicketPortal()`, `signOutPortal()`
-
-**Server routes** :
-- `/api/portal/session` (GET/POST/DELETE) pour cookie
-- `/api/portal/invoice/$orderRef` (GET PDF)
-
-**Workflow** : `src/automation/workflows/subscription-renewal-portal.workflow.ts` enregistré dans `src/automation/index.ts`, déclenché après `payment.confirmed` si `orders.metadata.kind === "renewal"`.
-
-**Génération facture** : lib légère (`@react-pdf/renderer` déjà utilisable, sinon HTML→print côté client via nouvelle route imprimable).
-
-**Menu principal** : ajout item "Espace Client" dans le header du site public.
-
-## Ordre d'implémentation
-
-1. Migration DB + types
-2. Auth OTP + session (server fns + route API cookie)
-3. Layout `/espace-client/_portal` + login + dashboard
-4. Renouvellement + workflow + confirmation
-5. Onglets secondaires (commandes, paiements, factures, profil, support, annonces, téléchargements)
-6. Module NCC `/ncc/portal`
-7. Lien menu principal + polish responsive
+## Hors périmètre (à faire dans un plan ultérieur si souhaité)
+- Envoi sortant de messages WhatsApp via l'API Cloud (templates, sessions 24h).
+- Table `whatsapp_events` + UI d'inspection dans NCC.
+- Rattachement `chat_id WhatsApp` au customer (équivalent du `/start` Telegram).
