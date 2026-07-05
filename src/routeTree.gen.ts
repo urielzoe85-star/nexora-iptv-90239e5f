@@ -13,6 +13,7 @@ import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
 import { Route as TrackRouteImport } from './routes/track'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as NccRouteImport } from './routes/ncc'
+import { Route as McpRouteImport } from './routes/mcp'
 import { Route as LegalGuideRouteImport } from './routes/legal-guide'
 import { Route as FrRouteImport } from './routes/fr'
 import { Route as EspaceClientRouteImport } from './routes/espace-client'
@@ -70,6 +71,8 @@ import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as AdminContentRouteImport } from './routes/admin.content'
 import { Route as AdminAutomationRouteImport } from './routes/admin.automation'
 import { Route as AdminAdminsRouteImport } from './routes/admin.admins'
+import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
+import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as NccSettingsIndexRouteImport } from './routes/ncc.settings.index'
 import { Route as NccIptvIndexRouteImport } from './routes/ncc.iptv.index'
 import { Route as NccSettingsSectionRouteImport } from './routes/ncc.settings.$section'
@@ -92,6 +95,7 @@ import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/em
 import { Route as EspaceClientSuccessRefRouteImport } from './routes/espace-client.success.$ref'
 import { Route as EspaceClientPayRefRouteImport } from './routes/espace-client.pay.$ref'
 import { Route as ApiPublicCspReportRouteImport } from './routes/api/public/csp-report'
+import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
@@ -127,6 +131,11 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
 const NccRoute = NccRouteImport.update({
   id: '/ncc',
   path: '/ncc',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const McpRoute = McpRouteImport.update({
+  id: '/mcp',
+  path: '/mcp',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LegalGuideRoute = LegalGuideRouteImport.update({
@@ -415,6 +424,18 @@ const AdminAdminsRoute = AdminAdminsRouteImport.update({
   path: '/admins',
   getParentRoute: () => AdminRoute,
 } as any)
+const Char91DotwellKnownChar93OauthProtectedResourceRoute =
+  Char91DotwellKnownChar93OauthProtectedResourceRouteImport.update({
+    id: '/.well-known/oauth-protected-resource',
+    path: '/.well-known/oauth-protected-resource',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const Char91DotmcpChar93ListToolsRoute =
+  Char91DotmcpChar93ListToolsRouteImport.update({
+    id: '/.mcp/list-tools',
+    path: '/.mcp/list-tools',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const NccSettingsIndexRoute = NccSettingsIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -525,6 +546,12 @@ const ApiPublicCspReportRoute = ApiPublicCspReportRouteImport.update({
   path: '/api/public/csp-report',
   getParentRoute: () => rootRouteImport,
 } as any)
+const Char91DotmcpChar93InvokeToolToolRoute =
+  Char91DotmcpChar93InvokeToolToolRouteImport.update({
+    id: '/.mcp/invoke-tool/$tool',
+    path: '/.mcp/invoke-tool/$tool',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const LovableEmailTransactionalSendRoute =
   LovableEmailTransactionalSendRouteImport.update({
     id: '/lovable/email/transactional/send',
@@ -629,10 +656,13 @@ export interface FileRoutesByFullPath {
   '/espace-client': typeof EspaceClientRouteWithChildren
   '/fr': typeof FrRouteWithChildren
   '/legal-guide': typeof LegalGuideRoute
+  '/mcp': typeof McpRoute
   '/ncc': typeof NccRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/track': typeof TrackRoute
   '/unsubscribe': typeof UnsubscribeRoute
+  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/admin/admins': typeof AdminAdminsRoute
   '/admin/automation': typeof AdminAutomationRoute
   '/admin/content': typeof AdminContentRoute
@@ -680,6 +710,7 @@ export interface FileRoutesByFullPath {
   '/espace-client/': typeof EspaceClientIndexRoute
   '/fr/': typeof FrIndexRoute
   '/ncc/': typeof NccIndexRoute
+  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
   '/espace-client/pay/$ref': typeof EspaceClientPayRefRoute
   '/espace-client/success/$ref': typeof EspaceClientSuccessRefRoute
@@ -726,9 +757,12 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardRoute
   '/de': typeof DeRoute
   '/legal-guide': typeof LegalGuideRoute
+  '/mcp': typeof McpRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/track': typeof TrackRoute
   '/unsubscribe': typeof UnsubscribeRoute
+  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/admin/admins': typeof AdminAdminsRoute
   '/admin/automation': typeof AdminAutomationRoute
   '/admin/content': typeof AdminContentRoute
@@ -774,6 +808,7 @@ export interface FileRoutesByTo {
   '/espace-client': typeof EspaceClientIndexRoute
   '/fr': typeof FrIndexRoute
   '/ncc': typeof NccIndexRoute
+  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
   '/espace-client/pay/$ref': typeof EspaceClientPayRefRoute
   '/espace-client/success/$ref': typeof EspaceClientSuccessRefRoute
@@ -825,10 +860,13 @@ export interface FileRoutesById {
   '/espace-client': typeof EspaceClientRouteWithChildren
   '/fr': typeof FrRouteWithChildren
   '/legal-guide': typeof LegalGuideRoute
+  '/mcp': typeof McpRoute
   '/ncc': typeof NccRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/track': typeof TrackRoute
   '/unsubscribe': typeof UnsubscribeRoute
+  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/admin/admins': typeof AdminAdminsRoute
   '/admin/automation': typeof AdminAutomationRoute
   '/admin/content': typeof AdminContentRoute
@@ -876,6 +914,7 @@ export interface FileRoutesById {
   '/espace-client/': typeof EspaceClientIndexRoute
   '/fr/': typeof FrIndexRoute
   '/ncc/': typeof NccIndexRoute
+  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
   '/espace-client/pay/$ref': typeof EspaceClientPayRefRoute
   '/espace-client/success/$ref': typeof EspaceClientSuccessRefRoute
@@ -928,10 +967,13 @@ export interface FileRouteTypes {
     | '/espace-client'
     | '/fr'
     | '/legal-guide'
+    | '/mcp'
     | '/ncc'
     | '/sitemap.xml'
     | '/track'
     | '/unsubscribe'
+    | '/.mcp/list-tools'
+    | '/.well-known/oauth-protected-resource'
     | '/admin/admins'
     | '/admin/automation'
     | '/admin/content'
@@ -979,6 +1021,7 @@ export interface FileRouteTypes {
     | '/espace-client/'
     | '/fr/'
     | '/ncc/'
+    | '/.mcp/invoke-tool/$tool'
     | '/api/public/csp-report'
     | '/espace-client/pay/$ref'
     | '/espace-client/success/$ref'
@@ -1025,9 +1068,12 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/de'
     | '/legal-guide'
+    | '/mcp'
     | '/sitemap.xml'
     | '/track'
     | '/unsubscribe'
+    | '/.mcp/list-tools'
+    | '/.well-known/oauth-protected-resource'
     | '/admin/admins'
     | '/admin/automation'
     | '/admin/content'
@@ -1073,6 +1119,7 @@ export interface FileRouteTypes {
     | '/espace-client'
     | '/fr'
     | '/ncc'
+    | '/.mcp/invoke-tool/$tool'
     | '/api/public/csp-report'
     | '/espace-client/pay/$ref'
     | '/espace-client/success/$ref'
@@ -1123,10 +1170,13 @@ export interface FileRouteTypes {
     | '/espace-client'
     | '/fr'
     | '/legal-guide'
+    | '/mcp'
     | '/ncc'
     | '/sitemap.xml'
     | '/track'
     | '/unsubscribe'
+    | '/.mcp/list-tools'
+    | '/.well-known/oauth-protected-resource'
     | '/admin/admins'
     | '/admin/automation'
     | '/admin/content'
@@ -1174,6 +1224,7 @@ export interface FileRouteTypes {
     | '/espace-client/'
     | '/fr/'
     | '/ncc/'
+    | '/.mcp/invoke-tool/$tool'
     | '/api/public/csp-report'
     | '/espace-client/pay/$ref'
     | '/espace-client/success/$ref'
@@ -1225,10 +1276,13 @@ export interface RootRouteChildren {
   EspaceClientRoute: typeof EspaceClientRouteWithChildren
   FrRoute: typeof FrRouteWithChildren
   LegalGuideRoute: typeof LegalGuideRoute
+  McpRoute: typeof McpRoute
   NccRoute: typeof NccRouteWithChildren
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TrackRoute: typeof TrackRoute
   UnsubscribeRoute: typeof UnsubscribeRoute
+  Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
+  Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   BlogBestIptv2026Route: typeof BlogBestIptv2026Route
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   LegalNoticeRoute: typeof LegalNoticeRoute
@@ -1238,6 +1292,7 @@ export interface RootRouteChildren {
   LegalTermsRoute: typeof LegalTermsRoute
   PaymentFailedRoute: typeof PaymentFailedRoute
   PaymentSuccessRoute: typeof PaymentSuccessRoute
+  Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   ApiPublicCspReportRoute: typeof ApiPublicCspReportRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ApiPublicAutomationEmitTestRoute: typeof ApiPublicAutomationEmitTestRoute
@@ -1286,6 +1341,13 @@ declare module '@tanstack/react-router' {
       path: '/ncc'
       fullPath: '/ncc'
       preLoaderRoute: typeof NccRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mcp': {
+      id: '/mcp'
+      path: '/mcp'
+      fullPath: '/mcp'
+      preLoaderRoute: typeof McpRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/legal-guide': {
@@ -1687,6 +1749,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAdminsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/.well-known/oauth-protected-resource': {
+      id: '/.well-known/oauth-protected-resource'
+      path: '/.well-known/oauth-protected-resource'
+      fullPath: '/.well-known/oauth-protected-resource'
+      preLoaderRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.mcp/list-tools': {
+      id: '/.mcp/list-tools'
+      path: '/.mcp/list-tools'
+      fullPath: '/.mcp/list-tools'
+      preLoaderRoute: typeof Char91DotmcpChar93ListToolsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/ncc/settings/': {
       id: '/ncc/settings/'
       path: '/'
@@ -1839,6 +1915,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/csp-report'
       fullPath: '/api/public/csp-report'
       preLoaderRoute: typeof ApiPublicCspReportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.mcp/invoke-tool/$tool': {
+      id: '/.mcp/invoke-tool/$tool'
+      path: '/.mcp/invoke-tool/$tool'
+      fullPath: '/.mcp/invoke-tool/$tool'
+      preLoaderRoute: typeof Char91DotmcpChar93InvokeToolToolRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/lovable/email/transactional/send': {
@@ -2174,10 +2257,14 @@ const rootRouteChildren: RootRouteChildren = {
   EspaceClientRoute: EspaceClientRouteWithChildren,
   FrRoute: FrRouteWithChildren,
   LegalGuideRoute: LegalGuideRoute,
+  McpRoute: McpRoute,
   NccRoute: NccRouteWithChildren,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TrackRoute: TrackRoute,
   UnsubscribeRoute: UnsubscribeRoute,
+  Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
+  Char91DotwellKnownChar93OauthProtectedResourceRoute:
+    Char91DotwellKnownChar93OauthProtectedResourceRoute,
   BlogBestIptv2026Route: BlogBestIptv2026Route,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   LegalNoticeRoute: LegalNoticeRoute,
@@ -2187,6 +2274,7 @@ const rootRouteChildren: RootRouteChildren = {
   LegalTermsRoute: LegalTermsRoute,
   PaymentFailedRoute: PaymentFailedRoute,
   PaymentSuccessRoute: PaymentSuccessRoute,
+  Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   ApiPublicCspReportRoute: ApiPublicCspReportRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ApiPublicAutomationEmitTestRoute: ApiPublicAutomationEmitTestRoute,
