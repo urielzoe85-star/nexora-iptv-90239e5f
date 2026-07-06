@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, Users, Package, ShoppingBag, CreditCard, Tv2, Gift,
   Bot, MessageCircle, Send, Mail, Bell, LifeBuoy, BarChart3, UserCog, Workflow,
-  ScrollText, Settings, UserCircle,
+  ScrollText, Settings, UserCircle, Images,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -38,6 +38,7 @@ export const NCC_MODULES: NccModule[] = [
   { id: "payments", label: "Paiements", description: "Transactions, réconciliations, payouts.", icon: CreditCard, to: "/ncc/payments", group: "sales", status: "ready" },
   { id: "payments-binance", label: "Paiements Binance", description: "Vérification manuelle des paiements Binance Pay (QR).", icon: CreditCard, to: "/ncc/payments/binance", group: "sales", status: "ready" },
   { id: "trials", label: "Essais gratuits", description: "Gestion des comptes de démonstration.", icon: Gift, to: "/ncc/trials", group: "sales", status: "ready" },
+  { id: "gallery", label: "Galerie photos", description: "Photos produits liées aux plans et pages produit (SEO Google Merchant).", icon: Images, to: "/ncc/gallery", group: "sales", status: "ready" },
 
   { id: "iptv", label: "IPTV Manager", description: "Abonnements IPTV, lignes, renouvellements.", icon: Tv2, to: "/ncc/iptv", group: "services", status: "ready" },
   { id: "bots", label: "Bots", description: "Orchestration des assistants automatisés.", icon: Bot, to: "/ncc/bots", group: "services", status: "ready" },

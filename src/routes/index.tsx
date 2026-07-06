@@ -97,6 +97,7 @@ function Nav() {
           <a href="#devices" className="hover:text-foreground transition">{t("nav.devices")}</a>
           <a href="#pricing" className="hover:text-foreground transition">{t("nav.pricing")}</a>
           <Link to="/catalog" className="hover:text-foreground transition">{t("nav.catalog")}</Link>
+          <Link to="/galerie" className="hover:text-foreground transition">Galerie</Link>
           <a href="#faq" className="hover:text-foreground transition">{t("nav.faq")}</a>
           <a href="#support" className="hover:text-foreground transition">{t("nav.support")}</a>
           <Link to="/espace-client" className="hover:text-foreground transition">Espace client</Link>
@@ -128,6 +129,7 @@ function Nav() {
             <a href="#devices" onClick={close} className="hover:text-foreground transition">{t("nav.devices")}</a>
             <a href="#pricing" onClick={close} className="hover:text-foreground transition">{t("nav.pricing")}</a>
             <Link to="/catalog" onClick={close} className="hover:text-foreground transition">{t("nav.catalog")}</Link>
+            <Link to="/galerie" onClick={close} className="hover:text-foreground transition">Galerie</Link>
             <a href="#faq" onClick={close} className="hover:text-foreground transition">{t("nav.faq")}</a>
             <a href="#support" onClick={close} className="hover:text-foreground transition">{t("nav.support")}</a>
             <Link to="/espace-client" onClick={close} className="hover:text-foreground transition">Espace client</Link>
@@ -267,7 +269,7 @@ function Pricing() {
         </div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {plans.map(p => (
-            <div key={p.id} className={`relative glass rounded-2xl p-8 transition hover-scale ${p.popular ? "border-[color:var(--gold)]/60 shadow-[var(--shadow-gold)]" : ""}`}>
+            <div key={p.id} id={`pricing-${p.slug}`} className={`relative glass rounded-2xl p-8 transition hover-scale scroll-mt-24 ${p.popular ? "border-[color:var(--gold)]/60 shadow-[var(--shadow-gold)]" : ""}`}>
               {p.popular && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[image:var(--gradient-gold)] text-black text-xs font-bold px-3 py-1 rounded-full">
                   {t("pricing.popular")}

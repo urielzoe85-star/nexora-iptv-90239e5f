@@ -12,7 +12,7 @@ const BASE_URL = "https://nexora-iptv.com";
 //   - /api/*, /lovable/*, /email/*   → server endpoints, not pages
 const PAGES = [
   "/", "/fr", "/en", "/de",
-  "/catalog", "/legal-guide",
+  "/catalog", "/galerie", "/legal-guide",
   "/fr/guide-iptv", "/en/guide-iptv",
   "/blog/best-iptv-2026", "/track",
   // Sprint 3 · Bloc C — public compliance pages

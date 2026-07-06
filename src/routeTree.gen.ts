@@ -13,8 +13,10 @@ import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
 import { Route as TrackRouteImport } from './routes/track'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as NccRouteImport } from './routes/ncc'
+import { Route as MerchantFeedDotxmlRouteImport } from './routes/merchant-feed[.]xml'
 import { Route as McpRouteImport } from './routes/mcp'
 import { Route as LegalGuideRouteImport } from './routes/legal-guide'
+import { Route as GalerieRouteImport } from './routes/galerie'
 import { Route as FrRouteImport } from './routes/fr'
 import { Route as EspaceClientRouteImport } from './routes/espace-client'
 import { Route as EnRouteImport } from './routes/en'
@@ -29,6 +31,7 @@ import { Route as FrIndexRouteImport } from './routes/fr.index'
 import { Route as EspaceClientIndexRouteImport } from './routes/espace-client.index'
 import { Route as EnIndexRouteImport } from './routes/en.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as ProduitsSlugRouteImport } from './routes/produits.$slug'
 import { Route as PaymentSuccessRouteImport } from './routes/payment.success'
 import { Route as PaymentFailedRouteImport } from './routes/payment.failed'
 import { Route as NccWhatsappRouteImport } from './routes/ncc.whatsapp'
@@ -43,6 +46,7 @@ import { Route as NccOrdersRouteImport } from './routes/ncc.orders'
 import { Route as NccNotificationsRouteImport } from './routes/ncc.notifications'
 import { Route as NccLogsRouteImport } from './routes/ncc.logs'
 import { Route as NccIptvRouteImport } from './routes/ncc.iptv'
+import { Route as NccGalleryRouteImport } from './routes/ncc.gallery'
 import { Route as NccEmployeesRouteImport } from './routes/ncc.employees'
 import { Route as NccEmailsRouteImport } from './routes/ncc.emails'
 import { Route as NccClientsRouteImport } from './routes/ncc.clients'
@@ -133,6 +137,11 @@ const NccRoute = NccRouteImport.update({
   path: '/ncc',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MerchantFeedDotxmlRoute = MerchantFeedDotxmlRouteImport.update({
+  id: '/merchant-feed.xml',
+  path: '/merchant-feed.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const McpRoute = McpRouteImport.update({
   id: '/mcp',
   path: '/mcp',
@@ -141,6 +150,11 @@ const McpRoute = McpRouteImport.update({
 const LegalGuideRoute = LegalGuideRouteImport.update({
   id: '/legal-guide',
   path: '/legal-guide',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GalerieRoute = GalerieRouteImport.update({
+  id: '/galerie',
+  path: '/galerie',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FrRoute = FrRouteImport.update({
@@ -213,6 +227,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AdminRoute,
 } as any)
+const ProduitsSlugRoute = ProduitsSlugRouteImport.update({
+  id: '/produits/$slug',
+  path: '/produits/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PaymentSuccessRoute = PaymentSuccessRouteImport.update({
   id: '/payment/success',
   path: '/payment/success',
@@ -281,6 +300,11 @@ const NccLogsRoute = NccLogsRouteImport.update({
 const NccIptvRoute = NccIptvRouteImport.update({
   id: '/iptv',
   path: '/iptv',
+  getParentRoute: () => NccRoute,
+} as any)
+const NccGalleryRoute = NccGalleryRouteImport.update({
+  id: '/gallery',
+  path: '/gallery',
   getParentRoute: () => NccRoute,
 } as any)
 const NccEmployeesRoute = NccEmployeesRouteImport.update({
@@ -655,8 +679,10 @@ export interface FileRoutesByFullPath {
   '/en': typeof EnRouteWithChildren
   '/espace-client': typeof EspaceClientRouteWithChildren
   '/fr': typeof FrRouteWithChildren
+  '/galerie': typeof GalerieRoute
   '/legal-guide': typeof LegalGuideRoute
   '/mcp': typeof McpRoute
+  '/merchant-feed.xml': typeof MerchantFeedDotxmlRoute
   '/ncc': typeof NccRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/track': typeof TrackRoute
@@ -691,6 +717,7 @@ export interface FileRoutesByFullPath {
   '/ncc/clients': typeof NccClientsRouteWithChildren
   '/ncc/emails': typeof NccEmailsRoute
   '/ncc/employees': typeof NccEmployeesRoute
+  '/ncc/gallery': typeof NccGalleryRoute
   '/ncc/iptv': typeof NccIptvRouteWithChildren
   '/ncc/logs': typeof NccLogsRoute
   '/ncc/notifications': typeof NccNotificationsRoute
@@ -705,6 +732,7 @@ export interface FileRoutesByFullPath {
   '/ncc/whatsapp': typeof NccWhatsappRoute
   '/payment/failed': typeof PaymentFailedRoute
   '/payment/success': typeof PaymentSuccessRoute
+  '/produits/$slug': typeof ProduitsSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/en/': typeof EnIndexRoute
   '/espace-client/': typeof EspaceClientIndexRoute
@@ -756,8 +784,10 @@ export interface FileRoutesByTo {
   '/checkout': typeof CheckoutRoute
   '/dashboard': typeof DashboardRoute
   '/de': typeof DeRoute
+  '/galerie': typeof GalerieRoute
   '/legal-guide': typeof LegalGuideRoute
   '/mcp': typeof McpRoute
+  '/merchant-feed.xml': typeof MerchantFeedDotxmlRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/track': typeof TrackRoute
   '/unsubscribe': typeof UnsubscribeRoute
@@ -791,6 +821,7 @@ export interface FileRoutesByTo {
   '/ncc/clients': typeof NccClientsRouteWithChildren
   '/ncc/emails': typeof NccEmailsRoute
   '/ncc/employees': typeof NccEmployeesRoute
+  '/ncc/gallery': typeof NccGalleryRoute
   '/ncc/logs': typeof NccLogsRoute
   '/ncc/notifications': typeof NccNotificationsRoute
   '/ncc/orders': typeof NccOrdersRouteWithChildren
@@ -803,6 +834,7 @@ export interface FileRoutesByTo {
   '/ncc/whatsapp': typeof NccWhatsappRoute
   '/payment/failed': typeof PaymentFailedRoute
   '/payment/success': typeof PaymentSuccessRoute
+  '/produits/$slug': typeof ProduitsSlugRoute
   '/admin': typeof AdminIndexRoute
   '/en': typeof EnIndexRoute
   '/espace-client': typeof EspaceClientIndexRoute
@@ -859,8 +891,10 @@ export interface FileRoutesById {
   '/en': typeof EnRouteWithChildren
   '/espace-client': typeof EspaceClientRouteWithChildren
   '/fr': typeof FrRouteWithChildren
+  '/galerie': typeof GalerieRoute
   '/legal-guide': typeof LegalGuideRoute
   '/mcp': typeof McpRoute
+  '/merchant-feed.xml': typeof MerchantFeedDotxmlRoute
   '/ncc': typeof NccRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/track': typeof TrackRoute
@@ -895,6 +929,7 @@ export interface FileRoutesById {
   '/ncc/clients': typeof NccClientsRouteWithChildren
   '/ncc/emails': typeof NccEmailsRoute
   '/ncc/employees': typeof NccEmployeesRoute
+  '/ncc/gallery': typeof NccGalleryRoute
   '/ncc/iptv': typeof NccIptvRouteWithChildren
   '/ncc/logs': typeof NccLogsRoute
   '/ncc/notifications': typeof NccNotificationsRoute
@@ -909,6 +944,7 @@ export interface FileRoutesById {
   '/ncc/whatsapp': typeof NccWhatsappRoute
   '/payment/failed': typeof PaymentFailedRoute
   '/payment/success': typeof PaymentSuccessRoute
+  '/produits/$slug': typeof ProduitsSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/en/': typeof EnIndexRoute
   '/espace-client/': typeof EspaceClientIndexRoute
@@ -966,8 +1002,10 @@ export interface FileRouteTypes {
     | '/en'
     | '/espace-client'
     | '/fr'
+    | '/galerie'
     | '/legal-guide'
     | '/mcp'
+    | '/merchant-feed.xml'
     | '/ncc'
     | '/sitemap.xml'
     | '/track'
@@ -1002,6 +1040,7 @@ export interface FileRouteTypes {
     | '/ncc/clients'
     | '/ncc/emails'
     | '/ncc/employees'
+    | '/ncc/gallery'
     | '/ncc/iptv'
     | '/ncc/logs'
     | '/ncc/notifications'
@@ -1016,6 +1055,7 @@ export interface FileRouteTypes {
     | '/ncc/whatsapp'
     | '/payment/failed'
     | '/payment/success'
+    | '/produits/$slug'
     | '/admin/'
     | '/en/'
     | '/espace-client/'
@@ -1067,8 +1107,10 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/dashboard'
     | '/de'
+    | '/galerie'
     | '/legal-guide'
     | '/mcp'
+    | '/merchant-feed.xml'
     | '/sitemap.xml'
     | '/track'
     | '/unsubscribe'
@@ -1102,6 +1144,7 @@ export interface FileRouteTypes {
     | '/ncc/clients'
     | '/ncc/emails'
     | '/ncc/employees'
+    | '/ncc/gallery'
     | '/ncc/logs'
     | '/ncc/notifications'
     | '/ncc/orders'
@@ -1114,6 +1157,7 @@ export interface FileRouteTypes {
     | '/ncc/whatsapp'
     | '/payment/failed'
     | '/payment/success'
+    | '/produits/$slug'
     | '/admin'
     | '/en'
     | '/espace-client'
@@ -1169,8 +1213,10 @@ export interface FileRouteTypes {
     | '/en'
     | '/espace-client'
     | '/fr'
+    | '/galerie'
     | '/legal-guide'
     | '/mcp'
+    | '/merchant-feed.xml'
     | '/ncc'
     | '/sitemap.xml'
     | '/track'
@@ -1205,6 +1251,7 @@ export interface FileRouteTypes {
     | '/ncc/clients'
     | '/ncc/emails'
     | '/ncc/employees'
+    | '/ncc/gallery'
     | '/ncc/iptv'
     | '/ncc/logs'
     | '/ncc/notifications'
@@ -1219,6 +1266,7 @@ export interface FileRouteTypes {
     | '/ncc/whatsapp'
     | '/payment/failed'
     | '/payment/success'
+    | '/produits/$slug'
     | '/admin/'
     | '/en/'
     | '/espace-client/'
@@ -1275,8 +1323,10 @@ export interface RootRouteChildren {
   EnRoute: typeof EnRouteWithChildren
   EspaceClientRoute: typeof EspaceClientRouteWithChildren
   FrRoute: typeof FrRouteWithChildren
+  GalerieRoute: typeof GalerieRoute
   LegalGuideRoute: typeof LegalGuideRoute
   McpRoute: typeof McpRoute
+  MerchantFeedDotxmlRoute: typeof MerchantFeedDotxmlRoute
   NccRoute: typeof NccRouteWithChildren
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TrackRoute: typeof TrackRoute
@@ -1292,6 +1342,7 @@ export interface RootRouteChildren {
   LegalTermsRoute: typeof LegalTermsRoute
   PaymentFailedRoute: typeof PaymentFailedRoute
   PaymentSuccessRoute: typeof PaymentSuccessRoute
+  ProduitsSlugRoute: typeof ProduitsSlugRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   ApiPublicCspReportRoute: typeof ApiPublicCspReportRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
@@ -1343,6 +1394,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof NccRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/merchant-feed.xml': {
+      id: '/merchant-feed.xml'
+      path: '/merchant-feed.xml'
+      fullPath: '/merchant-feed.xml'
+      preLoaderRoute: typeof MerchantFeedDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/mcp': {
       id: '/mcp'
       path: '/mcp'
@@ -1355,6 +1413,13 @@ declare module '@tanstack/react-router' {
       path: '/legal-guide'
       fullPath: '/legal-guide'
       preLoaderRoute: typeof LegalGuideRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/galerie': {
+      id: '/galerie'
+      path: '/galerie'
+      fullPath: '/galerie'
+      preLoaderRoute: typeof GalerieRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/fr': {
@@ -1455,6 +1520,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/produits/$slug': {
+      id: '/produits/$slug'
+      path: '/produits/$slug'
+      fullPath: '/produits/$slug'
+      preLoaderRoute: typeof ProduitsSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/payment/success': {
       id: '/payment/success'
       path: '/payment/success'
@@ -1551,6 +1623,13 @@ declare module '@tanstack/react-router' {
       path: '/iptv'
       fullPath: '/ncc/iptv'
       preLoaderRoute: typeof NccIptvRouteImport
+      parentRoute: typeof NccRoute
+    }
+    '/ncc/gallery': {
+      id: '/ncc/gallery'
+      path: '/gallery'
+      fullPath: '/ncc/gallery'
+      preLoaderRoute: typeof NccGalleryRouteImport
       parentRoute: typeof NccRoute
     }
     '/ncc/employees': {
@@ -2207,6 +2286,7 @@ interface NccRouteChildren {
   NccClientsRoute: typeof NccClientsRouteWithChildren
   NccEmailsRoute: typeof NccEmailsRoute
   NccEmployeesRoute: typeof NccEmployeesRoute
+  NccGalleryRoute: typeof NccGalleryRoute
   NccIptvRoute: typeof NccIptvRouteWithChildren
   NccLogsRoute: typeof NccLogsRoute
   NccNotificationsRoute: typeof NccNotificationsRoute
@@ -2229,6 +2309,7 @@ const NccRouteChildren: NccRouteChildren = {
   NccClientsRoute: NccClientsRouteWithChildren,
   NccEmailsRoute: NccEmailsRoute,
   NccEmployeesRoute: NccEmployeesRoute,
+  NccGalleryRoute: NccGalleryRoute,
   NccIptvRoute: NccIptvRouteWithChildren,
   NccLogsRoute: NccLogsRoute,
   NccNotificationsRoute: NccNotificationsRoute,
@@ -2256,8 +2337,10 @@ const rootRouteChildren: RootRouteChildren = {
   EnRoute: EnRouteWithChildren,
   EspaceClientRoute: EspaceClientRouteWithChildren,
   FrRoute: FrRouteWithChildren,
+  GalerieRoute: GalerieRoute,
   LegalGuideRoute: LegalGuideRoute,
   McpRoute: McpRoute,
+  MerchantFeedDotxmlRoute: MerchantFeedDotxmlRoute,
   NccRoute: NccRouteWithChildren,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TrackRoute: TrackRoute,
@@ -2274,6 +2357,7 @@ const rootRouteChildren: RootRouteChildren = {
   LegalTermsRoute: LegalTermsRoute,
   PaymentFailedRoute: PaymentFailedRoute,
   PaymentSuccessRoute: PaymentSuccessRoute,
+  ProduitsSlugRoute: ProduitsSlugRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   ApiPublicCspReportRoute: ApiPublicCspReportRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
