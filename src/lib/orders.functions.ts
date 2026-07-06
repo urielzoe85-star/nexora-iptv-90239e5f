@@ -25,7 +25,7 @@ const CreateOrderSchema = z.object({
   // Sprint 3 · Bloc C — the checkout form MUST tick a box accepting the
   // CGU / CGV / privacy / refund policy before it can call this fn.
   termsAccepted: z.literal(true, {
-    errorMap: () => ({ message: "Vous devez accepter les CGU et CGV." }),
+    message: "Vous devez accepter les CGU et CGV.",
   }),
   termsVersion: z.string().trim().min(4).max(32).optional(),
 }).refine(
