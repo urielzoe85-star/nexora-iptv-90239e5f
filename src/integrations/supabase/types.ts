@@ -579,6 +579,69 @@ export type Database = {
         }
         Relationships: []
       }
+      gallery_items: {
+        Row: {
+          active: boolean
+          availability: string
+          brand: string | null
+          created_at: string
+          currency: string
+          description: string | null
+          external_url: string | null
+          id: string
+          image_source: string
+          image_url: string
+          link_type: string
+          plan_slug: string | null
+          price: number | null
+          product_slug: string | null
+          sku: string | null
+          sort_order: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          availability?: string
+          brand?: string | null
+          created_at?: string
+          currency?: string
+          description?: string | null
+          external_url?: string | null
+          id?: string
+          image_source?: string
+          image_url: string
+          link_type?: string
+          plan_slug?: string | null
+          price?: number | null
+          product_slug?: string | null
+          sku?: string | null
+          sort_order?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          availability?: string
+          brand?: string | null
+          created_at?: string
+          currency?: string
+          description?: string | null
+          external_url?: string | null
+          id?: string
+          image_source?: string
+          image_url?: string
+          link_type?: string
+          plan_slug?: string | null
+          price?: number | null
+          product_slug?: string | null
+          sku?: string | null
+          sort_order?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       integration_debug_logs: {
         Row: {
           actor_id: string | null
