@@ -23,8 +23,8 @@ export type GalleryItem = {
   updated_at: string;
 };
 
-function anonClient() {
-  const { createClient } = require("@supabase/supabase-js") as typeof import("@supabase/supabase-js");
+async function anonClient() {
+  const { createClient } = await import("@supabase/supabase-js");
   return createClient(
     process.env.SUPABASE_URL!,
     process.env.SUPABASE_PUBLISHABLE_KEY!,
@@ -52,7 +52,7 @@ const upsertSchema = z.object({
 });
 
 export const listGalleryPublic = createServerFn({ method: "GET" }).handler(async () => {
-  const sb = anonClient();
+  const sb = await anonClient();
   const { data, error } = await sb
     .from("gallery_items")
     .select("*")
@@ -66,7 +66,7 @@ export const listGalleryPublic = createServerFn({ method: "GET" }).handler(async
 export const getGalleryItemBySlug = createServerFn({ method: "GET" })
   .inputValidator((d) => z.object({ slug: z.string().trim().min(1).max(80) }).parse(d))
   .handler(async ({ data }) => {
-    const sb = anonClient();
+    const sb = await anonClient();
     const { data: row, error } = await sb
       .from("gallery_items")
       .select("*")
