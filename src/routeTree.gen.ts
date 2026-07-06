@@ -13,6 +13,7 @@ import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
 import { Route as TrackRouteImport } from './routes/track'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as NccRouteImport } from './routes/ncc'
+import { Route as MerchantFeedDotxmlRouteImport } from './routes/merchant-feed[.]xml'
 import { Route as McpRouteImport } from './routes/mcp'
 import { Route as LegalGuideRouteImport } from './routes/legal-guide'
 import { Route as GalerieRouteImport } from './routes/galerie'
@@ -134,6 +135,11 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
 const NccRoute = NccRouteImport.update({
   id: '/ncc',
   path: '/ncc',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MerchantFeedDotxmlRoute = MerchantFeedDotxmlRouteImport.update({
+  id: '/merchant-feed.xml',
+  path: '/merchant-feed.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
 const McpRoute = McpRouteImport.update({
@@ -676,6 +682,7 @@ export interface FileRoutesByFullPath {
   '/galerie': typeof GalerieRoute
   '/legal-guide': typeof LegalGuideRoute
   '/mcp': typeof McpRoute
+  '/merchant-feed.xml': typeof MerchantFeedDotxmlRoute
   '/ncc': typeof NccRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/track': typeof TrackRoute
@@ -780,6 +787,7 @@ export interface FileRoutesByTo {
   '/galerie': typeof GalerieRoute
   '/legal-guide': typeof LegalGuideRoute
   '/mcp': typeof McpRoute
+  '/merchant-feed.xml': typeof MerchantFeedDotxmlRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/track': typeof TrackRoute
   '/unsubscribe': typeof UnsubscribeRoute
@@ -886,6 +894,7 @@ export interface FileRoutesById {
   '/galerie': typeof GalerieRoute
   '/legal-guide': typeof LegalGuideRoute
   '/mcp': typeof McpRoute
+  '/merchant-feed.xml': typeof MerchantFeedDotxmlRoute
   '/ncc': typeof NccRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/track': typeof TrackRoute
@@ -996,6 +1005,7 @@ export interface FileRouteTypes {
     | '/galerie'
     | '/legal-guide'
     | '/mcp'
+    | '/merchant-feed.xml'
     | '/ncc'
     | '/sitemap.xml'
     | '/track'
@@ -1100,6 +1110,7 @@ export interface FileRouteTypes {
     | '/galerie'
     | '/legal-guide'
     | '/mcp'
+    | '/merchant-feed.xml'
     | '/sitemap.xml'
     | '/track'
     | '/unsubscribe'
@@ -1205,6 +1216,7 @@ export interface FileRouteTypes {
     | '/galerie'
     | '/legal-guide'
     | '/mcp'
+    | '/merchant-feed.xml'
     | '/ncc'
     | '/sitemap.xml'
     | '/track'
@@ -1314,6 +1326,7 @@ export interface RootRouteChildren {
   GalerieRoute: typeof GalerieRoute
   LegalGuideRoute: typeof LegalGuideRoute
   McpRoute: typeof McpRoute
+  MerchantFeedDotxmlRoute: typeof MerchantFeedDotxmlRoute
   NccRoute: typeof NccRouteWithChildren
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TrackRoute: typeof TrackRoute
@@ -1379,6 +1392,13 @@ declare module '@tanstack/react-router' {
       path: '/ncc'
       fullPath: '/ncc'
       preLoaderRoute: typeof NccRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/merchant-feed.xml': {
+      id: '/merchant-feed.xml'
+      path: '/merchant-feed.xml'
+      fullPath: '/merchant-feed.xml'
+      preLoaderRoute: typeof MerchantFeedDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/mcp': {
@@ -2320,6 +2340,7 @@ const rootRouteChildren: RootRouteChildren = {
   GalerieRoute: GalerieRoute,
   LegalGuideRoute: LegalGuideRoute,
   McpRoute: McpRoute,
+  MerchantFeedDotxmlRoute: MerchantFeedDotxmlRoute,
   NccRoute: NccRouteWithChildren,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TrackRoute: TrackRoute,
