@@ -43,6 +43,7 @@ import { Route as NccOrdersRouteImport } from './routes/ncc.orders'
 import { Route as NccNotificationsRouteImport } from './routes/ncc.notifications'
 import { Route as NccLogsRouteImport } from './routes/ncc.logs'
 import { Route as NccIptvRouteImport } from './routes/ncc.iptv'
+import { Route as NccGalleryRouteImport } from './routes/ncc.gallery'
 import { Route as NccEmployeesRouteImport } from './routes/ncc.employees'
 import { Route as NccEmailsRouteImport } from './routes/ncc.emails'
 import { Route as NccClientsRouteImport } from './routes/ncc.clients'
@@ -281,6 +282,11 @@ const NccLogsRoute = NccLogsRouteImport.update({
 const NccIptvRoute = NccIptvRouteImport.update({
   id: '/iptv',
   path: '/iptv',
+  getParentRoute: () => NccRoute,
+} as any)
+const NccGalleryRoute = NccGalleryRouteImport.update({
+  id: '/gallery',
+  path: '/gallery',
   getParentRoute: () => NccRoute,
 } as any)
 const NccEmployeesRoute = NccEmployeesRouteImport.update({
@@ -691,6 +697,7 @@ export interface FileRoutesByFullPath {
   '/ncc/clients': typeof NccClientsRouteWithChildren
   '/ncc/emails': typeof NccEmailsRoute
   '/ncc/employees': typeof NccEmployeesRoute
+  '/ncc/gallery': typeof NccGalleryRoute
   '/ncc/iptv': typeof NccIptvRouteWithChildren
   '/ncc/logs': typeof NccLogsRoute
   '/ncc/notifications': typeof NccNotificationsRoute
@@ -791,6 +798,7 @@ export interface FileRoutesByTo {
   '/ncc/clients': typeof NccClientsRouteWithChildren
   '/ncc/emails': typeof NccEmailsRoute
   '/ncc/employees': typeof NccEmployeesRoute
+  '/ncc/gallery': typeof NccGalleryRoute
   '/ncc/logs': typeof NccLogsRoute
   '/ncc/notifications': typeof NccNotificationsRoute
   '/ncc/orders': typeof NccOrdersRouteWithChildren
@@ -895,6 +903,7 @@ export interface FileRoutesById {
   '/ncc/clients': typeof NccClientsRouteWithChildren
   '/ncc/emails': typeof NccEmailsRoute
   '/ncc/employees': typeof NccEmployeesRoute
+  '/ncc/gallery': typeof NccGalleryRoute
   '/ncc/iptv': typeof NccIptvRouteWithChildren
   '/ncc/logs': typeof NccLogsRoute
   '/ncc/notifications': typeof NccNotificationsRoute
@@ -1002,6 +1011,7 @@ export interface FileRouteTypes {
     | '/ncc/clients'
     | '/ncc/emails'
     | '/ncc/employees'
+    | '/ncc/gallery'
     | '/ncc/iptv'
     | '/ncc/logs'
     | '/ncc/notifications'
@@ -1102,6 +1112,7 @@ export interface FileRouteTypes {
     | '/ncc/clients'
     | '/ncc/emails'
     | '/ncc/employees'
+    | '/ncc/gallery'
     | '/ncc/logs'
     | '/ncc/notifications'
     | '/ncc/orders'
@@ -1205,6 +1216,7 @@ export interface FileRouteTypes {
     | '/ncc/clients'
     | '/ncc/emails'
     | '/ncc/employees'
+    | '/ncc/gallery'
     | '/ncc/iptv'
     | '/ncc/logs'
     | '/ncc/notifications'
@@ -1551,6 +1563,13 @@ declare module '@tanstack/react-router' {
       path: '/iptv'
       fullPath: '/ncc/iptv'
       preLoaderRoute: typeof NccIptvRouteImport
+      parentRoute: typeof NccRoute
+    }
+    '/ncc/gallery': {
+      id: '/ncc/gallery'
+      path: '/gallery'
+      fullPath: '/ncc/gallery'
+      preLoaderRoute: typeof NccGalleryRouteImport
       parentRoute: typeof NccRoute
     }
     '/ncc/employees': {
@@ -2207,6 +2226,7 @@ interface NccRouteChildren {
   NccClientsRoute: typeof NccClientsRouteWithChildren
   NccEmailsRoute: typeof NccEmailsRoute
   NccEmployeesRoute: typeof NccEmployeesRoute
+  NccGalleryRoute: typeof NccGalleryRoute
   NccIptvRoute: typeof NccIptvRouteWithChildren
   NccLogsRoute: typeof NccLogsRoute
   NccNotificationsRoute: typeof NccNotificationsRoute
@@ -2229,6 +2249,7 @@ const NccRouteChildren: NccRouteChildren = {
   NccClientsRoute: NccClientsRouteWithChildren,
   NccEmailsRoute: NccEmailsRoute,
   NccEmployeesRoute: NccEmployeesRoute,
+  NccGalleryRoute: NccGalleryRoute,
   NccIptvRoute: NccIptvRouteWithChildren,
   NccLogsRoute: NccLogsRoute,
   NccNotificationsRoute: NccNotificationsRoute,
