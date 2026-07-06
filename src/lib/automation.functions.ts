@@ -38,7 +38,7 @@ export const toggleWorkflow = createServerFn({ method: "POST" })
 
 export const runWorkflowManually = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
-  .inputValidator((d) => z.object({ key: z.string(), payload: z.record(z.unknown()).optional() }).parse(d))
+  .inputValidator((d) => z.object({ key: z.string(), payload: z.record(z.string(), z.unknown()).optional() }).parse(d))
   .handler(async ({ data, context }) => {
     await admin(context.userId);
     const { automationApi } = await import("@/automation");
@@ -109,7 +109,7 @@ export const emitBusinessEvent = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
   .inputValidator((d) => z.object({
     event: z.string(),
-    payload: z.record(z.unknown()).optional(),
+    payload: z.record(z.string(), z.unknown()).optional(),
     sync: z.boolean().optional(),
   }).parse(d))
   .handler(async ({ data, context }) => {
