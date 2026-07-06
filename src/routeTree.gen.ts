@@ -30,6 +30,7 @@ import { Route as FrIndexRouteImport } from './routes/fr.index'
 import { Route as EspaceClientIndexRouteImport } from './routes/espace-client.index'
 import { Route as EnIndexRouteImport } from './routes/en.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as ProduitsSlugRouteImport } from './routes/produits.$slug'
 import { Route as PaymentSuccessRouteImport } from './routes/payment.success'
 import { Route as PaymentFailedRouteImport } from './routes/payment.failed'
 import { Route as NccWhatsappRouteImport } from './routes/ncc.whatsapp'
@@ -219,6 +220,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AdminRoute,
+} as any)
+const ProduitsSlugRoute = ProduitsSlugRouteImport.update({
+  id: '/produits/$slug',
+  path: '/produits/$slug',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const PaymentSuccessRoute = PaymentSuccessRouteImport.update({
   id: '/payment/success',
@@ -719,6 +725,7 @@ export interface FileRoutesByFullPath {
   '/ncc/whatsapp': typeof NccWhatsappRoute
   '/payment/failed': typeof PaymentFailedRoute
   '/payment/success': typeof PaymentSuccessRoute
+  '/produits/$slug': typeof ProduitsSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/en/': typeof EnIndexRoute
   '/espace-client/': typeof EspaceClientIndexRoute
@@ -819,6 +826,7 @@ export interface FileRoutesByTo {
   '/ncc/whatsapp': typeof NccWhatsappRoute
   '/payment/failed': typeof PaymentFailedRoute
   '/payment/success': typeof PaymentSuccessRoute
+  '/produits/$slug': typeof ProduitsSlugRoute
   '/admin': typeof AdminIndexRoute
   '/en': typeof EnIndexRoute
   '/espace-client': typeof EspaceClientIndexRoute
@@ -927,6 +935,7 @@ export interface FileRoutesById {
   '/ncc/whatsapp': typeof NccWhatsappRoute
   '/payment/failed': typeof PaymentFailedRoute
   '/payment/success': typeof PaymentSuccessRoute
+  '/produits/$slug': typeof ProduitsSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/en/': typeof EnIndexRoute
   '/espace-client/': typeof EspaceClientIndexRoute
@@ -1036,6 +1045,7 @@ export interface FileRouteTypes {
     | '/ncc/whatsapp'
     | '/payment/failed'
     | '/payment/success'
+    | '/produits/$slug'
     | '/admin/'
     | '/en/'
     | '/espace-client/'
@@ -1136,6 +1146,7 @@ export interface FileRouteTypes {
     | '/ncc/whatsapp'
     | '/payment/failed'
     | '/payment/success'
+    | '/produits/$slug'
     | '/admin'
     | '/en'
     | '/espace-client'
@@ -1243,6 +1254,7 @@ export interface FileRouteTypes {
     | '/ncc/whatsapp'
     | '/payment/failed'
     | '/payment/success'
+    | '/produits/$slug'
     | '/admin/'
     | '/en/'
     | '/espace-client/'
@@ -1317,6 +1329,7 @@ export interface RootRouteChildren {
   LegalTermsRoute: typeof LegalTermsRoute
   PaymentFailedRoute: typeof PaymentFailedRoute
   PaymentSuccessRoute: typeof PaymentSuccessRoute
+  ProduitsSlugRoute: typeof ProduitsSlugRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   ApiPublicCspReportRoute: typeof ApiPublicCspReportRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
@@ -1486,6 +1499,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/produits/$slug': {
+      id: '/produits/$slug'
+      path: '/produits/$slug'
+      fullPath: '/produits/$slug'
+      preLoaderRoute: typeof ProduitsSlugRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/payment/success': {
       id: '/payment/success'
@@ -2316,6 +2336,7 @@ const rootRouteChildren: RootRouteChildren = {
   LegalTermsRoute: LegalTermsRoute,
   PaymentFailedRoute: PaymentFailedRoute,
   PaymentSuccessRoute: PaymentSuccessRoute,
+  ProduitsSlugRoute: ProduitsSlugRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   ApiPublicCspReportRoute: ApiPublicCspReportRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
