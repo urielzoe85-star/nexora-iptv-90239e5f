@@ -15,6 +15,7 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as NccRouteImport } from './routes/ncc'
 import { Route as McpRouteImport } from './routes/mcp'
 import { Route as LegalGuideRouteImport } from './routes/legal-guide'
+import { Route as GalerieRouteImport } from './routes/galerie'
 import { Route as FrRouteImport } from './routes/fr'
 import { Route as EspaceClientRouteImport } from './routes/espace-client'
 import { Route as EnRouteImport } from './routes/en'
@@ -142,6 +143,11 @@ const McpRoute = McpRouteImport.update({
 const LegalGuideRoute = LegalGuideRouteImport.update({
   id: '/legal-guide',
   path: '/legal-guide',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GalerieRoute = GalerieRouteImport.update({
+  id: '/galerie',
+  path: '/galerie',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FrRoute = FrRouteImport.update({
@@ -661,6 +667,7 @@ export interface FileRoutesByFullPath {
   '/en': typeof EnRouteWithChildren
   '/espace-client': typeof EspaceClientRouteWithChildren
   '/fr': typeof FrRouteWithChildren
+  '/galerie': typeof GalerieRoute
   '/legal-guide': typeof LegalGuideRoute
   '/mcp': typeof McpRoute
   '/ncc': typeof NccRouteWithChildren
@@ -763,6 +770,7 @@ export interface FileRoutesByTo {
   '/checkout': typeof CheckoutRoute
   '/dashboard': typeof DashboardRoute
   '/de': typeof DeRoute
+  '/galerie': typeof GalerieRoute
   '/legal-guide': typeof LegalGuideRoute
   '/mcp': typeof McpRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -867,6 +875,7 @@ export interface FileRoutesById {
   '/en': typeof EnRouteWithChildren
   '/espace-client': typeof EspaceClientRouteWithChildren
   '/fr': typeof FrRouteWithChildren
+  '/galerie': typeof GalerieRoute
   '/legal-guide': typeof LegalGuideRoute
   '/mcp': typeof McpRoute
   '/ncc': typeof NccRouteWithChildren
@@ -975,6 +984,7 @@ export interface FileRouteTypes {
     | '/en'
     | '/espace-client'
     | '/fr'
+    | '/galerie'
     | '/legal-guide'
     | '/mcp'
     | '/ncc'
@@ -1077,6 +1087,7 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/dashboard'
     | '/de'
+    | '/galerie'
     | '/legal-guide'
     | '/mcp'
     | '/sitemap.xml'
@@ -1180,6 +1191,7 @@ export interface FileRouteTypes {
     | '/en'
     | '/espace-client'
     | '/fr'
+    | '/galerie'
     | '/legal-guide'
     | '/mcp'
     | '/ncc'
@@ -1287,6 +1299,7 @@ export interface RootRouteChildren {
   EnRoute: typeof EnRouteWithChildren
   EspaceClientRoute: typeof EspaceClientRouteWithChildren
   FrRoute: typeof FrRouteWithChildren
+  GalerieRoute: typeof GalerieRoute
   LegalGuideRoute: typeof LegalGuideRoute
   McpRoute: typeof McpRoute
   NccRoute: typeof NccRouteWithChildren
@@ -1367,6 +1380,13 @@ declare module '@tanstack/react-router' {
       path: '/legal-guide'
       fullPath: '/legal-guide'
       preLoaderRoute: typeof LegalGuideRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/galerie': {
+      id: '/galerie'
+      path: '/galerie'
+      fullPath: '/galerie'
+      preLoaderRoute: typeof GalerieRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/fr': {
@@ -2277,6 +2297,7 @@ const rootRouteChildren: RootRouteChildren = {
   EnRoute: EnRouteWithChildren,
   EspaceClientRoute: EspaceClientRouteWithChildren,
   FrRoute: FrRouteWithChildren,
+  GalerieRoute: GalerieRoute,
   LegalGuideRoute: LegalGuideRoute,
   McpRoute: McpRoute,
   NccRoute: NccRouteWithChildren,
