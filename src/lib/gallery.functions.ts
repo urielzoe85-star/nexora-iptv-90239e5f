@@ -97,10 +97,10 @@ export const adminUpsertGalleryItem = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
     const payload = { ...data };
     if (data.id) {
-      const { id, ...rest } = payload;
-      const { error } = await supabaseAdmin.from("gallery_items").update(rest).eq("id", id);
+      const { id: _id, ...rest } = payload;
+      const { error } = await supabaseAdmin.from("gallery_items").update(rest).eq("id", data.id);
       if (error) throw new Error(error.message);
-      return { ok: true, id };
+      return { ok: true, id: data.id };
     }
     const { data: inserted, error } = await supabaseAdmin
       .from("gallery_items")
