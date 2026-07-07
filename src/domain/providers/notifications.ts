@@ -39,6 +39,7 @@ class WhatsAppChannel implements NotificationChannelAdapter {
   readonly id: NotificationChannel = "whatsapp";
   readonly label = "WhatsApp";
   get enabled() {
+    if (typeof process === "undefined" || !process.env) return false;
     return Boolean(process.env.WHATSAPP_PHONE_NUMBER_ID && process.env.WHATSAPP_ACCESS_TOKEN);
   }
   async send(input: NotificationDispatchInput): Promise<NotificationDispatchResult> {
