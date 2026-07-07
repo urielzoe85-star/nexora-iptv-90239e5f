@@ -145,6 +145,42 @@ export const sendTelegramAuto = createServerFn({ method: "POST" })
   });
 
 // ────────────────────────────────────────────────────────────────────────────
+// ENVOI AUTOMATIQUE — WhatsApp Cloud API (Meta Business)
+// ────────────────────────────────────────────────────────────────────────────
+export const sendWhatsAppAuto = createServerFn({ method: "POST" })
+  .middleware([requireNccUnlock])
+  .inputValidator((d: unknown) =>
+    z.object({
+      order_id: z.string().uuid(),
+      to: z.string().min(6).max(20),
+      text: z.string().min(1).max(4000),
+      template_id: z.string().max(80).optional(),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const sb = await adminClient(context.userId);
+    if (!process.env.WHATSAPP_PHONE_NUMBER_ID || !process.env.WHATSAPP_ACCESS_TOKEN) {
+      throw new Error("WhatsApp non configuré (WHATSAPP_PHONE_NUMBER_ID ou WHATSAPP_ACCESS_TOKEN manquant)");
+    }
+    const { sendWhatsAppText, normalizeWaNumber } = await import("@/lib/whatsapp.server");
+    const res = await sendWhatsAppText(data.to, data.text);
+    const { data: order } = await sb.from("orders").select("customer_id").eq("id", data.order_id).maybeSingle();
+    await sb.from("delivery_logs").insert({
+      order_id: data.order_id,
+      customer_id: order?.customer_id ?? null,
+      channel: "whatsapp",
+      status: res.ok ? "automatic" : "failed",
+      template_id: data.template_id ?? null,
+      content: data.text,
+      recipient: normalizeWaNumber(data.to),
+      admin_id: context.userId,
+      error: res.ok ? null : (res.error ?? `HTTP ${res.status}`),
+    });
+    if (!res.ok) throw new Error(res.error ?? `WhatsApp error ${res.status}`);
+    return { ok: true, message_id: res.messageId };
+  });
+
+// ────────────────────────────────────────────────────────────────────────────
 // ENVOI AUTOMATIQUE — Email via Lovable Emails (queue + retry)
 // ────────────────────────────────────────────────────────────────────────────
 export const sendEmailAuto = createServerFn({ method: "POST" })
