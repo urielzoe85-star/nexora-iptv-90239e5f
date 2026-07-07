@@ -35,9 +35,30 @@ class StubChannel implements NotificationChannelAdapter {
   }
 }
 
+class WhatsAppChannel implements NotificationChannelAdapter {
+  readonly id: NotificationChannel = "whatsapp";
+  readonly label = "WhatsApp";
+  get enabled() {
+    return Boolean(process.env.WHATSAPP_PHONE_NUMBER_ID && process.env.WHATSAPP_ACCESS_TOKEN);
+  }
+  async send(input: NotificationDispatchInput): Promise<NotificationDispatchResult> {
+    try {
+      const { sendWhatsAppText } = await import("@/lib/whatsapp.server");
+      const body = input.body ?? input.subject ?? "";
+      if (!body) return { status: "failed", error: "empty_body" };
+      const res = await sendWhatsAppText(input.recipient, body);
+      return res.ok
+        ? { status: "sent", providerReference: res.messageId }
+        : { status: "failed", error: res.error ?? `HTTP ${res.status}` };
+    } catch (e: any) {
+      return { status: "failed", error: e?.message ?? String(e) };
+    }
+  }
+}
+
 export const NOTIFICATION_CHANNELS_REGISTRY: Record<NotificationChannel, NotificationChannelAdapter> = {
   email:    new StubChannel("email",    "Email"),
-  whatsapp: new StubChannel("whatsapp", "WhatsApp"),
+  whatsapp: new WhatsAppChannel(),
   telegram: new StubChannel("telegram", "Telegram"),
   sms:      new StubChannel("sms",      "SMS"),
   in_app:   new StubChannel("in_app",   "Notification interne"),
