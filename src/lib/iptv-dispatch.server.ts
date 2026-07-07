@@ -169,35 +169,28 @@ async function sendWhatsAppChannel(args: {
   customer: any;
   text: string;
 }): Promise<Outcome> {
-  // WhatsApp Business API n'est pas branché dans cette version : on marque
-  // "skipped" avec une raison explicite. La preuve de vie (numéro client)
-  // et la trace dans delivery_logs sont conservées pour l'exploitation
-  // manuelle depuis le NCC (bouton "Ouvrir WhatsApp" du DeliveryComposer).
   const phone = args.customer?.phone ?? args.order.phone ?? args.order?.metadata?.momo?.phone ?? null;
-  const LOVABLE_API_KEY = process.env.LOVABLE_API_KEY;
-  const WA_KEY = process.env.WHATSAPP_API_KEY || process.env.WABA_API_KEY;
   if (!phone) return { ok: false, skipped: true, reason: "whatsapp_phone_missing" };
-  if (!LOVABLE_API_KEY || !WA_KEY) return { ok: false, skipped: true, reason: "whatsapp_not_configured" };
+  if (!process.env.WHATSAPP_PHONE_NUMBER_ID || !process.env.WHATSAPP_ACCESS_TOKEN) {
+    return { ok: false, skipped: true, reason: "whatsapp_not_configured" };
+  }
   try {
-    const res = await fetch("https://connector-gateway.lovable.dev/whatsapp/sendMessage", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "X-Connection-Api-Key": WA_KEY,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ to: phone.replace(/[^\d]/g, ""), text: args.text }),
-    });
-    const body = await res.json().catch(() => ({}));
-    const ok = res.ok;
+    const { sendWhatsAppText, normalizeWaNumber } = await import("@/lib/whatsapp.server");
+    const res = await sendWhatsAppText(phone, args.text);
     await insertDeliveryLog({
       order_id: args.order.id, customer_id: args.order.customer_id ?? null,
-      channel: "whatsapp", status: ok ? "automatic" : "failed",
-      content: args.text, recipient: phone,
-      error: ok ? null : (body?.error?.message ?? `HTTP ${res.status}`),
+      channel: "whatsapp", status: res.ok ? "automatic" : "failed",
+      content: args.text, recipient: normalizeWaNumber(phone),
+      error: res.ok ? null : (res.error ?? `HTTP ${res.status}`),
     });
-    return ok ? { ok: true } : { ok: false, error: body?.error?.message ?? `HTTP ${res.status}` };
+    return res.ok ? { ok: true } : { ok: false, error: res.error ?? `HTTP ${res.status}` };
   } catch (e: any) {
+    await insertDeliveryLog({
+      order_id: args.order.id, customer_id: args.order.customer_id ?? null,
+      channel: "whatsapp", status: "failed",
+      content: args.text, recipient: String(phone),
+      error: e?.message ?? String(e),
+    });
     return { ok: false, error: e?.message ?? String(e) };
   }
 }
