@@ -5,5 +5,6 @@ Disallow: /dashboard
 Disallow: /checkout
 Disallow: /track
 Disallow: /payment/
+Disallow: /unsubscribe
 
 Sitemap: https://nexora-iptv.com/sitemap.xml
