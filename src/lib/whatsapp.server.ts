@@ -22,7 +22,7 @@ async function noteAuthFailure(status: number) {
   if (status !== 401 && status !== 403) return;
   try {
     const { noteSecretInvalid } = await import("@/lib/secret-guard.server");
-    await noteSecretInvalid("WHATSAPP_ACCESS_TOKEN", `HTTP ${status}`);
+    await noteSecretInvalid("WHATSAPP_ACCESS_TOKEN", { route: "whatsapp.cloud_api" }, `HTTP ${status}`);
   } catch {
     // secret-guard optionnel — ignorer si indisponible
   }
