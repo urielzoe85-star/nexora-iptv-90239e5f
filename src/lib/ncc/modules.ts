@@ -52,7 +52,7 @@ export const NCC_MODULES: NccModule[] = [
   { id: "automation", label: "Automatisation", description: "Workflows, déclencheurs, file d'attente et historique.", icon: Workflow, to: "/ncc/automation", group: "ops", status: "ready" },
   { id: "portal", label: "Espace client", description: "Offres de renouvellement, annonces, sessions du portail.", icon: UserCircle, to: "/ncc/portal", group: "ops", status: "ready" },
 
-  { id: "settings", label: "Paramètres", description: "Configuration globale de la plateforme.", icon: Settings, to: "/ncc/settings", group: "system", status: "preparing" },
+  { id: "settings", label: "Paramètres", description: "Configuration globale de la plateforme.", icon: Settings, to: "/ncc/settings", group: "system", status: "ready" },
 ];
 
 export const SETTINGS_SECTIONS = [
