@@ -1744,11 +1744,6 @@ export type Database = {
       }
     }
     Functions: {
-      _camerpay_selftest: { Args: { _ref: string }; Returns: Json }
-      _camerpay_sign: {
-        Args: { _amount: string; _ref: string; _status: string; _uuid: string }
-        Returns: string
-      }
       admin_change_role: {
         Args: {
           _action: string
