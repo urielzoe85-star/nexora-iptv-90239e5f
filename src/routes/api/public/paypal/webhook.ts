@@ -11,11 +11,11 @@ export const Route = createFileRoute("/api/public/paypal/webhook")({
         const { processCamerpayFormattedWebhook } = await import(
           "@/lib/camerpay-webhook-handler.server"
         );
-        const { camerpayPaypalWebhookSecret } = await import(
+        const { camerpayWebhookSecret } = await import(
           "@/lib/payments-camerpay.server"
         );
         let secret = "";
-        try { secret = camerpayPaypalWebhookSecret(); }
+        try { secret = camerpayWebhookSecret(); }
         catch (e: any) {
           console.error("[paypal-webhook] missing secret", e?.message ?? e);
           return new Response("Server misconfigured", { status: 500 });
