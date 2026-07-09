@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Check, Lock, ShieldCheck, ChevronLeft, Mail, User,
   Loader2, Tv, Phone, Globe, Smartphone, ExternalLink, Clock, Bitcoin,
+  CreditCard, Wallet,
 } from "lucide-react";
 import { createOrder } from "@/lib/orders.functions";
 import { LEGAL_VERSION } from "@/lib/legal-version";
@@ -95,7 +96,7 @@ function CheckoutPage() {
   const [errorMsg, setErrorMsg] = useState<string>("");
   const [pending, setPending] = useState<PendingState | null>(null);
   const [termsAccepted, setTermsAccepted] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<"momo" | "crypto">("momo");
+  const [paymentMethod, setPaymentMethod] = useState<"momo" | "crypto" | "card" | "paypal">("momo");
 
   // When the country changes: re-prefix the phone with the new dial code
   // and reset the operator if the previous one isn't offered there.
@@ -124,7 +125,7 @@ function CheckoutPage() {
     !!selected &&
     email.includes("@") &&
     fullName.trim().length > 1 &&
-    (paymentMethod === "crypto" ||
+    (paymentMethod !== "momo" ||
       (phone.replace(/\D/g, "").length >= 8 && !!operator && !!country)) &&
     termsAccepted;
 
@@ -145,12 +146,21 @@ function CheckoutPage() {
               termsAccepted: true as const,
               termsVersion: LEGAL_VERSION,
             }
-          : {
+          : paymentMethod === "crypto"
+          ? {
               email: email.toLowerCase(), fullName,
               planId: selected.id, planName: selected.name,
               amount: total, currency: "USD",
               method: "crypto" as const,
               crypto_currency: "USDT" as const,
+              termsAccepted: true as const,
+              termsVersion: LEGAL_VERSION,
+            }
+          : {
+              email: email.toLowerCase(), fullName,
+              planId: selected.id, planName: selected.name,
+              amount: total, currency: "USD",
+              method: paymentMethod, // "card" | "paypal"
               termsAccepted: true as const,
               termsVersion: LEGAL_VERSION,
             };
@@ -170,11 +180,10 @@ function CheckoutPage() {
       const successUrl = `${origin}/payment/success?ref=${order.order_ref}`;
       const failureUrl = `${origin}/payment/failed?ref=${order.order_ref}`;
 
-      if (paymentMethod === "momo") {
+      if (paymentMethod === "momo" || paymentMethod === "card" || paymentMethod === "paypal") {
         // Generic dispatcher — CamerPay for CM (and international), SebPay
-        // for the other West-Africa MoMo countries. No behaviour change for
-        // existing SebPay countries; CamerPay users are redirected to
-        // `pay_url`.
+        // for the other West-Africa MoMo countries. Card & PayPal are always
+        // routed to CamerPay (hosted Stripe / PayPal page).
         const result = await initCheckout({
           data: { ref: order.order_ref, successUrl, failureUrl },
         });
