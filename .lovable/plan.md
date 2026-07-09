@@ -1,65 +1,85 @@
-# Intégration WhatsApp Cloud API — Plan
+## Phase 1 — Payment Gateway Manager + CamerPay (SebPay preserved)
 
-## Contexte
+Scope: introduce a provider abstraction, add CamerPay (initiate + status + signed webhook), and route by country. **IPTV auto-attribution / stock XLSX / admin UI are out of scope** — the existing post-payment chain (`reactivateAccountsForOrder` → `emitBusinessEvent("payment.confirmed")` → automation queue → WhatsApp/Telegram/Email) is already generic and will fire the same way for CamerPay. That means no regression on SebPay and CamerPay plugs into the exact same delivery pipeline on day one.
 
-Webhook réception déjà en place (`/api/public/whatsapp/webhook`) avec `WHATSAPP_VERIFY_TOKEN` + `WHATSAPP_APP_SECRET`. Il manque l'envoi et le traitement métier des messages entrants.
+### Provider routing
 
-## Étape 1 — Secrets
+- `CM` (Cameroun) → CamerPay (XAF, Orange Money / MTN MoMo / cartes / PayPal).
+- International (any country CamerPay accepts via card/PayPal, not in the West-Africa SebPay list) → CamerPay.
+- West Africa (`BJ`, `SN`, `CI`, `TG`, `BF`, `ML`, `NE`, `GN` — countries with a Mobile Money operator in `src/lib/countries.ts` and non-XAF currency) → SebPay.
+- Override: if the frontend sends an explicit `provider`, honour it (used by admin re-tries).
 
-Ajouter via formulaire sécurisé :
-- `WHATSAPP_PHONE_NUMBER_ID` — ID du numéro (Meta Developer Console → WhatsApp → API Setup)
-- `WHATSAPP_ACCESS_TOKEN` — token long-terme (System User dans Business Manager, permissions `whatsapp_business_messaging` + `whatsapp_business_management`)
+### Gateway Manager
 
-## Étape 2 — Client d'envoi serveur
+New folder `src/lib/payments/` with one file per concern:
 
-Nouveau fichier `src/lib/whatsapp.server.ts` :
-- `sendWhatsAppText(to, body)` — message texte libre (fenêtre 24h après message client)
-- `sendWhatsAppTemplate(to, templateName, lang, components)` — templates approuvés Meta (pour initier une conversation hors fenêtre 24h)
-- Appel direct `https://graph.facebook.com/v21.0/{PHONE_NUMBER_ID}/messages`
-- Gestion erreurs upstream avec `noteSecretInvalid` sur 401/403
-- Retour typé `{ok, message_id}` / erreur explicite
+- `types.ts` — `PaymentProvider` interface: `initiate(order)`, `verify(order)`, `parseWebhook(req)`, `refund?` (stub for later).
+- `manager.ts` — `pickProvider(country, override?)` + `getProvider(name)` registry.
+- `sebpay.provider.ts` — thin wrapper around existing `initSebPayCheckout` / `verifyPaymentInternal` / webhook parser (extracted from current route). **Zero behaviour change.**
+- `camerpay.provider.ts` — new adapter (see below).
+- `router.functions.ts` — new `initCheckout` server fn (validated by Zod) that resolves provider by order country and calls `provider.initiate`. `verifyPayment` in `payments.functions.ts` is generalised to dispatch by `orders.payment_provider`.
 
-## Étape 3 — Server function `sendWhatsAppAuto`
+### CamerPay adapter
 
-Dans `src/lib/delivery.functions.ts`, sur le modèle exact de `sendTelegramAuto` :
-- Input : `order_id`, `to` (E.164), `text`, `template_id?`
-- Appelle `whatsapp.server.ts`
-- Log dans `delivery_logs` (status `automatic` / `failed`)
-- Câbler dans `dispatchIptvDelivery` pour le canal `whatsapp`
-- Brancher dans `iptv-dispatch.server.ts` (parité workflow `payment-confirmed`)
+- Base URL from `CAMERPAY_BASE_URL` (default `https://camerpay.biz`).
+- Auth: `Authorization: Bearer ${CAMERPAY_API_KEY}` (sandbox and live tokens are distinct — one env var, swapped per environment).
+- `initiate`: `POST /api/payment/initiate` with `{ amount, currency:"XAF", customer_phone, customer_email, customer_name, merchant_invoice_id: order.order_ref, merchant_callback_url: "/api/public/camerpay/webhook", merchant_return_url: successUrl, idempotency_key: order.order_ref, source: "nexora-ncc" }`. Store `transaction_uuid` in a new `provider_reference` column and return `pay_url`.
+- `verify`: `GET /api/payment/{uuid}/status` → map `completed → paid`, `failed|cancelled → failed`, else `processing`.
+- Amount conversion: order already stored in `currency` (XAF for CM). If a non-XAF order is somehow routed to CamerPay, reject at `pickProvider` with a clear error — never silently convert.
 
-## Étape 4 — Adapter le connector
+### Webhook `POST /api/public/camerpay/webhook`
 
-Remplacer le stub `whatsapp` dans `src/domain/providers/notifications.ts` par un adapter réel qui appelle `sendWhatsAppText`. Impact : les workflows d'automation utilisent enfin WhatsApp.
+- `content-type: application/x-www-form-urlencoded` — parse via `await request.formData()`.
+- Verify HMAC-SHA256 over `uuid|invoice_id|status|amount` with `CAMERPAY_WEBHOOK_SECRET`, comparing against header `X-CamerPay-Signature` (fallback body `signature`) using `timingSafeEqual`.
+- Idempotency: log `X-CamerPay-Event-Id` / `Idempotency-Key` in `delivery_logs`; skip if the same event id already flipped the order.
+- Look up order by `merchant_invoice_id` (= `order_ref`). If `status=completed`, run the same transition as SebPay: update to `paid`, call `reactivateAccountsForOrder`, emit `payment.confirmed`. On `failed|cancelled`, emit `payment.failed` with `failure_reason` / `failure_code` captured in metadata.
+- Always reply `200 OK` after processing (CamerPay does not retry on 4xx/5xx).
 
-## Étape 5 — Réception & support
+### Database migration (single migration)
 
-Étendre `POST` du webhook `/api/public/whatsapp/webhook` :
-- Parser `entry[].changes[].value.messages[]` (texte, image, bouton)
-- Créer / retrouver le customer par numéro (`customers.phone`)
-- Insérer dans `support_messages` (thread par numéro) — nouvelle table si nécessaire
-- Traiter les statuts (`sent`/`delivered`/`read`/`failed`) → mise à jour `delivery_logs`
-- Notifier admin (Telegram + in-app) sur nouveau message entrant
+- `ALTER TABLE public.orders ADD COLUMN payment_provider text` (nullable; backfill existing rows to `'sebpay'` when `sebpay_reference IS NOT NULL`, else leave null).
+- `ALTER TABLE public.orders ADD COLUMN provider_reference text` (nullable; backfill from `sebpay_reference`).
+- Keep `sebpay_reference` untouched for backward compat — existing code paths continue to read/write it. New CamerPay flow only writes `provider_reference` + `payment_provider`.
+- Index: `CREATE INDEX orders_provider_reference_idx ON public.orders (provider_reference)`.
+- No RLS change (orders policies unchanged).
 
-## Étape 6 — UI NCC WhatsApp
+### Secrets
 
-Enrichir `src/routes/ncc.whatsapp.tsx` :
-- Liste des conversations (numéro, dernier message, non-lus)
-- Vue thread avec historique + composer d'envoi (rate-limit 24h respecté)
-- Bouton « Renvoyer via template » quand fenêtre 24h expirée
-- Bloc statut : phone number ID, quota, health check via API Meta
+Request via `add_secret` (user pastes from CamerPay dashboard `/client/api`):
 
-## Étape 7 — Tests
+- `CAMERPAY_API_KEY` — Bearer token (sandbox first, swap to live after KYC).
+- `CAMERPAY_WEBHOOK_SECRET` — the `callback_secret` from CamerPay dashboard.
+- `CAMERPAY_BASE_URL` — optional, defaults to `https://camerpay.biz`, can override for staging.
 
-- Envoi manuel depuis NCC vers un numéro de test
-- Simulation webhook entrant avec signature HMAC valide
-- Vérification `delivery_logs` + affichage NCC
-- Test échec (token expiré) → status `failed` + event `secret.invalid_use`
+Stored server-side only, read inside handler bodies (never at module scope), never exposed to the client bundle.
 
-## Détails techniques
+### Files touched
 
-- Endpoint Graph API : `POST graph.facebook.com/v21.0/{PHONE_NUMBER_ID}/messages`
-- Body texte : `{messaging_product:"whatsapp", to, type:"text", text:{body}}`
-- Templates : requis hors fenêtre 24h — à créer côté Meta (`order_delivered`, `renewal_reminder`)
-- Sécurité : token jamais exposé côté client, chargement lazy dans handler serveur
-- Rate limit : Meta impose 80 msg/s par numéro — pas de throttle nécessaire pour l'usage IPTV
+**Created**
+- `src/lib/payments/types.ts`
+- `src/lib/payments/manager.ts`
+- `src/lib/payments/sebpay.provider.ts` (wraps existing helpers, no logic change)
+- `src/lib/payments/camerpay.provider.ts`
+- `src/lib/payments/router.functions.ts` (new `initCheckout` server fn)
+- `src/routes/api/public/camerpay/webhook.ts`
+- Migration for the two new columns + index + backfill.
+
+**Edited**
+- `src/lib/payments.functions.ts` — `verifyPaymentInternal` becomes provider-aware (dispatch on `payment_provider`); SebPay branch unchanged.
+- `src/routes/checkout.tsx` — call the new `initCheckout` (which internally routes to SebPay or CamerPay). SebPay UX preserved for West-Africa orders; CamerPay users are redirected to `pay_url`.
+- No change to existing SebPay webhook, adapter, or `initSebPayCheckout` — deliberately.
+
+### Deferred to Phase 2 (not in this sprint)
+
+- IPTV stock XLSX import UI + auto-attribution logic (existing `reactivateAccountsForOrder` already handles allocation from the current `iptv_accounts` table; a proper stock table + import UI needs its own sprint).
+- Admin NCC page listing payments per provider + webhook replay.
+- `refundPayment` implementation on both adapters.
+
+### Success criteria
+
+- SebPay flow (BJ/SN/CI order → MoMo) still works end-to-end.
+- CM order → CamerPay `pay_url`, completing the CamerPay sandbox payment triggers `payment.confirmed`, WhatsApp/Telegram/Email fire.
+- CamerPay webhook with a tampered signature returns 401 and does not mutate the order.
+- Typecheck + build pass.
+
+Confirm and I ship Phase 1 exactly as scoped.
