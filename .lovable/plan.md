@@ -1,46 +1,33 @@
-## Objectif
+## Ajustement
 
-Créer 3 endpoints webhook Nexora signés à déclarer dans le dashboard CamerPay :
+CamerPay n'expose qu'un seul webhook secret partagé pour tous les canaux (Mobile Money / Stripe / PayPal). Pas besoin de nouveaux secrets — je réutilise le `CAMERPAY_WEBHOOK_SECRET` existant pour les 3 endpoints.
 
-- `https://nexora-iptv.com/api/public/camerpay/webhook` *(existe déjà)*
-- `https://nexora-iptv.com/api/public/stripe/webhook` *(à créer)*
-- `https://nexora-iptv.com/api/public/paypal/webhook` *(à créer)*
+Les deux valeurs que tu m'as collées correspondent aux secrets déjà présents côté Nexora :
+- `160b09a0…f46c` → `CAMERPAY_WEBHOOK_SECRET` (déjà configuré ✅)
+- `454|MKJc…b4fb` → `CAMERPAY_API_KEY` (déjà configuré ✅)
 
-Note : les URLs `camerpay.biz/webhook/*` que tu m'as données sont côté CamerPay — pas utilisables comme destination. Je vais te fournir les 3 URLs Nexora ci-dessus, à coller dans le dashboard CamerPay.
+Ne me les recolle pas — ils sont déjà en place. Je n'ai donc **rien à te demander**.
 
-## Étapes
+## Changements code
 
-1. **Secrets partagés** (via `add_secret`, tu génères une valeur random et tu la colles à la fois côté CamerPay dashboard et côté Nexora) :
-   - `CAMERPAY_STRIPE_WEBHOOK_SECRET`
-   - `CAMERPAY_PAYPAL_WEBHOOK_SECRET`
-   - (le `CAMERPAY_WEBHOOK_SECRET` existant reste inchangé)
+1. **`src/lib/payments-camerpay.server.ts`** — supprimer les helpers `camerpayStripeWebhookSecret()` / `camerpayPaypalWebhookSecret()` ajoutés au tour précédent (inutiles).
 
-2. **Nouveau helper** `src/lib/payments-camerpay.server.ts` : factoriser une fonction `verifyHmacSignature(rawBody, header, secret)` réutilisable + mapping payload → mise à jour `orders`.
+2. **`src/routes/api/public/stripe/webhook.ts`** — remplacer l'appel par `camerpayWebhookSecret()` (secret partagé).
 
-3. **Route** `src/routes/api/public/stripe/webhook.ts` :
-   - `POST` uniquement, lecture `request.text()` (raw body indispensable pour HMAC)
-   - vérification HMAC SHA-256 header `x-camerpay-signature` avec `CAMERPAY_STRIPE_WEBHOOK_SECRET`, comparaison `timingSafeEqual`
-   - validation Zod du payload (`order_ref`, `status`, `transaction_id`, `amount`, `currency`, `provider: "stripe"`)
-   - mise à jour `orders` via `supabaseAdmin` (import dynamique dans le handler) + insert `payment_events`
-   - idempotence sur `transaction_id`
-   - jamais de PII renvoyée, réponse `200 { ok: true }` ou `401/400` sans détails
+3. **`src/routes/api/public/paypal/webhook.ts`** — idem.
 
-4. **Route** `src/routes/api/public/paypal/webhook.ts` : mêmes règles, secret `CAMERPAY_PAYPAL_WEBHOOK_SECRET`, `provider: "paypal"`.
+4. **`src/routes/api/public/camerpay-selftest.ts`** — le mode `?provider=stripe|paypal` utilise `CAMERPAY_WEBHOOK_SECRET` pour tout.
 
-5. **Régénérer** `src/routeTree.gen.ts` (auto via plugin au build).
+5. **Sécurité** — noter dans `@security-memory` que les 3 endpoints partagent le même HMAC secret CamerPay (rotation = une seule opération côté dashboard).
 
-6. **Auto-test signé** : étendre `camerpay-selftest.ts` avec deux nouveaux modes `?provider=stripe` et `?provider=paypal` pour vérifier chaque endpoint end-to-end après déploiement.
+## Après build
 
-7. **Publish** puis vérification live des 3 endpoints via curl signé.
+Les 3 URLs à coller dans le dashboard CamerPay :
 
-## Sécurité
+```
+https://nexora-iptv.com/api/public/camerpay/webhook
+https://nexora-iptv.com/api/public/stripe/webhook
+https://nexora-iptv.com/api/public/paypal/webhook
+```
 
-- Pas de `supabaseAdmin` en import top-level dans les route files.
-- Signature vérifiée avant tout `JSON.parse`.
-- Rate-limiting implicite via `orders.status` idempotent.
-- Aucun log de PII (email, phone, address).
-- Update `@security-memory` : ajouter les 2 nouveaux endpoints à la "surface publique acceptée".
-
-## Livrable pour toi
-
-Après implémentation, tu recevras un bloc prêt-à-coller pour le dashboard CamerPay avec les 3 URLs et l'algo de signature attendu (`HMAC-SHA256 hex, header x-camerpay-signature, body = raw JSON`).
+Puis je lance un test signé end-to-end sur chaque via `/api/public/camerpay-selftest?provider=stripe&ref=NX-CAMTEST1` et `?provider=paypal`.
