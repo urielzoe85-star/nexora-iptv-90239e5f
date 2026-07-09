@@ -1,40 +1,44 @@
 ## Objectif
 
-Vérifier end-to-end que les 4 canaux de paiement se déclenchent automatiquement selon la méthode/pays choisi, sans intervention manuelle.
+Le webhook `/api/public/whatsapp/webhook` répond `Forbidden` (403) lors de la vérification Meta. Diagnostiquer la cause et valider l'envoi/réception WhatsApp de bout en bout.
 
-## Matrice à valider
+## Causes possibles du 403
 
-| Méthode client | Pays | Provider attendu | Canal CamerPay | Flow attendu |
-|---|---|---|---|---|
-| MoMo | CM | CamerPay | `mobile_money` | redirect hosted page |
-| MoMo | CI/SN/... | SebPay | — | redirect SebPay |
-| Carte | any | CamerPay | `stripe` | redirect hosted page |
-| PayPal | any | CamerPay | `paypal` | redirect hosted page |
-| Binance | any | manual | — | QR + preuve (inchangé) |
+Le handler GET renvoie 403 dans un seul cas : `mode !== "subscribe"` OU `token !== WHATSAPP_VERIFY_TOKEN`. Donc :
 
-## Étapes de vérification
+1. `WHATSAPP_VERIFY_TOKEN` n'est pas défini côté serveur (retournerait 503 en fait — à vérifier).
+2. La valeur de `WHATSAPP_VERIFY_TOKEN` dans Lovable Cloud ≠ celle saisie dans Meta Business Manager.
+3. L'URL configurée dans Meta pointe vers preview au lieu de production (ou l'inverse), et le secret diffère entre les deux environnements.
 
-1. **Audit code (lecture seule)**
-   - Relire `src/lib/orders.functions.ts` : conversion USD→XAF appliquée pour `card`/`paypal`, `metadata.card.channel` bien posé.
-   - Relire `src/lib/payments.functions.ts` : `initCheckout` force `camerpay` pour `card`/`paypal` ; `initCamerPayCheckout` mappe `channel` → `stripe`/`paypal`/`mobile_money` correctement ; routage MoMo par pays intact.
-   - Relire `src/routes/checkout.tsx` : les tuiles Carte/PayPal appellent bien `initCheckout` puis `initCamerPayCheckout` et redirigent sur `providerLink`.
-   - Vérifier `src/routes/espace-client.pay.$ref.tsx` : gère aussi `method === "card"` / `"paypal"` (sinon un client qui revient sur la page de paiement voit un écran vide).
+## Étapes de vérification (lecture seule)
 
-2. **Test runtime signé sur les 3 webhooks** (via `camerpay-selftest` déjà en place)
-   - `curl` sur `/api/public/camerpay-selftest?provider=camerpay|stripe|paypal&ref=NX-VERIF-<ts>&status=completed` — attendu `200 {ok:true, status:"paid"}` sur les 3.
-   - `curl` SebPay : réutiliser `tests/e2e/sprint-3/billing_lifecycle_test.py` ou un ping signé sur `/api/public/sebpay/webhook`.
+1. **Lister les secrets** (`fetch_secrets`) pour confirmer présence de :
+   - `WHATSAPP_VERIFY_TOKEN`
+   - `WHATSAPP_APP_SECRET`
+   - `WHATSAPP_ACCESS_TOKEN`
+   - `WHATSAPP_PHONE_NUMBER_ID`
+   - `WHATSAPP_ADMIN_PHONE` (pour test d'envoi)
 
-3. **Test création d'ordre + init checkout** (server functions)
-   - Créer 4 ordres via `createOrder` avec `method` = `momo`(CM), `momo`(CI), `card`, `paypal`.
-   - Appeler `initCheckout` sur chacun, vérifier `provider` retourné et présence de `providerLink`.
-   - Vérifier en base : `orders.payment_provider`, `metadata.card.channel`, `amount`/`currency` (XAF pour CamerPay).
+2. **Tester le handshake GET** via `curl` sur l'URL publiée :
+   ```
+   GET /api/public/whatsapp/webhook?hub.mode=subscribe&hub.verify_token=<token>&hub.challenge=ping
+   ```
+   - Sans token config → 503
+   - Token faux → 403
+   - Token correct → 200 + `ping`
 
-4. **Rapport**
-   - Tableau récap avec statut ✅/❌ par canal, référence de test, provider effectivement invoqué.
-   - Si un cas échoue : correctif ciblé (probablement `espace-client.pay.$ref.tsx` pour les nouvelles méthodes).
+3. **Tester un envoi WhatsApp sortant** via une petite server-fn admin temporaire OU via `notifyAdminWhatsApp` déjà présent, pour valider que `WHATSAPP_ACCESS_TOKEN` + `WHATSAPP_PHONE_NUMBER_ID` fonctionnent (retour Meta OK, `messages[0].id` présent).
 
-## Détails techniques
+4. **Vérifier logs** (`stack_modern--server-function-logs` filtré `whatsapp`) pour toute erreur.
 
-- Aucune modif fonctionnelle prévue en dehors d'un éventuel patch sur la page `/espace-client/pay/$ref` si elle ne gère pas encore `card`/`paypal` (aujourd'hui elle ne connaît que `momo` et `crypto`).
-- Pas de changement DB, pas de nouvelle migration.
-- Les tests utilisent uniquement l'endpoint self-test déjà déployé + server functions existantes.
+## Livrables
+
+- Diagnostic clair : lequel des 3 cas ci-dessus s'applique.
+- Instruction précise pour l'utilisateur :
+  - Soit re-saisir `WHATSAPP_VERIFY_TOKEN` (`update_secret`) et le recopier tel quel dans Meta → onglet WhatsApp → Configuration → Webhook.
+  - Soit corriger l'URL du webhook dans Meta pour pointer sur `https://nexora-iptv.lovable.app/api/public/whatsapp/webhook`.
+- Confirmation d'un envoi test réussi vers `WHATSAPP_ADMIN_PHONE`.
+
+## Ce qui NE change pas
+
+- Aucun code modifié (le handler est correct). Si le diagnostic révèle un bug (ex. 403 au lieu de 503 quand token absent), je proposerai un patch minimal dans un plan suivant.
