@@ -109,6 +109,7 @@ import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/em
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as ApiPublicWhatsappWebhookRouteImport } from './routes/api/public/whatsapp/webhook'
 import { Route as ApiPublicTelegramWebhookRouteImport } from './routes/api/public/telegram/webhook'
+import { Route as ApiPublicStripeWebhookRouteImport } from './routes/api/public/stripe/webhook'
 import { Route as ApiPublicSebpayWebhookRouteImport } from './routes/api/public/sebpay/webhook'
 import { Route as ApiPublicIptvPlaylistRouteImport } from './routes/api/public/iptv/playlist'
 import { Route as ApiPublicHooksSloSnapshotRouteImport } from './routes/api/public/hooks/slo-snapshot'
@@ -630,6 +631,11 @@ const ApiPublicTelegramWebhookRoute =
     path: '/api/public/telegram/webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicStripeWebhookRoute = ApiPublicStripeWebhookRouteImport.update({
+  id: '/api/public/stripe/webhook',
+  path: '/api/public/stripe/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicSebpayWebhookRoute = ApiPublicSebpayWebhookRouteImport.update({
   id: '/api/public/sebpay/webhook',
   path: '/api/public/sebpay/webhook',
@@ -793,6 +799,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/slo-snapshot': typeof ApiPublicHooksSloSnapshotRoute
   '/api/public/iptv/playlist': typeof ApiPublicIptvPlaylistRoute
   '/api/public/sebpay/webhook': typeof ApiPublicSebpayWebhookRoute
+  '/api/public/stripe/webhook': typeof ApiPublicStripeWebhookRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -898,6 +905,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/slo-snapshot': typeof ApiPublicHooksSloSnapshotRoute
   '/api/public/iptv/playlist': typeof ApiPublicIptvPlaylistRoute
   '/api/public/sebpay/webhook': typeof ApiPublicSebpayWebhookRoute
+  '/api/public/stripe/webhook': typeof ApiPublicStripeWebhookRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -1011,6 +1019,7 @@ export interface FileRoutesById {
   '/api/public/hooks/slo-snapshot': typeof ApiPublicHooksSloSnapshotRoute
   '/api/public/iptv/playlist': typeof ApiPublicIptvPlaylistRoute
   '/api/public/sebpay/webhook': typeof ApiPublicSebpayWebhookRoute
+  '/api/public/stripe/webhook': typeof ApiPublicStripeWebhookRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -1125,6 +1134,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/slo-snapshot'
     | '/api/public/iptv/playlist'
     | '/api/public/sebpay/webhook'
+    | '/api/public/stripe/webhook'
     | '/api/public/telegram/webhook'
     | '/api/public/whatsapp/webhook'
     | '/lovable/email/auth/preview'
@@ -1230,6 +1240,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/slo-snapshot'
     | '/api/public/iptv/playlist'
     | '/api/public/sebpay/webhook'
+    | '/api/public/stripe/webhook'
     | '/api/public/telegram/webhook'
     | '/api/public/whatsapp/webhook'
     | '/lovable/email/auth/preview'
@@ -1342,6 +1353,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/slo-snapshot'
     | '/api/public/iptv/playlist'
     | '/api/public/sebpay/webhook'
+    | '/api/public/stripe/webhook'
     | '/api/public/telegram/webhook'
     | '/api/public/whatsapp/webhook'
     | '/lovable/email/auth/preview'
@@ -1396,6 +1408,7 @@ export interface RootRouteChildren {
   ApiPublicHooksSloSnapshotRoute: typeof ApiPublicHooksSloSnapshotRoute
   ApiPublicIptvPlaylistRoute: typeof ApiPublicIptvPlaylistRoute
   ApiPublicSebpayWebhookRoute: typeof ApiPublicSebpayWebhookRoute
+  ApiPublicStripeWebhookRoute: typeof ApiPublicStripeWebhookRoute
   ApiPublicTelegramWebhookRoute: typeof ApiPublicTelegramWebhookRoute
   ApiPublicWhatsappWebhookRoute: typeof ApiPublicWhatsappWebhookRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
@@ -2107,6 +2120,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicTelegramWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/stripe/webhook': {
+      id: '/api/public/stripe/webhook'
+      path: '/api/public/stripe/webhook'
+      fullPath: '/api/public/stripe/webhook'
+      preLoaderRoute: typeof ApiPublicStripeWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/sebpay/webhook': {
       id: '/api/public/sebpay/webhook'
       path: '/api/public/sebpay/webhook'
@@ -2436,6 +2456,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksSloSnapshotRoute: ApiPublicHooksSloSnapshotRoute,
   ApiPublicIptvPlaylistRoute: ApiPublicIptvPlaylistRoute,
   ApiPublicSebpayWebhookRoute: ApiPublicSebpayWebhookRoute,
+  ApiPublicStripeWebhookRoute: ApiPublicStripeWebhookRoute,
   ApiPublicTelegramWebhookRoute: ApiPublicTelegramWebhookRoute,
   ApiPublicWhatsappWebhookRoute: ApiPublicWhatsappWebhookRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
