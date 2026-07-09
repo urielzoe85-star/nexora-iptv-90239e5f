@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 import { createOrder } from "@/lib/orders.functions";
 import { LEGAL_VERSION } from "@/lib/legal-version";
-import { initSebPayCheckout, verifyPayment, submitBinanceProof } from "@/lib/payments.functions";
+import { initCheckout, verifyPayment, submitBinanceProof } from "@/lib/payments.functions";
 import { useT, LanguageSwitcher } from "@/i18n/context";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -45,7 +45,7 @@ export const Route = createFileRoute("/checkout")({
 
 type PendingState =
   | {
-      provider: "sebpay";
+      provider: "sebpay" | "camerpay";
       orderRef: string;
       transactionId: string;
       providerLink: string | null;
@@ -171,7 +171,11 @@ function CheckoutPage() {
       const failureUrl = `${origin}/payment/failed?ref=${order.order_ref}`;
 
       if (paymentMethod === "momo") {
-        const result = await initSebPayCheckout({
+        // Generic dispatcher — CamerPay for CM (and international), SebPay
+        // for the other West-Africa MoMo countries. No behaviour change for
+        // existing SebPay countries; CamerPay users are redirected to
+        // `pay_url`.
+        const result = await initCheckout({
           data: { ref: order.order_ref, successUrl, failureUrl },
         });
         if (result.providerLink && typeof window !== "undefined") {
@@ -182,7 +186,7 @@ function CheckoutPage() {
           transactionId: result.transactionId,
           providerLink: result.providerLink,
           message: result.message,
-          provider: "sebpay",
+          provider: result.provider,
         });
       } else {
         // Crypto : la commande est créée avec le montant en USDT ; le client
@@ -568,7 +572,7 @@ function PendingPanel({ pending }: { pending: PendingState }) {
 function SebPayPendingPanel({
   pending,
 }: {
-  pending: Extract<PendingState, { provider: "sebpay" }>;
+  pending: Extract<PendingState, { provider: "sebpay" | "camerpay" }>;
 }) {
   const [status, setStatus] = useState<string>("processing");
   const [tries, setTries] = useState(0);

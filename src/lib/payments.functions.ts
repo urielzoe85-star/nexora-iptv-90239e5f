@@ -126,16 +126,138 @@ export const verifyPayment = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => z.object({ ref: z.string().min(4).max(40) }).parse(data))
   .handler(async ({ data }) => verifyPaymentInternal(data.ref));
 
+/**
+ * Create a payment with CamerPay and return the pay_url the customer must be
+ * redirected to. Order → "processing"; it only flips to "paid" once the
+ * signed webhook (or a /status re-check) confirms `completed`.
+ */
+export const initCamerPayCheckout = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        ref: z.string().min(4).max(40),
+        successUrl: z.string().url(),
+        failureUrl: z.string().url(),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
+    const { camerpayInitiate } = await import("@/lib/payments-camerpay.server");
+
+    const { data: order, error } = await supabaseAdmin
+      .from("orders")
+      .select("order_ref, email, full_name, amount, currency, method, status, metadata")
+      .eq("order_ref", data.ref)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!order) throw new Error("Order not found");
+    if (order.status !== "pending") {
+      throw new Error(`Order is already ${order.status}; cannot start a new checkout.`);
+    }
+    if (String(order.currency).toUpperCase() !== "XAF") {
+      throw new Error(
+        "CamerPay accepte uniquement des paiements en XAF pour le moment.",
+      );
+    }
+
+    const momo = (order.metadata as any)?.momo as
+      | { phone?: string; operator?: string; country?: string }
+      | undefined;
+
+    const callbackUrl = `${new URL(data.successUrl).origin}/api/public/camerpay/webhook`;
+
+    // Map Nexora MoMo operator to CamerPay's payment_method (best effort).
+    let paymentMethod: "orange_money" | "mtn_momo" | undefined;
+    const opLower = String(momo?.operator ?? "").toLowerCase();
+    if (opLower.includes("orange")) paymentMethod = "orange_money";
+    else if (opLower.includes("mtn")) paymentMethod = "mtn_momo";
+
+    const result = await camerpayInitiate({
+      amount: Number(order.amount),
+      invoiceId: order.order_ref,
+      callbackUrl,
+      returnUrl: data.successUrl,
+      customerEmail: order.email ?? null,
+      customerName: order.full_name ?? null,
+      customerPhone: momo?.phone ?? null,
+      paymentMethod,
+      source: "nexora-ncc",
+    });
+
+    await supabaseAdmin
+      .from("orders")
+      .update({
+        status: "processing",
+        payment_provider: "camerpay",
+        provider_reference: result.transactionUuid,
+        metadata: {
+          ...((order.metadata as any) ?? {}),
+          camerpay_request: {
+            invoice_id: order.order_ref,
+            callback_url: callbackUrl,
+            return_url: data.successUrl,
+            payment_method: paymentMethod ?? null,
+          },
+          camerpay_response: result.raw,
+          camerpay_pay_url: result.payUrl,
+          camerpay_initial_status: result.status,
+        },
+      })
+      .eq("order_ref", order.order_ref);
+
+    return {
+      transactionId: result.transactionUuid,
+      providerLink: result.payUrl || null,
+      status: result.status,
+      message: result.message,
+    };
+  });
+
+/**
+ * Generic checkout entry point — picks the provider by the order's country
+ * (Cameroun → CamerPay, other West-Africa MoMo countries → SebPay, else
+ * CamerPay for international card/PayPal). SebPay behaviour is unchanged.
+ */
+export const initCheckout = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        ref: z.string().min(4).max(40),
+        successUrl: z.string().url(),
+        failureUrl: z.string().url(),
+        providerOverride: z.enum(["sebpay", "camerpay"]).optional().nullable(),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
+    const { pickPaymentProvider } = await import("@/lib/payments-camerpay.server");
+
+    const { data: order, error } = await supabaseAdmin
+      .from("orders")
+      .select("order_ref, method, currency, metadata")
+      .eq("order_ref", data.ref)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!order) throw new Error("Order not found");
+
+    const momoCountry = (order.metadata as any)?.momo?.country as string | undefined;
+    const provider = pickPaymentProvider(momoCountry, data.providerOverride ?? undefined);
+
+    if (provider === "camerpay") {
+      const res = await initCamerPayCheckout({ data });
+      return { provider: "camerpay" as const, ...res };
+    }
+    const res = await initSebPayCheckout({ data });
+    return { provider: "sebpay" as const, ...res };
+  });
+
 export async function verifyPaymentInternal(ref: string): Promise<{ status: string }> {
   const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
-  const {
-    SEBPAY_COLLECTIONS_PATH: PATH,
-    sebpayFetch,
-    mapSebpayStatus,
-  } = await import("@/lib/payments-sebpay.server");
   const { data: order, error } = await supabaseAdmin
     .from("orders")
-    .select("order_ref, status, sebpay_reference, metadata")
+    .select("order_ref, status, sebpay_reference, provider_reference, payment_provider, metadata")
     .eq("order_ref", ref)
     .maybeSingle();
   if (error) throw new Error(error.message);
@@ -144,22 +266,49 @@ export async function verifyPaymentInternal(ref: string): Promise<{ status: stri
   if (["paid", "failed", "cancelled"].includes(order.status)) {
     return { status: order.status };
   }
-  if (!order.sebpay_reference) {
-    return { status: order.status };
+  // Dispatch by provider. Historical rows have `payment_provider = null` but
+  // carry a `sebpay_reference` — treat those as sebpay for backward compat.
+  const provider =
+    (order.payment_provider as "sebpay" | "camerpay" | null) ??
+    (order.sebpay_reference ? "sebpay" : null);
+  if (!provider) return { status: order.status };
+
+  let mapped: "paid" | "failed" | "cancelled" | "pending" = "pending";
+  let providerRaw: any = null;
+  let providerStatusStr: string | null = null;
+
+  if (provider === "camerpay") {
+    const uuid = order.provider_reference;
+    if (!uuid) return { status: order.status };
+    const { camerpayStatus, mapCamerpayStatus } = await import("@/lib/payments-camerpay.server");
+    const res = await camerpayStatus(uuid);
+    if (!res) return { status: order.status };
+    providerRaw = res.raw;
+    providerStatusStr = res.status;
+    mapped = mapCamerpayStatus(res.status);
+  } else {
+    // sebpay
+    const {
+      SEBPAY_COLLECTIONS_PATH: PATH,
+      sebpayFetch,
+      mapSebpayStatus,
+    } = await import("@/lib/payments-sebpay.server");
+    const sebRef = order.sebpay_reference ?? order.provider_reference;
+    if (!sebRef) return { status: order.status };
+    const { status: httpStatus, raw, json } = await sebpayFetch(
+      `${PATH}/${encodeURIComponent(sebRef)}`,
+      { method: "GET" },
+    );
+    if (httpStatus < 200 || httpStatus >= 300 || !json) {
+      console.error("[sebpay] verify failed", { ref, httpStatus, raw: raw.slice(0, 300) });
+      return { status: order.status };
+    }
+    const d = json.data ?? json;
+    providerStatusStr = d.status ?? json.status ?? json.payment_status ?? null;
+    providerRaw = json;
+    mapped = mapSebpayStatus(providerStatusStr);
   }
 
-  const { status: httpStatus, raw, json } = await sebpayFetch(
-    `${PATH}/${encodeURIComponent(order.sebpay_reference)}`,
-    { method: "GET" },
-  );
-  if (httpStatus < 200 || httpStatus >= 300 || !json) {
-    console.error("[sebpay] verify failed", { ref, httpStatus, raw: raw.slice(0, 300) });
-    return { status: order.status };
-  }
-
-  const d = json.data ?? json;
-  const sebStatus = d.status ?? json.status ?? json.payment_status;
-  const mapped = mapSebpayStatus(sebStatus);
   if (mapped === "pending") return { status: "processing" };
 
   const { data: updatedRows } = await supabaseAdmin
@@ -168,8 +317,8 @@ export async function verifyPaymentInternal(ref: string): Promise<{ status: stri
       status: mapped,
       metadata: {
         ...((order.metadata as any) ?? {}),
-        sebpay_verify_response: json,
-        sebpay_verified_status: sebStatus,
+        [`${provider}_verify_response`]: providerRaw,
+        [`${provider}_verified_status`]: providerStatusStr,
         verified_at: new Date().toISOString(),
       },
     })
@@ -186,7 +335,7 @@ export async function verifyPaymentInternal(ref: string): Promise<{ status: stri
         const { data: internal } = await supabaseAdmin
           .from("orders").select("id").eq("order_ref", ref).maybeSingle();
         if (internal?.id) {
-          await reactivateAccountsForOrder(internal.id, { source: "payment.verify" });
+          await reactivateAccountsForOrder(internal.id, { source: `payment.verify.${provider}` });
         }
       } catch (e) {
         console.error("[billing] reactivation on payment failed", e);
@@ -201,7 +350,8 @@ export async function verifyPaymentInternal(ref: string): Promise<{ status: stri
         planName: row.plan_name,
         amount: row.amount,
         currency: row.currency,
-        sebpayStatus: sebStatus,
+        provider,
+        providerStatus: providerStatusStr,
       },
     );
   }
