@@ -126,6 +126,133 @@ export const verifyPayment = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => z.object({ ref: z.string().min(4).max(40) }).parse(data))
   .handler(async ({ data }) => verifyPaymentInternal(data.ref));
 
+/**
+ * Create a payment with CamerPay and return the pay_url the customer must be
+ * redirected to. Order → "processing"; it only flips to "paid" once the
+ * signed webhook (or a /status re-check) confirms `completed`.
+ */
+export const initCamerPayCheckout = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        ref: z.string().min(4).max(40),
+        successUrl: z.string().url(),
+        failureUrl: z.string().url(),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
+    const { camerpayInitiate } = await import("@/lib/payments-camerpay.server");
+
+    const { data: order, error } = await supabaseAdmin
+      .from("orders")
+      .select("order_ref, email, full_name, amount, currency, method, status, metadata")
+      .eq("order_ref", data.ref)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!order) throw new Error("Order not found");
+    if (order.status !== "pending") {
+      throw new Error(`Order is already ${order.status}; cannot start a new checkout.`);
+    }
+    if (String(order.currency).toUpperCase() !== "XAF") {
+      throw new Error(
+        "CamerPay accepte uniquement des paiements en XAF pour le moment.",
+      );
+    }
+
+    const momo = (order.metadata as any)?.momo as
+      | { phone?: string; operator?: string; country?: string }
+      | undefined;
+
+    const callbackUrl = `${new URL(data.successUrl).origin}/api/public/camerpay/webhook`;
+
+    // Map Nexora MoMo operator to CamerPay's payment_method (best effort).
+    let paymentMethod: "orange_money" | "mtn_momo" | undefined;
+    const opLower = String(momo?.operator ?? "").toLowerCase();
+    if (opLower.includes("orange")) paymentMethod = "orange_money";
+    else if (opLower.includes("mtn")) paymentMethod = "mtn_momo";
+
+    const result = await camerpayInitiate({
+      amount: Number(order.amount),
+      invoiceId: order.order_ref,
+      callbackUrl,
+      returnUrl: data.successUrl,
+      customerEmail: order.email ?? null,
+      customerName: order.full_name ?? null,
+      customerPhone: momo?.phone ?? null,
+      paymentMethod,
+      source: "nexora-ncc",
+    });
+
+    await supabaseAdmin
+      .from("orders")
+      .update({
+        status: "processing",
+        payment_provider: "camerpay",
+        provider_reference: result.transactionUuid,
+        metadata: {
+          ...((order.metadata as any) ?? {}),
+          camerpay_request: {
+            invoice_id: order.order_ref,
+            callback_url: callbackUrl,
+            return_url: data.successUrl,
+            payment_method: paymentMethod ?? null,
+          },
+          camerpay_response: result.raw,
+          camerpay_pay_url: result.payUrl,
+          camerpay_initial_status: result.status,
+        },
+      })
+      .eq("order_ref", order.order_ref);
+
+    return {
+      transactionId: result.transactionUuid,
+      providerLink: result.payUrl || null,
+      status: result.status,
+      message: result.message,
+    };
+  });
+
+/**
+ * Generic checkout entry point — picks the provider by the order's country
+ * (Cameroun → CamerPay, other West-Africa MoMo countries → SebPay, else
+ * CamerPay for international card/PayPal). SebPay behaviour is unchanged.
+ */
+export const initCheckout = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        ref: z.string().min(4).max(40),
+        successUrl: z.string().url(),
+        failureUrl: z.string().url(),
+        providerOverride: z.enum(["sebpay", "camerpay"]).optional().nullable(),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
+    const { pickPaymentProvider } = await import("@/lib/payments-camerpay.server");
+
+    const { data: order, error } = await supabaseAdmin
+      .from("orders")
+      .select("order_ref, method, currency, metadata")
+      .eq("order_ref", data.ref)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!order) throw new Error("Order not found");
+
+    const momoCountry = (order.metadata as any)?.momo?.country as string | undefined;
+    const provider = pickPaymentProvider(momoCountry, data.providerOverride ?? undefined);
+
+    if (provider === "camerpay") {
+      const res = await initCamerPayCheckout({ data });
+      return { provider: "camerpay" as const, ...res };
+    }
+    const res = await initSebPayCheckout({ data });
+    return { provider: "sebpay" as const, ...res };
+  });
+
 export async function verifyPaymentInternal(ref: string): Promise<{ status: string }> {
   const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
   const { data: order, error } = await supabaseAdmin
