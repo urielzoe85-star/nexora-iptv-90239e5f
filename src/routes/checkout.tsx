@@ -572,7 +572,7 @@ function PendingPanel({ pending }: { pending: PendingState }) {
 function SebPayPendingPanel({
   pending,
 }: {
-  pending: Extract<PendingState, { provider: "sebpay" }>;
+  pending: Extract<PendingState, { provider: "sebpay" | "camerpay" }>;
 }) {
   const [status, setStatus] = useState<string>("processing");
   const [tries, setTries] = useState(0);
