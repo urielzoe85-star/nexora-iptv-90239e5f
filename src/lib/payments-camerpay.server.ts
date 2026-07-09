@@ -36,25 +36,6 @@ export function camerpayWebhookSecret(): string {
   return s;
 }
 
-/**
- * Webhook secret partagé avec le dashboard CamerPay pour le canal Stripe.
- * CamerPay agrège Stripe côté passerelle puis relaie vers Nexora avec la même
- * convention de signature (HMAC-SHA256 sur `uuid|invoice_id|status|amount`),
- * mais nous isolons le secret pour pouvoir le rotationner indépendamment.
- */
-export function camerpayStripeWebhookSecret(): string {
-  const s = cleanSecretValue(process.env.CAMERPAY_STRIPE_WEBHOOK_SECRET ?? "");
-  if (!s) throw new Error("CAMERPAY_STRIPE_WEBHOOK_SECRET manquante côté serveur.");
-  return s;
-}
-
-/** Webhook secret partagé pour le canal PayPal (via CamerPay). */
-export function camerpayPaypalWebhookSecret(): string {
-  const s = cleanSecretValue(process.env.CAMERPAY_PAYPAL_WEBHOOK_SECRET ?? "");
-  if (!s) throw new Error("CAMERPAY_PAYPAL_WEBHOOK_SECRET manquante côté serveur.");
-  return s;
-}
-
 export type CamerPayStatus = "pending" | "processing" | "completed" | "failed" | "cancelled" | "refunded";
 
 export function mapCamerpayStatus(s: unknown): "paid" | "failed" | "cancelled" | "pending" {

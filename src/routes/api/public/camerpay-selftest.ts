@@ -14,10 +14,9 @@ export const Route = createFileRoute("/api/public/camerpay-selftest")({
         const provider = (url.searchParams.get("provider") ?? "camerpay").toLowerCase();
         const uuid = `selftest-${provider}-${ref}`;
 
-        const secretEnv =
-          provider === "stripe" ? "CAMERPAY_STRIPE_WEBHOOK_SECRET"
-          : provider === "paypal" ? "CAMERPAY_PAYPAL_WEBHOOK_SECRET"
-          : "CAMERPAY_WEBHOOK_SECRET";
+        // Les 3 canaux (natif / Stripe / PayPal) partagent le même webhook
+        // secret côté dashboard CamerPay.
+        const secretEnv = "CAMERPAY_WEBHOOK_SECRET";
         const targetPath =
           provider === "stripe" ? "/api/public/stripe/webhook"
           : provider === "paypal" ? "/api/public/paypal/webhook"
