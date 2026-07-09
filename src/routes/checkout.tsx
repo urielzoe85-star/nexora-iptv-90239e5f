@@ -449,6 +449,30 @@ function PaymentStep(props: {
             </div>
             <p className="text-xs text-muted-foreground mt-1">BTC, ETH, USDT — paiement instantané via l'app Binance.</p>
           </button>
+          <button
+            type="button"
+            onClick={() => setPaymentMethod("card")}
+            className={`text-left rounded-xl p-4 border transition ${paymentMethod === "card"
+              ? "border-[color:var(--gold)] bg-white/[0.04] shadow-[var(--shadow-gold)]"
+              : "border-white/10 hover:border-white/20 bg-white/[0.02]"}`}
+          >
+            <div className="flex items-center gap-2 font-semibold">
+              <CreditCard className="h-4 w-4 text-[color:var(--gold)]" /> Carte bancaire
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">Visa, Mastercard — paiement sécurisé via Stripe (CamerPay).</p>
+          </button>
+          <button
+            type="button"
+            onClick={() => setPaymentMethod("paypal")}
+            className={`text-left rounded-xl p-4 border transition ${paymentMethod === "paypal"
+              ? "border-[color:var(--gold)] bg-white/[0.04] shadow-[var(--shadow-gold)]"
+              : "border-white/10 hover:border-white/20 bg-white/[0.02]"}`}
+          >
+            <div className="flex items-center gap-2 font-semibold">
+              <Wallet className="h-4 w-4 text-[color:var(--gold)]" /> PayPal
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">Payez avec votre compte PayPal — redirection automatique.</p>
+          </button>
         </div>
       </section>
 
@@ -504,7 +528,7 @@ function PaymentStep(props: {
         </div>
 
       </section>
-      ) : (
+      ) : paymentMethod === "crypto" ? (
       <section className="glass rounded-2xl p-6 md:p-8">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold">Paiement Crypto — Binance Pay</h2>
@@ -522,6 +546,29 @@ function PaymentStep(props: {
             <li>Montant facturé : <span className="font-mono text-foreground">{total.toFixed(2)} USDT</span> (≈ ${total.toFixed(2)}).</li>
             <li>Confirmation automatique dès que Binance valide la transaction.</li>
             <li>Aucun frais caché — conversion auto en fiat côté marchand.</li>
+          </ul>
+        </div>
+      </section>
+      ) : (
+      <section className="glass rounded-2xl p-6 md:p-8">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-bold">
+            {paymentMethod === "card" ? "Paiement par carte bancaire" : "Paiement PayPal"}
+          </h2>
+          <span className="text-xs text-muted-foreground flex items-center gap-1">
+            <ShieldCheck className="h-4 w-4 text-[color:var(--gold)]" /> Sécurisé
+          </span>
+        </div>
+        <div className="space-y-3 text-sm text-muted-foreground">
+          <p>
+            Après validation, vous serez redirigé automatiquement vers la page
+            {paymentMethod === "card" ? " Stripe" : " PayPal"} hébergée par CamerPay
+            pour finaliser le paiement en toute sécurité.
+          </p>
+          <ul className="list-disc pl-5 space-y-1">
+            <li>Montant facturé : <span className="font-mono text-foreground">${total.toFixed(2)}</span> (converti automatiquement).</li>
+            <li>Confirmation instantanée dès validation du paiement.</li>
+            <li>Aucune donnée bancaire ne transite par Nexora.</li>
           </ul>
         </div>
       </section>
