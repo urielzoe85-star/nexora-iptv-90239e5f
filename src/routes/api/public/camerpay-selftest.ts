@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 // TEMPORARY self-test — signs a synthetic CamerPay webhook payload with
 // the server-side CAMERPAY_WEBHOOK_SECRET and POSTs it to the real
 // webhook, then returns the response. Delete after validation.
-export const Route = createFileRoute("/api/public/_camerpay-selftest")({
+export const Route = createFileRoute("/api/public/camerpay-selftest")({
   server: {
     handlers: {
       GET: async ({ request }) => {
