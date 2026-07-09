@@ -1,33 +1,40 @@
-## Ajustement
+## Objectif
 
-CamerPay n'expose qu'un seul webhook secret partagé pour tous les canaux (Mobile Money / Stripe / PayPal). Pas besoin de nouveaux secrets — je réutilise le `CAMERPAY_WEBHOOK_SECRET` existant pour les 3 endpoints.
+Vérifier end-to-end que les 4 canaux de paiement se déclenchent automatiquement selon la méthode/pays choisi, sans intervention manuelle.
 
-Les deux valeurs que tu m'as collées correspondent aux secrets déjà présents côté Nexora :
-- `160b09a0…f46c` → `CAMERPAY_WEBHOOK_SECRET` (déjà configuré ✅)
-- `454|MKJc…b4fb` → `CAMERPAY_API_KEY` (déjà configuré ✅)
+## Matrice à valider
 
-Ne me les recolle pas — ils sont déjà en place. Je n'ai donc **rien à te demander**.
+| Méthode client | Pays | Provider attendu | Canal CamerPay | Flow attendu |
+|---|---|---|---|---|
+| MoMo | CM | CamerPay | `mobile_money` | redirect hosted page |
+| MoMo | CI/SN/... | SebPay | — | redirect SebPay |
+| Carte | any | CamerPay | `stripe` | redirect hosted page |
+| PayPal | any | CamerPay | `paypal` | redirect hosted page |
+| Binance | any | manual | — | QR + preuve (inchangé) |
 
-## Changements code
+## Étapes de vérification
 
-1. **`src/lib/payments-camerpay.server.ts`** — supprimer les helpers `camerpayStripeWebhookSecret()` / `camerpayPaypalWebhookSecret()` ajoutés au tour précédent (inutiles).
+1. **Audit code (lecture seule)**
+   - Relire `src/lib/orders.functions.ts` : conversion USD→XAF appliquée pour `card`/`paypal`, `metadata.card.channel` bien posé.
+   - Relire `src/lib/payments.functions.ts` : `initCheckout` force `camerpay` pour `card`/`paypal` ; `initCamerPayCheckout` mappe `channel` → `stripe`/`paypal`/`mobile_money` correctement ; routage MoMo par pays intact.
+   - Relire `src/routes/checkout.tsx` : les tuiles Carte/PayPal appellent bien `initCheckout` puis `initCamerPayCheckout` et redirigent sur `providerLink`.
+   - Vérifier `src/routes/espace-client.pay.$ref.tsx` : gère aussi `method === "card"` / `"paypal"` (sinon un client qui revient sur la page de paiement voit un écran vide).
 
-2. **`src/routes/api/public/stripe/webhook.ts`** — remplacer l'appel par `camerpayWebhookSecret()` (secret partagé).
+2. **Test runtime signé sur les 3 webhooks** (via `camerpay-selftest` déjà en place)
+   - `curl` sur `/api/public/camerpay-selftest?provider=camerpay|stripe|paypal&ref=NX-VERIF-<ts>&status=completed` — attendu `200 {ok:true, status:"paid"}` sur les 3.
+   - `curl` SebPay : réutiliser `tests/e2e/sprint-3/billing_lifecycle_test.py` ou un ping signé sur `/api/public/sebpay/webhook`.
 
-3. **`src/routes/api/public/paypal/webhook.ts`** — idem.
+3. **Test création d'ordre + init checkout** (server functions)
+   - Créer 4 ordres via `createOrder` avec `method` = `momo`(CM), `momo`(CI), `card`, `paypal`.
+   - Appeler `initCheckout` sur chacun, vérifier `provider` retourné et présence de `providerLink`.
+   - Vérifier en base : `orders.payment_provider`, `metadata.card.channel`, `amount`/`currency` (XAF pour CamerPay).
 
-4. **`src/routes/api/public/camerpay-selftest.ts`** — le mode `?provider=stripe|paypal` utilise `CAMERPAY_WEBHOOK_SECRET` pour tout.
+4. **Rapport**
+   - Tableau récap avec statut ✅/❌ par canal, référence de test, provider effectivement invoqué.
+   - Si un cas échoue : correctif ciblé (probablement `espace-client.pay.$ref.tsx` pour les nouvelles méthodes).
 
-5. **Sécurité** — noter dans `@security-memory` que les 3 endpoints partagent le même HMAC secret CamerPay (rotation = une seule opération côté dashboard).
+## Détails techniques
 
-## Après build
-
-Les 3 URLs à coller dans le dashboard CamerPay :
-
-```
-https://nexora-iptv.com/api/public/camerpay/webhook
-https://nexora-iptv.com/api/public/stripe/webhook
-https://nexora-iptv.com/api/public/paypal/webhook
-```
-
-Puis je lance un test signé end-to-end sur chaque via `/api/public/camerpay-selftest?provider=stripe&ref=NX-CAMTEST1` et `?provider=paypal`.
+- Aucune modif fonctionnelle prévue en dehors d'un éventuel patch sur la page `/espace-client/pay/$ref` si elle ne gère pas encore `card`/`paypal` (aujourd'hui elle ne connaît que `momo` et `crypto`).
+- Pas de changement DB, pas de nouvelle migration.
+- Les tests utilisent uniquement l'endpoint self-test déjà déployé + server functions existantes.

@@ -2,8 +2,8 @@ import { createFileRoute, useRouter, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { getPortalOrderStatus } from "@/lib/portal.functions";
-import { initSebPayCheckout, submitBinanceProof } from "@/lib/payments.functions";
-import { Bitcoin, ExternalLink, Loader2, Clock, CheckCircle2 } from "lucide-react";
+import { initSebPayCheckout, initCheckout, submitBinanceProof } from "@/lib/payments.functions";
+import { Bitcoin, ExternalLink, Loader2, Clock, CheckCircle2, CreditCard, Wallet } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export const Route = createFileRoute("/espace-client/pay/$ref")({
@@ -18,6 +18,7 @@ function PayPage() {
   const router = useRouter();
   const status = useServerFn(getPortalOrderStatus);
   const initSeb = useServerFn(initSebPayCheckout);
+  const initCamer = useServerFn(initCheckout);
   const submitProof = useServerFn(submitBinanceProof);
 
   const q = useQuery({
@@ -28,6 +29,8 @@ function PayPage() {
 
   const [sebStarted, setSebStarted] = useState(false);
   const [sebErr, setSebErr] = useState("");
+  const [cardStarted, setCardStarted] = useState(false);
+  const [cardErr, setCardErr] = useState("");
   const [accountName, setAccountName] = useState("");
   const [txId, setTxId] = useState("");
   const [uid, setUid] = useState("");
@@ -59,6 +62,24 @@ function PayPage() {
       if (res.providerLink) window.location.href = res.providerLink;
     } catch (e: any) {
       setSebErr(e?.message ?? "Impossible de lancer le paiement.");
+    }
+  }
+
+  async function startCardPayPal() {
+    setCardErr("");
+    try {
+      const origin = window.location.origin;
+      const res = await initCamer({
+        data: {
+          ref,
+          successUrl: `${origin}/espace-client/success/${ref}`,
+          failureUrl: `${origin}/espace-client/pay/${ref}`,
+        },
+      });
+      setCardStarted(true);
+      if (res.providerLink) window.location.href = res.providerLink;
+    } catch (e: any) {
+      setCardErr(e?.message ?? "Impossible de lancer le paiement.");
     }
   }
 
@@ -103,6 +124,27 @@ function PayPage() {
           {!sebStarted ? (
             <button onClick={startSebPay} className="btn-gold btn-gold-hover px-6 py-3 rounded-full text-sm font-semibold inline-flex items-center gap-2">
               <ExternalLink className="h-4 w-4" /> Lancer le paiement Mobile Money
+            </button>
+          ) : (
+            <p className="text-sm text-muted-foreground inline-flex items-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin" /> Redirection en cours…
+            </p>
+          )}
+        </div>
+      )}
+
+      {(o.method === "card" || o.method === "paypal") && (
+        <div className="glass rounded-2xl p-6 space-y-4">
+          <p className="text-sm text-muted-foreground inline-flex items-center gap-2">
+            {o.method === "card" ? <CreditCard className="h-4 w-4" /> : <Wallet className="h-4 w-4" />}
+            Vous allez être redirigé vers la page de paiement sécurisée
+            {o.method === "card" ? " Stripe" : " PayPal"} hébergée par CamerPay.
+          </p>
+          {cardErr && <p className="text-sm text-destructive">{cardErr}</p>}
+          {!cardStarted ? (
+            <button onClick={startCardPayPal} className="btn-gold btn-gold-hover px-6 py-3 rounded-full text-sm font-semibold inline-flex items-center gap-2">
+              <ExternalLink className="h-4 w-4" />
+              {o.method === "card" ? "Payer par carte" : "Payer avec PayPal"}
             </button>
           ) : (
             <p className="text-sm text-muted-foreground inline-flex items-center gap-2">
