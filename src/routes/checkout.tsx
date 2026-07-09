@@ -381,7 +381,8 @@ function PaymentStep(props: {
   phone: string; setPhone: (v: string) => void;
   operator: Operator; setOperator: (v: Operator) => void;
   country: string; setCountry: (v: string) => void;
-  paymentMethod: "momo" | "crypto"; setPaymentMethod: (v: "momo" | "crypto") => void;
+  paymentMethod: "momo" | "crypto" | "card" | "paypal";
+  setPaymentMethod: (v: "momo" | "crypto" | "card" | "paypal") => void;
   termsAccepted: boolean; setTermsAccepted: (v: boolean) => void;
   processing: boolean; canPay: boolean; total: number; errorMsg?: string;
   onBack: () => void; onSubmit: (e: React.FormEvent) => void;
