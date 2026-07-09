@@ -99,6 +99,7 @@ import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/em
 import { Route as EspaceClientSuccessRefRouteImport } from './routes/espace-client.success.$ref'
 import { Route as EspaceClientPayRefRouteImport } from './routes/espace-client.pay.$ref'
 import { Route as ApiPublicCspReportRouteImport } from './routes/api/public/csp-report'
+import { Route as ApiPublicCamerpaySelftestRouteImport } from './routes/api/public/_camerpay-selftest'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
@@ -572,6 +573,12 @@ const ApiPublicCspReportRoute = ApiPublicCspReportRouteImport.update({
   path: '/api/public/csp-report',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicCamerpaySelftestRoute =
+  ApiPublicCamerpaySelftestRouteImport.update({
+    id: '/api/public/_camerpay-selftest',
+    path: '/api/public',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const Char91DotmcpChar93InvokeToolToolRoute =
   Char91DotmcpChar93InvokeToolToolRouteImport.update({
     id: '/.mcp/invoke-tool/$tool',
@@ -753,6 +760,7 @@ export interface FileRoutesByFullPath {
   '/ncc/': typeof NccIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
+  '/api/public': typeof ApiPublicCamerpaySelftestRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
   '/espace-client/pay/$ref': typeof EspaceClientPayRefRoute
   '/espace-client/success/$ref': typeof EspaceClientSuccessRefRoute
@@ -857,6 +865,7 @@ export interface FileRoutesByTo {
   '/ncc': typeof NccIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
+  '/api/public': typeof ApiPublicCamerpaySelftestRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
   '/espace-client/pay/$ref': typeof EspaceClientPayRefRoute
   '/espace-client/success/$ref': typeof EspaceClientSuccessRefRoute
@@ -969,6 +978,7 @@ export interface FileRoutesById {
   '/ncc/': typeof NccIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
+  '/api/public/_camerpay-selftest': typeof ApiPublicCamerpaySelftestRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
   '/espace-client/pay/$ref': typeof EspaceClientPayRefRoute
   '/espace-client/success/$ref': typeof EspaceClientSuccessRefRoute
@@ -1082,6 +1092,7 @@ export interface FileRouteTypes {
     | '/ncc/'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
+    | '/api/public'
     | '/api/public/csp-report'
     | '/espace-client/pay/$ref'
     | '/espace-client/success/$ref'
@@ -1186,6 +1197,7 @@ export interface FileRouteTypes {
     | '/ncc'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
+    | '/api/public'
     | '/api/public/csp-report'
     | '/espace-client/pay/$ref'
     | '/espace-client/success/$ref'
@@ -1297,6 +1309,7 @@ export interface FileRouteTypes {
     | '/ncc/'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
+    | '/api/public/_camerpay-selftest'
     | '/api/public/csp-report'
     | '/espace-client/pay/$ref'
     | '/espace-client/success/$ref'
@@ -1370,6 +1383,7 @@ export interface RootRouteChildren {
   ProduitsSlugRoute: typeof ProduitsSlugRoute
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
+  ApiPublicCamerpaySelftestRoute: typeof ApiPublicCamerpaySelftestRoute
   ApiPublicCspReportRoute: typeof ApiPublicCspReportRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ApiPublicAutomationEmitTestRoute: typeof ApiPublicAutomationEmitTestRoute
@@ -2023,6 +2037,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicCspReportRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/_camerpay-selftest': {
+      id: '/api/public/_camerpay-selftest'
+      path: '/api/public'
+      fullPath: '/api/public'
+      preLoaderRoute: typeof ApiPublicCamerpaySelftestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/.mcp/invoke-tool/$tool': {
       id: '/.mcp/invoke-tool/$tool'
       path: '/.mcp/invoke-tool/$tool'
@@ -2401,6 +2422,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProduitsSlugRoute: ProduitsSlugRoute,
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
+  ApiPublicCamerpaySelftestRoute: ApiPublicCamerpaySelftestRoute,
   ApiPublicCspReportRoute: ApiPublicCspReportRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ApiPublicAutomationEmitTestRoute: ApiPublicAutomationEmitTestRoute,
