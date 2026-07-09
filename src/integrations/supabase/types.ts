@@ -1105,8 +1105,10 @@ export type Database = {
           metadata: Json
           method: string
           order_ref: string
+          payment_provider: string | null
           plan_id: string
           plan_name: string
+          provider_reference: string | null
           sebpay_reference: string | null
           status: string
           updated_at: string
@@ -1124,8 +1126,10 @@ export type Database = {
           metadata?: Json
           method?: string
           order_ref: string
+          payment_provider?: string | null
           plan_id: string
           plan_name: string
+          provider_reference?: string | null
           sebpay_reference?: string | null
           status?: string
           updated_at?: string
@@ -1143,8 +1147,10 @@ export type Database = {
           metadata?: Json
           method?: string
           order_ref?: string
+          payment_provider?: string | null
           plan_id?: string
           plan_name?: string
+          provider_reference?: string | null
           sebpay_reference?: string | null
           status?: string
           updated_at?: string
