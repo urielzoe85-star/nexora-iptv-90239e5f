@@ -168,10 +168,17 @@ export const initCamerPayCheckout = createServerFn({ method: "POST" })
     const callbackUrl = `${new URL(data.successUrl).origin}/api/public/camerpay/webhook`;
 
     // Map Nexora MoMo operator to CamerPay's payment_method (best effort).
-    let paymentMethod: "orange_money" | "mtn_momo" | undefined;
-    const opLower = String(momo?.operator ?? "").toLowerCase();
-    if (opLower.includes("orange")) paymentMethod = "orange_money";
-    else if (opLower.includes("mtn")) paymentMethod = "mtn_momo";
+    // For method === "card"/"paypal", metadata.card.channel forces the
+    // provider directly so CamerPay opens the right hosted page.
+    let paymentMethod: "orange_money" | "mtn_momo" | "stripe" | "paypal" | undefined;
+    const cardChannel = (order.metadata as any)?.card?.channel as string | undefined;
+    if (cardChannel === "card") paymentMethod = "stripe";
+    else if (cardChannel === "paypal") paymentMethod = "paypal";
+    else {
+      const opLower = String(momo?.operator ?? "").toLowerCase();
+      if (opLower.includes("orange")) paymentMethod = "orange_money";
+      else if (opLower.includes("mtn")) paymentMethod = "mtn_momo";
+    }
 
     const result = await camerpayInitiate({
       amount: Number(order.amount),
@@ -242,8 +249,15 @@ export const initCheckout = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     if (!order) throw new Error("Order not found");
 
+    // Card / PayPal always go through CamerPay's hosted checkout, regardless
+    // of geography. MoMo keeps its country-based routing (SebPay for West
+    // Africa, CamerPay for CM & rest).
+    const orderMethod = order.method as string;
+    const forceCamerpay = orderMethod === "card" || orderMethod === "paypal";
     const momoCountry = (order.metadata as any)?.momo?.country as string | undefined;
-    const provider = pickPaymentProvider(momoCountry, data.providerOverride ?? undefined);
+    const provider = forceCamerpay
+      ? "camerpay"
+      : pickPaymentProvider(momoCountry, data.providerOverride ?? undefined);
 
     if (provider === "camerpay") {
       const res = await initCamerPayCheckout({ data });

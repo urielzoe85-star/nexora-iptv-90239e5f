@@ -15,7 +15,7 @@ const CreateOrderSchema = z.object({
   planName: z.string().trim().min(1).max(80),
   amount: z.number().positive().max(100000),
   currency: z.string().trim().length(3).default("USD"),
-  method: z.enum(["momo", "crypto"]),
+  method: z.enum(["momo", "crypto", "card", "paypal"]),
   // Mobile Money fields — required only when method === "momo".
   phone: z.string().trim().min(6).max(20).optional(),
   operator: z.string().trim().min(2).max(40).optional(),
@@ -93,12 +93,22 @@ export const createOrder = createServerFn({ method: "POST" })
         operator: data.operator,
         country: data.country,
       };
-    } else {
+    } else if (data.method === "crypto") {
       amount = data.amount;
       currency = "USD";
       metadata.crypto = {
         provider: "binance_pay",
         display_currency: data.crypto_currency ?? "USDT",
+      };
+    } else {
+      // Card / PayPal → CamerPay (XAF). Convert USD to XAF via CM rate.
+      const conv = convertUsdToLocal(data.amount, "CM");
+      amount = conv.amount;
+      currency = conv.currency;
+      metadata.usd_to_local_rate = amount / data.amount;
+      metadata.card = {
+        provider: "camerpay",
+        channel: data.method, // "card" | "paypal"
       };
     }
 
