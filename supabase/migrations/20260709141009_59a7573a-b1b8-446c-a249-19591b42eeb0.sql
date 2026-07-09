@@ -1,0 +1,1 @@
+GRANT EXECUTE ON FUNCTION public._camerpay_sign(text,text,text,text) TO service_role, postgres;
