@@ -111,6 +111,7 @@ import { Route as ApiPublicWhatsappWebhookRouteImport } from './routes/api/publi
 import { Route as ApiPublicTelegramWebhookRouteImport } from './routes/api/public/telegram/webhook'
 import { Route as ApiPublicStripeWebhookRouteImport } from './routes/api/public/stripe/webhook'
 import { Route as ApiPublicSebpayWebhookRouteImport } from './routes/api/public/sebpay/webhook'
+import { Route as ApiPublicPaypalWebhookRouteImport } from './routes/api/public/paypal/webhook'
 import { Route as ApiPublicIptvPlaylistRouteImport } from './routes/api/public/iptv/playlist'
 import { Route as ApiPublicHooksSloSnapshotRouteImport } from './routes/api/public/hooks/slo-snapshot'
 import { Route as ApiPublicHooksSecretRotationCheckRouteImport } from './routes/api/public/hooks/secret-rotation-check'
@@ -641,6 +642,11 @@ const ApiPublicSebpayWebhookRoute = ApiPublicSebpayWebhookRouteImport.update({
   path: '/api/public/sebpay/webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicPaypalWebhookRoute = ApiPublicPaypalWebhookRouteImport.update({
+  id: '/api/public/paypal/webhook',
+  path: '/api/public/paypal/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicIptvPlaylistRoute = ApiPublicIptvPlaylistRouteImport.update({
   id: '/api/public/iptv/playlist',
   path: '/api/public/iptv/playlist',
@@ -798,6 +804,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/secret-rotation-check': typeof ApiPublicHooksSecretRotationCheckRoute
   '/api/public/hooks/slo-snapshot': typeof ApiPublicHooksSloSnapshotRoute
   '/api/public/iptv/playlist': typeof ApiPublicIptvPlaylistRoute
+  '/api/public/paypal/webhook': typeof ApiPublicPaypalWebhookRoute
   '/api/public/sebpay/webhook': typeof ApiPublicSebpayWebhookRoute
   '/api/public/stripe/webhook': typeof ApiPublicStripeWebhookRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
@@ -904,6 +911,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/secret-rotation-check': typeof ApiPublicHooksSecretRotationCheckRoute
   '/api/public/hooks/slo-snapshot': typeof ApiPublicHooksSloSnapshotRoute
   '/api/public/iptv/playlist': typeof ApiPublicIptvPlaylistRoute
+  '/api/public/paypal/webhook': typeof ApiPublicPaypalWebhookRoute
   '/api/public/sebpay/webhook': typeof ApiPublicSebpayWebhookRoute
   '/api/public/stripe/webhook': typeof ApiPublicStripeWebhookRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
@@ -1018,6 +1026,7 @@ export interface FileRoutesById {
   '/api/public/hooks/secret-rotation-check': typeof ApiPublicHooksSecretRotationCheckRoute
   '/api/public/hooks/slo-snapshot': typeof ApiPublicHooksSloSnapshotRoute
   '/api/public/iptv/playlist': typeof ApiPublicIptvPlaylistRoute
+  '/api/public/paypal/webhook': typeof ApiPublicPaypalWebhookRoute
   '/api/public/sebpay/webhook': typeof ApiPublicSebpayWebhookRoute
   '/api/public/stripe/webhook': typeof ApiPublicStripeWebhookRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
@@ -1133,6 +1142,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/secret-rotation-check'
     | '/api/public/hooks/slo-snapshot'
     | '/api/public/iptv/playlist'
+    | '/api/public/paypal/webhook'
     | '/api/public/sebpay/webhook'
     | '/api/public/stripe/webhook'
     | '/api/public/telegram/webhook'
@@ -1239,6 +1249,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/secret-rotation-check'
     | '/api/public/hooks/slo-snapshot'
     | '/api/public/iptv/playlist'
+    | '/api/public/paypal/webhook'
     | '/api/public/sebpay/webhook'
     | '/api/public/stripe/webhook'
     | '/api/public/telegram/webhook'
@@ -1352,6 +1363,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/secret-rotation-check'
     | '/api/public/hooks/slo-snapshot'
     | '/api/public/iptv/playlist'
+    | '/api/public/paypal/webhook'
     | '/api/public/sebpay/webhook'
     | '/api/public/stripe/webhook'
     | '/api/public/telegram/webhook'
@@ -1407,6 +1419,7 @@ export interface RootRouteChildren {
   ApiPublicHooksSecretRotationCheckRoute: typeof ApiPublicHooksSecretRotationCheckRoute
   ApiPublicHooksSloSnapshotRoute: typeof ApiPublicHooksSloSnapshotRoute
   ApiPublicIptvPlaylistRoute: typeof ApiPublicIptvPlaylistRoute
+  ApiPublicPaypalWebhookRoute: typeof ApiPublicPaypalWebhookRoute
   ApiPublicSebpayWebhookRoute: typeof ApiPublicSebpayWebhookRoute
   ApiPublicStripeWebhookRoute: typeof ApiPublicStripeWebhookRoute
   ApiPublicTelegramWebhookRoute: typeof ApiPublicTelegramWebhookRoute
@@ -2134,6 +2147,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicSebpayWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/paypal/webhook': {
+      id: '/api/public/paypal/webhook'
+      path: '/api/public/paypal/webhook'
+      fullPath: '/api/public/paypal/webhook'
+      preLoaderRoute: typeof ApiPublicPaypalWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/iptv/playlist': {
       id: '/api/public/iptv/playlist'
       path: '/api/public/iptv/playlist'
@@ -2455,6 +2475,7 @@ const rootRouteChildren: RootRouteChildren = {
     ApiPublicHooksSecretRotationCheckRoute,
   ApiPublicHooksSloSnapshotRoute: ApiPublicHooksSloSnapshotRoute,
   ApiPublicIptvPlaylistRoute: ApiPublicIptvPlaylistRoute,
+  ApiPublicPaypalWebhookRoute: ApiPublicPaypalWebhookRoute,
   ApiPublicSebpayWebhookRoute: ApiPublicSebpayWebhookRoute,
   ApiPublicStripeWebhookRoute: ApiPublicStripeWebhookRoute,
   ApiPublicTelegramWebhookRoute: ApiPublicTelegramWebhookRoute,
