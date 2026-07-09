@@ -14,11 +14,11 @@ export const Route = createFileRoute("/api/public/stripe/webhook")({
         const { processCamerpayFormattedWebhook } = await import(
           "@/lib/camerpay-webhook-handler.server"
         );
-        const { camerpayStripeWebhookSecret } = await import(
+        const { camerpayWebhookSecret } = await import(
           "@/lib/payments-camerpay.server"
         );
         let secret = "";
-        try { secret = camerpayStripeWebhookSecret(); }
+        try { secret = camerpayWebhookSecret(); }
         catch (e: any) {
           console.error("[stripe-webhook] missing secret", e?.message ?? e);
           return new Response("Server misconfigured", { status: 500 });
