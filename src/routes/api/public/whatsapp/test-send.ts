@@ -18,7 +18,7 @@ export const Route = createFileRoute("/api/public/whatsapp/test-send")({
           const { sendWhatsAppText } = await import("@/lib/whatsapp.server");
           const text =
             "✅ Test Nexora — WhatsApp Cloud API opérationnelle. Ce message confirme l'intégration Meta Business.";
-          const res = await sendWhatsAppText(to, text);
+          const res: any = await sendWhatsAppText(to, text);
           return Response.json(
             {
               ok: res.ok,
