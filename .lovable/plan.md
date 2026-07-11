@@ -1,44 +1,27 @@
-## Objectif
+## État actuel
 
-Le webhook `/api/public/whatsapp/webhook` répond `Forbidden` (403) lors de la vérification Meta. Diagnostiquer la cause et valider l'envoi/réception WhatsApp de bout en bout.
+Tu m'as fourni :
+- **Phone Number ID** : `1006407992170433`
+- **Nouveau token permanent** WhatsApp
 
-## Causes possibles du 403
+Les secrets ne sont pas encore écrasés côté serveur (j'attendais ton feu vert avant de toucher aux valeurs existantes).
 
-Le handler GET renvoie 403 dans un seul cas : `mode !== "subscribe"` OU `token !== WHATSAPP_VERIFY_TOKEN`. Donc :
+## La suite — 3 étapes
 
-1. `WHATSAPP_VERIFY_TOKEN` n'est pas défini côté serveur (retournerait 503 en fait — à vérifier).
-2. La valeur de `WHATSAPP_VERIFY_TOKEN` dans Lovable Cloud ≠ celle saisie dans Meta Business Manager.
-3. L'URL configurée dans Meta pointe vers preview au lieu de production (ou l'inverse), et le secret diffère entre les deux environnements.
+1. **Remplacer les 2 secrets WhatsApp**
+   - Supprimer `WHATSAPP_PHONE_NUMBER_ID` et `WHATSAPP_ACCESS_TOKEN` (obligatoire, `set_secret` n'écrase pas).
+   - Recréer avec les valeurs que tu viens d'envoyer.
 
-## Étapes de vérification (lecture seule)
+2. **Rejouer le test d'envoi** vers ton numéro `+237 698 608 808`
+   - Appel : `POST /api/public/whatsapp/test-send?token=<verify>&to=237698608808`
+   - Succès attendu : Meta renvoie `messages[0].id` et tu reçois le message WhatsApp "✅ Test Nexora…" sur ton téléphone.
 
-1. **Lister les secrets** (`fetch_secrets`) pour confirmer présence de :
-   - `WHATSAPP_VERIFY_TOKEN`
-   - `WHATSAPP_APP_SECRET`
-   - `WHATSAPP_ACCESS_TOKEN`
-   - `WHATSAPP_PHONE_NUMBER_ID`
-   - `WHATSAPP_ADMIN_PHONE` (pour test d'envoi)
+3. **Interpréter le résultat**
+   - ✅ Si OK → l'intégration Cloud API est validée. On peut brancher les notifications réelles (livraison IPTV, alertes admin) sur le canal WhatsApp du hub.
+   - ❌ Si Meta renvoie encore une erreur → je te donne le code exact + la case précise à corriger dans Meta Business (System User / rôle WABA / scopes du token), sans re-deviner.
 
-2. **Tester le handshake GET** via `curl` sur l'URL publiée :
-   ```
-   GET /api/public/whatsapp/webhook?hub.mode=subscribe&hub.verify_token=<token>&hub.challenge=ping
-   ```
-   - Sans token config → 503
-   - Token faux → 403
-   - Token correct → 200 + `ping`
+## Ce qui ne change pas
 
-3. **Tester un envoi WhatsApp sortant** via une petite server-fn admin temporaire OU via `notifyAdminWhatsApp` déjà présent, pour valider que `WHATSAPP_ACCESS_TOKEN` + `WHATSAPP_PHONE_NUMBER_ID` fonctionnent (retour Meta OK, `messages[0].id` présent).
+Aucun fichier code n'est touché. Le handler `test-send`, `whatsapp.server.ts` et le webhook `/api/public/whatsapp/webhook` sont déjà corrects — c'est purement une mise à jour de secrets + test.
 
-4. **Vérifier logs** (`stack_modern--server-function-logs` filtré `whatsapp`) pour toute erreur.
-
-## Livrables
-
-- Diagnostic clair : lequel des 3 cas ci-dessus s'applique.
-- Instruction précise pour l'utilisateur :
-  - Soit re-saisir `WHATSAPP_VERIFY_TOKEN` (`update_secret`) et le recopier tel quel dans Meta → onglet WhatsApp → Configuration → Webhook.
-  - Soit corriger l'URL du webhook dans Meta pour pointer sur `https://nexora-iptv.lovable.app/api/public/whatsapp/webhook`.
-- Confirmation d'un envoi test réussi vers `WHATSAPP_ADMIN_PHONE`.
-
-## Ce qui NE change pas
-
-- Aucun code modifié (le handler est correct). Si le diagnostic révèle un bug (ex. 403 au lieu de 503 quand token absent), je proposerai un patch minimal dans un plan suivant.
+Valide ce plan et je passe en build pour exécuter les 3 étapes d'un coup.
