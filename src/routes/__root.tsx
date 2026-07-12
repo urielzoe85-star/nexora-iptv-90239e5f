@@ -12,6 +12,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { I18nProvider, useT } from "../i18n/context";
+import { FloatingWhatsApp } from "../components/FloatingWhatsApp";
 
 function NotFoundComponent() {
   const t = useT();
@@ -161,6 +162,7 @@ function RootComponent() {
       <I18nProvider>
         {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
         <Outlet />
+        <FloatingWhatsApp />
       </I18nProvider>
     </QueryClientProvider>
   );
