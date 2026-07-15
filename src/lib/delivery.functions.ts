@@ -244,8 +244,8 @@ export const sendEmailAuto = createServerFn({ method: "POST" })
       payload: {
         message_id: messageId,
         to: data.recipient,
-        from: `nexora-iptv <noreply@nexora-iptv.com>`,
-        sender_domain: "notify.nexora-iptv.com",
+        from: `nexora-iptv <noreply@send.nexora-iptv.com>`,
+        sender_domain: "notify.send.nexora-iptv.com",
         subject,
         html, text,
         purpose: "transactional",
