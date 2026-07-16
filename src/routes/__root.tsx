@@ -126,7 +126,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
               "@type": "Organization",
               name: "Nexora IPTV",
               url: "https://nexora-iptv.com",
-              logo: "https://nexora-iptv.com/favicon.ico",
+              logo: "https://nexora-iptv.com/pwa-512.png",
               sameAs: [],
             },
             {
