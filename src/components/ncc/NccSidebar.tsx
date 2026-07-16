@@ -18,9 +18,11 @@ export function NccSidebar() {
     <Sidebar collapsible="icon">
       <SidebarHeader className="px-3 py-4">
         <div className="flex items-center gap-2">
-          <div className="h-8 w-8 rounded-md bg-primary/15 grid place-items-center">
-            <Gauge className="h-4 w-4 text-primary" />
-          </div>
+          <img
+            src="/pwa-192.png"
+            alt="Nexora"
+            className="h-8 w-8 rounded-md object-cover"
+          />
           <div className="flex flex-col leading-tight">
             <span className="font-semibold text-sm">Nexora</span>
             <span className="text-[10px] text-muted-foreground tracking-wider uppercase">Control Center</span>
