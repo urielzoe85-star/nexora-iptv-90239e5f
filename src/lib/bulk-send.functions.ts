@@ -170,7 +170,7 @@ async function sendEmail(sb: any, args: { subject: string; body: string; recipie
 // sur les canaux choisis. Throttle 200ms entre chaque cible pour ménager Meta.
 // ────────────────────────────────────────────────────────────────────────────
 const TargetSchema = z.object({
-  kind: z.enum(["order", "iptv_account"]),
+  kind: z.enum(["order", "iptv_account", "manual"]),
   id: z.string(),
   label: z.string().nullable().optional(),
   customer_id: z.string().uuid().nullable().optional(),
