@@ -1,8 +1,8 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Send, Mail, MessageCircle, Loader2, Users, RefreshCw } from "lucide-react";
+import { Send, Mail, MessageCircle, Loader2, Users, RefreshCw, Upload, FileWarning, Trash2, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -30,12 +30,66 @@ const CHANNEL_META: Record<DeliveryChannel, { icon: any; label: string }> = {
   email: { icon: Mail, label: "Email" },
 };
 
+type Source = "database" | "csv";
+
+type ImportedTarget = {
+  id: string;
+  kind: "manual";
+  label: string;
+  full_name: string | null;
+  email: string | null;
+  phone: string | null;
+  telegram_chat_id: string | null;
+  _row: number;
+};
+
+type RejectedRow = { row: number; raw: string; reason: string };
+
+// ── CSV parsing minimal (support quotes + virgules/point-virgules/tab) ──
+function parseCSV(text: string): string[][] {
+  const rows: string[][] = [];
+  const src = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+  // Détection du séparateur sur la 1ère ligne non vide.
+  const first = src.split("\n").find((l) => l.trim().length) ?? "";
+  const sep = [",", ";", "\t"].sort((a, b) => (first.split(b).length - first.split(a).length))[0];
+  let cur = "", row: string[] = [], inQ = false;
+  for (let i = 0; i < src.length; i++) {
+    const c = src[i];
+    if (inQ) {
+      if (c === '"' && src[i + 1] === '"') { cur += '"'; i++; }
+      else if (c === '"') inQ = false;
+      else cur += c;
+    } else {
+      if (c === '"') inQ = true;
+      else if (c === sep) { row.push(cur); cur = ""; }
+      else if (c === "\n") { row.push(cur); rows.push(row); row = []; cur = ""; }
+      else cur += c;
+    }
+  }
+  if (cur.length || row.length) { row.push(cur); rows.push(row); }
+  return rows.filter((r) => r.some((x) => x && x.trim().length));
+}
+
+function normalizePhone(v: string): string | null {
+  const digits = v.replace(/[^\d+]/g, "");
+  if (!digits) return null;
+  // Doit avoir au moins 7 chiffres pour être plausible.
+  if (digits.replace(/\D/g, "").length < 7) return null;
+  return digits.startsWith("+") ? digits : digits;
+}
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export function BulkSendPage() {
   const [scenario, setScenario] = useState<Scenario>("renewal");
   const [days, setDays] = useState<number>(7);
   const [channels, setChannels] = useState<DeliveryChannel[]>(["whatsapp", "email"]);
   const [templateId, setTemplateId] = useState<string>("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [source, setSource] = useState<Source>("database");
+  const [imported, setImported] = useState<ImportedTarget[]>([]);
+  const [rejected, setRejected] = useState<RejectedRow[]>([]);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const listTargetsFn = useServerFn(listBulkTargets);
   const listTemplatesFn = useServerFn(listBulkTemplates);
@@ -62,16 +116,19 @@ export function BulkSendPage() {
   const targets = useQuery({
     queryKey: ["bulk", "targets", scenario, days],
     queryFn: () => listTargetsFn({ data: { scenario, days, limit: 200 } }) as Promise<any[]>,
+    enabled: source === "database",
   });
+
+  const activeTargets = source === "csv" ? imported : (targets.data ?? []);
 
   const toggleChannel = (ch: DeliveryChannel) => {
     setChannels((prev) => (prev.includes(ch) ? prev.filter((c) => c !== ch) : [...prev, ch]));
   };
 
   const toggleAll = () => {
-    if (!targets.data) return;
-    if (selected.size === targets.data.length) setSelected(new Set());
-    else setSelected(new Set(targets.data.map((t) => t.id)));
+    if (!activeTargets.length) return;
+    if (selected.size === activeTargets.length) setSelected(new Set());
+    else setSelected(new Set(activeTargets.map((t: any) => t.id)));
   };
 
   const toggleOne = (id: string) => {
@@ -83,8 +140,8 @@ export function BulkSendPage() {
   };
 
   const preview = useMemo(() => {
-    if (!currentTemplate || !targets.data?.length) return "";
-    const first = targets.data.find((t) => selected.has(t.id)) ?? targets.data[0];
+    if (!currentTemplate || !activeTargets.length) return "";
+    const first: any = activeTargets.find((t: any) => selected.has(t.id)) ?? activeTargets[0];
     const ctx = buildDeliveryContext({
       order: {
         order_ref: (first as any).order_ref ?? "",
@@ -102,20 +159,20 @@ export function BulkSendPage() {
         : {},
     });
     return renderTemplate(currentTemplate.body, ctx);
-  }, [currentTemplate, targets.data, selected]);
+  }, [currentTemplate, activeTargets, selected]);
 
   const send = useMutation({
     mutationFn: async () => {
       if (!currentTemplate) throw new Error("Sélectionne un template.");
       if (!channels.length) throw new Error("Sélectionne au moins un canal.");
-      const chosen = (targets.data ?? []).filter((t) => selected.has(t.id));
+      const chosen = activeTargets.filter((t: any) => selected.has(t.id));
       if (!chosen.length) throw new Error("Sélectionne au moins un destinataire.");
       return bulkSendFn({
         data: {
           template_id: currentTemplate.id,
           channels,
           scenario,
-          targets: chosen.map((t) => ({
+          targets: chosen.map((t: any) => ({
             kind: t.kind, id: t.id, label: t.label,
             customer_id: t.customer_id ?? null,
             email: t.email, full_name: t.full_name, phone: t.phone,
@@ -138,7 +195,81 @@ export function BulkSendPage() {
     onError: (e: any) => toast.error(e?.message ?? "Erreur d'envoi"),
   });
 
-  const allChecked = targets.data && targets.data.length > 0 && selected.size === targets.data.length;
+  const allChecked = activeTargets.length > 0 && selected.size === activeTargets.length;
+
+  // ── Import CSV ────────────────────────────────────────────────────────
+  const handleFile = async (file: File) => {
+    const text = await file.text();
+    const rows = parseCSV(text);
+    if (!rows.length) { toast.error("Fichier vide."); return; }
+    const header = rows[0].map((h) => h.trim().toLowerCase());
+    const idx = (names: string[]) => header.findIndex((h) => names.includes(h));
+    const iPhone = idx(["phone", "telephone", "téléphone", "whatsapp", "wa", "msisdn"]);
+    const iEmail = idx(["email", "e-mail", "mail"]);
+    const iTg = idx(["telegram_chat_id", "telegram", "chat_id", "tg"]);
+    const iName = idx(["full_name", "name", "nom", "client"]);
+    if (iPhone < 0 && iEmail < 0 && iTg < 0) {
+      toast.error("En-têtes manquants. Attendus : phone, email, telegram_chat_id.");
+      return;
+    }
+    const accepted: ImportedTarget[] = [];
+    const rej: RejectedRow[] = [];
+    const seen = new Set<string>();
+    for (let r = 1; r < rows.length; r++) {
+      const cells = rows[r];
+      const raw = cells.join(" | ");
+      const phoneRaw = iPhone >= 0 ? (cells[iPhone] ?? "").trim() : "";
+      const emailRaw = iEmail >= 0 ? (cells[iEmail] ?? "").trim() : "";
+      const tgRaw = iTg >= 0 ? (cells[iTg] ?? "").trim() : "";
+      const name = iName >= 0 ? (cells[iName] ?? "").trim() : "";
+      const phone = phoneRaw ? normalizePhone(phoneRaw) : null;
+      const email = emailRaw ? (EMAIL_RE.test(emailRaw) ? emailRaw.toLowerCase() : "__invalid__") : null;
+      const tg = tgRaw ? tgRaw.replace(/[^\d-]/g, "") : null;
+
+      if (phoneRaw && !phone) { rej.push({ row: r + 1, raw, reason: "téléphone invalide" }); continue; }
+      if (email === "__invalid__") { rej.push({ row: r + 1, raw, reason: "email invalide" }); continue; }
+      if (tgRaw && !tg) { rej.push({ row: r + 1, raw, reason: "telegram_chat_id invalide" }); continue; }
+      if (!phone && !email && !tg) { rej.push({ row: r + 1, raw, reason: "aucun contact" }); continue; }
+
+      const dedupKey = `${phone ?? ""}|${email ?? ""}|${tg ?? ""}`;
+      if (seen.has(dedupKey)) { rej.push({ row: r + 1, raw, reason: "doublon" }); continue; }
+      seen.add(dedupKey);
+
+      accepted.push({
+        id: `csv-${r}-${dedupKey}`,
+        kind: "manual",
+        label: name || email || phone || tg || `Ligne ${r + 1}`,
+        full_name: name || null,
+        email: email && email !== "__invalid__" ? email : null,
+        phone,
+        telegram_chat_id: tg,
+        _row: r + 1,
+      });
+    }
+    setImported(accepted);
+    setRejected(rej);
+    setSelected(new Set(accepted.map((a) => a.id)));
+    toast.success(`${accepted.length} ligne(s) importée(s) · ${rej.length} rejetée(s)`);
+  };
+
+  const downloadTemplate = () => {
+    const csv = "full_name,phone,email,telegram_chat_id\nJean Dupont,+237698000000,jean@example.com,123456789\n";
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "modele-destinataires.csv"; a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const downloadRejected = () => {
+    if (!rejected.length) return;
+    const csv = "row,reason,raw\n" + rejected.map((r) => `${r.row},"${r.reason}","${r.raw.replace(/"/g, '""')}"`).join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "lignes-rejetees.csv"; a.click();
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="p-4 space-y-4">
@@ -147,6 +278,17 @@ export function BulkSendPage() {
         <Card>
           <CardHeader><CardTitle className="text-sm">Configuration</CardTitle></CardHeader>
           <CardContent className="space-y-4">
+            <div>
+              <Label className="text-xs">Source</Label>
+              <Select value={source} onValueChange={(v) => { setSource(v as Source); setSelected(new Set()); }}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="database">🗂️ Base de données</SelectItem>
+                  <SelectItem value="csv">📥 Import CSV</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             <div>
               <Label className="text-xs">Scénario</Label>
               <Select value={scenario} onValueChange={(v) => { setScenario(v as Scenario); setSelected(new Set()); setTemplateId(""); }}>
@@ -159,7 +301,7 @@ export function BulkSendPage() {
               </Select>
             </div>
 
-            <div>
+            {source === "database" && <div>
               <Label className="text-xs">
                 {scenario === "renewal" ? "Expiration dans (jours)" : "Commandes des derniers (jours)"}
               </Label>
@@ -169,7 +311,32 @@ export function BulkSendPage() {
                   {[1, 3, 7, 14, 30, 60].map((d) => <SelectItem key={d} value={String(d)}>{d} jours</SelectItem>)}
                 </SelectContent>
               </Select>
-            </div>
+            </div>}
+
+            {source === "csv" && (
+              <div className="space-y-2">
+                <Label className="text-xs">Fichier CSV</Label>
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept=".csv,text/csv"
+                  className="hidden"
+                  onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); e.target.value = ""; }}
+                />
+                <Button size="sm" variant="outline" className="w-full" onClick={() => fileRef.current?.click()}>
+                  <Upload className="h-3.5 w-3.5 mr-2" /> Importer un CSV
+                </Button>
+                <Button size="sm" variant="ghost" className="w-full" onClick={downloadTemplate}>
+                  <Download className="h-3.5 w-3.5 mr-2" /> Télécharger le modèle
+                </Button>
+                {imported.length > 0 && (
+                  <Button size="sm" variant="ghost" className="w-full text-destructive" onClick={() => { setImported([]); setRejected([]); setSelected(new Set()); }}>
+                    <Trash2 className="h-3.5 w-3.5 mr-2" /> Vider l'import
+                  </Button>
+                )}
+                <p className="text-[10px] text-muted-foreground">Colonnes reconnues : full_name, phone, email, telegram_chat_id.</p>
+              </div>
+            )}
 
             <div>
               <Label className="text-xs">Template</Label>
@@ -210,29 +377,60 @@ export function BulkSendPage() {
 
         {/* PANEL CIBLES + PREVIEW */}
         <div className="space-y-4">
+          {source === "csv" && rejected.length > 0 && (
+            <Card className="border-destructive/40">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0">
+                <CardTitle className="text-sm flex items-center gap-2 text-destructive">
+                  <FileWarning className="h-4 w-4" /> {rejected.length} ligne(s) rejetée(s)
+                </CardTitle>
+                <Button size="sm" variant="outline" onClick={downloadRejected}>
+                  <Download className="h-3.5 w-3.5 mr-2" /> Télécharger le rapport
+                </Button>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="h-[140px]">
+                  <div className="space-y-1 text-xs font-mono">
+                    {rejected.slice(0, 100).map((r) => (
+                      <div key={r.row} className="flex gap-2">
+                        <span className="text-muted-foreground w-12 shrink-0">L{r.row}</span>
+                        <Badge variant="outline" className="text-[10px] shrink-0">{r.reason}</Badge>
+                        <span className="truncate text-muted-foreground">{r.raw}</span>
+                      </div>
+                    ))}
+                    {rejected.length > 100 && <div className="text-muted-foreground italic">…et {rejected.length - 100} autres.</div>}
+                  </div>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          )}
+
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0">
               <CardTitle className="text-sm flex items-center gap-2">
-                <Users className="h-4 w-4" /> Destinataires ({targets.data?.length ?? 0})
+                <Users className="h-4 w-4" /> Destinataires ({activeTargets.length})
               </CardTitle>
               <div className="flex items-center gap-2">
-                <Button size="sm" variant="ghost" onClick={() => targets.refetch()}>
-                  <RefreshCw className="h-3.5 w-3.5" />
-                </Button>
-                <Button size="sm" variant="outline" onClick={toggleAll} disabled={!targets.data?.length}>
+                {source === "database" && (
+                  <Button size="sm" variant="ghost" onClick={() => targets.refetch()}>
+                    <RefreshCw className="h-3.5 w-3.5" />
+                  </Button>
+                )}
+                <Button size="sm" variant="outline" onClick={toggleAll} disabled={!activeTargets.length}>
                   {allChecked ? "Tout désélectionner" : "Tout sélectionner"}
                 </Button>
               </div>
             </CardHeader>
             <CardContent>
-              {targets.isLoading ? (
+              {source === "database" && targets.isLoading ? (
                 <div className="text-sm text-muted-foreground p-4">Chargement…</div>
-              ) : !targets.data?.length ? (
-                <div className="text-sm text-muted-foreground p-4">Aucun destinataire pour ce scénario.</div>
+              ) : !activeTargets.length ? (
+                <div className="text-sm text-muted-foreground p-4">
+                  {source === "csv" ? "Importe un CSV pour commencer." : "Aucun destinataire pour ce scénario."}
+                </div>
               ) : (
                 <ScrollArea className="h-[340px]">
                   <div className="space-y-1">
-                    {targets.data.map((t) => {
+                    {activeTargets.map((t: any) => {
                       const missing: string[] = [];
                       if (channels.includes("email") && !t.email) missing.push("email");
                       if (channels.includes("whatsapp") && !t.phone) missing.push("wa");
