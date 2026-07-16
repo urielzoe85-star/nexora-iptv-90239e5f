@@ -5,7 +5,6 @@ import {
   SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarHeader, SidebarFooter,
 } from "@/components/ui/sidebar";
 import { Badge } from "@/components/ui/badge";
-import { Gauge } from "lucide-react";
 
 const GROUP_ORDER: ModuleGroup[] = ["cockpit", "sales", "services", "ops", "system"];
 
