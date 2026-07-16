@@ -1,46 +1,58 @@
-## Lancer le test WhatsApp via curl
+# Templates multi-canal + Envoi en masse (bulk)
 
-### Ce que tu vas faire
-Envoyer une commande depuis ton terminal qui appelle la route `POST /api/public/whatsapp/test-send` sur ton site publié. Cette route est déjà déployée sur `nexora-iptv.lovable.app`. Elle demande à Meta WhatsApp d'envoyer un message texte de test à ton numéro `237656895003`.
+Objectif : disposer de **messages pré-rédigés** — équivalents aux templates email — utilisables sur WhatsApp / Telegram / Email pour 3 scénarios de relance, avec **envoi en masse** depuis le NCC.
 
-### Étape 1 — Récupérer ton `WHATSAPP_VERIFY_TOKEN`
-C'est la valeur que tu as enregistrée dans les secrets Lovable (utilisée aussi côté Meta pour valider le webhook).
-- Si tu l'as toujours dans ton gestionnaire de mots de passe / notes → copie-la.
-- Sinon, tu peux la remplacer par une nouvelle valeur (mais **il faudra alors la remettre à jour aussi dans la config webhook Meta** sinon la vérification webhook casse).
+## 1. Trois nouveaux templates (FR + EN chacun)
 
-### Étape 2 — Ouvrir un terminal
-Selon ton système :
-- **Mac** : ouvre l'app *Terminal* (Cmd+Espace → tape "Terminal").
-- **Windows** : ouvre *PowerShell* (menu Démarrer → tape "PowerShell").
-- **Linux** : n'importe quel terminal.
+Ajoutés dans `src/domain/delivery/builtin-templates.ts` (moteur `message-engine.ts` déjà en place, réutilise les mêmes variables `{{client_name}}`, `{{username}}`, `{{expiration_date}}`, `{{order_ref}}`, `{{portal_link}}`, etc.) :
 
-`curl` est préinstallé sur les trois systèmes récents.
+- **`delivery_*`** — Livraison des accès (relance client qui n'a pas reçu / redemande ses infos). Réutilise le contexte accès complet.
+- **`renewal_j7`, `renewal_j3`, `renewal_j1`** — Rappels de renouvellement avant expiration, avec CTA `{{renew_url}}` (nouvelle variable ajoutée au `DeliveryContext`, dérivée de `portal_link`).
+- **`payment_reminder_*`** — Relance paiement en attente (commande créée non payée), avec `{{payment_url}}` (déduit de `order.metadata.checkout_url` sinon lien portail).
 
-### Étape 3 — Lancer la commande
-Colle ceci en remplaçant `TON_TOKEN_ICI` par ta vraie valeur de `WHATSAPP_VERIFY_TOKEN` :
+Chaque template a une version WhatsApp/Telegram (courte, emojis discrets) + une variante Email (sujet + corps plus long). Ils utilisent la même clé pour que le sélecteur du composer les retrouve.
 
-```bash
-curl -X POST "https://nexora-iptv.lovable.app/api/public/whatsapp/test-send?token=TON_TOKEN_ICI&to=237656895003"
-```
+## 2. Extension du contexte de rendu
 
-Appuie sur Entrée.
+`buildDeliveryContext` dans `src/domain/delivery/message-engine.ts` : ajouter `renew_url`, `payment_url`, `days_left`, `amount_due`, `currency`. Rétro-compatible (valeurs `—` par défaut).
 
-### Étape 4 — Lire la réponse
+## 3. Page « Envoi en masse » dans le NCC
 
-**Succès attendu** — un JSON du type :
-```json
-{"ok":true,"status":200,"messageId":"wamid.HBgL...","error":null,"data":{...}}
-```
-Et un message WhatsApp arrive sur le `237656895003` dans les secondes qui suivent.
+Nouvelle route `src/routes/ncc.bulk.tsx` + page `src/components/ncc/bulk/BulkSendPage.tsx` :
 
-**Erreurs possibles** :
-- `forbidden` (HTTP 403) → le `token` dans l'URL ne matche pas `WHATSAPP_VERIFY_TOKEN`. Recopie-le sans espace.
-- `{"ok":false,"status":401,...}` → le nouveau `WHATSAPP_ACCESS_TOKEN` est rejeté par Meta (expiré ou mauvais scope).
-- `{"ok":false,"status":400,"error":"Recipient phone number not in allowed list"}` → en mode dev Meta, le numéro doit être ajouté comme testeur dans Meta Business.
-- `{"ok":false,"error":"(#131047) Message failed to send because more than 24 hours..."}` → hors fenêtre 24 h, il faudra passer par un template approuvé (pas bloquant pour valider l'API).
+- **Sélection de la cible** :
+  - Scénario `delivery` → commandes payées récentes
+  - Scénario `renewal` → abonnements expirant dans N jours (7/3/1) via `iptv_accounts.expires_at`
+  - Scénario `payment_reminder` → commandes `pending_payment` > X heures
+- **Choix du template** (parmi ceux du bloc 1, filtrés par scénario) + **preview** rendu avec la 1ʳᵉ ligne cochée.
+- **Choix des canaux** (checkboxes WhatsApp / Telegram / Email — multi).
+- **Table** des destinataires cochables avec colonnes : client, contact WA/TG/email dispo, statut. Case « tout sélectionner ».
+- **Bouton « Envoyer »** → confirmation modale (nombre de messages, canaux, coût estimé Meta).
 
-### Étape 5 — Me renvoyer le résultat
-Copie/colle ici la réponse JSON complète (masque le `messageId` si tu veux). Je confirme que tout est OK et je remets à jour le `plan.md` avec le statut final.
+## 4. Server function `bulkSendMessages`
 
-### Alternative si tu n'as pas le `WHATSAPP_VERIFY_TOKEN`
-Dis-le moi : je peux, en build mode, ajouter une petite route interne signée par un secret que je génère (jamais révélé), la publier, lancer le test moi-même, puis la supprimer.
+Nouveau fichier `src/lib/bulk-send.functions.ts` (protégé par `requireNccUnlock`) :
+
+- Input : `{ template_id, channels[], target_ids[], scenario }`.
+- Pour chaque cible : construit le contexte, rend le template, appelle en interne `sendWhatsAppAuto` / `sendTelegramAuto` / `sendEmailAuto` (déjà existants dans `src/lib/delivery.functions.ts`).
+- Throttle : 5 messages/seconde côté serveur pour respecter les quotas Meta.
+- Retourne un résumé `{ sent, failed, skipped, errors[] }` — affiché en toast + résumé après envoi.
+- Chaque envoi est déjà loggé dans `delivery_logs` par les fonctions unitaires → traçabilité gratuite dans **NCC → Notifications**.
+
+## 5. Cible de la sidebar
+
+Ajouter une entrée « Envoi en masse » dans `src/components/ncc/NccSidebar.tsx` (icône `Megaphone`) pointant vers `/ncc/bulk`.
+
+## Fichiers touchés
+
+- `src/domain/delivery/builtin-templates.ts` (ajout templates)
+- `src/domain/delivery/message-engine.ts` (contexte étendu)
+- `src/lib/bulk-send.functions.ts` (nouveau — server fn)
+- `src/components/ncc/bulk/BulkSendPage.tsx` (nouveau — UI)
+- `src/routes/ncc.bulk.tsx` (nouveau)
+- `src/components/ncc/NccSidebar.tsx` (lien menu)
+
+## Hors scope (à demander si besoin plus tard)
+
+- Programmation (cron) automatique des rappels J-7/J-3/J-1 : déjà partiellement géré par `payment-confirmed` + `iptv-renewal-reminder` email — bulk = envoi **manuel** à la demande.
+- Éditeur visuel de templates (les templates restent en code).

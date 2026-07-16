@@ -51,6 +51,7 @@ import { Route as NccGalleryRouteImport } from './routes/ncc.gallery'
 import { Route as NccEmployeesRouteImport } from './routes/ncc.employees'
 import { Route as NccEmailsRouteImport } from './routes/ncc.emails'
 import { Route as NccClientsRouteImport } from './routes/ncc.clients'
+import { Route as NccBulkRouteImport } from './routes/ncc.bulk'
 import { Route as NccBotsRouteImport } from './routes/ncc.bots'
 import { Route as NccAutomationRouteImport } from './routes/ncc.automation'
 import { Route as NccAnalyticsRouteImport } from './routes/ncc.analytics'
@@ -332,6 +333,11 @@ const NccEmailsRoute = NccEmailsRouteImport.update({
 const NccClientsRoute = NccClientsRouteImport.update({
   id: '/clients',
   path: '/clients',
+  getParentRoute: () => NccRoute,
+} as any)
+const NccBulkRoute = NccBulkRouteImport.update({
+  id: '/bulk',
+  path: '/bulk',
   getParentRoute: () => NccRoute,
 } as any)
 const NccBotsRoute = NccBotsRouteImport.update({
@@ -760,6 +766,7 @@ export interface FileRoutesByFullPath {
   '/ncc/analytics': typeof NccAnalyticsRoute
   '/ncc/automation': typeof NccAutomationRoute
   '/ncc/bots': typeof NccBotsRoute
+  '/ncc/bulk': typeof NccBulkRoute
   '/ncc/clients': typeof NccClientsRouteWithChildren
   '/ncc/emails': typeof NccEmailsRoute
   '/ncc/employees': typeof NccEmployeesRoute
@@ -871,6 +878,7 @@ export interface FileRoutesByTo {
   '/ncc/analytics': typeof NccAnalyticsRoute
   '/ncc/automation': typeof NccAutomationRoute
   '/ncc/bots': typeof NccBotsRoute
+  '/ncc/bulk': typeof NccBulkRoute
   '/ncc/clients': typeof NccClientsRouteWithChildren
   '/ncc/emails': typeof NccEmailsRoute
   '/ncc/employees': typeof NccEmployeesRoute
@@ -986,6 +994,7 @@ export interface FileRoutesById {
   '/ncc/analytics': typeof NccAnalyticsRoute
   '/ncc/automation': typeof NccAutomationRoute
   '/ncc/bots': typeof NccBotsRoute
+  '/ncc/bulk': typeof NccBulkRoute
   '/ncc/clients': typeof NccClientsRouteWithChildren
   '/ncc/emails': typeof NccEmailsRoute
   '/ncc/employees': typeof NccEmployeesRoute
@@ -1104,6 +1113,7 @@ export interface FileRouteTypes {
     | '/ncc/analytics'
     | '/ncc/automation'
     | '/ncc/bots'
+    | '/ncc/bulk'
     | '/ncc/clients'
     | '/ncc/emails'
     | '/ncc/employees'
@@ -1215,6 +1225,7 @@ export interface FileRouteTypes {
     | '/ncc/analytics'
     | '/ncc/automation'
     | '/ncc/bots'
+    | '/ncc/bulk'
     | '/ncc/clients'
     | '/ncc/emails'
     | '/ncc/employees'
@@ -1329,6 +1340,7 @@ export interface FileRouteTypes {
     | '/ncc/analytics'
     | '/ncc/automation'
     | '/ncc/bots'
+    | '/ncc/bulk'
     | '/ncc/clients'
     | '/ncc/emails'
     | '/ncc/employees'
@@ -1752,6 +1764,13 @@ declare module '@tanstack/react-router' {
       path: '/clients'
       fullPath: '/ncc/clients'
       preLoaderRoute: typeof NccClientsRouteImport
+      parentRoute: typeof NccRoute
+    }
+    '/ncc/bulk': {
+      id: '/ncc/bulk'
+      path: '/bulk'
+      fullPath: '/ncc/bulk'
+      preLoaderRoute: typeof NccBulkRouteImport
       parentRoute: typeof NccRoute
     }
     '/ncc/bots': {
@@ -2426,6 +2445,7 @@ interface NccRouteChildren {
   NccAnalyticsRoute: typeof NccAnalyticsRoute
   NccAutomationRoute: typeof NccAutomationRoute
   NccBotsRoute: typeof NccBotsRoute
+  NccBulkRoute: typeof NccBulkRoute
   NccClientsRoute: typeof NccClientsRouteWithChildren
   NccEmailsRoute: typeof NccEmailsRoute
   NccEmployeesRoute: typeof NccEmployeesRoute
@@ -2449,6 +2469,7 @@ const NccRouteChildren: NccRouteChildren = {
   NccAnalyticsRoute: NccAnalyticsRoute,
   NccAutomationRoute: NccAutomationRoute,
   NccBotsRoute: NccBotsRoute,
+  NccBulkRoute: NccBulkRoute,
   NccClientsRoute: NccClientsRouteWithChildren,
   NccEmailsRoute: NccEmailsRoute,
   NccEmployeesRoute: NccEmployeesRoute,

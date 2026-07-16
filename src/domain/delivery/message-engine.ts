@@ -18,6 +18,11 @@ export interface DeliveryContext {
   order_ref: string;
   email: string;
   phone: string;
+  renew_url: string;
+  payment_url: string;
+  days_left: string;
+  amount_due: string;
+  currency: string;
 }
 
 export interface DeliveryTemplate {
@@ -42,6 +47,14 @@ export function buildDeliveryContext(input: {
   const d = input.delivery ?? {};
   const o = input.order ?? {};
   const c = input.customer ?? {};
+  const portal = (d.portal_link ?? "https://nexora-iptv.com/dashboard").toString();
+  const renew = (o?.metadata?.renew_url ?? portal ?? "https://nexora-iptv.com/dashboard").toString();
+  const payment = (o?.metadata?.checkout_url ?? o?.metadata?.payment_url ?? "https://nexora-iptv.com/dashboard").toString();
+  let daysLeft = "—";
+  if (d.expires_at) {
+    const diff = Math.ceil((new Date(d.expires_at).getTime() - Date.now()) / 86_400_000);
+    daysLeft = String(Math.max(0, diff));
+  }
   return {
     client_name: (c.full_name || o.full_name || (c.email ?? o.email ?? "").split("@")[0] || "Client").toString(),
     product_name: (o.plan_name ?? d.package ?? "Abonnement IPTV").toString(),
@@ -50,12 +63,17 @@ export function buildDeliveryContext(input: {
     package: (d.package ?? o.plan_name ?? "—").toString(),
     dns: (d.dns_link ?? "—").toString(),
     dns_samsung_lg: (d.dns_link_samsung_lg ?? d.dns_link ?? "—").toString(),
-    portal_link: (d.portal_link ?? "—").toString(),
+    portal_link: portal,
     expiration_date: fmtDate(d.expires_at),
     max_connections: (d.max_connections ?? "—").toString(),
     order_ref: (o.order_ref ?? "").toString(),
     email: (c.email ?? o.email ?? "").toString(),
     phone: (c.phone ?? "").toString(),
+    renew_url: renew,
+    payment_url: payment,
+    days_left: daysLeft,
+    amount_due: (o.amount ?? "—").toString(),
+    currency: (o.currency ?? "XAF").toString(),
   };
 }
 
@@ -84,4 +102,5 @@ export const TEMPLATE_VARIABLES = [
   "client_name", "product_name", "username", "password",
   "package", "dns", "dns_samsung_lg", "portal_link",
   "expiration_date", "max_connections", "order_ref", "email", "phone",
+  "renew_url", "payment_url", "days_left", "amount_due", "currency",
 ] as const;
