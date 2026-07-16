@@ -531,3 +531,123 @@ export const getDashboardKpis = createServerFn({ method: "GET" })
       revenue_currency,
     };
   });
+
+// ─── DASHBOARD OVERVIEW (revenue series + recent activity) ──────────────
+
+type ActivityKind = "order" | "payment" | "support" | "iptv" | "trial" | "customer";
+export interface DashboardOverview {
+  series: Array<{ date: string; revenue: number; orders: number }>;
+  activity: Array<{ id: string; kind: ActivityKind; who: string; what: string; when: string }>;
+}
+
+export const getDashboardOverview = createServerFn({ method: "GET" })
+  .middleware([requireNccUnlock])
+  .handler(async ({ context }): Promise<DashboardOverview> => {
+    const sb = await getAdminContext(context.userId);
+    const days = 30;
+    const sinceIso = new Date(Date.now() - days * 86400_000).toISOString();
+
+    const [ordersRes, eventsRes, iptvRes, ticketsRes] = await Promise.all([
+      sb.from("orders")
+        .select("id,order_ref,email,full_name,plan_name,amount,status,created_at")
+        .gte("created_at", sinceIso)
+        .order("created_at", { ascending: false })
+        .limit(200),
+      sb.from("customer_events")
+        .select("id,type,created_at,customer_id,customers(email,full_name)")
+        .order("created_at", { ascending: false })
+        .limit(20),
+      sb.from("iptv_logs")
+        .select("id,action,message,created_at")
+        .order("created_at", { ascending: false })
+        .limit(20),
+      sb.from("support_tickets")
+        .select("id,subject,email,status,created_at")
+        .order("created_at", { ascending: false })
+        .limit(10),
+    ]);
+
+    // Revenue series (30 days)
+    const buckets: Record<string, { revenue: number; orders: number }> = {};
+    for (let i = days - 1; i >= 0; i--) {
+      const d = new Date(); d.setUTCHours(0, 0, 0, 0); d.setUTCDate(d.getUTCDate() - i);
+      buckets[d.toISOString().slice(0, 10)] = { revenue: 0, orders: 0 };
+    }
+    for (const o of ordersRes.data ?? []) {
+      const k = new Date(o.created_at).toISOString().slice(0, 10);
+      if (!(k in buckets)) continue;
+      buckets[k].orders += 1;
+      if (o.status === "paid" || o.status === "completed") {
+        buckets[k].revenue += Number(o.amount ?? 0);
+      }
+    }
+    const series = Object.entries(buckets).map(([date, v]) => ({ date, ...v }));
+
+    // Activity feed — merge & sort by created_at desc
+    type Item = { id: string; kind: ActivityKind; who: string; what: string; when: string; ts: number };
+    const items: Item[] = [];
+    for (const o of (ordersRes.data ?? []).slice(0, 20)) {
+      const paid = o.status === "paid" || o.status === "completed";
+      items.push({
+        id: `order-${o.id}`,
+        kind: paid ? "payment" : "order",
+        who: o.full_name || o.email || "Client",
+        what: paid
+          ? `paiement confirmé · ${o.plan_name ?? o.order_ref ?? ""}`
+          : `nouvelle commande · ${o.plan_name ?? o.order_ref ?? ""}`,
+        when: o.created_at,
+        ts: new Date(o.created_at).getTime(),
+      });
+    }
+    for (const e of eventsRes.data ?? []) {
+      const c: any = (e as any).customers;
+      const who = c?.full_name || c?.email || "Client";
+      items.push({
+        id: `event-${e.id}`,
+        kind: "customer",
+        who,
+        what: `évènement client · ${e.type}`,
+        when: e.created_at,
+        ts: new Date(e.created_at).getTime(),
+      });
+    }
+    for (const l of iptvRes.data ?? []) {
+      items.push({
+        id: `iptv-${l.id}`,
+        kind: "iptv",
+        who: "IPTV",
+        what: l.message ? `${l.action} · ${l.message}` : l.action,
+        when: l.created_at,
+        ts: new Date(l.created_at).getTime(),
+      });
+    }
+    for (const t of ticketsRes.data ?? []) {
+      items.push({
+        id: `ticket-${t.id}`,
+        kind: "support",
+        who: t.email || "Support",
+        what: `ticket ${t.status} · ${t.subject}`,
+        when: t.created_at,
+        ts: new Date(t.created_at).getTime(),
+      });
+    }
+    items.sort((a, b) => b.ts - a.ts);
+    const activity = items.slice(0, 12).map(({ ts: _ts, ...rest }) => rest);
+
+    return { series, activity };
+  });
+
+// ─── RECENT NOTIFICATIONS (bell panel) ─────────────────────────────────
+
+export const listRecentNotifications = createServerFn({ method: "GET" })
+  .middleware([requireNccUnlock])
+  .handler(async ({ context }) => {
+    const sb = await getAdminContext(context.userId);
+    const { data, error } = await sb
+      .from("notifications")
+      .select("id,channel,recipient,subject,body,status,error,created_at,sent_at")
+      .order("created_at", { ascending: false })
+      .limit(20);
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  });
