@@ -172,6 +172,7 @@ async function sendEmail(sb: any, args: { subject: string; body: string; recipie
 const TargetSchema = z.object({
   kind: z.enum(["order", "iptv_account"]),
   id: z.string(),
+  label: z.string().nullable().optional(),
   customer_id: z.string().uuid().nullable().optional(),
   email: z.string().nullable().optional(),
   full_name: z.string().nullable().optional(),
