@@ -5,6 +5,7 @@ import {
   SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarHeader, SidebarFooter,
 } from "@/components/ui/sidebar";
 import { Badge } from "@/components/ui/badge";
+import nexoraBrand from "@/assets/nexora-brand.jpg.asset.json";
 
 const GROUP_ORDER: ModuleGroup[] = ["cockpit", "sales", "services", "ops", "system"];
 
@@ -18,7 +19,7 @@ export function NccSidebar() {
       <SidebarHeader className="px-3 py-4">
         <div className="flex items-center gap-2">
           <img
-            src="/pwa-192.png"
+            src={nexoraBrand.url}
             alt="Nexora"
             className="h-8 w-8 rounded-md object-cover"
           />
