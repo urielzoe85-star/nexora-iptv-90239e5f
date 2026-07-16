@@ -47,6 +47,11 @@ export function FloatingWhatsApp() {
             "radial-gradient(circle at 30% 20%, #00B2FF 0%, #006AFF 40%, #A033FF 75%, #FF5285 100%)",
         }}
       >
+        <span
+          aria-hidden
+          className="absolute inset-0 rounded-full animate-ping opacity-40"
+          style={{ backgroundColor: "#0084FF" }}
+        />
         <svg
           viewBox="0 0 32 32"
           className="relative h-8 w-8 md:h-9 md:w-9"
