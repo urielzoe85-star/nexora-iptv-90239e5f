@@ -109,6 +109,201 @@ Un conseiller VIP vous accompagne 7j/7.
   },
 ];
 
+// ────────────────────────────────────────────────────────────────────────────
+// Templates de relance (bulk) — livraison, renouvellement, paiement.
+// Chaque template a une clé `scenario` pour le filtrage dans la page bulk.
+// ────────────────────────────────────────────────────────────────────────────
+export type BulkScenario = "delivery" | "renewal" | "payment_reminder";
+
+export interface BulkTemplate extends DeliveryTemplate {
+  scenario: BulkScenario;
+}
+
+export const BULK_TEMPLATES: BulkTemplate[] = [
+  // ── LIVRAISON ────────────────────────────────────────────────────────────
+  {
+    id: "delivery_fr",
+    name: "Livraison — FR",
+    scenario: "delivery",
+    channel: "any",
+    language: "fr",
+    subject: "Vos accès NEXORA IPTV — {{order_ref}}",
+    body:
+`Bonjour {{client_name}} 👋
+
+Voici (ou re-voici) vos accès NEXORA IPTV pour {{product_name}} :
+
+🔐 Username : {{username}}
+🔑 Password : {{password}}
+🌐 DNS      : {{dns}}
+📅 Expire le : {{expiration_date}}
+👥 Connexions max : {{max_connections}}
+
+Portail client : {{portal_link}}
+
+Une question ? Répondez à ce message, notre équipe vous répond.
+— L'équipe NEXORA`,
+  },
+  {
+    id: "delivery_en",
+    name: "Delivery — EN",
+    scenario: "delivery",
+    channel: "any",
+    language: "en",
+    subject: "Your NEXORA IPTV credentials — {{order_ref}}",
+    body:
+`Hi {{client_name}} 👋
+
+Here are your NEXORA IPTV credentials for {{product_name}}:
+
+🔐 Username: {{username}}
+🔑 Password: {{password}}
+🌐 DNS:      {{dns}}
+📅 Expires:  {{expiration_date}}
+👥 Max devices: {{max_connections}}
+
+Client portal: {{portal_link}}
+
+Reply to this message if you need any help.
+— The NEXORA Team`,
+  },
+
+  // ── RENOUVELLEMENT ──────────────────────────────────────────────────────
+  {
+    id: "renewal_j7_fr",
+    name: "Renouvellement J-7 — FR",
+    scenario: "renewal",
+    channel: "any",
+    language: "fr",
+    subject: "Votre abonnement NEXORA expire dans {{days_left}} jours",
+    body:
+`Bonjour {{client_name}},
+
+Votre abonnement {{product_name}} arrive à échéance le {{expiration_date}} (dans {{days_left}} jours).
+
+Pour éviter toute coupure, renouvelez dès maintenant :
+👉 {{renew_url}}
+
+Compte concerné : {{username}}
+
+Merci de votre confiance !
+— L'équipe NEXORA`,
+  },
+  {
+    id: "renewal_j3_fr",
+    name: "Renouvellement J-3 — FR",
+    scenario: "renewal",
+    channel: "any",
+    language: "fr",
+    subject: "⏰ Plus que {{days_left}} jours avant coupure — NEXORA IPTV",
+    body:
+`Bonjour {{client_name}},
+
+⏰ Rappel important : votre abonnement {{product_name}} expire le {{expiration_date}} (dans {{days_left}} jours seulement).
+
+Renouvelez en 1 clic : {{renew_url}}
+
+Compte : {{username}}
+
+— NEXORA`,
+  },
+  {
+    id: "renewal_j1_fr",
+    name: "Renouvellement J-1 — FR",
+    scenario: "renewal",
+    channel: "any",
+    language: "fr",
+    subject: "🚨 Dernière chance — votre IPTV expire demain",
+    body:
+`{{client_name}}, dernière alerte 🚨
+
+Votre abonnement {{product_name}} ({{username}}) expire DEMAIN ({{expiration_date}}).
+
+Renouvelez maintenant pour éviter la coupure :
+👉 {{renew_url}}
+
+— NEXORA`,
+  },
+  {
+    id: "renewal_j7_en",
+    name: "Renewal J-7 — EN",
+    scenario: "renewal",
+    channel: "any",
+    language: "en",
+    subject: "Your NEXORA subscription expires in {{days_left}} days",
+    body:
+`Hi {{client_name}},
+
+Your {{product_name}} subscription expires on {{expiration_date}} (in {{days_left}} days).
+
+Renew now to avoid any interruption:
+👉 {{renew_url}}
+
+Account: {{username}}
+
+— The NEXORA Team`,
+  },
+
+  // ── RELANCE PAIEMENT ────────────────────────────────────────────────────
+  {
+    id: "payment_reminder_fr",
+    name: "Relance paiement — FR",
+    scenario: "payment_reminder",
+    channel: "any",
+    language: "fr",
+    subject: "Votre commande {{order_ref}} est en attente de paiement",
+    body:
+`Bonjour {{client_name}},
+
+Nous avons bien reçu votre commande {{order_ref}} ({{product_name}}) — {{amount_due}} {{currency}} — mais le paiement n'est pas encore confirmé.
+
+Finalisez votre paiement pour activer votre abonnement :
+👉 {{payment_url}}
+
+Si vous avez déjà payé, ignorez ce message ou envoyez-nous la preuve.
+— L'équipe NEXORA`,
+  },
+  {
+    id: "payment_reminder_final_fr",
+    name: "Relance paiement — Dernier rappel FR",
+    scenario: "payment_reminder",
+    channel: "any",
+    language: "fr",
+    subject: "⏳ Dernier rappel — commande {{order_ref}}",
+    body:
+`{{client_name}},
+
+⏳ Votre commande {{order_ref}} attend toujours votre paiement ({{amount_due}} {{currency}}).
+Elle sera annulée automatiquement dans 24 h.
+
+Payez maintenant : {{payment_url}}
+
+— NEXORA`,
+  },
+  {
+    id: "payment_reminder_en",
+    name: "Payment reminder — EN",
+    scenario: "payment_reminder",
+    channel: "any",
+    language: "en",
+    subject: "Your order {{order_ref}} is awaiting payment",
+    body:
+`Hi {{client_name}},
+
+We received your order {{order_ref}} ({{product_name}}) — {{amount_due}} {{currency}} — but payment is not confirmed yet.
+
+Complete your payment to activate your subscription:
+👉 {{payment_url}}
+
+If you already paid, please ignore or reply with the proof.
+— The NEXORA Team`,
+  },
+];
+
+export function getBulkTemplate(id: string): BulkTemplate | undefined {
+  return BULK_TEMPLATES.find((t) => t.id === id);
+}
+
 export function getTemplate(id: string): DeliveryTemplate | undefined {
   return BUILTIN_TEMPLATES.find((t) => t.id === id);
 }
