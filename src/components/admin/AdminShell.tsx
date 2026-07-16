@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/sonner";
+import nexoraBrand from "@/assets/nexora-brand.jpg.asset.json";
 
 const items = [
   { to: "/admin", label: "Vue d'ensemble", icon: LayoutDashboard, exact: true },
@@ -40,7 +41,7 @@ export function AdminShell({ children, email }: { children: ReactNode; email?: s
           <SidebarHeader className="px-3 py-4">
             <div className="flex items-center gap-2">
               <img
-                src="/pwa-192.png"
+                src={nexoraBrand.url}
                 alt="Nexora"
                 className="h-8 w-8 rounded-md object-cover"
               />
