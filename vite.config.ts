@@ -6,6 +6,7 @@
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 import { mcpPlugin } from "@lovable.dev/mcp-js/stacks/tanstack/vite";
+import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig({
   tanstackStart: {
@@ -14,6 +15,64 @@ export default defineConfig({
     server: { entry: "server" },
   },
   vite: {
-    plugins: [mcpPlugin()],
+    plugins: [
+      mcpPlugin(),
+      VitePWA({
+        strategies: "generateSW",
+        registerType: "autoUpdate",
+        injectRegister: null,
+        filename: "sw.js",
+        manifest: false,
+        devOptions: { enabled: false },
+        workbox: {
+          navigateFallback: "/",
+          navigateFallbackDenylist: [
+            /^\/api\//,
+            /^\/~oauth/,
+            /^\/sitemap\.xml/,
+            /^\/robots\.txt/,
+          ],
+          globPatterns: ["**/*.{js,css,html,ico,png,svg,webp,woff2}"],
+          cleanupOutdatedCaches: true,
+          clientsClaim: true,
+          skipWaiting: false,
+          runtimeCaching: [
+            {
+              urlPattern: ({ request }) => request.mode === "navigate",
+              handler: "NetworkFirst",
+              options: {
+                cacheName: "nexora-html",
+                networkTimeoutSeconds: 4,
+                expiration: { maxEntries: 40, maxAgeSeconds: 60 * 60 * 24 },
+              },
+            },
+            {
+              urlPattern: ({ url, sameOrigin }) => sameOrigin && /\.(?:js|css|woff2)$/.test(url.pathname),
+              handler: "CacheFirst",
+              options: {
+                cacheName: "nexora-assets",
+                expiration: { maxEntries: 120, maxAgeSeconds: 60 * 60 * 24 * 30 },
+              },
+            },
+            {
+              urlPattern: ({ url, sameOrigin }) => sameOrigin && /\.(?:png|jpg|jpeg|webp|svg|ico)$/.test(url.pathname),
+              handler: "CacheFirst",
+              options: {
+                cacheName: "nexora-images",
+                expiration: { maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 30 },
+              },
+            },
+            {
+              urlPattern: ({ url }) => url.origin === "https://fonts.gstatic.com",
+              handler: "CacheFirst",
+              options: {
+                cacheName: "google-fonts",
+                expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 365 },
+              },
+            },
+          ],
+        },
+      }),
+    ],
   },
 });

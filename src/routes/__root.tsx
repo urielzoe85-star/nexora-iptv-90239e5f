@@ -13,6 +13,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { I18nProvider, useT } from "../i18n/context";
 import { FloatingWhatsApp } from "../components/FloatingWhatsApp";
+import { PwaManager } from "../components/pwa/PwaManager";
 
 function NotFoundComponent() {
   const t = useT();
@@ -80,6 +81,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { title: "Nexora IPTV" },
       { name: "description", content: "Premium IPTV service with thousands of live channels, movies and series in HD/FHD/4K." },
       { name: "author", content: "Nexora IPTV" },
+      { name: "theme-color", content: "#4F46E5" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
+      { name: "apple-mobile-web-app-title", content: "Nexora" },
+      { name: "mobile-web-app-capable", content: "yes" },
       { property: "og:site_name", content: "Nexora IPTV" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -95,6 +101,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: appCss,
       },
+      { rel: "manifest", href: "/manifest.webmanifest" },
+      { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
+      { rel: "icon", type: "image/png", sizes: "32x32", href: "/favicon-32.png" },
+      { rel: "icon", type: "image/png", sizes: "16x16", href: "/favicon-16.png" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700;800&display=swap" },
@@ -163,6 +173,7 @@ function RootComponent() {
         {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
         <Outlet />
         <FloatingWhatsApp />
+        <PwaManager />
       </I18nProvider>
     </QueryClientProvider>
   );
