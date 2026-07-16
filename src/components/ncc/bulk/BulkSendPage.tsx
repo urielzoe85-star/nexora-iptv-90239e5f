@@ -61,7 +61,7 @@ export function BulkSendPage() {
 
   const targets = useQuery({
     queryKey: ["bulk", "targets", scenario, days],
-    queryFn: () => listTargetsFn({ data: { scenario, days, limit: 200 } }),
+    queryFn: () => listTargetsFn({ data: { scenario, days, limit: 200 } }) as Promise<any[]>,
   });
 
   const toggleChannel = (ch: DeliveryChannel) => {
