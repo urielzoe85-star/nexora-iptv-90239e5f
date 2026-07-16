@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, Users, Package, ShoppingBag, CreditCard, Tv2, Gift,
   Bot, MessageCircle, Send, Mail, Bell, LifeBuoy, BarChart3, UserCog, Workflow,
-  ScrollText, Settings, UserCircle, Images,
+  ScrollText, Settings, UserCircle, Images, Megaphone,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -46,6 +46,7 @@ export const NCC_MODULES: NccModule[] = [
   { id: "whatsapp", label: "WhatsApp", description: "Conversations & campagnes WhatsApp.", icon: MessageCircle, to: "/ncc/whatsapp", group: "services", status: "ready" },
   { id: "telegram", label: "Telegram", description: "Bots et diffusions Telegram.", icon: Send, to: "/ncc/telegram", group: "services", status: "ready" },
   { id: "emails", label: "Emails", description: "Historique des emails transactionnels.", icon: Mail, to: "/ncc/emails", group: "services", status: "ready" },
+  { id: "bulk", label: "Envoi en masse", description: "Relance par lot (livraison, renouvellement, paiement) — WhatsApp, Telegram, Email.", icon: Megaphone, to: "/ncc/bulk", group: "services", status: "ready" },
 
   { id: "support", label: "Support", description: "Tickets et helpdesk client.", icon: LifeBuoy, to: "/ncc/support", group: "ops", status: "ready" },
   { id: "employees", label: "Employés", description: "Comptes internes, rôles, permissions.", icon: UserCog, to: "/ncc/employees", group: "ops", status: "ready" },
