@@ -60,7 +60,6 @@ export async function registerPwa(onUpdateAvailable?: PwaUpdateListener): Promis
     const { Workbox } = await import("workbox-window");
     const wb = new Workbox("/sw.js", { scope: "/" });
     wb.addEventListener("waiting", () => onUpdateAvailable?.(wb));
-    wb.addEventListener("externalwaiting", () => onUpdateAvailable?.(wb));
     await wb.register();
   } catch (err) {
     console.warn("[pwa] registration failed", err);
