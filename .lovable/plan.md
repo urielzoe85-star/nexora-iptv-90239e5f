@@ -1,58 +1,36 @@
-# Templates multi-canal + Envoi en masse (bulk)
+## Objectif
 
-Objectif : disposer de **messages pré-rédigés** — équivalents aux templates email — utilisables sur WhatsApp / Telegram / Email pour 3 scénarios de relance, avec **envoi en masse** depuis le NCC.
+Remplacer le favicon et le logo Nexora par la nouvelle image fournie (marque "N" dorée sur fond bleu avec le mot NEXORA et le tagline "INNOVATE · CONNECT · EMPOWER"), sur toute l'application et la PWA. Le provider push reste **différé** — on le finalisera plus tard sur **Firebase Cloud Messaging (FCM)**, choix déjà adapté à NCC (gratuit, multi-plateforme Web/Android/iOS, fiable, s'intègre avec le service worker PWA déjà en place).
 
-## 1. Trois nouveaux templates (FR + EN chacun)
+## Étapes
 
-Ajoutés dans `src/domain/delivery/builtin-templates.ts` (moteur `message-engine.ts` déjà en place, réutilise les mêmes variables `{{client_name}}`, `{{username}}`, `{{expiration_date}}`, `{{order_ref}}`, `{{portal_link}}`, etc.) :
+1. **Uploader la nouvelle image en asset CDN**
+   - `lovable-assets create` depuis `/mnt/user-uploads/5C85511D-...jpeg` → `src/assets/nexora-brand.jpg.asset.json` (logo complet avec texte, pour les écrans où on affiche la marque).
+   - Générer une version carrée "mark only" (juste le "N" doré sur fond bleu) pour les icônes PWA/favicon via `imagegen--edit_image` à partir de l'upload → asset CDN `src/assets/nexora-icon.jpg.asset.json`.
 
-- **`delivery_*`** — Livraison des accès (relance client qui n'a pas reçu / redemande ses infos). Réutilise le contexte accès complet.
-- **`renewal_j7`, `renewal_j3`, `renewal_j1`** — Rappels de renouvellement avant expiration, avec CTA `{{renew_url}}` (nouvelle variable ajoutée au `DeliveryContext`, dérivée de `portal_link`).
-- **`payment_reminder_*`** — Relance paiement en attente (commande créée non payée), avec `{{payment_url}}` (déduit de `order.metadata.checkout_url` sinon lien portail).
+2. **Régénérer les icônes PWA & favicons dans `public/`**
+   - `public/favicon.ico`, `favicon-16.png`, `favicon-32.png`
+   - `public/apple-touch-icon.png` (180×180)
+   - `public/pwa-192.png`, `pwa-512.png`
+   - `public/pwa-maskable-512.png` (avec safe zone : "N" centré, marges élargies pour Android maskable)
+   
+   Sources dérivées de la nouvelle image "mark only" pour rester lisibles à petite taille.
 
-Chaque template a une version WhatsApp/Telegram (courte, emojis discrets) + une variante Email (sujet + corps plus long). Ils utilisent la même clé pour que le sélecteur du composer les retrouve.
+3. **Remplacer le logo dans l'UI**
+   - `src/components/admin/AdminShell.tsx` : remplacer `/pwa-192.png` par l'asset logo complet.
+   - `src/components/ncc/NccSidebar.tsx` : idem.
+   - Vérifier autres emplacements (`FloatingWhatsApp`, header public, footer) et harmoniser si le logo Nexora y apparaît.
 
-## 2. Extension du contexte de rendu
+4. **Metadata**
+   - `manifest.webmanifest` : conserver les chemins `/pwa-*.png` (les fichiers sont juste remplacés).
+   - `__root.tsx` : `theme_color` et liens `apple-touch-icon` / favicons inchangés (mêmes chemins).
 
-`buildDeliveryContext` dans `src/domain/delivery/message-engine.ts` : ajouter `renew_url`, `payment_url`, `days_left`, `amount_due`, `currency`. Rétro-compatible (valeurs `—` par défaut).
+5. **Push notifications**
+   - **Aucun changement de code maintenant.** Décision consignée : provider = **Firebase Cloud Messaging (FCM)**, à activer plus tard quand ton compte Firebase sera prêt (VAPID key + `firebase-messaging-sw.js` + config projet).
 
-## 3. Page « Envoi en masse » dans le NCC
+## Détails techniques
 
-Nouvelle route `src/routes/ncc.bulk.tsx` + page `src/components/ncc/bulk/BulkSendPage.tsx` :
-
-- **Sélection de la cible** :
-  - Scénario `delivery` → commandes payées récentes
-  - Scénario `renewal` → abonnements expirant dans N jours (7/3/1) via `iptv_accounts.expires_at`
-  - Scénario `payment_reminder` → commandes `pending_payment` > X heures
-- **Choix du template** (parmi ceux du bloc 1, filtrés par scénario) + **preview** rendu avec la 1ʳᵉ ligne cochée.
-- **Choix des canaux** (checkboxes WhatsApp / Telegram / Email — multi).
-- **Table** des destinataires cochables avec colonnes : client, contact WA/TG/email dispo, statut. Case « tout sélectionner ».
-- **Bouton « Envoyer »** → confirmation modale (nombre de messages, canaux, coût estimé Meta).
-
-## 4. Server function `bulkSendMessages`
-
-Nouveau fichier `src/lib/bulk-send.functions.ts` (protégé par `requireNccUnlock`) :
-
-- Input : `{ template_id, channels[], target_ids[], scenario }`.
-- Pour chaque cible : construit le contexte, rend le template, appelle en interne `sendWhatsAppAuto` / `sendTelegramAuto` / `sendEmailAuto` (déjà existants dans `src/lib/delivery.functions.ts`).
-- Throttle : 5 messages/seconde côté serveur pour respecter les quotas Meta.
-- Retourne un résumé `{ sent, failed, skipped, errors[] }` — affiché en toast + résumé après envoi.
-- Chaque envoi est déjà loggé dans `delivery_logs` par les fonctions unitaires → traçabilité gratuite dans **NCC → Notifications**.
-
-## 5. Cible de la sidebar
-
-Ajouter une entrée « Envoi en masse » dans `src/components/ncc/NccSidebar.tsx` (icône `Megaphone`) pointant vers `/ncc/bulk`.
-
-## Fichiers touchés
-
-- `src/domain/delivery/builtin-templates.ts` (ajout templates)
-- `src/domain/delivery/message-engine.ts` (contexte étendu)
-- `src/lib/bulk-send.functions.ts` (nouveau — server fn)
-- `src/components/ncc/bulk/BulkSendPage.tsx` (nouveau — UI)
-- `src/routes/ncc.bulk.tsx` (nouveau)
-- `src/components/ncc/NccSidebar.tsx` (lien menu)
-
-## Hors scope (à demander si besoin plus tard)
-
-- Programmation (cron) automatique des rappels J-7/J-3/J-1 : déjà partiellement géré par `payment-confirmed` + `iptv-renewal-reminder` email — bulk = envoi **manuel** à la demande.
-- Éditeur visuel de templates (les templates restent en code).
+- Icônes PWA générées en PNG carré 512×512 puis redimensionnées ; version maskable avec ~20% de padding autour du "N" pour respecter la safe zone Android.
+- Favicon `.ico` multi-tailles (16/32/48) généré depuis le PNG 512 pour rester net sur onglet navigateur.
+- Les composants qui affichaient `/pwa-192.png` comme logo passent à l'import de l'asset JSON complet (`nexora-brand.jpg.asset.json`) pour éviter la duplication et bénéficier du CDN.
+- Aucun changement de logique métier, d'auth, de RLS ou de routes.
