@@ -39,9 +39,11 @@ export function AdminShell({ children, email }: { children: ReactNode; email?: s
         <Sidebar collapsible="icon">
           <SidebarHeader className="px-3 py-4">
             <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-md bg-primary/15 flex items-center justify-center">
-                <Shield className="h-4 w-4 text-primary" />
-              </div>
+              <img
+                src="/pwa-192.png"
+                alt="Nexora"
+                className="h-8 w-8 rounded-md object-cover"
+              />
               <div className="flex flex-col">
                 <span className="font-semibold text-sm">Nexora Admin</span>
                 <span className="text-[10px] text-muted-foreground truncate max-w-[140px]">{email ?? ""}</span>
