@@ -58,6 +58,17 @@ export const Route = createFileRoute("/")({
   component: NexoraLanding,
 });
 
+function isPortalHost() {
+  return typeof window !== "undefined" && window.location.hostname === PORTAL_HOST;
+}
+
+function PortalClientLink({ className, onClick, children }: { className?: string; onClick?: () => void; children: ReactNode }) {
+  if (isPortalHost()) {
+    return <Link to="/espace-client" className={className} onClick={onClick}>{children}</Link>;
+  }
+  return <a href={`${PORTAL_BASE_URL}/espace-client`} className={className} onClick={onClick}>{children}</a>;
+}
+
 export function NexoraLanding() {
   return (
     <div className="min-h-screen bg-background text-foreground">
