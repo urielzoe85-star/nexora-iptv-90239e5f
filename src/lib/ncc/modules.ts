@@ -1,12 +1,12 @@
 import {
   LayoutDashboard, Users, Package, ShoppingBag, CreditCard, Tv2, Gift,
   Bot, MessageCircle, Send, Mail, Bell, LifeBuoy, BarChart3, UserCog, Workflow,
-  ScrollText, Settings, UserCircle, Images, Megaphone,
+  ScrollText, Settings, UserCircle, Images, Megaphone, FileText, FolderTree, Tags,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 export type ModuleStatus = "ready" | "preparing";
-export type ModuleGroup = "cockpit" | "sales" | "services" | "ops" | "system";
+export type ModuleGroup = "cockpit" | "sales" | "services" | "content" | "ops" | "system";
 
 export type NccModule = {
   id: string;
@@ -23,6 +23,7 @@ export const GROUP_LABELS: Record<ModuleGroup, string> = {
   cockpit: "Cockpit",
   sales: "Ventes",
   services: "Services",
+  content: "Contenu",
   ops: "Opérations",
   system: "Système",
 };
@@ -47,6 +48,10 @@ export const NCC_MODULES: NccModule[] = [
   { id: "telegram", label: "Telegram", description: "Bots et diffusions Telegram.", icon: Send, to: "/ncc/telegram", group: "services", status: "ready" },
   { id: "emails", label: "Emails", description: "Historique des emails transactionnels.", icon: Mail, to: "/ncc/emails", group: "services", status: "ready" },
   { id: "bulk", label: "Envoi en masse", description: "Relance par lot (livraison, renouvellement, paiement) — WhatsApp, Telegram, Email.", icon: Megaphone, to: "/ncc/bulk", group: "services", status: "ready" },
+
+  { id: "blog", label: "Blog", description: "Rédaction, planification et publication des articles.", icon: FileText, to: "/ncc/blog", group: "content", status: "ready" },
+  { id: "blog-categories", label: "Catégories", description: "Organisation thématique du blog.", icon: FolderTree, to: "/ncc/blog/categories", group: "content", status: "ready" },
+  { id: "blog-tags", label: "Tags", description: "Mots-clés transverses des articles.", icon: Tags, to: "/ncc/blog/tags", group: "content", status: "ready" },
 
   { id: "support", label: "Support", description: "Tickets et helpdesk client.", icon: LifeBuoy, to: "/ncc/support", group: "ops", status: "ready" },
   { id: "employees", label: "Employés", description: "Comptes internes, rôles, permissions.", icon: UserCog, to: "/ncc/employees", group: "ops", status: "ready" },
