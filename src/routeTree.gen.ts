@@ -31,6 +31,7 @@ import { Route as NccIndexRouteImport } from './routes/ncc.index'
 import { Route as FrIndexRouteImport } from './routes/fr.index'
 import { Route as EspaceClientIndexRouteImport } from './routes/espace-client.index'
 import { Route as EnIndexRouteImport } from './routes/en.index'
+import { Route as BlogIndexRouteImport } from './routes/blog.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as ProduitsSlugRouteImport } from './routes/produits.$slug'
 import { Route as PaymentSuccessRouteImport } from './routes/payment.success'
@@ -72,6 +73,7 @@ import { Route as EspaceClientAnnouncementsRouteImport } from './routes/espace-c
 import { Route as EnGuideIptvRouteImport } from './routes/en.guide-iptv'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as BlogBestIptv2026RouteImport } from './routes/blog.best-iptv-2026'
+import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as AdminPlansRouteImport } from './routes/admin.plans'
 import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
@@ -106,6 +108,7 @@ import { Route as NccBlogIdRouteImport } from './routes/ncc.blog.$id'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as EspaceClientSuccessRefRouteImport } from './routes/espace-client.success.$ref'
 import { Route as EspaceClientPayRefRouteImport } from './routes/espace-client.pay.$ref'
+import { Route as BlogCategorieSlugRouteImport } from './routes/blog.categorie.$slug'
 import { Route as ApiPublicCspReportRouteImport } from './routes/api/public/csp-report'
 import { Route as ApiPublicCamerpaySelftestRouteImport } from './routes/api/public/camerpay-selftest'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
@@ -240,6 +243,11 @@ const EnIndexRoute = EnIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => EnRoute,
+} as any)
+const BlogIndexRoute = BlogIndexRouteImport.update({
+  id: '/blog/',
+  path: '/blog/',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
@@ -448,6 +456,11 @@ const BlogBestIptv2026Route = BlogBestIptv2026RouteImport.update({
   path: '/blog/best-iptv-2026',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BlogSlugRoute = BlogSlugRouteImport.update({
+  id: '/blog/$slug',
+  path: '/blog/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminPlansRoute = AdminPlansRouteImport.update({
   id: '/plans',
   path: '/plans',
@@ -620,6 +633,11 @@ const EspaceClientPayRefRoute = EspaceClientPayRefRouteImport.update({
   path: '/pay/$ref',
   getParentRoute: () => EspaceClientRoute,
 } as any)
+const BlogCategorieSlugRoute = BlogCategorieSlugRouteImport.update({
+  id: '/blog/categorie/$slug',
+  path: '/blog/categorie/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicCspReportRoute = ApiPublicCspReportRouteImport.update({
   id: '/api/public/csp-report',
   path: '/api/public/csp-report',
@@ -784,6 +802,7 @@ export interface FileRoutesByFullPath {
   '/admin/login': typeof AdminLoginRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/plans': typeof AdminPlansRoute
+  '/blog/$slug': typeof BlogSlugRoute
   '/blog/best-iptv-2026': typeof BlogBestIptv2026Route
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/en/guide-iptv': typeof EnGuideIptvRoute
@@ -825,6 +844,7 @@ export interface FileRoutesByFullPath {
   '/payment/success': typeof PaymentSuccessRoute
   '/produits/$slug': typeof ProduitsSlugRoute
   '/admin/': typeof AdminIndexRoute
+  '/blog/': typeof BlogIndexRoute
   '/en/': typeof EnIndexRoute
   '/espace-client/': typeof EspaceClientIndexRoute
   '/fr/': typeof FrIndexRoute
@@ -833,6 +853,7 @@ export interface FileRoutesByFullPath {
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/public/camerpay-selftest': typeof ApiPublicCamerpaySelftestRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
+  '/blog/categorie/$slug': typeof BlogCategorieSlugRoute
   '/espace-client/pay/$ref': typeof EspaceClientPayRefRoute
   '/espace-client/success/$ref': typeof EspaceClientSuccessRefRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
@@ -902,6 +923,7 @@ export interface FileRoutesByTo {
   '/admin/login': typeof AdminLoginRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/plans': typeof AdminPlansRoute
+  '/blog/$slug': typeof BlogSlugRoute
   '/blog/best-iptv-2026': typeof BlogBestIptv2026Route
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/en/guide-iptv': typeof EnGuideIptvRoute
@@ -941,6 +963,7 @@ export interface FileRoutesByTo {
   '/payment/success': typeof PaymentSuccessRoute
   '/produits/$slug': typeof ProduitsSlugRoute
   '/admin': typeof AdminIndexRoute
+  '/blog': typeof BlogIndexRoute
   '/en': typeof EnIndexRoute
   '/espace-client': typeof EspaceClientIndexRoute
   '/fr': typeof FrIndexRoute
@@ -949,6 +972,7 @@ export interface FileRoutesByTo {
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/public/camerpay-selftest': typeof ApiPublicCamerpaySelftestRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
+  '/blog/categorie/$slug': typeof BlogCategorieSlugRoute
   '/espace-client/pay/$ref': typeof EspaceClientPayRefRoute
   '/espace-client/success/$ref': typeof EspaceClientSuccessRefRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
@@ -1024,6 +1048,7 @@ export interface FileRoutesById {
   '/admin/login': typeof AdminLoginRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/plans': typeof AdminPlansRoute
+  '/blog/$slug': typeof BlogSlugRoute
   '/blog/best-iptv-2026': typeof BlogBestIptv2026Route
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/en/guide-iptv': typeof EnGuideIptvRoute
@@ -1065,6 +1090,7 @@ export interface FileRoutesById {
   '/payment/success': typeof PaymentSuccessRoute
   '/produits/$slug': typeof ProduitsSlugRoute
   '/admin/': typeof AdminIndexRoute
+  '/blog/': typeof BlogIndexRoute
   '/en/': typeof EnIndexRoute
   '/espace-client/': typeof EspaceClientIndexRoute
   '/fr/': typeof FrIndexRoute
@@ -1073,6 +1099,7 @@ export interface FileRoutesById {
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/public/camerpay-selftest': typeof ApiPublicCamerpaySelftestRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
+  '/blog/categorie/$slug': typeof BlogCategorieSlugRoute
   '/espace-client/pay/$ref': typeof EspaceClientPayRefRoute
   '/espace-client/success/$ref': typeof EspaceClientSuccessRefRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
@@ -1149,6 +1176,7 @@ export interface FileRouteTypes {
     | '/admin/login'
     | '/admin/orders'
     | '/admin/plans'
+    | '/blog/$slug'
     | '/blog/best-iptv-2026'
     | '/email/unsubscribe'
     | '/en/guide-iptv'
@@ -1190,6 +1218,7 @@ export interface FileRouteTypes {
     | '/payment/success'
     | '/produits/$slug'
     | '/admin/'
+    | '/blog/'
     | '/en/'
     | '/espace-client/'
     | '/fr/'
@@ -1198,6 +1227,7 @@ export interface FileRouteTypes {
     | '/.mcp/invoke-tool/$tool'
     | '/api/public/camerpay-selftest'
     | '/api/public/csp-report'
+    | '/blog/categorie/$slug'
     | '/espace-client/pay/$ref'
     | '/espace-client/success/$ref'
     | '/lovable/email/suppression'
@@ -1267,6 +1297,7 @@ export interface FileRouteTypes {
     | '/admin/login'
     | '/admin/orders'
     | '/admin/plans'
+    | '/blog/$slug'
     | '/blog/best-iptv-2026'
     | '/email/unsubscribe'
     | '/en/guide-iptv'
@@ -1306,6 +1337,7 @@ export interface FileRouteTypes {
     | '/payment/success'
     | '/produits/$slug'
     | '/admin'
+    | '/blog'
     | '/en'
     | '/espace-client'
     | '/fr'
@@ -1314,6 +1346,7 @@ export interface FileRouteTypes {
     | '/.mcp/invoke-tool/$tool'
     | '/api/public/camerpay-selftest'
     | '/api/public/csp-report'
+    | '/blog/categorie/$slug'
     | '/espace-client/pay/$ref'
     | '/espace-client/success/$ref'
     | '/lovable/email/suppression'
@@ -1388,6 +1421,7 @@ export interface FileRouteTypes {
     | '/admin/login'
     | '/admin/orders'
     | '/admin/plans'
+    | '/blog/$slug'
     | '/blog/best-iptv-2026'
     | '/email/unsubscribe'
     | '/en/guide-iptv'
@@ -1429,6 +1463,7 @@ export interface FileRouteTypes {
     | '/payment/success'
     | '/produits/$slug'
     | '/admin/'
+    | '/blog/'
     | '/en/'
     | '/espace-client/'
     | '/fr/'
@@ -1437,6 +1472,7 @@ export interface FileRouteTypes {
     | '/.mcp/invoke-tool/$tool'
     | '/api/public/camerpay-selftest'
     | '/api/public/csp-report'
+    | '/blog/categorie/$slug'
     | '/espace-client/pay/$ref'
     | '/espace-client/success/$ref'
     | '/lovable/email/suppression'
@@ -1506,6 +1542,7 @@ export interface RootRouteChildren {
   UnsubscribeRoute: typeof UnsubscribeRoute
   Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  BlogSlugRoute: typeof BlogSlugRoute
   BlogBestIptv2026Route: typeof BlogBestIptv2026Route
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   LegalNoticeRoute: typeof LegalNoticeRoute
@@ -1516,10 +1553,12 @@ export interface RootRouteChildren {
   PaymentFailedRoute: typeof PaymentFailedRoute
   PaymentSuccessRoute: typeof PaymentSuccessRoute
   ProduitsSlugRoute: typeof ProduitsSlugRoute
+  BlogIndexRoute: typeof BlogIndexRoute
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   ApiPublicCamerpaySelftestRoute: typeof ApiPublicCamerpaySelftestRoute
   ApiPublicCspReportRoute: typeof ApiPublicCspReportRoute
+  BlogCategorieSlugRoute: typeof BlogCategorieSlugRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ApiPublicAutomationEmitTestRoute: typeof ApiPublicAutomationEmitTestRoute
   ApiPublicAutomationProcessQueueRoute: typeof ApiPublicAutomationProcessQueueRoute
@@ -1698,6 +1737,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/en/'
       preLoaderRoute: typeof EnIndexRouteImport
       parentRoute: typeof EnRoute
+    }
+    '/blog/': {
+      id: '/blog/'
+      path: '/blog'
+      fullPath: '/blog/'
+      preLoaderRoute: typeof BlogIndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/admin/': {
       id: '/admin/'
@@ -1986,6 +2032,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BlogBestIptv2026RouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/blog/$slug': {
+      id: '/blog/$slug'
+      path: '/blog/$slug'
+      fullPath: '/blog/$slug'
+      preLoaderRoute: typeof BlogSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/plans': {
       id: '/admin/plans'
       path: '/plans'
@@ -2223,6 +2276,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/espace-client/pay/$ref'
       preLoaderRoute: typeof EspaceClientPayRefRouteImport
       parentRoute: typeof EspaceClientRoute
+    }
+    '/blog/categorie/$slug': {
+      id: '/blog/categorie/$slug'
+      path: '/blog/categorie/$slug'
+      fullPath: '/blog/categorie/$slug'
+      preLoaderRoute: typeof BlogCategorieSlugRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/public/csp-report': {
       id: '/api/public/csp-report'
@@ -2640,6 +2700,7 @@ const rootRouteChildren: RootRouteChildren = {
   Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
   Char91DotwellKnownChar93OauthProtectedResourceRoute:
     Char91DotwellKnownChar93OauthProtectedResourceRoute,
+  BlogSlugRoute: BlogSlugRoute,
   BlogBestIptv2026Route: BlogBestIptv2026Route,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   LegalNoticeRoute: LegalNoticeRoute,
@@ -2650,10 +2711,12 @@ const rootRouteChildren: RootRouteChildren = {
   PaymentFailedRoute: PaymentFailedRoute,
   PaymentSuccessRoute: PaymentSuccessRoute,
   ProduitsSlugRoute: ProduitsSlugRoute,
+  BlogIndexRoute: BlogIndexRoute,
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   ApiPublicCamerpaySelftestRoute: ApiPublicCamerpaySelftestRoute,
   ApiPublicCspReportRoute: ApiPublicCspReportRoute,
+  BlogCategorieSlugRoute: BlogCategorieSlugRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ApiPublicAutomationEmitTestRoute: ApiPublicAutomationEmitTestRoute,
   ApiPublicAutomationProcessQueueRoute: ApiPublicAutomationProcessQueueRoute,
