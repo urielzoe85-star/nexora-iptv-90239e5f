@@ -194,9 +194,13 @@ export const adminChangePostStatus = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
-    const patch: Record<string, unknown> = { status: data.status };
+    const patch: {
+      status: typeof data.status;
+      published_at?: string;
+      scheduled_at?: string | null;
+    } = { status: data.status };
     if (data.status === "published") patch.published_at = new Date().toISOString();
-    if (data.status === "scheduled") patch.scheduled_at = data.scheduled_at;
+    if (data.status === "scheduled") patch.scheduled_at = data.scheduled_at ?? null;
     const { error } = await supabaseAdmin.from("blog_posts").update(patch).eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
