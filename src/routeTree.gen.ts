@@ -99,6 +99,10 @@ import { Route as NccIptvExpiredRouteImport } from './routes/ncc.iptv.expired'
 import { Route as NccIptvDebugRouteImport } from './routes/ncc.iptv.debug'
 import { Route as NccIptvAccountsRouteImport } from './routes/ncc.iptv.accounts'
 import { Route as NccClientsIdRouteImport } from './routes/ncc.clients.$id'
+import { Route as NccBlogTagsRouteImport } from './routes/ncc.blog.tags'
+import { Route as NccBlogNewRouteImport } from './routes/ncc.blog.new'
+import { Route as NccBlogCategoriesRouteImport } from './routes/ncc.blog.categories'
+import { Route as NccBlogIdRouteImport } from './routes/ncc.blog.$id'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as EspaceClientSuccessRefRouteImport } from './routes/espace-client.success.$ref'
 import { Route as EspaceClientPayRefRouteImport } from './routes/espace-client.pay.$ref'
@@ -581,6 +585,26 @@ const NccClientsIdRoute = NccClientsIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => NccClientsRoute,
 } as any)
+const NccBlogTagsRoute = NccBlogTagsRouteImport.update({
+  id: '/blog/tags',
+  path: '/blog/tags',
+  getParentRoute: () => NccRoute,
+} as any)
+const NccBlogNewRoute = NccBlogNewRouteImport.update({
+  id: '/blog/new',
+  path: '/blog/new',
+  getParentRoute: () => NccRoute,
+} as any)
+const NccBlogCategoriesRoute = NccBlogCategoriesRouteImport.update({
+  id: '/blog/categories',
+  path: '/blog/categories',
+  getParentRoute: () => NccRoute,
+} as any)
+const NccBlogIdRoute = NccBlogIdRouteImport.update({
+  id: '/blog/$id',
+  path: '/blog/$id',
+  getParentRoute: () => NccRoute,
+} as any)
 const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
   id: '/lovable/email/suppression',
   path: '/lovable/email/suppression',
@@ -812,6 +836,10 @@ export interface FileRoutesByFullPath {
   '/espace-client/pay/$ref': typeof EspaceClientPayRefRoute
   '/espace-client/success/$ref': typeof EspaceClientSuccessRefRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/ncc/blog/$id': typeof NccBlogIdRoute
+  '/ncc/blog/categories': typeof NccBlogCategoriesRoute
+  '/ncc/blog/new': typeof NccBlogNewRoute
+  '/ncc/blog/tags': typeof NccBlogTagsRoute
   '/ncc/clients/$id': typeof NccClientsIdRoute
   '/ncc/iptv/accounts': typeof NccIptvAccountsRoute
   '/ncc/iptv/debug': typeof NccIptvDebugRoute
@@ -924,6 +952,10 @@ export interface FileRoutesByTo {
   '/espace-client/pay/$ref': typeof EspaceClientPayRefRoute
   '/espace-client/success/$ref': typeof EspaceClientSuccessRefRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/ncc/blog/$id': typeof NccBlogIdRoute
+  '/ncc/blog/categories': typeof NccBlogCategoriesRoute
+  '/ncc/blog/new': typeof NccBlogNewRoute
+  '/ncc/blog/tags': typeof NccBlogTagsRoute
   '/ncc/clients/$id': typeof NccClientsIdRoute
   '/ncc/iptv/accounts': typeof NccIptvAccountsRoute
   '/ncc/iptv/debug': typeof NccIptvDebugRoute
@@ -1044,6 +1076,10 @@ export interface FileRoutesById {
   '/espace-client/pay/$ref': typeof EspaceClientPayRefRoute
   '/espace-client/success/$ref': typeof EspaceClientSuccessRefRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/ncc/blog/$id': typeof NccBlogIdRoute
+  '/ncc/blog/categories': typeof NccBlogCategoriesRoute
+  '/ncc/blog/new': typeof NccBlogNewRoute
+  '/ncc/blog/tags': typeof NccBlogTagsRoute
   '/ncc/clients/$id': typeof NccClientsIdRoute
   '/ncc/iptv/accounts': typeof NccIptvAccountsRoute
   '/ncc/iptv/debug': typeof NccIptvDebugRoute
@@ -1165,6 +1201,10 @@ export interface FileRouteTypes {
     | '/espace-client/pay/$ref'
     | '/espace-client/success/$ref'
     | '/lovable/email/suppression'
+    | '/ncc/blog/$id'
+    | '/ncc/blog/categories'
+    | '/ncc/blog/new'
+    | '/ncc/blog/tags'
     | '/ncc/clients/$id'
     | '/ncc/iptv/accounts'
     | '/ncc/iptv/debug'
@@ -1277,6 +1317,10 @@ export interface FileRouteTypes {
     | '/espace-client/pay/$ref'
     | '/espace-client/success/$ref'
     | '/lovable/email/suppression'
+    | '/ncc/blog/$id'
+    | '/ncc/blog/categories'
+    | '/ncc/blog/new'
+    | '/ncc/blog/tags'
     | '/ncc/clients/$id'
     | '/ncc/iptv/accounts'
     | '/ncc/iptv/debug'
@@ -1396,6 +1440,10 @@ export interface FileRouteTypes {
     | '/espace-client/pay/$ref'
     | '/espace-client/success/$ref'
     | '/lovable/email/suppression'
+    | '/ncc/blog/$id'
+    | '/ncc/blog/categories'
+    | '/ncc/blog/new'
+    | '/ncc/blog/tags'
     | '/ncc/clients/$id'
     | '/ncc/iptv/accounts'
     | '/ncc/iptv/debug'
@@ -2127,6 +2175,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof NccClientsIdRouteImport
       parentRoute: typeof NccClientsRoute
     }
+    '/ncc/blog/tags': {
+      id: '/ncc/blog/tags'
+      path: '/blog/tags'
+      fullPath: '/ncc/blog/tags'
+      preLoaderRoute: typeof NccBlogTagsRouteImport
+      parentRoute: typeof NccRoute
+    }
+    '/ncc/blog/new': {
+      id: '/ncc/blog/new'
+      path: '/blog/new'
+      fullPath: '/ncc/blog/new'
+      preLoaderRoute: typeof NccBlogNewRouteImport
+      parentRoute: typeof NccRoute
+    }
+    '/ncc/blog/categories': {
+      id: '/ncc/blog/categories'
+      path: '/blog/categories'
+      fullPath: '/ncc/blog/categories'
+      preLoaderRoute: typeof NccBlogCategoriesRouteImport
+      parentRoute: typeof NccRoute
+    }
+    '/ncc/blog/$id': {
+      id: '/ncc/blog/$id'
+      path: '/blog/$id'
+      fullPath: '/ncc/blog/$id'
+      preLoaderRoute: typeof NccBlogIdRouteImport
+      parentRoute: typeof NccRoute
+    }
     '/lovable/email/suppression': {
       id: '/lovable/email/suppression'
       path: '/lovable/email/suppression'
@@ -2504,6 +2580,10 @@ interface NccRouteChildren {
   NccTrialsRoute: typeof NccTrialsRoute
   NccWhatsappRoute: typeof NccWhatsappRoute
   NccIndexRoute: typeof NccIndexRoute
+  NccBlogIdRoute: typeof NccBlogIdRoute
+  NccBlogCategoriesRoute: typeof NccBlogCategoriesRoute
+  NccBlogNewRoute: typeof NccBlogNewRoute
+  NccBlogTagsRoute: typeof NccBlogTagsRoute
   NccBlogIndexRoute: typeof NccBlogIndexRoute
 }
 
@@ -2529,6 +2609,10 @@ const NccRouteChildren: NccRouteChildren = {
   NccTrialsRoute: NccTrialsRoute,
   NccWhatsappRoute: NccWhatsappRoute,
   NccIndexRoute: NccIndexRoute,
+  NccBlogIdRoute: NccBlogIdRoute,
+  NccBlogCategoriesRoute: NccBlogCategoriesRoute,
+  NccBlogNewRoute: NccBlogNewRoute,
+  NccBlogTagsRoute: NccBlogTagsRoute,
   NccBlogIndexRoute: NccBlogIndexRoute,
 }
 
