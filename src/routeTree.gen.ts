@@ -82,6 +82,7 @@ import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } fr
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as NccSettingsIndexRouteImport } from './routes/ncc.settings.index'
 import { Route as NccIptvIndexRouteImport } from './routes/ncc.iptv.index'
+import { Route as NccBlogIndexRouteImport } from './routes/ncc.blog.index'
 import { Route as NccSettingsSectionRouteImport } from './routes/ncc.settings.$section'
 import { Route as NccPaymentsBinanceRouteImport } from './routes/ncc.payments.binance'
 import { Route as NccOrdersIdRouteImport } from './routes/ncc.orders.$id'
@@ -495,6 +496,11 @@ const NccIptvIndexRoute = NccIptvIndexRouteImport.update({
   path: '/',
   getParentRoute: () => NccIptvRoute,
 } as any)
+const NccBlogIndexRoute = NccBlogIndexRouteImport.update({
+  id: '/blog/',
+  path: '/blog/',
+  getParentRoute: () => NccRoute,
+} as any)
 const NccSettingsSectionRoute = NccSettingsSectionRouteImport.update({
   id: '/$section',
   path: '/$section',
@@ -822,6 +828,7 @@ export interface FileRoutesByFullPath {
   '/ncc/orders/$id': typeof NccOrdersIdRoute
   '/ncc/payments/binance': typeof NccPaymentsBinanceRoute
   '/ncc/settings/$section': typeof NccSettingsSectionRoute
+  '/ncc/blog/': typeof NccBlogIndexRoute
   '/ncc/iptv/': typeof NccIptvIndexRoute
   '/ncc/settings/': typeof NccSettingsIndexRoute
   '/api/public/automation/emit-test': typeof ApiPublicAutomationEmitTestRoute
@@ -933,6 +940,7 @@ export interface FileRoutesByTo {
   '/ncc/orders/$id': typeof NccOrdersIdRoute
   '/ncc/payments/binance': typeof NccPaymentsBinanceRoute
   '/ncc/settings/$section': typeof NccSettingsSectionRoute
+  '/ncc/blog': typeof NccBlogIndexRoute
   '/ncc/iptv': typeof NccIptvIndexRoute
   '/ncc/settings': typeof NccSettingsIndexRoute
   '/api/public/automation/emit-test': typeof ApiPublicAutomationEmitTestRoute
@@ -1052,6 +1060,7 @@ export interface FileRoutesById {
   '/ncc/orders/$id': typeof NccOrdersIdRoute
   '/ncc/payments/binance': typeof NccPaymentsBinanceRoute
   '/ncc/settings/$section': typeof NccSettingsSectionRoute
+  '/ncc/blog/': typeof NccBlogIndexRoute
   '/ncc/iptv/': typeof NccIptvIndexRoute
   '/ncc/settings/': typeof NccSettingsIndexRoute
   '/api/public/automation/emit-test': typeof ApiPublicAutomationEmitTestRoute
@@ -1172,6 +1181,7 @@ export interface FileRouteTypes {
     | '/ncc/orders/$id'
     | '/ncc/payments/binance'
     | '/ncc/settings/$section'
+    | '/ncc/blog/'
     | '/ncc/iptv/'
     | '/ncc/settings/'
     | '/api/public/automation/emit-test'
@@ -1283,6 +1293,7 @@ export interface FileRouteTypes {
     | '/ncc/orders/$id'
     | '/ncc/payments/binance'
     | '/ncc/settings/$section'
+    | '/ncc/blog'
     | '/ncc/iptv'
     | '/ncc/settings'
     | '/api/public/automation/emit-test'
@@ -1401,6 +1412,7 @@ export interface FileRouteTypes {
     | '/ncc/orders/$id'
     | '/ncc/payments/binance'
     | '/ncc/settings/$section'
+    | '/ncc/blog/'
     | '/ncc/iptv/'
     | '/ncc/settings/'
     | '/api/public/automation/emit-test'
@@ -1996,6 +2008,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof NccIptvIndexRouteImport
       parentRoute: typeof NccIptvRoute
     }
+    '/ncc/blog/': {
+      id: '/ncc/blog/'
+      path: '/blog'
+      fullPath: '/ncc/blog/'
+      preLoaderRoute: typeof NccBlogIndexRouteImport
+      parentRoute: typeof NccRoute
+    }
     '/ncc/settings/$section': {
       id: '/ncc/settings/$section'
       path: '/$section'
@@ -2485,6 +2504,7 @@ interface NccRouteChildren {
   NccTrialsRoute: typeof NccTrialsRoute
   NccWhatsappRoute: typeof NccWhatsappRoute
   NccIndexRoute: typeof NccIndexRoute
+  NccBlogIndexRoute: typeof NccBlogIndexRoute
 }
 
 const NccRouteChildren: NccRouteChildren = {
@@ -2509,6 +2529,7 @@ const NccRouteChildren: NccRouteChildren = {
   NccTrialsRoute: NccTrialsRoute,
   NccWhatsappRoute: NccWhatsappRoute,
   NccIndexRoute: NccIndexRoute,
+  NccBlogIndexRoute: NccBlogIndexRoute,
 }
 
 const NccRouteWithChildren = NccRoute._addFileChildren(NccRouteChildren)
