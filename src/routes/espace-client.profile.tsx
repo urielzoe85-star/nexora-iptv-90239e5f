@@ -7,6 +7,17 @@ import { COUNTRIES } from "@/lib/countries";
 import { Loader2, CheckCircle2 } from "lucide-react";
 
 export const Route = createFileRoute("/espace-client/profile")({
+  head: () => ({
+    meta: [
+      { title: 'Mon profil — Espace Client Nexora' },
+      { name: "description", content: 'Mettez à jour vos coordonnées, votre pays et vos préférences de contact.' },
+      { name: "robots", content: "noindex, nofollow" },
+      { property: "og:title", content: 'Mon profil — Espace Client Nexora' },
+      { property: "og:description", content: 'Mettez à jour vos coordonnées, votre pays et vos préférences de contact.' },
+      { property: "og:url", content: 'https://nexora-iptv.com/espace-client/profile' },
+    ],
+    links: [{ rel: "canonical", href: 'https://nexora-iptv.com/espace-client/profile' }],
+  }),
   component: ProfilePage,
 });
 

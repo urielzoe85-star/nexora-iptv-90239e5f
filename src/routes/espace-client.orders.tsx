@@ -4,6 +4,17 @@ import { useQuery } from "@tanstack/react-query";
 import { getPortalOrders } from "@/lib/portal.functions";
 
 export const Route = createFileRoute("/espace-client/orders")({
+  head: () => ({
+    meta: [
+      { title: 'Mes commandes — Espace Client Nexora' },
+      { name: "description", content: 'Historique et statut de vos commandes et paiements Nexora IPTV.' },
+      { name: "robots", content: "noindex, nofollow" },
+      { property: "og:title", content: 'Mes commandes — Espace Client Nexora' },
+      { property: "og:description", content: 'Historique et statut de vos commandes et paiements Nexora IPTV.' },
+      { property: "og:url", content: 'https://nexora-iptv.com/espace-client/orders' },
+    ],
+    links: [{ rel: "canonical", href: 'https://nexora-iptv.com/espace-client/orders' }],
+  }),
   component: OrdersPage,
 });
 

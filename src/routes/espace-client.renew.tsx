@@ -7,6 +7,17 @@ import { useState } from "react";
 import { RefreshCcw, Bitcoin, Smartphone, Loader2, CheckCircle2 } from "lucide-react";
 
 export const Route = createFileRoute("/espace-client/renew")({
+  head: () => ({
+    meta: [
+      { title: 'Renouveler mon abonnement — Nexora IPTV' },
+      { name: "description", content: 'Renouvelez votre abonnement Nexora IPTV en quelques clics via Mobile Money ou crypto.' },
+      { name: "robots", content: "noindex, nofollow" },
+      { property: "og:title", content: 'Renouveler mon abonnement — Nexora IPTV' },
+      { property: "og:description", content: 'Renouvelez votre abonnement Nexora IPTV en quelques clics via Mobile Money ou crypto.' },
+      { property: "og:url", content: 'https://nexora-iptv.com/espace-client/renew' },
+    ],
+    links: [{ rel: "canonical", href: 'https://nexora-iptv.com/espace-client/renew' }],
+  }),
   component: RenewPage,
 });
 
