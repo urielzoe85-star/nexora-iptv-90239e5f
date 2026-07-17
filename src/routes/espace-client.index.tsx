@@ -13,9 +13,9 @@ export const Route = createFileRoute("/espace-client/")({
       { name: "robots", content: "noindex, nofollow" },
       { property: "og:title", content: 'Connexion Espace Client — Nexora IPTV' },
       { property: "og:description", content: 'Connectez-vous à votre espace client Nexora IPTV pour gérer votre abonnement et vos accès.' },
-      { property: "og:url", content: 'https://nexora-iptv.com/espace-client' },
+      { property: "og:url", content: `${PORTAL_BASE_URL}/espace-client` },
     ],
-    links: [{ rel: "canonical", href: 'https://nexora-iptv.com/espace-client' }],
+    links: [{ rel: "canonical", href: `${PORTAL_BASE_URL}/espace-client` }],
   }),
   component: PortalLogin,
 });
