@@ -63,10 +63,16 @@ function isPortalHost() {
 }
 
 function PortalClientLink({ className, onClick, children }: { className?: string; onClick?: () => void; children: ReactNode }) {
-  if (isPortalHost()) {
-    return <Link to="/espace-client" className={className} onClick={onClick}>{children}</Link>;
+  // On ne redirige vers le sous-domaine account.* que depuis le site
+  // marketing de production (www.nexora-iptv.com / nexora-iptv.com).
+  // Sur l'aperçu Lovable, les URL *.lovable.app et le dev local, on garde
+  // la navigation interne pour que l'espace client s'ouvre correctement.
+  const hostname = typeof window !== "undefined" ? window.location.hostname : "";
+  const isMarketingProd = hostname === "www.nexora-iptv.com" || hostname === "nexora-iptv.com";
+  if (isMarketingProd) {
+    return <a href={`${PORTAL_BASE_URL}/espace-client`} className={className} onClick={onClick}>{children}</a>;
   }
-  return <a href={`${PORTAL_BASE_URL}/espace-client`} className={className} onClick={onClick}>{children}</a>;
+  return <Link to="/espace-client" className={className} onClick={onClick}>{children}</Link>;
 }
 
 export function NexoraLanding() {
