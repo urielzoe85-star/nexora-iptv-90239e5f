@@ -1,56 +1,78 @@
-# Passage du NCC en mode réel (fin du mode démo)
+# Utiliser account.nexora-iptv.com comme domaine dédié à l'espace client
 
-## Objectif
-Supprimer toutes les données mock/démo encore visibles dans le NCC (Nexora Control Center) et brancher chaque widget sur des données réelles issues de la base (orders, customers, subscriptions, customer_events, notifications, iptv_logs).
+## Contexte
 
-## Portée
-Uniquement les 4 endroits du NCC qui affichent encore de la démo :
-1. Graphique revenus du dashboard
-2. Fil d'activité récente du dashboard
-3. Panneau de notifications (cloche en haut à droite)
-4. Composant `DashboardKpis` mock (non utilisé aujourd'hui)
+Chez Lovable, un domaine personnalisé s'attache au **projet entier**, pas à un sous-chemin. `account.nexora-iptv.com` servira donc la même appli que `www.nexora-iptv.com`. Pour qu'il se comporte comme un "portail client dédié", on ajoute un routage conscient du hostname : sur `account.*`, la racine et les pages marketing basculent vers `/espace-client`.
 
-Aucun changement de style, de layout, de couleurs ou de logique métier. Le reste du NCC (Analytics, Clients, Commandes, Produits, Paiements, IPTV, etc.) est déjà en données réelles et n'est pas touché.
+## Étape 1 — Connecter le sous-domaine (côté utilisateur)
 
-## Changements
+Dans Project Settings → Domains → Connect Domain :
+- saisir `account.nexora-iptv.com`
+- ajouter chez le registrar les enregistrements affichés (A vers `185.158.133.1` + TXT `_lovable`, ou CNAME si mode proxy Cloudflare)
+- attendre la vérif + provisioning SSL
 
-### 1. Nouvelle fonction serveur `getDashboardOverview`
-Fichier : `src/lib/ncc.functions.ts` — ajout d'une fonction protégée par `requireNccUnlock` qui renvoie en un seul appel :
-- `series` : revenus des 30 derniers jours (paid + completed, groupés par jour) — même logique que `getAnalyticsSnapshot` mais fixée à 30 jours et exposée au dashboard.
-- `activity` : 12 derniers évènements réels, agrégés depuis :
-  - `orders` récents (création, changement de statut vers paid/completed)
-  - `customer_events` (created, updated, status changes)
-  - `iptv_logs` récents (provisionnement, renouvellement, expiration)
-  - `support_tickets` récents
-  Chaque item : `{ id, kind: 'order'|'payment'|'support'|'iptv'|'trial'|'customer', who, what, when (ISO) }`. Le composant formatera « il y a X min ».
+Aucune action code tant que ce n'est pas fait, mais le code ci-dessous peut être livré en parallèle : il reste inactif tant que le domaine ne résout pas.
 
-### 2. `src/components/ncc/modules/DashboardRevenueChart.tsx`
-- Supprimer l'import `mockRevenueSeries`.
-- Consommer `getDashboardOverview` via `useQuery` + `useServerFn` et alimenter `<AreaChart data={series} />`.
-- État vide : afficher « Aucun revenu sur la période » quand la série est entièrement à zéro. État chargement : petit skeleton dans la même hauteur.
+## Étape 2 — Routage host-aware
 
-### 3. `src/components/ncc/modules/DashboardActivityFeed.tsx`
-- Supprimer l'import `mockActivity`.
-- Consommer la même query `getDashboardOverview` (partagée via `queryKey: ['ncc','dashboard-overview']`) pour éviter un second round-trip.
-- Formater `when` en français relatif (« il y a 3 min », « il y a 2 h », « hier »).
-- État vide : « Aucune activité récente ».
+**`src/start.ts`** — dans le middleware de requêtes, avant les autres redirections, intercepter les requêtes GET HTML dont `Host === "account.nexora-iptv.com"` :
 
-### 4. `src/components/ncc/NccNotificationsPanel.tsx`
-- Supprimer `mockNotifs` et la mention « (démo) ».
-- Charger les 20 dernières lignes de la table `notifications` via une nouvelle fonction serveur `listRecentNotifications` (protégée `requireNccUnlock`), rendues avec icône selon `status` (`sent` → check vert, `failed` → alerte ambre, autres → info). Sous-titre : `Aperçu des évènements récents`.
-- Le bouton « Tout marquer comme lu » reste désactivé (pas de champ `read_at` sur la table ; hors périmètre).
+- `/` → 302 `/espace-client`
+- toutes les routes publiques marketing (`/`, `/tarifs`, `/guide-iptv`, `/contact`, `/a-propos`, `/blog*`, `/fr/*` marketing, etc.) → 302 vers la même page sur `https://www.nexora-iptv.com<path>`
+- laisser passer sans rediriger : `/espace-client*`, `/auth*`, `/checkout*` (nécessaire au renouvellement), `/api/*`, `/lovable/*`, assets statiques, `/robots.txt`, `/sitemap.xml`
 
-### 5. Nettoyage
-- Supprimer `src/lib/ncc/mock-dashboard.ts`.
-- Supprimer `src/components/ncc/modules/DashboardKpis.tsx` (composant mock non référencé).
+Un petit tableau `ACCOUNT_ALLOWED_PREFIXES` centralise la liste ; tout le reste bascule sur www. Bypass total pour `/lovable/*` et `/api/*` (déjà en place — ne pas casser).
+
+## Étape 3 — SEO propre pour account.*
+
+**`src/routes/__root.tsx`** — ajouter un `<meta name="robots" content="noindex, nofollow">` conditionnel côté SSR uniquement quand le host est `account.nexora-iptv.com`, pour éviter que Google indexe un doublon du site marketing en cas de fuite. Les canonicals des pages `espace-client.*` restent en relatif (déjà fait dans la dernière passe SEO) → ils pointeront naturellement vers `account.nexora-iptv.com/espace-client/...`.
+
+**`public/robots.txt`** — reste tel quel (partagé). La balise noindex host-aware suffit.
+
+## Étape 4 — Auth & liens sortants
+
+- **`src/integrations/supabase/client.ts`** est auto-généré, ne pas y toucher. Les redirects OAuth utilisent `window.location.origin`, donc ils fonctionneront automatiquement depuis `account.nexora-iptv.com`.
+- Vérifier qu'aucune URL absolue vers `www.nexora-iptv.com/espace-client` n'est codée en dur dans les emails / notifications. Si oui, remplacer par `https://account.nexora-iptv.com/...` dans :
+  - templates email (`src/lib/email-templates/*.tsx`) — liens "Accéder à mon espace"
+  - messages WhatsApp/Telegram de livraison IPTV (`src/lib/iptv-dispatch.server.ts`, `src/lib/delivery.functions.ts`)
+  - bulk templates (`src/domain/delivery/builtin-templates.ts`)
+
+Centraliser via une constante `PORTAL_BASE_URL = "https://account.nexora-iptv.com"` (nouveau fichier `src/lib/portal-url.ts`) réutilisée partout.
+
+## Étape 5 — Redirection douce depuis www
+
+Optionnel mais recommandé : sur `www.nexora-iptv.com/espace-client*`, ajouter un `<link rel="canonical" href="https://account.nexora-iptv.com/espace-client/...">` (pas de redirect dur pour ne pas casser les sessions existantes). Documenter dans un futur pass qu'on pourra activer une vraie 301 quand tous les liens externes seront migrés.
 
 ## Détails techniques
 
-- Les nouvelles fonctions serveur restent dans `src/lib/ncc.functions.ts`, en `createServerFn({ method: 'POST' }).middleware([requireNccUnlock])`, et importent `supabase-admin.server` uniquement dans le handler (règle du projet).
-- Aucune migration DB, aucun changement de schéma, aucun nouveau secret.
-- Le dashboard partage la query `['ncc','dashboard-overview']` entre les deux modules pour un seul appel réseau.
-- Les KPI cards du dashboard restent inchangées (déjà branchées sur `getDashboardKpis`, données réelles).
+```ts
+// src/lib/portal-url.ts
+export const PORTAL_HOST = "account.nexora-iptv.com";
+export const PORTAL_BASE_URL = `https://${PORTAL_HOST}`;
+export const MARKETING_BASE_URL = "https://www.nexora-iptv.com";
 
-## Vérification
-- `rg "mock" src/components/ncc src/routes/ncc*.tsx src/lib/ncc` doit ne plus rien retourner.
-- Ouvrir `/ncc` : le graphique reflète les vraies commandes payées, le fil d'activité liste les vrais évènements récents, la cloche liste les vraies notifications.
+export const ACCOUNT_ALLOWED_PREFIXES = [
+  "/espace-client", "/auth", "/checkout",
+  "/api", "/lovable", "/assets", "/favicon", "/manifest",
+  "/robots.txt", "/sitemap.xml",
+];
+```
+
+```ts
+// src/start.ts (extrait, dans le middleware existant)
+const url = new URL(request.url);
+if (url.hostname === PORTAL_HOST && request.method === "GET") {
+  const p = url.pathname;
+  if (p === "/" || p === "") return Response.redirect(`${PORTAL_BASE_URL}/espace-client`, 302);
+  const allowed = ACCOUNT_ALLOWED_PREFIXES.some(pref => p === pref || p.startsWith(pref + "/") || p.startsWith(pref));
+  if (!allowed) return Response.redirect(`${MARKETING_BASE_URL}${p}${url.search}`, 302);
+}
+```
+
+## Résultat attendu
+
+- `account.nexora-iptv.com` → `/espace-client` (login puis dashboard client)
+- `account.nexora-iptv.com/tarifs` → redirigé vers `www.nexora-iptv.com/tarifs`
+- Emails et messages de livraison pointent vers `account.nexora-iptv.com`
+- Aucun impact SEO (site marketing indexé sur www, portail noindex)
+- Ne bloque pas la config email actuelle sur `send.nexora-iptv.com`
