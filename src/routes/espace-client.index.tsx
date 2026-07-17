@@ -2,6 +2,7 @@ import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { requestPortalOtp, verifyPortalOtp } from "@/lib/portal.functions";
+import { PORTAL_BASE_URL } from "@/lib/portal-url";
 import { Mail, ShieldCheck, Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/espace-client/")({
