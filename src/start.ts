@@ -2,6 +2,25 @@ import { createStart, createMiddleware } from "@tanstack/react-start";
 
 import { renderErrorPage } from "./lib/error-page";
 import { attachSupabaseAuth } from "@/integrations/supabase/auth-attacher";
+import { PORTAL_HOST, PORTAL_BASE_URL, MARKETING_BASE_URL, isAccountAllowedPath } from "./lib/portal-url";
+
+// Sous-domaine dédié à l'espace client : sur account.nexora-iptv.com, on
+// redirige la racine vers /espace-client et on renvoie les routes marketing
+// vers www.nexora-iptv.com. Doit tourner AVANT les autres middlewares pour
+// éviter tout traitement inutile.
+const accountSubdomainMiddleware = createMiddleware().server(async ({ next, request }) => {
+  if (request.method !== "GET" && request.method !== "HEAD") return next();
+  const url = new URL(request.url);
+  if (url.hostname !== PORTAL_HOST) return next();
+  const p = url.pathname;
+  if (p === "/" || p === "") {
+    return Response.redirect(`${PORTAL_BASE_URL}/espace-client`, 302);
+  }
+  if (!isAccountAllowedPath(p)) {
+    return Response.redirect(`${MARKETING_BASE_URL}${p}${url.search}`, 302);
+  }
+  return next();
+});
 
 const errorMiddleware = createMiddleware().server(async ({ next, request }) => {
   const url = new URL(request.url);
@@ -98,5 +117,5 @@ const securityHeadersMiddleware = createMiddleware().server(async ({ next, reque
 
 export const startInstance = createStart(() => ({
   functionMiddleware: [attachSupabaseAuth],
-  requestMiddleware: [errorMiddleware, securityHeadersMiddleware],
+  requestMiddleware: [accountSubdomainMiddleware, errorMiddleware, securityHeadersMiddleware],
 }));
