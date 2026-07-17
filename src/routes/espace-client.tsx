@@ -29,7 +29,9 @@ const NAV = [
 function PortalLayout() {
   const location = useLocation();
   const router = useRouter();
-  const isLogin = location.pathname === "/espace-client" || location.pathname === "/espace-client/";
+  const isLogin = location.pathname === "/espace-client"
+    || location.pathname === "/espace-client/"
+    || location.pathname.startsWith("/espace-client/reset-password");
   const [mobileOpen, setMobileOpen] = useState(false);
   const signOut = useServerFn(signOutPortal);
   const me = useQuery({
