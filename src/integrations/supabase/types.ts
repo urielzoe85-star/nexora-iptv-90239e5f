@@ -278,6 +278,30 @@ export type Database = {
         }
         Relationships: []
       }
+      client_portal_login_attempts: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          ip: string | null
+          success: boolean
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          ip?: string | null
+          success?: boolean
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          ip?: string | null
+          success?: boolean
+        }
+        Relationships: []
+      }
       client_portal_otps: {
         Row: {
           attempts: number
@@ -310,6 +334,47 @@ export type Database = {
           used_at?: string | null
         }
         Relationships: []
+      }
+      client_portal_password_resets: {
+        Row: {
+          created_at: string
+          customer_id: string
+          email: string
+          expires_at: string
+          id: string
+          ip: string | null
+          token_hash: string
+          used_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          email: string
+          expires_at: string
+          id?: string
+          ip?: string | null
+          token_hash: string
+          used_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          ip?: string | null
+          token_hash?: string
+          used_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_portal_password_resets_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       client_portal_sessions: {
         Row: {
@@ -402,6 +467,8 @@ export type Database = {
           id: string
           metadata: Json
           notes: string | null
+          password_hash: string | null
+          password_updated_at: string | null
           phone: string | null
           status: string
           updated_at: string
@@ -414,6 +481,8 @@ export type Database = {
           id?: string
           metadata?: Json
           notes?: string | null
+          password_hash?: string | null
+          password_updated_at?: string | null
           phone?: string | null
           status?: string
           updated_at?: string
@@ -426,6 +495,8 @@ export type Database = {
           id?: string
           metadata?: Json
           notes?: string | null
+          password_hash?: string | null
+          password_updated_at?: string | null
           phone?: string | null
           status?: string
           updated_at?: string

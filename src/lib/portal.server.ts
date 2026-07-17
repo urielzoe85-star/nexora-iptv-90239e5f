@@ -2,7 +2,8 @@
 // Cookie-based session, no Supabase Auth user required. Customers identified
 // via `customers` table.
 
-import { createHash, randomBytes, randomInt, timingSafeEqual } from "crypto";
+import { createHash, randomBytes, randomInt, scryptSync, timingSafeEqual } from "crypto";
+import { PORTAL_BASE_URL } from "@/lib/portal-url";
 
 export const PORTAL_COOKIE = "nx_portal_session";
 export const OTP_TTL_MS = 10 * 60 * 1000;       // 10 minutes
@@ -19,6 +20,93 @@ export function generateOtpCode(): string {
 
 export function generateSessionToken(): string {
   return randomBytes(32).toString("hex");
+}
+
+// -------- Passwords (scrypt, medium security) --------
+const SCRYPT_N = 16384;
+const SCRYPT_R = 8;
+const SCRYPT_P = 1;
+const SCRYPT_KEYLEN = 64;
+
+export function hashPassword(password: string): string {
+  const salt = randomBytes(16);
+  const derived = scryptSync(password.normalize("NFKC"), salt, SCRYPT_KEYLEN, {
+    N: SCRYPT_N, r: SCRYPT_R, p: SCRYPT_P,
+  });
+  return `scrypt$${SCRYPT_N}$${SCRYPT_R}$${SCRYPT_P}$${salt.toString("hex")}$${derived.toString("hex")}`;
+}
+
+export function verifyPassword(password: string, stored: string | null | undefined): boolean {
+  if (!stored) return false;
+  const parts = stored.split("$");
+  if (parts.length !== 6 || parts[0] !== "scrypt") return false;
+  const N = Number(parts[1]);
+  const r = Number(parts[2]);
+  const p = Number(parts[3]);
+  const salt = Buffer.from(parts[4], "hex");
+  const expected = Buffer.from(parts[5], "hex");
+  if (!salt.length || !expected.length) return false;
+  const derived = scryptSync(password.normalize("NFKC"), salt, expected.length, { N, r, p });
+  if (derived.length !== expected.length) return false;
+  return timingSafeEqual(derived, expected);
+}
+
+export function validatePasswordStrength(password: string): string | null {
+  if (typeof password !== "string" || password.length < 8) {
+    return "Le mot de passe doit contenir au moins 8 caractères.";
+  }
+  if (password.length > 200) return "Mot de passe trop long.";
+  if (!/[A-Za-z]/.test(password) || !/\d/.test(password)) {
+    return "Le mot de passe doit contenir au moins une lettre et un chiffre.";
+  }
+  return null;
+}
+
+export function generateResetToken(): string {
+  return randomBytes(32).toString("hex");
+}
+
+export const PASSWORD_RESET_TTL_MS = 30 * 60 * 1000;
+
+export async function sendPasswordResetEmail(email: string, resetUrl: string): Promise<void> {
+  const subject = "Nexora IPTV — Réinitialisation de votre mot de passe";
+  const content = [
+    "Bonjour,",
+    "",
+    "Vous avez demandé à réinitialiser le mot de passe de votre Espace Client Nexora IPTV.",
+    "",
+    "Cliquez sur le lien ci-dessous pour définir un nouveau mot de passe :",
+    "",
+    resetUrl,
+    "",
+    "Ce lien est valable 30 minutes. Si vous n'êtes pas à l'origine de cette demande, ignorez cet e-mail — votre mot de passe ne sera pas modifié.",
+    "",
+    "— L'équipe Nexora IPTV",
+  ].join("\n");
+  try {
+    const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
+    await (supabaseAdmin as any).from("delivery_logs").insert({
+      channel: "email",
+      status: "prepared",
+      template_id: "portal-password-reset",
+      subject,
+      content,
+      recipient: email,
+    });
+  } catch (e) {
+    console.error("[portal] password reset delivery_logs insert failed", e);
+  }
+  try {
+    const { notifyAdminTelegram } = await import("@/lib/telegram.server");
+    await notifyAdminTelegram(`🔑 Reset mot de passe Espace Client\nDestinataire : ${email}\nLien : ${resetUrl}`);
+  } catch { /* best effort */ }
+  if (process.env.NODE_ENV !== "production") {
+    console.info("[portal] password reset for", email, "=>", resetUrl);
+  }
+}
+
+export function buildPasswordResetUrl(token: string): string {
+  return `${PORTAL_BASE_URL}/espace-client/reset-password?token=${encodeURIComponent(token)}`;
 }
 
 export function safeEqualHex(a: string, b: string): boolean {

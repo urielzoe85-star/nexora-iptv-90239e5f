@@ -5,18 +5,25 @@ import {
   PORTAL_COOKIE,
   OTP_TTL_MS,
   SESSION_TTL_MS,
+  PASSWORD_RESET_TTL_MS,
   buildSessionCookie,
+  buildPasswordResetUrl,
   clearSessionCookie,
   findCustomerByIdentifier,
   generateOtpCode,
   generateSessionToken,
+  generateResetToken,
+  hashPassword,
   hashToken,
   maskEmail,
   readCookie,
   requirePortalSessionFromCookie,
   safeEqualHex,
   sendOtpEmail,
+  sendPasswordResetEmail,
   sendRenewalConfirmationEmail,
+  validatePasswordStrength,
+  verifyPassword,
   type PortalSession,
 } from "@/lib/portal.server";
 
@@ -145,6 +152,242 @@ export const signOutPortal = createServerFn({ method: "POST" }).handler(async ()
   setResponseHeader("set-cookie", clearSessionCookie());
   return { ok: true as const };
 });
+
+// ---------------------------------------------------------------------------
+// Auth : Password (register / login / reset / change)
+// ---------------------------------------------------------------------------
+
+async function openPortalSession(sb: any, customer: { id: string; email: string }) {
+  const token = generateSessionToken();
+  const tokenHash = hashToken(token);
+  const ua = getRequestHeader("user-agent") ?? null;
+  const ip = getRequestHeader("x-forwarded-for") ?? null;
+  await sb.from("client_portal_sessions").insert({
+    token_hash: tokenHash,
+    customer_id: customer.id,
+    email: customer.email.toLowerCase(),
+    expires_at: new Date(Date.now() + SESSION_TTL_MS).toISOString(),
+    user_agent: ua,
+    ip,
+  });
+  setResponseHeader("set-cookie", buildSessionCookie(token));
+}
+
+const GENERIC_LOGIN_ERROR = "Identifiants invalides.";
+
+export const registerPortalAccount = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        email: z.string().trim().toLowerCase().email().max(160),
+        password: z.string().min(8).max(200),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data }) => {
+    const strengthErr = validatePasswordStrength(data.password);
+    if (strengthErr) throw new Error(strengthErr);
+
+    const customer = await findCustomerByIdentifier(data.email);
+    if (!customer) {
+      // Message générique — pas d'énumération de comptes.
+      throw new Error(
+        "Aucun compte client ne correspond à cet e-mail. Utilisez l'adresse indiquée lors de votre commande, ou contactez le support.",
+      );
+    }
+
+    const sb = await admin();
+    const { data: existing } = await sb
+      .from("customers")
+      .select("password_hash")
+      .eq("id", customer.id)
+      .maybeSingle();
+    if (existing?.password_hash) {
+      throw new Error(
+        "Un mot de passe est déjà défini pour ce compte. Connectez-vous, ou utilisez « Mot de passe oublié ».",
+      );
+    }
+
+    const hash = hashPassword(data.password);
+    const { error } = await sb
+      .from("customers")
+      .update({ password_hash: hash, password_updated_at: new Date().toISOString() })
+      .eq("id", customer.id);
+    if (error) throw new Error(error.message);
+
+    await openPortalSession(sb, customer);
+    return { ok: true as const };
+  });
+
+export const loginPortalPassword = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        email: z.string().trim().toLowerCase().email().max(160),
+        password: z.string().min(1).max(200),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data }) => {
+    const sb = await admin();
+    const ip = getRequestHeader("x-forwarded-for") ?? null;
+
+    // Rate limit: 5 échecs / 15 min par email
+    const windowStart = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+    const { count: recentFails } = await sb
+      .from("client_portal_login_attempts")
+      .select("id", { count: "exact", head: true })
+      .ilike("email", data.email)
+      .eq("success", false)
+      .gte("created_at", windowStart);
+    if ((recentFails ?? 0) >= 5) {
+      throw new Error("Trop de tentatives. Réessayez dans 15 minutes.");
+    }
+
+    const customer = await findCustomerByIdentifier(data.email);
+    let ok = false;
+    if (customer) {
+      const { data: row } = await sb
+        .from("customers")
+        .select("password_hash")
+        .eq("id", customer.id)
+        .maybeSingle();
+      ok = verifyPassword(data.password, row?.password_hash ?? null);
+    } else {
+      // Faux calcul pour égaliser le timing (approx)
+      verifyPassword(data.password, "scrypt$16384$8$1$00$00");
+    }
+
+    await sb.from("client_portal_login_attempts").insert({
+      email: data.email,
+      success: ok,
+      ip,
+    });
+
+    if (!ok || !customer) throw new Error(GENERIC_LOGIN_ERROR);
+
+    await openPortalSession(sb, customer);
+    return { ok: true as const };
+  });
+
+export const requestPortalPasswordReset = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) =>
+    z.object({ email: z.string().trim().toLowerCase().email().max(160) }).parse(data),
+  )
+  .handler(async ({ data }) => {
+    const customer = await findCustomerByIdentifier(data.email);
+    // Réponse générique quoi qu'il arrive
+    if (!customer) return { ok: true as const };
+
+    const sb = await admin();
+
+    // rate-limit : 3 resets / heure / email
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const { count } = await sb
+      .from("client_portal_password_resets")
+      .select("id", { count: "exact", head: true })
+      .ilike("email", customer.email)
+      .gte("created_at", oneHourAgo);
+    if ((count ?? 0) >= 3) return { ok: true as const };
+
+    const raw = generateResetToken();
+    const ip = getRequestHeader("x-forwarded-for") ?? null;
+    await sb.from("client_portal_password_resets").insert({
+      customer_id: customer.id,
+      email: customer.email.toLowerCase(),
+      token_hash: hashToken(raw),
+      expires_at: new Date(Date.now() + PASSWORD_RESET_TTL_MS).toISOString(),
+      ip,
+    });
+    await sendPasswordResetEmail(customer.email, buildPasswordResetUrl(raw));
+    return { ok: true as const };
+  });
+
+export const resetPortalPassword = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        token: z.string().trim().min(32).max(128),
+        password: z.string().min(8).max(200),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data }) => {
+    const strengthErr = validatePasswordStrength(data.password);
+    if (strengthErr) throw new Error(strengthErr);
+
+    const sb = await admin();
+    const tokenHash = hashToken(data.token);
+    const { data: row } = await sb
+      .from("client_portal_password_resets")
+      .select("id, customer_id, email, expires_at, used_at")
+      .eq("token_hash", tokenHash)
+      .maybeSingle();
+    if (!row) throw new Error("Lien de réinitialisation invalide ou expiré.");
+    if (row.used_at) throw new Error("Ce lien a déjà été utilisé.");
+    if (new Date(row.expires_at).getTime() < Date.now()) {
+      throw new Error("Ce lien a expiré. Redemandez-en un.");
+    }
+
+    const hash = hashPassword(data.password);
+    const { error } = await sb
+      .from("customers")
+      .update({ password_hash: hash, password_updated_at: new Date().toISOString() })
+      .eq("id", row.customer_id);
+    if (error) throw new Error(error.message);
+
+    await sb
+      .from("client_portal_password_resets")
+      .update({ used_at: new Date().toISOString() })
+      .eq("id", row.id);
+
+    // Révoquer toutes les sessions actives pour ce client (sécurité)
+    await sb
+      .from("client_portal_sessions")
+      .update({ revoked_at: new Date().toISOString() })
+      .eq("customer_id", row.customer_id)
+      .is("revoked_at", null);
+
+    await openPortalSession(sb, { id: row.customer_id, email: row.email });
+    return { ok: true as const };
+  });
+
+export const changePortalPassword = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        currentPassword: z.string().max(200).optional().or(z.literal("")),
+        newPassword: z.string().min(8).max(200),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data }) => {
+    const strengthErr = validatePasswordStrength(data.newPassword);
+    if (strengthErr) throw new Error(strengthErr);
+
+    const s = await requireSession();
+    const sb = await admin();
+    const { data: row } = await sb
+      .from("customers")
+      .select("password_hash")
+      .eq("id", s.customerId)
+      .maybeSingle();
+
+    // Si un mot de passe existe déjà, il faut fournir l'actuel.
+    if (row?.password_hash) {
+      if (!data.currentPassword || !verifyPassword(data.currentPassword, row.password_hash)) {
+        throw new Error("Mot de passe actuel incorrect.");
+      }
+    }
+
+    const hash = hashPassword(data.newPassword);
+    const { error } = await sb
+      .from("customers")
+      .update({ password_hash: hash, password_updated_at: new Date().toISOString() })
+      .eq("id", s.customerId);
+    if (error) throw new Error(error.message);
+    return { ok: true as const, hadPassword: !!row?.password_hash };
+  });
 
 // ---------------------------------------------------------------------------
 // Dashboard / data
