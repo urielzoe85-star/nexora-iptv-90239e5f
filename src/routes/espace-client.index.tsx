@@ -2,6 +2,7 @@ import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { requestPortalOtp, verifyPortalOtp } from "@/lib/portal.functions";
+import { PORTAL_BASE_URL } from "@/lib/portal-url";
 import { Mail, ShieldCheck, Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/espace-client/")({
@@ -12,9 +13,9 @@ export const Route = createFileRoute("/espace-client/")({
       { name: "robots", content: "noindex, nofollow" },
       { property: "og:title", content: 'Connexion Espace Client — Nexora IPTV' },
       { property: "og:description", content: 'Connectez-vous à votre espace client Nexora IPTV pour gérer votre abonnement et vos accès.' },
-      { property: "og:url", content: 'https://nexora-iptv.com/espace-client' },
+      { property: "og:url", content: `${PORTAL_BASE_URL}/espace-client` },
     ],
-    links: [{ rel: "canonical", href: 'https://nexora-iptv.com/espace-client' }],
+    links: [{ rel: "canonical", href: `${PORTAL_BASE_URL}/espace-client` }],
   }),
   component: PortalLogin,
 });

@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getPortalDashboard, updatePortalProfile } from "@/lib/portal.functions";
+import { PORTAL_BASE_URL } from "@/lib/portal-url";
 import { useEffect, useState } from "react";
 import { COUNTRIES } from "@/lib/countries";
 import { Loader2, CheckCircle2 } from "lucide-react";
@@ -14,9 +15,9 @@ export const Route = createFileRoute("/espace-client/profile")({
       { name: "robots", content: "noindex, nofollow" },
       { property: "og:title", content: 'Mon profil — Espace Client Nexora' },
       { property: "og:description", content: 'Mettez à jour vos coordonnées, votre pays et vos préférences de contact.' },
-      { property: "og:url", content: 'https://nexora-iptv.com/espace-client/profile' },
+      { property: "og:url", content: `${PORTAL_BASE_URL}/espace-client/profile` },
     ],
-    links: [{ rel: "canonical", href: 'https://nexora-iptv.com/espace-client/profile' }],
+    links: [{ rel: "canonical", href: `${PORTAL_BASE_URL}/espace-client/profile` }],
   }),
   component: ProfilePage,
 });

@@ -16,10 +16,11 @@ import {
 import { useT, useI18n } from "@/i18n/context";
 import { LanguageSwitcher } from "@/i18n/context";
 import { buildWhatsAppLink } from "@/lib/whatsapp-contact";
+import { PORTAL_HOST, PORTAL_BASE_URL } from "@/lib/portal-url";
 
 const TELEGRAM_BOT_URL = "https://t.me/NexoraIPTVBot";
 const SUPPORT_EMAIL = "info@nexora-iptv.com";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getPublicPlans, type PublicPlan } from "@/lib/plans.functions";
@@ -56,6 +57,17 @@ export const Route = createFileRoute("/")({
   }),
   component: NexoraLanding,
 });
+
+function isPortalHost() {
+  return typeof window !== "undefined" && window.location.hostname === PORTAL_HOST;
+}
+
+function PortalClientLink({ className, onClick, children }: { className?: string; onClick?: () => void; children: ReactNode }) {
+  if (isPortalHost()) {
+    return <Link to="/espace-client" className={className} onClick={onClick}>{children}</Link>;
+  }
+  return <a href={`${PORTAL_BASE_URL}/espace-client`} className={className} onClick={onClick}>{children}</a>;
+}
 
 export function NexoraLanding() {
   return (
@@ -100,7 +112,7 @@ function Nav() {
           <Link to="/galerie" className="hover:text-foreground transition">Galerie</Link>
           <a href="#faq" className="hover:text-foreground transition">{t("nav.faq")}</a>
           <a href="#support" className="hover:text-foreground transition">{t("nav.support")}</a>
-          <Link to="/espace-client" className="hover:text-foreground transition">Espace client</Link>
+          <PortalClientLink className="hover:text-foreground transition">Espace client</PortalClientLink>
           {locale === "fr" && (
             <Link to="/fr/guide-iptv" className="hover:text-foreground transition">Guide d'installation</Link>
           )}
@@ -132,7 +144,7 @@ function Nav() {
             <Link to="/galerie" onClick={close} className="hover:text-foreground transition">Galerie</Link>
             <a href="#faq" onClick={close} className="hover:text-foreground transition">{t("nav.faq")}</a>
             <a href="#support" onClick={close} className="hover:text-foreground transition">{t("nav.support")}</a>
-            <Link to="/espace-client" onClick={close} className="hover:text-foreground transition">Espace client</Link>
+            <PortalClientLink onClick={close} className="hover:text-foreground transition">Espace client</PortalClientLink>
             {locale === "fr" && (
               <Link to="/fr/guide-iptv" onClick={close} className="hover:text-foreground transition">Guide d'installation</Link>
             )}
