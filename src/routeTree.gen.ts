@@ -31,6 +31,7 @@ import { Route as NccIndexRouteImport } from './routes/ncc.index'
 import { Route as FrIndexRouteImport } from './routes/fr.index'
 import { Route as EspaceClientIndexRouteImport } from './routes/espace-client.index'
 import { Route as EnIndexRouteImport } from './routes/en.index'
+import { Route as BlogIndexRouteImport } from './routes/blog.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as ProduitsSlugRouteImport } from './routes/produits.$slug'
 import { Route as PaymentSuccessRouteImport } from './routes/payment.success'
@@ -72,6 +73,7 @@ import { Route as EspaceClientAnnouncementsRouteImport } from './routes/espace-c
 import { Route as EnGuideIptvRouteImport } from './routes/en.guide-iptv'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as BlogBestIptv2026RouteImport } from './routes/blog.best-iptv-2026'
+import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as AdminPlansRouteImport } from './routes/admin.plans'
 import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
@@ -82,6 +84,7 @@ import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } fr
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as NccSettingsIndexRouteImport } from './routes/ncc.settings.index'
 import { Route as NccIptvIndexRouteImport } from './routes/ncc.iptv.index'
+import { Route as NccBlogIndexRouteImport } from './routes/ncc.blog.index'
 import { Route as NccSettingsSectionRouteImport } from './routes/ncc.settings.$section'
 import { Route as NccPaymentsBinanceRouteImport } from './routes/ncc.payments.binance'
 import { Route as NccOrdersIdRouteImport } from './routes/ncc.orders.$id'
@@ -98,9 +101,14 @@ import { Route as NccIptvExpiredRouteImport } from './routes/ncc.iptv.expired'
 import { Route as NccIptvDebugRouteImport } from './routes/ncc.iptv.debug'
 import { Route as NccIptvAccountsRouteImport } from './routes/ncc.iptv.accounts'
 import { Route as NccClientsIdRouteImport } from './routes/ncc.clients.$id'
+import { Route as NccBlogTagsRouteImport } from './routes/ncc.blog.tags'
+import { Route as NccBlogNewRouteImport } from './routes/ncc.blog.new'
+import { Route as NccBlogCategoriesRouteImport } from './routes/ncc.blog.categories'
+import { Route as NccBlogIdRouteImport } from './routes/ncc.blog.$id'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as EspaceClientSuccessRefRouteImport } from './routes/espace-client.success.$ref'
 import { Route as EspaceClientPayRefRouteImport } from './routes/espace-client.pay.$ref'
+import { Route as BlogCategorieSlugRouteImport } from './routes/blog.categorie.$slug'
 import { Route as ApiPublicCspReportRouteImport } from './routes/api/public/csp-report'
 import { Route as ApiPublicCamerpaySelftestRouteImport } from './routes/api/public/camerpay-selftest'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
@@ -235,6 +243,11 @@ const EnIndexRoute = EnIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => EnRoute,
+} as any)
+const BlogIndexRoute = BlogIndexRouteImport.update({
+  id: '/blog/',
+  path: '/blog/',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
@@ -443,6 +456,11 @@ const BlogBestIptv2026Route = BlogBestIptv2026RouteImport.update({
   path: '/blog/best-iptv-2026',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BlogSlugRoute = BlogSlugRouteImport.update({
+  id: '/blog/$slug',
+  path: '/blog/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminPlansRoute = AdminPlansRouteImport.update({
   id: '/plans',
   path: '/plans',
@@ -494,6 +512,11 @@ const NccIptvIndexRoute = NccIptvIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => NccIptvRoute,
+} as any)
+const NccBlogIndexRoute = NccBlogIndexRouteImport.update({
+  id: '/blog/',
+  path: '/blog/',
+  getParentRoute: () => NccRoute,
 } as any)
 const NccSettingsSectionRoute = NccSettingsSectionRouteImport.update({
   id: '/$section',
@@ -575,6 +598,26 @@ const NccClientsIdRoute = NccClientsIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => NccClientsRoute,
 } as any)
+const NccBlogTagsRoute = NccBlogTagsRouteImport.update({
+  id: '/blog/tags',
+  path: '/blog/tags',
+  getParentRoute: () => NccRoute,
+} as any)
+const NccBlogNewRoute = NccBlogNewRouteImport.update({
+  id: '/blog/new',
+  path: '/blog/new',
+  getParentRoute: () => NccRoute,
+} as any)
+const NccBlogCategoriesRoute = NccBlogCategoriesRouteImport.update({
+  id: '/blog/categories',
+  path: '/blog/categories',
+  getParentRoute: () => NccRoute,
+} as any)
+const NccBlogIdRoute = NccBlogIdRouteImport.update({
+  id: '/blog/$id',
+  path: '/blog/$id',
+  getParentRoute: () => NccRoute,
+} as any)
 const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
   id: '/lovable/email/suppression',
   path: '/lovable/email/suppression',
@@ -589,6 +632,11 @@ const EspaceClientPayRefRoute = EspaceClientPayRefRouteImport.update({
   id: '/pay/$ref',
   path: '/pay/$ref',
   getParentRoute: () => EspaceClientRoute,
+} as any)
+const BlogCategorieSlugRoute = BlogCategorieSlugRouteImport.update({
+  id: '/blog/categorie/$slug',
+  path: '/blog/categorie/$slug',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicCspReportRoute = ApiPublicCspReportRouteImport.update({
   id: '/api/public/csp-report',
@@ -754,6 +802,7 @@ export interface FileRoutesByFullPath {
   '/admin/login': typeof AdminLoginRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/plans': typeof AdminPlansRoute
+  '/blog/$slug': typeof BlogSlugRoute
   '/blog/best-iptv-2026': typeof BlogBestIptv2026Route
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/en/guide-iptv': typeof EnGuideIptvRoute
@@ -795,6 +844,7 @@ export interface FileRoutesByFullPath {
   '/payment/success': typeof PaymentSuccessRoute
   '/produits/$slug': typeof ProduitsSlugRoute
   '/admin/': typeof AdminIndexRoute
+  '/blog/': typeof BlogIndexRoute
   '/en/': typeof EnIndexRoute
   '/espace-client/': typeof EspaceClientIndexRoute
   '/fr/': typeof FrIndexRoute
@@ -803,9 +853,14 @@ export interface FileRoutesByFullPath {
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/public/camerpay-selftest': typeof ApiPublicCamerpaySelftestRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
+  '/blog/categorie/$slug': typeof BlogCategorieSlugRoute
   '/espace-client/pay/$ref': typeof EspaceClientPayRefRoute
   '/espace-client/success/$ref': typeof EspaceClientSuccessRefRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/ncc/blog/$id': typeof NccBlogIdRoute
+  '/ncc/blog/categories': typeof NccBlogCategoriesRoute
+  '/ncc/blog/new': typeof NccBlogNewRoute
+  '/ncc/blog/tags': typeof NccBlogTagsRoute
   '/ncc/clients/$id': typeof NccClientsIdRoute
   '/ncc/iptv/accounts': typeof NccIptvAccountsRoute
   '/ncc/iptv/debug': typeof NccIptvDebugRoute
@@ -822,6 +877,7 @@ export interface FileRoutesByFullPath {
   '/ncc/orders/$id': typeof NccOrdersIdRoute
   '/ncc/payments/binance': typeof NccPaymentsBinanceRoute
   '/ncc/settings/$section': typeof NccSettingsSectionRoute
+  '/ncc/blog/': typeof NccBlogIndexRoute
   '/ncc/iptv/': typeof NccIptvIndexRoute
   '/ncc/settings/': typeof NccSettingsIndexRoute
   '/api/public/automation/emit-test': typeof ApiPublicAutomationEmitTestRoute
@@ -867,6 +923,7 @@ export interface FileRoutesByTo {
   '/admin/login': typeof AdminLoginRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/plans': typeof AdminPlansRoute
+  '/blog/$slug': typeof BlogSlugRoute
   '/blog/best-iptv-2026': typeof BlogBestIptv2026Route
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/en/guide-iptv': typeof EnGuideIptvRoute
@@ -906,6 +963,7 @@ export interface FileRoutesByTo {
   '/payment/success': typeof PaymentSuccessRoute
   '/produits/$slug': typeof ProduitsSlugRoute
   '/admin': typeof AdminIndexRoute
+  '/blog': typeof BlogIndexRoute
   '/en': typeof EnIndexRoute
   '/espace-client': typeof EspaceClientIndexRoute
   '/fr': typeof FrIndexRoute
@@ -914,9 +972,14 @@ export interface FileRoutesByTo {
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/public/camerpay-selftest': typeof ApiPublicCamerpaySelftestRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
+  '/blog/categorie/$slug': typeof BlogCategorieSlugRoute
   '/espace-client/pay/$ref': typeof EspaceClientPayRefRoute
   '/espace-client/success/$ref': typeof EspaceClientSuccessRefRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/ncc/blog/$id': typeof NccBlogIdRoute
+  '/ncc/blog/categories': typeof NccBlogCategoriesRoute
+  '/ncc/blog/new': typeof NccBlogNewRoute
+  '/ncc/blog/tags': typeof NccBlogTagsRoute
   '/ncc/clients/$id': typeof NccClientsIdRoute
   '/ncc/iptv/accounts': typeof NccIptvAccountsRoute
   '/ncc/iptv/debug': typeof NccIptvDebugRoute
@@ -933,6 +996,7 @@ export interface FileRoutesByTo {
   '/ncc/orders/$id': typeof NccOrdersIdRoute
   '/ncc/payments/binance': typeof NccPaymentsBinanceRoute
   '/ncc/settings/$section': typeof NccSettingsSectionRoute
+  '/ncc/blog': typeof NccBlogIndexRoute
   '/ncc/iptv': typeof NccIptvIndexRoute
   '/ncc/settings': typeof NccSettingsIndexRoute
   '/api/public/automation/emit-test': typeof ApiPublicAutomationEmitTestRoute
@@ -984,6 +1048,7 @@ export interface FileRoutesById {
   '/admin/login': typeof AdminLoginRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/plans': typeof AdminPlansRoute
+  '/blog/$slug': typeof BlogSlugRoute
   '/blog/best-iptv-2026': typeof BlogBestIptv2026Route
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/en/guide-iptv': typeof EnGuideIptvRoute
@@ -1025,6 +1090,7 @@ export interface FileRoutesById {
   '/payment/success': typeof PaymentSuccessRoute
   '/produits/$slug': typeof ProduitsSlugRoute
   '/admin/': typeof AdminIndexRoute
+  '/blog/': typeof BlogIndexRoute
   '/en/': typeof EnIndexRoute
   '/espace-client/': typeof EspaceClientIndexRoute
   '/fr/': typeof FrIndexRoute
@@ -1033,9 +1099,14 @@ export interface FileRoutesById {
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/public/camerpay-selftest': typeof ApiPublicCamerpaySelftestRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
+  '/blog/categorie/$slug': typeof BlogCategorieSlugRoute
   '/espace-client/pay/$ref': typeof EspaceClientPayRefRoute
   '/espace-client/success/$ref': typeof EspaceClientSuccessRefRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/ncc/blog/$id': typeof NccBlogIdRoute
+  '/ncc/blog/categories': typeof NccBlogCategoriesRoute
+  '/ncc/blog/new': typeof NccBlogNewRoute
+  '/ncc/blog/tags': typeof NccBlogTagsRoute
   '/ncc/clients/$id': typeof NccClientsIdRoute
   '/ncc/iptv/accounts': typeof NccIptvAccountsRoute
   '/ncc/iptv/debug': typeof NccIptvDebugRoute
@@ -1052,6 +1123,7 @@ export interface FileRoutesById {
   '/ncc/orders/$id': typeof NccOrdersIdRoute
   '/ncc/payments/binance': typeof NccPaymentsBinanceRoute
   '/ncc/settings/$section': typeof NccSettingsSectionRoute
+  '/ncc/blog/': typeof NccBlogIndexRoute
   '/ncc/iptv/': typeof NccIptvIndexRoute
   '/ncc/settings/': typeof NccSettingsIndexRoute
   '/api/public/automation/emit-test': typeof ApiPublicAutomationEmitTestRoute
@@ -1104,6 +1176,7 @@ export interface FileRouteTypes {
     | '/admin/login'
     | '/admin/orders'
     | '/admin/plans'
+    | '/blog/$slug'
     | '/blog/best-iptv-2026'
     | '/email/unsubscribe'
     | '/en/guide-iptv'
@@ -1145,6 +1218,7 @@ export interface FileRouteTypes {
     | '/payment/success'
     | '/produits/$slug'
     | '/admin/'
+    | '/blog/'
     | '/en/'
     | '/espace-client/'
     | '/fr/'
@@ -1153,9 +1227,14 @@ export interface FileRouteTypes {
     | '/.mcp/invoke-tool/$tool'
     | '/api/public/camerpay-selftest'
     | '/api/public/csp-report'
+    | '/blog/categorie/$slug'
     | '/espace-client/pay/$ref'
     | '/espace-client/success/$ref'
     | '/lovable/email/suppression'
+    | '/ncc/blog/$id'
+    | '/ncc/blog/categories'
+    | '/ncc/blog/new'
+    | '/ncc/blog/tags'
     | '/ncc/clients/$id'
     | '/ncc/iptv/accounts'
     | '/ncc/iptv/debug'
@@ -1172,6 +1251,7 @@ export interface FileRouteTypes {
     | '/ncc/orders/$id'
     | '/ncc/payments/binance'
     | '/ncc/settings/$section'
+    | '/ncc/blog/'
     | '/ncc/iptv/'
     | '/ncc/settings/'
     | '/api/public/automation/emit-test'
@@ -1217,6 +1297,7 @@ export interface FileRouteTypes {
     | '/admin/login'
     | '/admin/orders'
     | '/admin/plans'
+    | '/blog/$slug'
     | '/blog/best-iptv-2026'
     | '/email/unsubscribe'
     | '/en/guide-iptv'
@@ -1256,6 +1337,7 @@ export interface FileRouteTypes {
     | '/payment/success'
     | '/produits/$slug'
     | '/admin'
+    | '/blog'
     | '/en'
     | '/espace-client'
     | '/fr'
@@ -1264,9 +1346,14 @@ export interface FileRouteTypes {
     | '/.mcp/invoke-tool/$tool'
     | '/api/public/camerpay-selftest'
     | '/api/public/csp-report'
+    | '/blog/categorie/$slug'
     | '/espace-client/pay/$ref'
     | '/espace-client/success/$ref'
     | '/lovable/email/suppression'
+    | '/ncc/blog/$id'
+    | '/ncc/blog/categories'
+    | '/ncc/blog/new'
+    | '/ncc/blog/tags'
     | '/ncc/clients/$id'
     | '/ncc/iptv/accounts'
     | '/ncc/iptv/debug'
@@ -1283,6 +1370,7 @@ export interface FileRouteTypes {
     | '/ncc/orders/$id'
     | '/ncc/payments/binance'
     | '/ncc/settings/$section'
+    | '/ncc/blog'
     | '/ncc/iptv'
     | '/ncc/settings'
     | '/api/public/automation/emit-test'
@@ -1333,6 +1421,7 @@ export interface FileRouteTypes {
     | '/admin/login'
     | '/admin/orders'
     | '/admin/plans'
+    | '/blog/$slug'
     | '/blog/best-iptv-2026'
     | '/email/unsubscribe'
     | '/en/guide-iptv'
@@ -1374,6 +1463,7 @@ export interface FileRouteTypes {
     | '/payment/success'
     | '/produits/$slug'
     | '/admin/'
+    | '/blog/'
     | '/en/'
     | '/espace-client/'
     | '/fr/'
@@ -1382,9 +1472,14 @@ export interface FileRouteTypes {
     | '/.mcp/invoke-tool/$tool'
     | '/api/public/camerpay-selftest'
     | '/api/public/csp-report'
+    | '/blog/categorie/$slug'
     | '/espace-client/pay/$ref'
     | '/espace-client/success/$ref'
     | '/lovable/email/suppression'
+    | '/ncc/blog/$id'
+    | '/ncc/blog/categories'
+    | '/ncc/blog/new'
+    | '/ncc/blog/tags'
     | '/ncc/clients/$id'
     | '/ncc/iptv/accounts'
     | '/ncc/iptv/debug'
@@ -1401,6 +1496,7 @@ export interface FileRouteTypes {
     | '/ncc/orders/$id'
     | '/ncc/payments/binance'
     | '/ncc/settings/$section'
+    | '/ncc/blog/'
     | '/ncc/iptv/'
     | '/ncc/settings/'
     | '/api/public/automation/emit-test'
@@ -1446,6 +1542,7 @@ export interface RootRouteChildren {
   UnsubscribeRoute: typeof UnsubscribeRoute
   Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  BlogSlugRoute: typeof BlogSlugRoute
   BlogBestIptv2026Route: typeof BlogBestIptv2026Route
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   LegalNoticeRoute: typeof LegalNoticeRoute
@@ -1456,10 +1553,12 @@ export interface RootRouteChildren {
   PaymentFailedRoute: typeof PaymentFailedRoute
   PaymentSuccessRoute: typeof PaymentSuccessRoute
   ProduitsSlugRoute: typeof ProduitsSlugRoute
+  BlogIndexRoute: typeof BlogIndexRoute
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   ApiPublicCamerpaySelftestRoute: typeof ApiPublicCamerpaySelftestRoute
   ApiPublicCspReportRoute: typeof ApiPublicCspReportRoute
+  BlogCategorieSlugRoute: typeof BlogCategorieSlugRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ApiPublicAutomationEmitTestRoute: typeof ApiPublicAutomationEmitTestRoute
   ApiPublicAutomationProcessQueueRoute: typeof ApiPublicAutomationProcessQueueRoute
@@ -1638,6 +1737,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/en/'
       preLoaderRoute: typeof EnIndexRouteImport
       parentRoute: typeof EnRoute
+    }
+    '/blog/': {
+      id: '/blog/'
+      path: '/blog'
+      fullPath: '/blog/'
+      preLoaderRoute: typeof BlogIndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/admin/': {
       id: '/admin/'
@@ -1926,6 +2032,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BlogBestIptv2026RouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/blog/$slug': {
+      id: '/blog/$slug'
+      path: '/blog/$slug'
+      fullPath: '/blog/$slug'
+      preLoaderRoute: typeof BlogSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/plans': {
       id: '/admin/plans'
       path: '/plans'
@@ -1995,6 +2108,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/ncc/iptv/'
       preLoaderRoute: typeof NccIptvIndexRouteImport
       parentRoute: typeof NccIptvRoute
+    }
+    '/ncc/blog/': {
+      id: '/ncc/blog/'
+      path: '/blog'
+      fullPath: '/ncc/blog/'
+      preLoaderRoute: typeof NccBlogIndexRouteImport
+      parentRoute: typeof NccRoute
     }
     '/ncc/settings/$section': {
       id: '/ncc/settings/$section'
@@ -2108,6 +2228,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof NccClientsIdRouteImport
       parentRoute: typeof NccClientsRoute
     }
+    '/ncc/blog/tags': {
+      id: '/ncc/blog/tags'
+      path: '/blog/tags'
+      fullPath: '/ncc/blog/tags'
+      preLoaderRoute: typeof NccBlogTagsRouteImport
+      parentRoute: typeof NccRoute
+    }
+    '/ncc/blog/new': {
+      id: '/ncc/blog/new'
+      path: '/blog/new'
+      fullPath: '/ncc/blog/new'
+      preLoaderRoute: typeof NccBlogNewRouteImport
+      parentRoute: typeof NccRoute
+    }
+    '/ncc/blog/categories': {
+      id: '/ncc/blog/categories'
+      path: '/blog/categories'
+      fullPath: '/ncc/blog/categories'
+      preLoaderRoute: typeof NccBlogCategoriesRouteImport
+      parentRoute: typeof NccRoute
+    }
+    '/ncc/blog/$id': {
+      id: '/ncc/blog/$id'
+      path: '/blog/$id'
+      fullPath: '/ncc/blog/$id'
+      preLoaderRoute: typeof NccBlogIdRouteImport
+      parentRoute: typeof NccRoute
+    }
     '/lovable/email/suppression': {
       id: '/lovable/email/suppression'
       path: '/lovable/email/suppression'
@@ -2128,6 +2276,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/espace-client/pay/$ref'
       preLoaderRoute: typeof EspaceClientPayRefRouteImport
       parentRoute: typeof EspaceClientRoute
+    }
+    '/blog/categorie/$slug': {
+      id: '/blog/categorie/$slug'
+      path: '/blog/categorie/$slug'
+      fullPath: '/blog/categorie/$slug'
+      preLoaderRoute: typeof BlogCategorieSlugRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/public/csp-report': {
       id: '/api/public/csp-report'
@@ -2485,6 +2640,11 @@ interface NccRouteChildren {
   NccTrialsRoute: typeof NccTrialsRoute
   NccWhatsappRoute: typeof NccWhatsappRoute
   NccIndexRoute: typeof NccIndexRoute
+  NccBlogIdRoute: typeof NccBlogIdRoute
+  NccBlogCategoriesRoute: typeof NccBlogCategoriesRoute
+  NccBlogNewRoute: typeof NccBlogNewRoute
+  NccBlogTagsRoute: typeof NccBlogTagsRoute
+  NccBlogIndexRoute: typeof NccBlogIndexRoute
 }
 
 const NccRouteChildren: NccRouteChildren = {
@@ -2509,6 +2669,11 @@ const NccRouteChildren: NccRouteChildren = {
   NccTrialsRoute: NccTrialsRoute,
   NccWhatsappRoute: NccWhatsappRoute,
   NccIndexRoute: NccIndexRoute,
+  NccBlogIdRoute: NccBlogIdRoute,
+  NccBlogCategoriesRoute: NccBlogCategoriesRoute,
+  NccBlogNewRoute: NccBlogNewRoute,
+  NccBlogTagsRoute: NccBlogTagsRoute,
+  NccBlogIndexRoute: NccBlogIndexRoute,
 }
 
 const NccRouteWithChildren = NccRoute._addFileChildren(NccRouteChildren)
@@ -2535,6 +2700,7 @@ const rootRouteChildren: RootRouteChildren = {
   Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
   Char91DotwellKnownChar93OauthProtectedResourceRoute:
     Char91DotwellKnownChar93OauthProtectedResourceRoute,
+  BlogSlugRoute: BlogSlugRoute,
   BlogBestIptv2026Route: BlogBestIptv2026Route,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   LegalNoticeRoute: LegalNoticeRoute,
@@ -2545,10 +2711,12 @@ const rootRouteChildren: RootRouteChildren = {
   PaymentFailedRoute: PaymentFailedRoute,
   PaymentSuccessRoute: PaymentSuccessRoute,
   ProduitsSlugRoute: ProduitsSlugRoute,
+  BlogIndexRoute: BlogIndexRoute,
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   ApiPublicCamerpaySelftestRoute: ApiPublicCamerpaySelftestRoute,
   ApiPublicCspReportRoute: ApiPublicCspReportRoute,
+  BlogCategorieSlugRoute: BlogCategorieSlugRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ApiPublicAutomationEmitTestRoute: ApiPublicAutomationEmitTestRoute,
   ApiPublicAutomationProcessQueueRoute: ApiPublicAutomationProcessQueueRoute,
