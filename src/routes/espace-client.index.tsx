@@ -5,6 +5,17 @@ import { requestPortalOtp, verifyPortalOtp } from "@/lib/portal.functions";
 import { Mail, ShieldCheck, Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/espace-client/")({
+  head: () => ({
+    meta: [
+      { title: 'Connexion Espace Client — Nexora IPTV' },
+      { name: "description", content: 'Connectez-vous à votre espace client Nexora IPTV pour gérer votre abonnement et vos accès.' },
+      { name: "robots", content: "noindex, nofollow" },
+      { property: "og:title", content: 'Connexion Espace Client — Nexora IPTV' },
+      { property: "og:description", content: 'Connectez-vous à votre espace client Nexora IPTV pour gérer votre abonnement et vos accès.' },
+      { property: "og:url", content: 'https://nexora-iptv.com/espace-client' },
+    ],
+    links: [{ rel: "canonical", href: 'https://nexora-iptv.com/espace-client' }],
+  }),
   component: PortalLogin,
 });
 

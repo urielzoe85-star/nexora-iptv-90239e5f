@@ -35,8 +35,8 @@ const FAQ = [
 export const Route = createFileRoute("/fr/guide-iptv")({
   head: () => ({
     meta: [
-      { title: "Comment installer IPTV et regarder la TV en direct sur internet — Guide 2026" },
-      { name: "description", content: "Guide pas à pas en français pour installer IPTV sur Smart TV, Android, iPhone, Fire TV et Apple TV, configurer vos accès (M3U / Xtream) et regarder la TV en direct sur internet." },
+      { title: "Installer IPTV et regarder la TV en direct — Guide 2026" },
+      { name: "description", content: "Guide pas à pas pour installer IPTV sur Smart TV, Android, iPhone, Fire TV et Apple TV, et configurer vos accès M3U / Xtream Codes." },
       { property: "og:title", content: "Comment installer IPTV et regarder la TV en direct — Guide Nexora" },
       { property: "og:description", content: "Installation IPTV étape par étape : applications, configuration M3U / Xtream Codes, dépannage et FAQ." },
       { property: "og:url", content: "https://nexora-iptv.com/fr/guide-iptv" },

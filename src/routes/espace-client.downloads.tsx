@@ -2,6 +2,17 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Download, Smartphone, Tv2, Monitor } from "lucide-react";
 
 export const Route = createFileRoute("/espace-client/downloads")({
+  head: () => ({
+    meta: [
+      { title: 'Applications & téléchargements — Nexora IPTV' },
+      { name: "description", content: 'Téléchargez les applications IPTV recommandées pour Smart TV, mobile, tablette et PC.' },
+      { name: "robots", content: "noindex, nofollow" },
+      { property: "og:title", content: 'Applications & téléchargements — Nexora IPTV' },
+      { property: "og:description", content: 'Téléchargez les applications IPTV recommandées pour Smart TV, mobile, tablette et PC.' },
+      { property: "og:url", content: 'https://nexora-iptv.com/espace-client/downloads' },
+    ],
+    links: [{ rel: "canonical", href: 'https://nexora-iptv.com/espace-client/downloads' }],
+  }),
   component: DownloadsPage,
 });
 

@@ -6,6 +6,17 @@ import { RefreshCcw, Calendar, Zap, ShoppingBag, AlertCircle, CheckCircle2, Eye,
 import { useEffect, useState } from "react";
 
 export const Route = createFileRoute("/espace-client/dashboard")({
+  head: () => ({
+    meta: [
+      { title: 'Tableau de bord client — Nexora IPTV' },
+      { name: "description", content: "Vue d'ensemble de votre abonnement IPTV : statut, expiration, identifiants et actions rapides." },
+      { name: "robots", content: "noindex, nofollow" },
+      { property: "og:title", content: 'Tableau de bord client — Nexora IPTV' },
+      { property: "og:description", content: "Vue d'ensemble de votre abonnement IPTV : statut, expiration, identifiants et actions rapides." },
+      { property: "og:url", content: 'https://nexora-iptv.com/espace-client/dashboard' },
+    ],
+    links: [{ rel: "canonical", href: 'https://nexora-iptv.com/espace-client/dashboard' }],
+  }),
   component: DashboardPage,
 });
 

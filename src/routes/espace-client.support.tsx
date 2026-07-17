@@ -6,6 +6,17 @@ import { useState } from "react";
 import { Loader2, MessageSquare, CheckCircle2 } from "lucide-react";
 
 export const Route = createFileRoute("/espace-client/support")({
+  head: () => ({
+    meta: [
+      { title: 'Support client — Espace Client Nexora' },
+      { name: "description", content: 'Ouvrez un ticket, suivez vos demandes et échangez avec le support Nexora IPTV.' },
+      { name: "robots", content: "noindex, nofollow" },
+      { property: "og:title", content: 'Support client — Espace Client Nexora' },
+      { property: "og:description", content: 'Ouvrez un ticket, suivez vos demandes et échangez avec le support Nexora IPTV.' },
+      { property: "og:url", content: 'https://nexora-iptv.com/espace-client/support' },
+    ],
+    links: [{ rel: "canonical", href: 'https://nexora-iptv.com/espace-client/support' }],
+  }),
   component: SupportPage,
 });
 

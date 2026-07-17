@@ -5,6 +5,17 @@ import { getPortalAnnouncements } from "@/lib/portal.functions";
 import { Megaphone } from "lucide-react";
 
 export const Route = createFileRoute("/espace-client/announcements")({
+  head: () => ({
+    meta: [
+      { title: 'Annonces — Espace Client Nexora' },
+      { name: "description", content: 'Dernières annonces et informations importantes pour les abonnés Nexora IPTV.' },
+      { name: "robots", content: "noindex, nofollow" },
+      { property: "og:title", content: 'Annonces — Espace Client Nexora' },
+      { property: "og:description", content: 'Dernières annonces et informations importantes pour les abonnés Nexora IPTV.' },
+      { property: "og:url", content: 'https://nexora-iptv.com/espace-client/announcements' },
+    ],
+    links: [{ rel: "canonical", href: 'https://nexora-iptv.com/espace-client/announcements' }],
+  }),
   component: AnnouncementsPage,
 });
 
