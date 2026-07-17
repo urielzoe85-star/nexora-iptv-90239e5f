@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createPortalSupportTicket, listPortalTickets } from "@/lib/portal.functions";
+import { PORTAL_BASE_URL } from "@/lib/portal-url";
 import { useState } from "react";
 import { Loader2, MessageSquare, CheckCircle2 } from "lucide-react";
 
@@ -13,9 +14,9 @@ export const Route = createFileRoute("/espace-client/support")({
       { name: "robots", content: "noindex, nofollow" },
       { property: "og:title", content: 'Support client — Espace Client Nexora' },
       { property: "og:description", content: 'Ouvrez un ticket, suivez vos demandes et échangez avec le support Nexora IPTV.' },
-      { property: "og:url", content: 'https://nexora-iptv.com/espace-client/support' },
+      { property: "og:url", content: `${PORTAL_BASE_URL}/espace-client/support` },
     ],
-    links: [{ rel: "canonical", href: 'https://nexora-iptv.com/espace-client/support' }],
+    links: [{ rel: "canonical", href: `${PORTAL_BASE_URL}/espace-client/support` }],
   }),
   component: SupportPage,
 });

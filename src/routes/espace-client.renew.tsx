@@ -2,6 +2,7 @@ import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { getPortalDashboard, listRenewalPlans, createRenewalOrder } from "@/lib/portal.functions";
+import { PORTAL_BASE_URL } from "@/lib/portal-url";
 import { COUNTRIES, type Operator } from "@/lib/countries";
 import { useState } from "react";
 import { RefreshCcw, Bitcoin, Smartphone, Loader2, CheckCircle2 } from "lucide-react";
@@ -14,9 +15,9 @@ export const Route = createFileRoute("/espace-client/renew")({
       { name: "robots", content: "noindex, nofollow" },
       { property: "og:title", content: 'Renouveler mon abonnement — Nexora IPTV' },
       { property: "og:description", content: 'Renouvelez votre abonnement Nexora IPTV en quelques clics via Mobile Money ou crypto.' },
-      { property: "og:url", content: 'https://nexora-iptv.com/espace-client/renew' },
+      { property: "og:url", content: `${PORTAL_BASE_URL}/espace-client/renew` },
     ],
-    links: [{ rel: "canonical", href: 'https://nexora-iptv.com/espace-client/renew' }],
+    links: [{ rel: "canonical", href: `${PORTAL_BASE_URL}/espace-client/renew` }],
   }),
   component: RenewPage,
 });

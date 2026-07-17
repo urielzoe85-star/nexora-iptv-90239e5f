@@ -2,6 +2,7 @@ import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { getPortalDashboard } from "@/lib/portal.functions";
+import { PORTAL_BASE_URL } from "@/lib/portal-url";
 import { RefreshCcw, Calendar, Zap, ShoppingBag, AlertCircle, CheckCircle2, Eye, EyeOff } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -13,9 +14,9 @@ export const Route = createFileRoute("/espace-client/dashboard")({
       { name: "robots", content: "noindex, nofollow" },
       { property: "og:title", content: 'Tableau de bord client — Nexora IPTV' },
       { property: "og:description", content: "Vue d'ensemble de votre abonnement IPTV : statut, expiration, identifiants et actions rapides." },
-      { property: "og:url", content: 'https://nexora-iptv.com/espace-client/dashboard' },
+      { property: "og:url", content: `${PORTAL_BASE_URL}/espace-client/dashboard` },
     ],
-    links: [{ rel: "canonical", href: 'https://nexora-iptv.com/espace-client/dashboard' }],
+    links: [{ rel: "canonical", href: `${PORTAL_BASE_URL}/espace-client/dashboard` }],
   }),
   component: DashboardPage,
 });
