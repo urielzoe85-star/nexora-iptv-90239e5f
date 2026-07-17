@@ -1,34 +1,62 @@
-Le sous-domaine `account.nexora-iptv.com` est maintenant connecté. Le middleware existant redirige déjà sa racine vers `/espace-client` et renvoie les routes marketing vers `www.nexora-iptv.com`. Il reste à polir l'intégration pour que le portail soit pleinement utilisable et bien référencé.
+# Espace Client — Login par mot de passe (en plus de l'OTP)
 
-## Prochaines étapes
+Objectif : permettre au client de **créer un compte avec email + mot de passe** et de se connecter avec, tout en gardant le code par e-mail (OTP) comme méthode alternative.
 
-### 1. Vérifier le routage en ligne
-- Ouvrir `https://account.nexora-iptv.com` dans un navigateur : doit rediriger vers `https://account.nexora-iptv.com/espace-client`.
-- Confirmer que la page de connexion s'affiche correctement.
+## Ce qui change côté client (UI)
 
-### 2. Mettre à jour les métadonnées de `/espace-client`
-Remplacer les URLs `nexora-iptv.com/espace-client` par `account.nexora-iptv.com/espace-client` dans :
-- `og:url`
-- `canonical`
-- éventuellement le titre/description si on veut insister sur le sous-domaine dédié
+Sur `account.nexora-iptv.com/espace-client` (page de connexion), 3 onglets :
 
-Cela renforce le positionnement de `account.nexora-iptv.com` comme l'URL officielle de l'espace client.
+1. **Connexion** — email + mot de passe → bouton "Se connecter"
+2. **Créer un compte** — email + mot de passe + confirmation → "Créer mon compte"
+3. **Code par e-mail** — flux OTP existant (inchangé)
 
-### 3. Mettre à jour les liens "Espace client" sur le site marketing
-Dans la navigation (`src/routes/index.tsx`) :
-- Sur `www.nexora-iptv.com`, le lien "Espace client" doit pointer vers `https://account.nexora-iptv.com/espace-client` (lien externe `<a>`), pas vers `/espace-client` en interne.
-- Sur `account.nexora-iptv.com`, le lien peut rester interne (`/espace-client`).
+Ajouts UX :
+- Lien "Mot de passe oublié ?" sous le formulaire de connexion → envoie un lien de réinitialisation (jeton unique par e-mail, valable 30 min).
+- Page `/espace-client/reset-password?token=…` pour définir un nouveau mot de passe.
+- Dans `/espace-client/profile`, section "Sécurité" : définir / changer le mot de passe.
 
-Idem pour le menu mobile.
+Après connexion réussie (peu importe la méthode) → même cookie de session existant (`nx_portal_session`) → redirection vers `/espace-client/dashboard`. Rien à changer sur les autres pages.
 
-### 4. (Optionnel) Page d'accueil du portail
-Ajouter une petite page ou bannière sur `account.nexora-iptv.com/` qui confirme que l'utilisateur est sur le portail client et lui propose de se connecter / s'identifier. Cela évite la redirection brute et rassure l'utilisateur.
+## Ce qui change côté base de données
 
-### 5. Publier les changements
-- Les modifications frontend nécessitent un clic sur **Update** dans la boîte de dialogue de publication pour être live.
-- Les changements de middleware/server sont déployés automatiquement.
+Une migration Lovable Cloud ajoute :
 
-## Validation finale
-- Test `https://account.nexora-iptv.com` → `/espace-client` OK.
-- Test lien depuis `www.nexora-iptv.com` → ouvre bien le sous-domaine dédié.
-- Aucun lien interne ne pointe plus vers `nexora-iptv.com/espace-client` dans le contexte marketing.
+- **`customers.password_hash TEXT NULL`** — mot de passe scrypt (jamais en clair, jamais renvoyé au client).
+- **`customers.password_updated_at TIMESTAMPTZ NULL`**.
+- **Table `client_portal_password_resets`** : `id, customer_id, token_hash, expires_at, used_at, created_at, ip`.
+- Rate-limit sur les tentatives de connexion : réutilise la logique existante (`client_portal_otps` pour l'OTP) ; pour le mot de passe, compteur simple par e-mail dans une nouvelle table légère `client_portal_login_attempts` (5 tentatives / 15 min).
+
+Aucune politique publique n'est ajoutée : tout est lu/écrit via `supabaseAdmin` dans les server functions, comme le flux OTP actuel.
+
+## Ce qui change côté serveur (`src/lib/portal.functions.ts` + `portal.server.ts`)
+
+Nouvelles server functions :
+
+- `registerPortalAccount({ email, password })` — vérifie que l'e-mail existe dans `customers` (sinon message générique "vérifiez votre e-mail ou contactez le support"), refuse si un mot de passe est déjà défini, hache et enregistre, ouvre la session, pose le cookie.
+- `loginPortalPassword({ email, password })` — vérifie le hash, respecte le rate-limit, ouvre la session.
+- `requestPortalPasswordReset({ email })` — génère un jeton, envoie l'e-mail via `delivery_logs` + Telegram admin (comme l'OTP), réponse générique.
+- `resetPortalPassword({ token, password })` — consomme le jeton, met à jour le hash, ouvre la session.
+- `changePortalPassword({ currentPassword, newPassword })` — pour utilisateur déjà connecté (page Profil).
+
+Sécurité **moyenne** demandée :
+- Hash : **scrypt** de `node:crypto` (déjà dispo côté Worker), paramètres N=16384, r=8, p=1, sel 16 octets.
+- Longueur minimum : **8 caractères**, au moins 1 lettre + 1 chiffre. Pas de contrainte plus lourde.
+- Comparaisons en `timingSafeEqual`.
+- Cookie de session, expiration, révocation : identiques au flux OTP existant → aucun changement.
+
+## Fichiers touchés
+
+- `src/lib/portal.server.ts` : helpers `hashPassword`, `verifyPassword`, `generateResetToken`, `sendPasswordResetEmail`.
+- `src/lib/portal.functions.ts` : 5 nouvelles server functions listées ci-dessus.
+- `src/routes/espace-client.index.tsx` : refonte en 3 onglets (Connexion / Créer / Code e-mail).
+- `src/routes/espace-client.reset-password.tsx` : **nouvelle** route publique pour poser un nouveau mot de passe depuis le lien e-mail.
+- `src/routes/espace-client.profile.tsx` : ajout bloc "Sécurité — mot de passe".
+- 1 migration SQL pour les colonnes + tables ci-dessus.
+
+## Détails techniques
+
+- Aucun changement sur Supabase Auth (`auth.users`) : l'Espace Client reste un système parallèle basé sur `customers` + cookie, comme aujourd'hui. On ne mélange pas les deux.
+- `password_hash` stocké au format `scrypt$N$r$p$saltHex$hashHex` (auto-décrit, permet de tuner les paramètres plus tard).
+- Le lien de réinitialisation pointe vers `https://account.nexora-iptv.com/espace-client/reset-password?token=…`.
+- Les e-mails (création, reset) passent par le même canal `delivery_logs` que l'OTP actuel, avec templates simples en français.
+- Le rate-limit login : 5 échecs consécutifs bloquent 15 min, réponse générique "Identifiants invalides".
