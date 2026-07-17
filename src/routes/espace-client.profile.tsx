@@ -1,11 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { getPortalDashboard, updatePortalProfile } from "@/lib/portal.functions";
+import { getPortalDashboard, updatePortalProfile, changePortalPassword } from "@/lib/portal.functions";
 import { PORTAL_BASE_URL } from "@/lib/portal-url";
 import { useEffect, useState } from "react";
 import { COUNTRIES } from "@/lib/countries";
-import { Loader2, CheckCircle2 } from "lucide-react";
+import { Loader2, CheckCircle2, Lock } from "lucide-react";
 
 export const Route = createFileRoute("/espace-client/profile")({
   head: () => ({
@@ -25,6 +25,7 @@ export const Route = createFileRoute("/espace-client/profile")({
 function ProfilePage() {
   const dash = useServerFn(getPortalDashboard);
   const update = useServerFn(updatePortalProfile);
+  const changePwd = useServerFn(changePortalPassword);
   const qc = useQueryClient();
   const q = useQuery({ queryKey: ["portal-dashboard"], queryFn: () => dash() });
   const c = q.data?.customer;
@@ -56,6 +57,28 @@ function ProfilePage() {
     } finally { setSaving(false); }
   }
 
+  // Password section
+  const [currentPwd, setCurrentPwd] = useState("");
+  const [newPwd, setNewPwd] = useState("");
+  const [newPwd2, setNewPwd2] = useState("");
+  const [pwdSaving, setPwdSaving] = useState(false);
+  const [pwdSaved, setPwdSaved] = useState(false);
+  const [pwdErr, setPwdErr] = useState("");
+
+  async function submitPassword(e: React.FormEvent) {
+    e.preventDefault();
+    setPwdErr(""); setPwdSaved(false);
+    if (newPwd !== newPwd2) { setPwdErr("Les deux mots de passe ne correspondent pas."); return; }
+    setPwdSaving(true);
+    try {
+      await changePwd({ data: { currentPassword: currentPwd, newPassword: newPwd } });
+      setPwdSaved(true);
+      setCurrentPwd(""); setNewPwd(""); setNewPwd2("");
+    } catch (e: any) {
+      setPwdErr(e?.message ?? "Impossible de modifier le mot de passe.");
+    } finally { setPwdSaving(false); }
+  }
+
   return (
     <div className="space-y-4 max-w-xl">
       <header>
@@ -63,6 +86,7 @@ function ProfilePage() {
         <p className="text-sm text-muted-foreground mt-1">Ces informations servent à la facturation et à la livraison.</p>
       </header>
       {q.isLoading || !c ? <p className="text-sm text-muted-foreground">Chargement…</p> : (
+        <>
         <form onSubmit={submit} className="glass rounded-2xl p-6 space-y-4">
           <label className="block">
             <span className="text-xs uppercase tracking-wider text-muted-foreground">E-mail</span>
@@ -96,6 +120,43 @@ function ProfilePage() {
             {saving && <Loader2 className="h-4 w-4 animate-spin" />} Enregistrer
           </button>
         </form>
+
+        <form onSubmit={submitPassword} className="glass rounded-2xl p-6 space-y-4">
+          <div>
+            <h2 className="text-lg font-semibold inline-flex items-center gap-2"><Lock className="h-4 w-4" /> Sécurité — mot de passe</h2>
+            <p className="text-xs text-muted-foreground mt-1">
+              Laissez « Mot de passe actuel » vide si vous n'en aviez pas encore défini.
+            </p>
+          </div>
+          <label className="block">
+            <span className="text-xs uppercase tracking-wider text-muted-foreground">Mot de passe actuel</span>
+            <input type="password" autoComplete="current-password"
+              value={currentPwd} onChange={(e) => setCurrentPwd(e.target.value)}
+              className="mt-1 w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm" />
+          </label>
+          <label className="block">
+            <span className="text-xs uppercase tracking-wider text-muted-foreground">Nouveau mot de passe</span>
+            <input required type="password" autoComplete="new-password" minLength={8}
+              value={newPwd} onChange={(e) => setNewPwd(e.target.value)}
+              className="mt-1 w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm" />
+            <span className="mt-1 block text-[11px] text-muted-foreground">
+              Au moins 8 caractères, incluant lettres et chiffres.
+            </span>
+          </label>
+          <label className="block">
+            <span className="text-xs uppercase tracking-wider text-muted-foreground">Confirmer</span>
+            <input required type="password" autoComplete="new-password" minLength={8}
+              value={newPwd2} onChange={(e) => setNewPwd2(e.target.value)}
+              className="mt-1 w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm" />
+          </label>
+          {pwdErr && <p className="text-sm text-destructive">{pwdErr}</p>}
+          {pwdSaved && <p className="text-sm text-emerald-400 inline-flex items-center gap-1"><CheckCircle2 className="h-4 w-4" /> Mot de passe mis à jour.</p>}
+          <button type="submit" disabled={pwdSaving || newPwd.length < 8}
+            className="btn-gold btn-gold-hover px-5 py-2.5 rounded-full text-sm font-semibold inline-flex items-center gap-2 disabled:opacity-60">
+            {pwdSaving && <Loader2 className="h-4 w-4 animate-spin" />} Mettre à jour le mot de passe
+          </button>
+        </form>
+        </>
       )}
     </div>
   );
