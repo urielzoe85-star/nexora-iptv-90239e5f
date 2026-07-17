@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { getPortalAnnouncements } from "@/lib/portal.functions";
+import { PORTAL_BASE_URL } from "@/lib/portal-url";
 import { Megaphone } from "lucide-react";
 
 export const Route = createFileRoute("/espace-client/announcements")({
@@ -12,9 +13,9 @@ export const Route = createFileRoute("/espace-client/announcements")({
       { name: "robots", content: "noindex, nofollow" },
       { property: "og:title", content: 'Annonces — Espace Client Nexora' },
       { property: "og:description", content: 'Dernières annonces et informations importantes pour les abonnés Nexora IPTV.' },
-      { property: "og:url", content: 'https://nexora-iptv.com/espace-client/announcements' },
+      { property: "og:url", content: `${PORTAL_BASE_URL}/espace-client/announcements` },
     ],
-    links: [{ rel: "canonical", href: 'https://nexora-iptv.com/espace-client/announcements' }],
+    links: [{ rel: "canonical", href: `${PORTAL_BASE_URL}/espace-client/announcements` }],
   }),
   component: AnnouncementsPage,
 });
