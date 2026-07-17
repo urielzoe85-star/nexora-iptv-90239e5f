@@ -61,21 +61,29 @@ export function verifyNccToken(token: string | undefined | null, userId: string)
 }
 
 export async function setNccGateCookie(userId: string): Promise<{ expiresAt: number }> {
-  const { setCookie } = await import("@tanstack/react-start/server");
+  const { setResponseHeader } = await import("@tanstack/react-start/server");
   const { token, expiresAt } = issueNccToken(userId);
-  setCookie(COOKIE_NAME, token, {
-    httpOnly: true,
-    secure: true,
-    sameSite: "lax",
-    path: "/",
-    maxAge: DEFAULT_TTL_SECONDS,
-  });
+  // SameSite=None + Partitioned so the cookie is accepted in cross-site
+  // iframes (Lovable preview) as well as the top-level published site.
+  const cookie = [
+    `${COOKIE_NAME}=${encodeURIComponent(token)}`,
+    "Path=/",
+    "HttpOnly",
+    "Secure",
+    "SameSite=None",
+    "Partitioned",
+    `Max-Age=${DEFAULT_TTL_SECONDS}`,
+  ].join("; ");
+  setResponseHeader("set-cookie", cookie);
   return { expiresAt };
 }
 
 export async function clearNccGateCookie(): Promise<void> {
-  const { deleteCookie } = await import("@tanstack/react-start/server");
-  deleteCookie(COOKIE_NAME, { path: "/" });
+  const { setResponseHeader } = await import("@tanstack/react-start/server");
+  setResponseHeader(
+    "set-cookie",
+    `${COOKIE_NAME}=; Path=/; HttpOnly; Secure; SameSite=None; Partitioned; Max-Age=0`,
+  );
 }
 
 export async function readNccGateCookie(): Promise<string | undefined> {
