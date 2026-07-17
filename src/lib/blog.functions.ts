@@ -322,8 +322,11 @@ export const adminUploadBlogImage = createServerFn({ method: "POST" })
       upsert: false,
     });
     if (error) throw new Error(error.message);
-    const { data: pub } = supabaseAdmin.storage.from("blog-media").getPublicUrl(path);
-    return { url: pub.publicUrl, path };
+    const { data: signed, error: sErr } = await supabaseAdmin.storage
+      .from("blog-media")
+      .createSignedUrl(path, 60 * 60 * 24 * 365 * 10);
+    if (sErr || !signed) throw new Error(sErr?.message ?? "Signed URL failed");
+    return { url: signed.signedUrl, path };
   });
 
 // ─────────── Admin: settings ───────────
