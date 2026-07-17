@@ -138,13 +138,14 @@ export function buildSessionCookie(token: string, maxAgeSec = Math.floor(SESSION
     "HttpOnly",
     "SameSite=None",
     "Secure",
+    "Partitioned",
     `Max-Age=${maxAgeSec}`,
   ];
   return attrs.join("; ");
 }
 
 export function clearSessionCookie(): string {
-  return `${PORTAL_COOKIE}=; Path=/; HttpOnly; SameSite=None; Secure; Max-Age=0`;
+  return `${PORTAL_COOKIE}=; Path=/; HttpOnly; SameSite=None; Secure; Partitioned; Max-Age=0`;
 }
 
 export async function findCustomerByIdentifier(identifier: string): Promise<
