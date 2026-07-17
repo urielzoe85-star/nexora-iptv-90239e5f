@@ -62,6 +62,7 @@ import { Route as LegalPrivacyRouteImport } from './routes/legal.privacy'
 import { Route as LegalNoticeRouteImport } from './routes/legal.notice'
 import { Route as FrGuideIptvRouteImport } from './routes/fr.guide-iptv'
 import { Route as EspaceClientSupportRouteImport } from './routes/espace-client.support'
+import { Route as EspaceClientResetPasswordRouteImport } from './routes/espace-client.reset-password'
 import { Route as EspaceClientRenewRouteImport } from './routes/espace-client.renew'
 import { Route as EspaceClientProfileRouteImport } from './routes/espace-client.profile'
 import { Route as EspaceClientOrdersRouteImport } from './routes/espace-client.orders'
@@ -390,6 +391,12 @@ const EspaceClientSupportRoute = EspaceClientSupportRouteImport.update({
   path: '/support',
   getParentRoute: () => EspaceClientRoute,
 } as any)
+const EspaceClientResetPasswordRoute =
+  EspaceClientResetPasswordRouteImport.update({
+    id: '/reset-password',
+    path: '/reset-password',
+    getParentRoute: () => EspaceClientRoute,
+  } as any)
 const EspaceClientRenewRoute = EspaceClientRenewRouteImport.update({
   id: '/renew',
   path: '/renew',
@@ -756,6 +763,7 @@ export interface FileRoutesByFullPath {
   '/espace-client/orders': typeof EspaceClientOrdersRoute
   '/espace-client/profile': typeof EspaceClientProfileRoute
   '/espace-client/renew': typeof EspaceClientRenewRoute
+  '/espace-client/reset-password': typeof EspaceClientResetPasswordRoute
   '/espace-client/support': typeof EspaceClientSupportRoute
   '/fr/guide-iptv': typeof FrGuideIptvRoute
   '/legal/notice': typeof LegalNoticeRoute
@@ -868,6 +876,7 @@ export interface FileRoutesByTo {
   '/espace-client/orders': typeof EspaceClientOrdersRoute
   '/espace-client/profile': typeof EspaceClientProfileRoute
   '/espace-client/renew': typeof EspaceClientRenewRoute
+  '/espace-client/reset-password': typeof EspaceClientResetPasswordRoute
   '/espace-client/support': typeof EspaceClientSupportRoute
   '/fr/guide-iptv': typeof FrGuideIptvRoute
   '/legal/notice': typeof LegalNoticeRoute
@@ -984,6 +993,7 @@ export interface FileRoutesById {
   '/espace-client/orders': typeof EspaceClientOrdersRoute
   '/espace-client/profile': typeof EspaceClientProfileRoute
   '/espace-client/renew': typeof EspaceClientRenewRoute
+  '/espace-client/reset-password': typeof EspaceClientResetPasswordRoute
   '/espace-client/support': typeof EspaceClientSupportRoute
   '/fr/guide-iptv': typeof FrGuideIptvRoute
   '/legal/notice': typeof LegalNoticeRoute
@@ -1103,6 +1113,7 @@ export interface FileRouteTypes {
     | '/espace-client/orders'
     | '/espace-client/profile'
     | '/espace-client/renew'
+    | '/espace-client/reset-password'
     | '/espace-client/support'
     | '/fr/guide-iptv'
     | '/legal/notice'
@@ -1215,6 +1226,7 @@ export interface FileRouteTypes {
     | '/espace-client/orders'
     | '/espace-client/profile'
     | '/espace-client/renew'
+    | '/espace-client/reset-password'
     | '/espace-client/support'
     | '/fr/guide-iptv'
     | '/legal/notice'
@@ -1330,6 +1342,7 @@ export interface FileRouteTypes {
     | '/espace-client/orders'
     | '/espace-client/profile'
     | '/espace-client/renew'
+    | '/espace-client/reset-password'
     | '/espace-client/support'
     | '/fr/guide-iptv'
     | '/legal/notice'
@@ -1843,6 +1856,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EspaceClientSupportRouteImport
       parentRoute: typeof EspaceClientRoute
     }
+    '/espace-client/reset-password': {
+      id: '/espace-client/reset-password'
+      path: '/reset-password'
+      fullPath: '/espace-client/reset-password'
+      preLoaderRoute: typeof EspaceClientResetPasswordRouteImport
+      parentRoute: typeof EspaceClientRoute
+    }
     '/espace-client/renew': {
       id: '/espace-client/renew'
       path: '/renew'
@@ -2321,6 +2341,7 @@ interface EspaceClientRouteChildren {
   EspaceClientOrdersRoute: typeof EspaceClientOrdersRoute
   EspaceClientProfileRoute: typeof EspaceClientProfileRoute
   EspaceClientRenewRoute: typeof EspaceClientRenewRoute
+  EspaceClientResetPasswordRoute: typeof EspaceClientResetPasswordRoute
   EspaceClientSupportRoute: typeof EspaceClientSupportRoute
   EspaceClientIndexRoute: typeof EspaceClientIndexRoute
   EspaceClientPayRefRoute: typeof EspaceClientPayRefRoute
@@ -2334,6 +2355,7 @@ const EspaceClientRouteChildren: EspaceClientRouteChildren = {
   EspaceClientOrdersRoute: EspaceClientOrdersRoute,
   EspaceClientProfileRoute: EspaceClientProfileRoute,
   EspaceClientRenewRoute: EspaceClientRenewRoute,
+  EspaceClientResetPasswordRoute: EspaceClientResetPasswordRoute,
   EspaceClientSupportRoute: EspaceClientSupportRoute,
   EspaceClientIndexRoute: EspaceClientIndexRoute,
   EspaceClientPayRefRoute: EspaceClientPayRefRoute,
