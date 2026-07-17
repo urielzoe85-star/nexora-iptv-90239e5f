@@ -16,10 +16,11 @@ import {
 import { useT, useI18n } from "@/i18n/context";
 import { LanguageSwitcher } from "@/i18n/context";
 import { buildWhatsAppLink } from "@/lib/whatsapp-contact";
+import { PORTAL_HOST, PORTAL_BASE_URL } from "@/lib/portal-url";
 
 const TELEGRAM_BOT_URL = "https://t.me/NexoraIPTVBot";
 const SUPPORT_EMAIL = "info@nexora-iptv.com";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getPublicPlans, type PublicPlan } from "@/lib/plans.functions";
