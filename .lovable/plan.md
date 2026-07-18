@@ -1,20 +1,27 @@
-## Objectif
-Sur `/blog`, afficher automatiquement les nouveaux articles publiés sans que le visiteur ait à rafraîchir manuellement.
+## Rendre le blog visible depuis le site public
 
-## Modifications
+Ajouter des points d'entrée vers `/blog` à trois endroits pour que les visiteurs découvrent les articles sans taper l'URL.
 
-**`src/routes/blog.index.tsx`** — ajouter le rafraîchissement auto à la `useQuery` de la liste d'articles :
-- `refetchInterval: 30_000` (poll toutes les 30 s)
-- `refetchOnWindowFocus: true` (recharge dès que l'onglet reprend le focus)
-- `refetchOnMount: "always"` + `staleTime: 0` (données considérées obsolètes → refetch à chaque montage)
-- Idem sur la query des catégories (intervalle plus long, 5 min) pour refléter les nouvelles catégories.
+### 1. Lien "Blog" dans le menu principal
+Ajouter un lien `<Link to="/blog">Blog</Link>` dans la barre de navigation publique (header) affichée sur toutes les pages du site, avec l'état actif (`activeProps`) pour surligner l'onglet quand on est sur `/blog` ou `/blog/...`.
 
-**`src/routes/blog.categorie.$slug.tsx`** — même traitement sur la liste filtrée par catégorie, pour cohérence.
+### 2. Section "Derniers articles" sur la page d'accueil
+Ajouter, en bas de la home (`src/routes/index.tsx`), une section qui affiche les **3 derniers articles publiés** :
+- Titre de section : « Derniers articles du blog »
+- Grille de 3 cartes `PostCard` (composant déjà existant)
+- Bouton « Voir tous les articles » → `/blog`
+- Données : appel à `publicListPosts({ page: 1, page_size: 3 })` (server function déjà en place)
+- Auto-refresh identique à la page `/blog` (poll 30 s + refetch on focus) pour que la home reflète immédiatement les nouvelles publications
 
-## Hors scope
-- Pas de changement backend, DB, cache CDN, ni de la page article `/blog/$slug`.
-- Pas de websocket/realtime Supabase (polling 30 s suffit et reste léger).
-- Pas de bouton "Rafraîchir" manuel (le polling + focus couvrent le besoin).
+Si aucun article n'est publié, la section ne s'affiche pas (aucun état vide sur la home).
 
-## Vérification
-Publier un article depuis NCC → l'onglet `/blog` déjà ouvert le fait apparaître en ≤ 30 s, ou immédiatement en revenant sur l'onglet.
+### 3. Lien "Blog" dans le footer
+Ajouter une entrée « Blog » dans le footer public, dans la même colonne que les autres liens de contenu (À propos, Guide, etc.).
+
+### Ce qui ne change pas
+- Aucun changement backend, aucune migration, aucun changement d'RLS.
+- Le composant `PostCard`, les server functions `publicListPosts` et les routes `/blog*` existent déjà.
+- Aucune modification du CMS NCC ni du workflow de publication.
+
+### Après déploiement
+Cliquer sur **Publier** pour que le nouveau menu, la section home et le footer soient visibles sur `nexora-iptv.com`.
