@@ -16,6 +16,12 @@ import danielPhoto from "@/assets/testimonial-daniel.jpg.asset.json";
 import ameliePhoto from "@/assets/testimonial-amelie.jpg.asset.json";
 import carlosPhoto from "@/assets/testimonial-carlos.jpg.asset.json";
 import fatouPhoto from "@/assets/testimonial-fatou.jpg.asset.json";
+import feature1Icon from "@/assets/features/feature-1.png.asset.json";
+import feature2Icon from "@/assets/features/feature-2.png.asset.json";
+import feature3Icon from "@/assets/features/feature-3.png.asset.json";
+import feature4Icon from "@/assets/features/feature-4.png.asset.json";
+import feature5Icon from "@/assets/features/feature-5.png.asset.json";
+import feature6Icon from "@/assets/features/feature-6.png.asset.json";
 import {
   Accordion, AccordionContent, AccordionItem, AccordionTrigger,
 } from "@/components/ui/accordion";
@@ -23,7 +29,6 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger,
 } from "@/components/ui/dialog";
 import {
-  Tv, Film, Zap, Globe2, ShieldCheck, Headphones,
   Check, Star, MessageCircle, Send, Mail, Menu,
   Download, Share2, Facebook, Twitter, Link2,
   BadgeCheck,
@@ -232,8 +237,12 @@ function Hero() {
 function Features() {
   const t = useT();
   const items = [
-    { Icon: Tv, k: 1 }, { Icon: Film, k: 2 }, { Icon: Zap, k: 3 },
-    { Icon: Globe2, k: 4 }, { Icon: ShieldCheck, k: 5 }, { Icon: Headphones, k: 6 },
+    { icon: feature1Icon.url, k: 1 },
+    { icon: feature2Icon.url, k: 2 },
+    { icon: feature3Icon.url, k: 3 },
+    { icon: feature4Icon.url, k: 4 },
+    { icon: feature5Icon.url, k: 5 },
+    { icon: feature6Icon.url, k: 6 },
   ];
   return (
     <section id="features" className="py-28 relative">
@@ -243,11 +252,17 @@ function Features() {
           <h2 className="text-4xl md:text-5xl font-bold">{t("features.title.a")}<span className="text-gradient-gold">{t("features.title.b")}</span></h2>
         </div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {items.map(({ Icon, k }) => (
+          {items.map(({ icon, k }) => (
             <div key={k} className="group glass rounded-2xl p-8 hover:border-[color:var(--gold)]/40 transition hover-scale">
-              <div className="h-12 w-12 rounded-xl bg-[image:var(--gradient-gold)] grid place-items-center text-black mb-5 group-hover:scale-110 transition">
-                <Icon className="h-6 w-6" />
-              </div>
+              <img
+                src={icon}
+                alt=""
+                width={1024}
+                height={1024}
+                loading="lazy"
+                decoding="async"
+                className="h-20 w-20 object-contain mb-5 group-hover:scale-110 transition drop-shadow-[0_10px_20px_rgba(212,175,55,0.15)]"
+              />
               <h3 className="text-xl font-semibold mb-2">{t(`features.${k}.title`)}</h3>
               <p className="text-muted-foreground text-sm leading-relaxed">{t(`features.${k}.desc`)}</p>
             </div>
