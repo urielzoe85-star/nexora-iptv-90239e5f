@@ -24,6 +24,8 @@ import { useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getPublicPlans, type PublicPlan } from "@/lib/plans.functions";
+import { publicListPosts } from "@/lib/blog.functions";
+import { PostCard } from "@/components/blog/PostCard";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -88,6 +90,7 @@ export function NexoraLanding() {
         <Downloads />
         <Testimonials />
         <FAQ />
+        <LatestPosts />
         <Payments />
         <Share />
         <Support />
@@ -116,6 +119,7 @@ function Nav() {
           <a href="#pricing" className="hover:text-foreground transition">{t("nav.pricing")}</a>
           <Link to="/catalog" className="hover:text-foreground transition">{t("nav.catalog")}</Link>
           <Link to="/galerie" className="hover:text-foreground transition">Galerie</Link>
+          <Link to="/blog" className="hover:text-foreground transition">Blog</Link>
           <a href="#faq" className="hover:text-foreground transition">{t("nav.faq")}</a>
           <a href="#support" className="hover:text-foreground transition">{t("nav.support")}</a>
           <PortalClientLink className="hover:text-foreground transition">Espace client</PortalClientLink>
@@ -148,6 +152,7 @@ function Nav() {
             <a href="#pricing" onClick={close} className="hover:text-foreground transition">{t("nav.pricing")}</a>
             <Link to="/catalog" onClick={close} className="hover:text-foreground transition">{t("nav.catalog")}</Link>
             <Link to="/galerie" onClick={close} className="hover:text-foreground transition">Galerie</Link>
+            <Link to="/blog" onClick={close} className="hover:text-foreground transition">Blog</Link>
             <a href="#faq" onClick={close} className="hover:text-foreground transition">{t("nav.faq")}</a>
             <a href="#support" onClick={close} className="hover:text-foreground transition">{t("nav.support")}</a>
             <PortalClientLink onClick={close} className="hover:text-foreground transition">Espace client</PortalClientLink>
