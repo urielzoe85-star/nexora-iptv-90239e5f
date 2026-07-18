@@ -16,6 +16,7 @@ import {
   Check, Star, MessageCircle, Send, Mail, Menu,
   Smartphone, Tablet, Laptop, Monitor, Tv2,
   Download, Share2, Facebook, Twitter, Link2,
+  BadgeCheck,
 } from "lucide-react";
 import { useT, useI18n } from "@/i18n/context";
 import { LanguageSwitcher } from "@/i18n/context";
