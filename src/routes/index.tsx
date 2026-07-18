@@ -251,13 +251,13 @@ function Features() {
 function Devices() {
   const t = useT();
   const devices = [
-    { icon: Tv2, key: "devices.smartTv" },
-    { icon: Tv, key: "devices.androidTv" },
-    { icon: Tv, key: "devices.fireTv" },
-    { icon: Smartphone, key: "devices.smartphone" },
-    { icon: Tablet, key: "devices.tablet" },
-    { icon: Laptop, key: "devices.laptop" },
-    { icon: Monitor, key: "devices.desktop" },
+    { photo: deviceSmartTv.url, key: "devices.smartTv", label: "Smart TV" },
+    { photo: deviceAndroidTv.url, key: "devices.androidTv", label: "Android TV" },
+    { photo: deviceFireTv.url, key: "devices.fireTv", label: "Fire TV" },
+    { photo: deviceSmartphone.url, key: "devices.smartphone", label: "Smartphone" },
+    { photo: deviceTablet.url, key: "devices.tablet", label: "Tablet" },
+    { photo: deviceLaptop.url, key: "devices.laptop", label: "Laptop" },
+    { photo: deviceDesktop.url, key: "devices.desktop", label: "Desktop" },
   ];
   return (
     <section id="devices" className="py-28 relative">
@@ -268,12 +268,26 @@ function Devices() {
           <p className="text-muted-foreground mt-4">{t("devices.sub")}</p>
         </div>
         <div className="glass rounded-3xl p-8 md:p-12">
-          <img src={devicesImg} alt="Premium streaming on multiple devices" width={1920} height={1080} loading="lazy" className="rounded-2xl w-full mb-10" />
+          <img
+            src={devicesMain.url}
+            alt="Premium streaming on multiple devices in a real living room"
+            width={1344}
+            height={768}
+            loading="lazy"
+            className="rounded-2xl w-full mb-10 object-cover"
+          />
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
-            {devices.map(({ icon: Icon, key }) => (
+            {devices.map(({ photo, key, label }) => (
               <div key={key} className="flex flex-col items-center gap-2 p-4 rounded-xl glass hover:border-[color:var(--gold)]/40 transition">
-                <Icon className="h-7 w-7 text-[color:var(--gold)]" />
-                <span className="text-xs text-muted-foreground">{t(key)}</span>
+                <img
+                  src={photo}
+                  alt={label}
+                  width={56}
+                  height={56}
+                  loading="lazy"
+                  className="h-14 w-14 rounded-lg object-cover ring-1 ring-[color:var(--gold)]/20"
+                />
+                <span className="text-xs text-muted-foreground text-center">{t(key)}</span>
               </div>
             ))}
           </div>
