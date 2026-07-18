@@ -1,53 +1,34 @@
 ## Objectif
+Rendre la section "Avis clients" de la home plus crédible avec 4 portraits photoréalistes générés et 4 témoignages réécrits en langage plus naturel.
 
-Enrichir le balisage schema.org sur le blog pour améliorer l'indexation et les rich snippets Google (dates, auteur, fil d'Ariane, image, catégorie).
+## Étapes
 
-## État actuel
+1. **Générer 4 portraits photoréalistes** (agent `generate_image`, premium, format carré 512×512, sauvegardés dans `src/assets/`) — 4 profils diversifiés cohérents avec les noms/villes :
+   - Homme afro-descendant ~30 ans, souriant, extérieur urbain (Lagos) → `testimonial-daniel.jpg`
+   - Femme blanche ~35 ans, cheveux châtains, sourire discret, intérieur parisien lumineux → `testimonial-amelie.jpg`
+   - Homme latino ~40 ans, barbe courte, terrasse ensoleillée (Madrid) → `testimonial-carlos.jpg`
+   - Femme africaine ~28 ans, foulard coloré, ambiance chaleureuse (Dakar) → `testimonial-fatou.jpg`
+   
+   (Portraits candides "selfie/photo perso" — pas de style studio publicitaire, pour éviter l'effet IA/stock.)
 
-- `/blog/$slug` a déjà un JSON-LD `Article` basique (headline, image, dates, author, publisher).
-- `/blog` et `/blog/categorie/$slug` n'ont **aucun** JSON-LD.
-- Pas de `BreadcrumbList`, pas de `mainEntityOfPage` typé, pas de `wordCount`, `keywords`, `articleSection`, ni `inLanguage`.
+2. **Externaliser via `lovable-assets`** chaque JPG puis supprimer le binaire local, comme les autres assets du projet.
 
-## Ce que je vais faire
+3. **Réécrire les 4 témoignages** dans `src/routes/index.tsx` (fonction `Testimonials`, lignes 508–549) : ton plus parlé, détails concrets (nom d'appareil, chaîne préférée, moyen de paiement local, délai). Exemples de direction :
+   - Daniel : Canal+ Sport + Premier League sur Firestick, activation en 2 min.
+   - Amélie : beIN + Netflix VF sur Apple TV, support WhatsApp réactif.
+   - Carlos : LaLiga + films VOST, testé 4 concurrents avant.
+   - Fatou : bouquet Nollywood + dessins animés enfants, paiement Orange Money.
 
-### 1. `src/routes/blog.$slug.tsx` — enrichir le schéma article
-
-- Passer `@type` de `Article` à **`BlogPosting`** (plus précis, mieux compris par Google).
-- Corriger `mainEntityOfPage` en objet typé : `{ "@type": "WebPage", "@id": url }`.
-- Ajouter :
-  - `inLanguage: "fr-FR"`
-  - `url` (canonical de l'article)
-  - `keywords` (à partir de `p.tags` si dispo, sinon `seo_keywords`)
-  - `articleSection` (nom de la catégorie principale si dispo)
-  - `wordCount` (calculé côté serveur à partir du contenu HTML nettoyé)
-  - `author` enrichi avec `url` si `author_url` existe
-  - `publisher.logo` avec `width`/`height`
-  - Objet `image` typé `ImageObject` avec dimensions par défaut si connues
-- Ajouter un **second script JSON-LD `BreadcrumbList`** : Accueil › Blog › [Catégorie] › Article.
-
-### 2. `src/routes/blog.index.tsx` — ajouter JSON-LD
-
-Deux blocs `application/ld+json` :
-- **`Blog`** avec `name`, `description`, `url`, `publisher`, et `blogPost[]` (les articles chargés côté loader, ou top 10).
-- **`BreadcrumbList`** : Accueil › Blog.
-
-### 3. `src/routes/blog.categorie.$slug.tsx` — ajouter JSON-LD
-
-- **`CollectionPage`** avec `mainEntity` = `ItemList` des articles de la catégorie.
-- **`BreadcrumbList`** : Accueil › Blog › Catégorie.
-
-### 4. Support backend (si nécessaire)
-
-- Vérifier que `publicGetPost` renvoie déjà `tags`, `category`, `content` bruts pour calculer `wordCount` et `keywords`. Si non, étendre le retour dans `src/lib/blog.functions.ts` (champs additionnels seulement, aucune régression).
-- Ajouter un helper `computeWordCount(html)` dans `src/lib/blog.server.ts` (strip HTML + split whitespace).
+4. **Remplacer l'avatar cercle-initiale par un vrai `<img>`** :
+   - Ajouter un champ `photo` dans chaque objet du tableau `testimonials` pointant vers `photo.url` (import du `.asset.json`).
+   - Remplacer le `<div>…{tt.name[0]}</div>` par `<img src={tt.photo} alt={tt.name} className="h-11 w-11 rounded-full object-cover ring-2 ring-[color:var(--gold)]/40" loading="lazy" />`.
+   - Garder la mise en page glass/étoiles inchangée.
 
 ## Détails techniques
 
-- Tout reste **SSR-safe** : JSON-LD injecté via l'API `head().scripts` de TanStack Start (déjà en place).
-- Aucune modif visuelle, aucun changement de logique métier.
-- URLs absolues `https://nexora-iptv.com/...` conformes aux règles du projet.
-- Zéro impact sur les pages hors blog.
+- Aucune clé i18n modifiée (les témoignages sont déjà en dur dans le composant, pas dans `messages.ts`).
+- Aucune modification backend, DB, SEO, routes.
+- Les portraits sont générés en `premium` pour un rendu photoréaliste crédible, puis compressés côté CDN Lovable.
 
-## Vérification
-
-Après build : contrôler avec l'outil Google Rich Results Test sur un article publié et sur `/blog`.
+## Hors périmètre
+Pas de refonte des étoiles, du titre, ni du reste de la page. Pas de photos de vraies personnes (choix : IA photoréaliste).
