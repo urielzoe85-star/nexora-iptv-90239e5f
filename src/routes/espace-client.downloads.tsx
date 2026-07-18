@@ -18,6 +18,8 @@ export const Route = createFileRoute("/espace-client/downloads")({
 });
 
 const APPS = [
+  { name: "M-IBO Player", os: "Android (APK)", icon: Smartphone,
+    url: "https://pub-32ee8b5200cb4935b28bee48941d5806.r2.dev/android/m-ibo.apk" },
   { name: "IPTV Smarters Pro", os: "Android / iOS / Smart TV", icon: Smartphone,
     url: "https://www.iptvsmarters.com/" },
   { name: "TiviMate", os: "Android TV / Fire TV", icon: Tv2,
