@@ -1,30 +1,51 @@
-Intégration du Google tag (gtag.js) pour GA4
+# Fix : paiements CamerPay qui n'aboutissent pas
 
-Objectif
-- Ajouter le code de suivi fourni (G-MFZ9FD4YMB) sur toutes les pages du site afin de mesurer le trafic et les conversions.
-- Conserver la sécurité existante en mettant à jour la Content-Security-Policy.
+## Diagnostic (confirmé)
 
-Changements prévus
-1. Route racine (`src/routes/__root.tsx`)
-   - Ajouter deux scripts dans le bloc `scripts` de `head()` :
-     - Un script `async` vers `https://www.googletagmanager.com/gtag/js?id=G-MFZ9FD4YMB`.
-     - Un script inline initialisant `window.dataLayer` et appelant `gtag('js', new Date())` + `gtag('config', 'G-MFZ9FD4YMB')`.
-   - Les scripts seront positionnés avant/après le bloc JSON-LD existant, de manière à rester dans le `<head>`.
+Les logs serveur montrent que **l'API CamerPay renvoie `HTTP 520` (Cloudflare "origin unreachable")** sur chaque tentative des 2 derniers jours :
 
-2. Sécurité (`src/start.ts`)
-   - Mettre à jour `buildCsp()` pour inclure `https://www.googletagmanager.com` dans `script-src`.
-   - Ajouter `https://www.google-analytics.com https://www.googletagmanager.com` dans `connect-src` (pour les hits collectés par `gtag` / `analytics.js` et `gtm.js`).
-   - Ajouter `https://www.googletagmanager.com` dans `img-src` si le site utilise des pixels de mesure.
-   - Conserver le mode `Content-Security-Policy-Report-Only` par défaut (actuellement géré via `CSP_ENFORCE`).
+```
+[camerpay] initiate failed {"status":520,"detail":"error code: 520\n"}
+```
 
-3. Vérifications
-   - S’assurer que le build TypeScript passe (`bun run build` ou équivalent) et que les scripts apparaissent dans le `<head>` de la page d’accueil.
-   - Vérifier que le header `Content-Security-Policy-Report-Only` n’émet pas de violations bloquantes pour Google Tag Manager en naviguant sur `/`.
+- Toutes les commandes récentes (`NX-ZVKMNDDGUQ`, `NX-S98CQYD83S`, …) restent en `pending`, `payment_provider = null`, aucune réponse CamerPay enregistrée.
+- Tu reçois quand même la notification Telegram/WhatsApp/email parce qu'elle est déclenchée à la **création de la commande** (workflow `order-created`), *avant* l'appel à CamerPay.
+- Le client, lui, voit "Le paiement CamerPay n'a pas pu être initialisé" et ne peut pas payer.
 
-Non inclus dans ce plan
-- Aucun suivi d’événements personnalisés (achat, conversion, etc.) — seule la mesure de pagevue de base est ajoutée.
-- Aucune modification de l’UI ou des pages existantes.
+C'est un incident côté CamerPay (leur origine derrière Cloudflare est down/instable), pas un bug de code. Mais on peut rendre le checkout beaucoup plus résilient.
 
-Risques / remarques
-- La CSP actuelle est en `Report-Only`. Même si le domaine de Google Tag Manager n’est pas encore présent, le site ne bloque pas encore les violations. L’ajout de la CSP est donc préventif pour le futur passage en mode enforce.
-- Le script `gtag` envoie des données vers Google. Les pages sont en HTTPS et les headers de sécurité restent conservateurs.
+## Ce que je vais faire
+
+### 1. Retry automatique sur 5xx / timeout côté serveur
+Dans `src/lib/payments-camerpay.server.ts` (fonction `camerpayFetch` + `camerpayInitiate`) :
+- 3 tentatives max, backoff 400 ms → 1200 ms → 2500 ms.
+- On ne retry **que** sur `status >= 500`, `429`, ou `AbortError` (timeout).
+- On ne retry **jamais** sur 4xx (mauvaise requête / clé invalide) pour éviter de générer des doublons.
+- L'`idempotency_key = order_ref` est déjà envoyé, donc les retries sont sûrs côté CamerPay.
+
+### 2. Message d'erreur client plus clair
+Aujourd'hui : "Le paiement CamerPay n'a pas pu être initialisé. Veuillez réessayer."
+Après :
+- Si 5xx persistant → "Notre passerelle de paiement est temporairement indisponible. Réessayez dans quelques instants ou contactez-nous sur WhatsApp pour finaliser votre commande **{order_ref}**."
+- Si 4xx → message précis renvoyé par CamerPay (ex. "montant invalide").
+
+### 3. Fallback visuel dans le checkout
+Sur la page checkout, quand `initCamerPayCheckout` échoue, afficher un encart avec :
+- Le bouton "Réessayer".
+- Le bouton WhatsApp existant (numéro admin déjà en place), pré-rempli avec la référence de commande.
+
+Aucun changement sur SebPay, Binance Pay, les webhooks, les workflows, ni les notifications.
+
+### 4. Traçabilité
+Chaque échec définitif (après retries) est loggé dans `integration_debug_logs` avec `provider=camerpay`, `status=520`, `order_ref`, afin qu'on puisse voir dans le NCC quand CamerPay retombe.
+
+## Détails techniques
+
+- Fichiers modifiés : `src/lib/payments-camerpay.server.ts`, `src/lib/payments.functions.ts`, le composant de checkout qui affiche l'erreur (`src/routes/checkout*` — je le repèrerai avant l'édition).
+- Aucune migration DB.
+- Aucun secret à ajouter.
+- Le fix n'active pas de "faux paid" : la commande reste `pending` tant que CamerPay ne confirme rien via webhook signé.
+
+## Action recommandée en parallèle (hors code)
+
+Contacte le support CamerPay pour signaler l'incident 520 sur `/api/payment/initiate` — c'est chez eux que la panne se règle définitivement. Le code ci-dessus rend juste ton checkout tolérant à leurs micro-coupures.
