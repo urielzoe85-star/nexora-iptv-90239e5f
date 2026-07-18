@@ -20,7 +20,7 @@ async function admin(userId: string) {
   return supabaseAdmin as any;
 }
 
-const ScenarioEnum = z.enum(["delivery", "renewal", "payment_reminder"]);
+const ScenarioEnum = z.enum(["delivery", "renewal", "payment_reminder", "marketing", "custom"]);
 const ChannelEnum = z.enum(["whatsapp", "telegram", "email"]);
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -70,9 +70,10 @@ export const listBulkTargets = createServerFn({ method: "POST" })
       });
     }
 
-    // delivery / payment_reminder → basés sur les commandes
+    // delivery / payment_reminder / marketing / custom → basés sur les commandes
     let statusIn: string[];
     if (data.scenario === "payment_reminder") statusIn = ["pending", "processing"];
+    else if (data.scenario === "marketing" || data.scenario === "custom") statusIn = ["completed", "paid", "active"];
     else statusIn = ["completed", "paid"]; // livraison : rappel des accès aux clients payés
     const since = new Date(Date.now() - data.days * 86_400_000).toISOString();
     const { data: rows, error } = await sb
@@ -195,11 +196,25 @@ export const bulkSendMessages = createServerFn({ method: "POST" })
       channels: z.array(ChannelEnum).min(1),
       targets: z.array(TargetSchema).min(1).max(500),
       scenario: ScenarioEnum,
+      custom_subject: z.string().trim().max(200).optional(),
+      custom_body: z.string().trim().min(10).max(4000).optional(),
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    const tpl = getBulkTemplate(data.template_id);
-    if (!tpl) throw new Error(`Template inconnu : ${data.template_id}`);
+    let tpl: { id: string; name: string; body: string; subject?: string };
+    if (data.template_id === "custom") {
+      if (!data.custom_body) throw new Error("Message personnalisé vide.");
+      tpl = {
+        id: "custom",
+        name: "Message personnalisé",
+        body: data.custom_body,
+        subject: data.custom_subject || "Message NEXORA",
+      };
+    } else {
+      const found = getBulkTemplate(data.template_id);
+      if (!found) throw new Error(`Template inconnu : ${data.template_id}`);
+      tpl = found;
+    }
     const sb = await admin(context.userId);
 
     let sent = 0, failed = 0, skipped = 0;

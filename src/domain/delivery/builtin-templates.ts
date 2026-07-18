@@ -113,7 +113,7 @@ Un conseiller VIP vous accompagne 7j/7.
 // Templates de relance (bulk) — livraison, renouvellement, paiement.
 // Chaque template a une clé `scenario` pour le filtrage dans la page bulk.
 // ────────────────────────────────────────────────────────────────────────────
-export type BulkScenario = "delivery" | "renewal" | "payment_reminder";
+export type BulkScenario = "delivery" | "renewal" | "payment_reminder" | "marketing";
 
 export interface BulkTemplate extends DeliveryTemplate {
   scenario: BulkScenario;
@@ -297,6 +297,104 @@ Complete your payment to activate your subscription:
 
 If you already paid, please ignore or reply with the proof.
 — The NEXORA Team`,
+  },
+
+  // ── MARKETING / PROMO COMMERCIALE ────────────────────────────────────────
+  {
+    id: "marketing_promo_fr",
+    name: "Promo saisonnière — FR",
+    scenario: "marketing" as BulkScenario,
+    channel: "any",
+    language: "fr",
+    subject: "🎁 Offre spéciale NEXORA IPTV — jusqu'à -30 %",
+    body:
+`Bonjour {{client_name}} 👋
+
+Profitez de notre offre spéciale sur NEXORA IPTV :
+✅ +20 000 chaînes HD/4K
+✅ VOD, séries & sport premium
+✅ Jusqu'à -30 % sur les abonnements 6 et 12 mois
+
+👉 Commandez ici : {{portal_link}}
+
+Une question ? Répondez à ce message, on vous accompagne.
+— L'équipe NEXORA`,
+  },
+  {
+    id: "marketing_upsell_fr",
+    name: "Upsell VIP — FR",
+    scenario: "marketing" as BulkScenario,
+    channel: "any",
+    language: "fr",
+    subject: "🌟 Passez à l'expérience NEXORA VIP",
+    body:
+`Bonjour {{client_name}},
+
+En tant que client fidèle, vous êtes éligible à notre offre VIP :
+🌟 Multi-écrans (jusqu'à 5 devices)
+🌟 Support prioritaire 7j/7
+🌟 Chaînes premium exclusives
+
+Découvrir : {{portal_link}}
+
+— L'équipe NEXORA`,
+  },
+  {
+    id: "marketing_winback_fr",
+    name: "Réactivation ex-client — FR",
+    scenario: "marketing" as BulkScenario,
+    channel: "any",
+    language: "fr",
+    subject: "On vous a manqué chez NEXORA 💙",
+    body:
+`Bonjour {{client_name}},
+
+Cela fait un moment que vous n'avez pas renouvelé votre abonnement NEXORA IPTV.
+Bonne nouvelle : nous vous offrons -20 % sur votre prochain abonnement.
+
+👉 Réactivez ici : {{renew_url}}
+
+À très vite,
+— L'équipe NEXORA`,
+  },
+  {
+    id: "marketing_promo_en",
+    name: "Seasonal promo — EN",
+    scenario: "marketing" as BulkScenario,
+    channel: "any",
+    language: "en",
+    subject: "🎁 NEXORA IPTV special offer — up to 30% off",
+    body:
+`Hi {{client_name}} 👋
+
+Enjoy our special offer on NEXORA IPTV:
+✅ 20,000+ HD/4K channels
+✅ VOD, series & premium sports
+✅ Up to 30% off on 6 and 12-month plans
+
+👉 Order here: {{portal_link}}
+
+Reply if you need help.
+— The NEXORA Team`,
+  },
+  {
+    id: "marketing_new_catalog_fr",
+    name: "Nouveautés catalogue — FR",
+    scenario: "marketing" as BulkScenario,
+    channel: "any",
+    language: "fr",
+    subject: "🆕 Nouveautés NEXORA IPTV cette semaine",
+    body:
+`Bonjour {{client_name}},
+
+Nouveautés du catalogue NEXORA IPTV :
+🎬 Nouveaux films & séries en VOD
+⚽ Toutes les compétitions live
+📺 Nouvelles chaînes ajoutées
+
+Découvrez tout : {{portal_link}}
+
+— NEXORA`,
   },
 ];
 

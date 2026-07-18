@@ -2,7 +2,7 @@ import { useMemo, useRef, useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Send, Mail, MessageCircle, Loader2, Users, RefreshCw, Upload, FileWarning, Trash2, Download } from "lucide-react";
+import { Send, Mail, MessageCircle, Loader2, Users, RefreshCw, Upload, FileWarning, Trash2, Download, Sparkles, PenLine } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -11,18 +11,26 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { listBulkTargets, listBulkTemplates, bulkSendMessages } from "@/lib/bulk-send.functions";
 import {
   buildDeliveryContext, renderTemplate, type DeliveryChannel,
 } from "@/domain/delivery/message-engine";
 
-type Scenario = "delivery" | "renewal" | "payment_reminder";
+type Scenario = "delivery" | "renewal" | "payment_reminder" | "marketing" | "custom";
 
 const SCENARIO_LABEL: Record<Scenario, string> = {
   delivery: "Livraison des accès",
   renewal: "Rappel de renouvellement",
   payment_reminder: "Relance de paiement",
+  marketing: "Marketing / Promo",
+  custom: "Message personnalisé",
 };
+
+const CUSTOM_VARS = [
+  "client_name", "product_name", "portal_link", "renew_url",
+  "expiration_date", "username", "order_ref",
+] as const;
 
 const CHANNEL_META: Record<DeliveryChannel, { icon: any; label: string }> = {
   whatsapp: { icon: MessageCircle, label: "WhatsApp" },
@@ -85,6 +93,9 @@ export function BulkSendPage() {
   const [days, setDays] = useState<number>(7);
   const [channels, setChannels] = useState<DeliveryChannel[]>(["whatsapp", "email"]);
   const [templateId, setTemplateId] = useState<string>("");
+  const [customSubject, setCustomSubject] = useState<string>("");
+  const [customBody, setCustomBody] = useState<string>("");
+  const customBodyRef = useRef<HTMLTextAreaElement>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [source, setSource] = useState<Source>("database");
   const [imported, setImported] = useState<ImportedTarget[]>([]);
@@ -104,6 +115,8 @@ export function BulkSendPage() {
     () => (templates.data ?? []).filter((t) => t.scenario === scenario),
     [templates.data, scenario],
   );
+
+  const isCustom = scenario === "custom";
 
   // Sélection auto du 1er template compatible.
   const currentTemplate = useMemo(() => {
@@ -140,7 +153,8 @@ export function BulkSendPage() {
   };
 
   const preview = useMemo(() => {
-    if (!currentTemplate || !activeTargets.length) return "";
+    const body = isCustom ? customBody : currentTemplate?.body;
+    if (!body || !activeTargets.length) return "";
     const first: any = activeTargets.find((t: any) => selected.has(t.id)) ?? activeTargets[0];
     const ctx = buildDeliveryContext({
       order: {
@@ -158,18 +172,24 @@ export function BulkSendPage() {
         ? { username: first.label, package: (first as any).package, expires_at: (first as any).expires_at }
         : {},
     });
-    return renderTemplate(currentTemplate.body, ctx);
-  }, [currentTemplate, activeTargets, selected]);
+    return renderTemplate(body, ctx);
+  }, [currentTemplate, activeTargets, selected, isCustom, customBody]);
 
   const send = useMutation({
     mutationFn: async () => {
-      if (!currentTemplate) throw new Error("Sélectionne un template.");
+      if (isCustom) {
+        if (customBody.trim().length < 10) throw new Error("Rédige un message d'au moins 10 caractères.");
+      } else if (!currentTemplate) {
+        throw new Error("Sélectionne un template.");
+      }
       if (!channels.length) throw new Error("Sélectionne au moins un canal.");
       const chosen = activeTargets.filter((t: any) => selected.has(t.id));
       if (!chosen.length) throw new Error("Sélectionne au moins un destinataire.");
       return bulkSendFn({
         data: {
-          template_id: currentTemplate.id,
+          template_id: isCustom ? "custom" : currentTemplate!.id,
+          custom_subject: isCustom ? (customSubject.trim() || undefined) : undefined,
+          custom_body: isCustom ? customBody : undefined,
           channels,
           scenario,
           targets: chosen.map((t: any) => ({
@@ -196,6 +216,21 @@ export function BulkSendPage() {
   });
 
   const allChecked = activeTargets.length > 0 && selected.size === activeTargets.length;
+
+  const insertVar = (v: string) => {
+    const token = `{{${v}}}`;
+    const el = customBodyRef.current;
+    if (!el) { setCustomBody((prev) => prev + token); return; }
+    const start = el.selectionStart ?? customBody.length;
+    const end = el.selectionEnd ?? customBody.length;
+    const next = customBody.slice(0, start) + token + customBody.slice(end);
+    setCustomBody(next);
+    requestAnimationFrame(() => {
+      el.focus();
+      const pos = start + token.length;
+      el.setSelectionRange(pos, pos);
+    });
+  };
 
   // ── Import CSV ────────────────────────────────────────────────────────
   const handleFile = async (file: File) => {
@@ -297,6 +332,8 @@ export function BulkSendPage() {
                   <SelectItem value="delivery">📦 {SCENARIO_LABEL.delivery}</SelectItem>
                   <SelectItem value="renewal">🔁 {SCENARIO_LABEL.renewal}</SelectItem>
                   <SelectItem value="payment_reminder">💳 {SCENARIO_LABEL.payment_reminder}</SelectItem>
+                  <SelectItem value="marketing">🎁 {SCENARIO_LABEL.marketing}</SelectItem>
+                  <SelectItem value="custom">✍️ {SCENARIO_LABEL.custom}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -338,17 +375,56 @@ export function BulkSendPage() {
               </div>
             )}
 
-            <div>
-              <Label className="text-xs">Template</Label>
-              <Select value={currentTemplate?.id ?? ""} onValueChange={setTemplateId}>
-                <SelectTrigger><SelectValue placeholder="Choisir un template" /></SelectTrigger>
-                <SelectContent>
-                  {filteredTemplates.map((t) => (
-                    <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+            {!isCustom && (
+              <div>
+                <Label className="text-xs flex items-center gap-1"><Sparkles className="h-3 w-3" /> Template</Label>
+                <Select value={currentTemplate?.id ?? ""} onValueChange={setTemplateId}>
+                  <SelectTrigger><SelectValue placeholder="Choisir un template" /></SelectTrigger>
+                  <SelectContent>
+                    {filteredTemplates.map((t) => (
+                      <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {isCustom && (
+              <div className="space-y-2">
+                <Label className="text-xs flex items-center gap-1"><PenLine className="h-3 w-3" /> Sujet (email)</Label>
+                <Input
+                  value={customSubject}
+                  maxLength={200}
+                  placeholder="Ex. Une offre pour vous"
+                  onChange={(e) => setCustomSubject(e.target.value)}
+                />
+                <Label className="text-xs">Message</Label>
+                <Textarea
+                  ref={customBodyRef}
+                  value={customBody}
+                  maxLength={4000}
+                  rows={8}
+                  placeholder={"Bonjour {{client_name}},\n\nVotre message ici…"}
+                  onChange={(e) => setCustomBody(e.target.value)}
+                  className="font-mono text-xs"
+                />
+                <div className="flex flex-wrap gap-1">
+                  {CUSTOM_VARS.map((v) => (
+                    <button
+                      key={v}
+                      type="button"
+                      onClick={() => insertVar(v)}
+                      className="text-[10px] px-1.5 py-0.5 rounded border bg-muted/40 hover:bg-muted font-mono"
+                    >
+                      {`{{${v}}}`}
+                    </button>
                   ))}
-                </SelectContent>
-              </Select>
-            </div>
+                </div>
+                <p className="text-[10px] text-muted-foreground">
+                  {customBody.length}/4000 · Les variables sont remplacées pour chaque destinataire.
+                </p>
+              </div>
+            )}
 
             <div>
               <Label className="text-xs">Canaux</Label>
@@ -368,7 +444,7 @@ export function BulkSendPage() {
             <Button
               className="w-full"
               onClick={() => send.mutate()}
-              disabled={send.isPending || !selected.size || !channels.length || !currentTemplate}
+              disabled={send.isPending || !selected.size || !channels.length || (isCustom ? customBody.trim().length < 10 : !currentTemplate)}
             >
               {send.isPending ? <><Loader2 className="h-4 w-4 mr-2 animate-spin"/>Envoi…</> : <><Send className="h-4 w-4 mr-2"/>Envoyer à {selected.size} destinataire(s)</>}
             </Button>

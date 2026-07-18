@@ -1,42 +1,38 @@
+## Objectif
+Ajouter dans **NCC → Envoi en masse** un nouveau scénario **Marketing / Promotion commerciale** avec des templates pré-rédigés, et permettre à l'admin de **rédiger son propre message** (sujet + corps) au lieu de choisir un template figé.
 
-## Problèmes identifiés
+## Portée
+Frontend + templates uniquement. Aucune modification de l'infra d'envoi (WhatsApp/Telegram/Email), de la queue email, ni des tables. On garde le throttle et la trace `delivery_logs` existants.
 
-**1. Upload d'image qui ne charge pas (spinner infini)**
-Dans `BlogEditor.tsx` et `TipTapEditor.tsx`, l'encodage base64 utilise `btoa(String.fromCharCode(...new Uint8Array(buf)))`. Le spread `...` explose la stack JS dès que le fichier dépasse ~100 Ko, sans message d'erreur visible → le bouton tourne dans le vide.
+## Changements
 
-**2. Vidéo impossible à insérer**
-L'éditeur n'accepte que des liens YouTube (extension `@tiptap/extension-youtube`). Aucun bouton pour uploader un fichier vidéo (mp4).
+### 1. Nouveau scénario `marketing`
+- `src/domain/delivery/builtin-templates.ts` :
+  - Étendre `BulkScenario` → `"delivery" | "renewal" | "payment_reminder" | "marketing"`.
+  - Ajouter 4–5 `BULK_TEMPLATES` marketing FR/EN (offre découverte, promo saisonnière, nouveauté catalogue, réactivation ex-client, upsell VIP) avec variables sûres : `{{client_name}}`, `{{product_name}}`, `{{portal_link}}`, `{{renew_url}}`.
 
-**3. Article publié mais introuvable en ligne**
-L'article `Comment configurer IPTV SMARTERS PRO / Lite` est bien en base avec `status='published'`. Deux causes probables :
-- Le site public **n'a pas été republié** depuis l'ajout du module blog → les routes `/blog` et `/blog/<slug>` n'existent pas encore sur `nexora-iptv.com`.
-- L'article n'a **pas d'image de couverture** (échec upload) et l'UI peut donner l'impression qu'il n'a pas été enregistré.
+### 2. Rédaction libre (« Scénario personnalisé »)
+- `src/components/ncc/bulk/BulkSendPage.tsx` :
+  - Ajouter option `custom` dans le sélecteur Scénario (label « ✍️ Message personnalisé »).
+  - Quand `scenario === "custom"` : masquer le sélecteur Template et afficher deux champs :
+    - `Input` **Sujet** (utilisé pour l'email).
+    - `Textarea` **Message** (multi-ligne, min 10 caractères).
+  - Petit helper affichant les variables disponibles cliquables pour insertion (`{{client_name}}`, `{{product_name}}`, `{{portal_link}}`, `{{renew_url}}`, `{{expiration_date}}`, `{{username}}`).
+  - La preview utilise le message rédigé (rendu via `renderTemplate` existant).
+  - Envoi : construire un template éphémère `{ id: "custom", subject, body }` et l'envoyer au backend.
 
-## Corrections proposées
+### 3. Backend — accepter un template ad hoc
+- `src/lib/bulk-send.functions.ts` :
+  - `ScenarioEnum` inclut `"marketing"` et `"custom"`.
+  - `bulkSendMessages` : si `template_id === "custom"`, lire `custom_subject` + `custom_body` (nouveaux champs optionnels validés par Zod, max 200 / 4000 caractères) au lieu d'appeler `getBulkTemplate`. Sinon comportement inchangé.
+  - `listBulkTargets` pour scénario `marketing` : utiliser la même requête que `delivery` mais élargir à tous les clients ayant au moins une commande sur la fenêtre (statuts `completed`, `paid`, `active`) — pour cibler la base client existante.
 
-### A. Upload d'image fiable (fichiers > 100 Ko)
-Remplacer l'encodage base64 par un `FileReader.readAsDataURL` (natif, pas de limite de stack) dans les deux composants concernés :
-- `src/components/ncc/blog/BlogEditor.tsx` (fonction `uploadCover`)
-- `src/components/ncc/blog/TipTapEditor.tsx` (fonction `insertImage`)
+## Hors périmètre
+- Pas de sauvegarde des scénarios personnalisés (one-shot). Pourra être ajouté plus tard si besoin.
+- Pas de segmentation avancée (tags, LTV) — le CSV import reste la solution pour cibles custom.
+- Pas de garde-fous anti-spam supplémentaires côté infra (le throttle 200 ms + suppressions email existants restent en place).
 
-Ajouter un toast de progression (`Envoi en cours…`) et un toast d'erreur explicite si l'upload échoue.
-
-### B. Support vidéo dans l'éditeur
-Ajouter un bouton "Vidéo" dans la barre d'outils TipTap qui :
-- Upload le fichier (mp4/webm, max 50 Mo) via une nouvelle fonction serveur `adminUploadBlogVideo` (même bucket `blog-media`, sous-dossier `videos/`).
-- Insère un bloc HTML `<video controls src="…" />` dans l'article.
-- Autoriser la balise `video` + attributs `src/controls/poster/width/height` dans `sanitizeBlogHtml` (`src/lib/blog.server.ts`).
-
-Le bouton YouTube existant reste inchangé.
-
-### C. Publier le site
-Après les corrections ci-dessus, republier via le bouton **Publier** pour que `/blog` et l'article `comment-configurer-iptv-smarters-pro-lite-…` deviennent visibles sur `https://nexora-iptv.com/blog`.
-
-## Détails techniques
-
-- `FileReader.readAsDataURL` renvoie `data:<mime>;base64,<payload>` → on split sur la virgule et envoie le payload existant à `adminUploadBlogImage` (aucun changement côté serveur).
-- Limite image conservée à 8 Mo ; limite vidéo fixée à 50 Mo (validée côté client + `.max(70_000_000)` sur la validation base64 serveur pour tenir compte du surcoût base64).
-- `sanitizeBlogHtml` : ajouter `"video","source"` aux tags autorisés et `video: ["src","controls","poster","width","height","preload"]` aux attributs.
-
-## Hors scope
-Pas de changement au design ni aux tables. Aucun changement de la logique de publication ni du planificateur `pg_cron`.
+## Fichiers touchés
+- `src/domain/delivery/builtin-templates.ts`
+- `src/lib/bulk-send.functions.ts`
+- `src/components/ncc/bulk/BulkSendPage.tsx`
