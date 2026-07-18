@@ -1,27 +1,53 @@
-## Rendre le blog visible depuis le site public
+## Objectif
 
-Ajouter des points d'entrée vers `/blog` à trois endroits pour que les visiteurs découvrent les articles sans taper l'URL.
+Enrichir le balisage schema.org sur le blog pour améliorer l'indexation et les rich snippets Google (dates, auteur, fil d'Ariane, image, catégorie).
 
-### 1. Lien "Blog" dans le menu principal
-Ajouter un lien `<Link to="/blog">Blog</Link>` dans la barre de navigation publique (header) affichée sur toutes les pages du site, avec l'état actif (`activeProps`) pour surligner l'onglet quand on est sur `/blog` ou `/blog/...`.
+## État actuel
 
-### 2. Section "Derniers articles" sur la page d'accueil
-Ajouter, en bas de la home (`src/routes/index.tsx`), une section qui affiche les **3 derniers articles publiés** :
-- Titre de section : « Derniers articles du blog »
-- Grille de 3 cartes `PostCard` (composant déjà existant)
-- Bouton « Voir tous les articles » → `/blog`
-- Données : appel à `publicListPosts({ page: 1, page_size: 3 })` (server function déjà en place)
-- Auto-refresh identique à la page `/blog` (poll 30 s + refetch on focus) pour que la home reflète immédiatement les nouvelles publications
+- `/blog/$slug` a déjà un JSON-LD `Article` basique (headline, image, dates, author, publisher).
+- `/blog` et `/blog/categorie/$slug` n'ont **aucun** JSON-LD.
+- Pas de `BreadcrumbList`, pas de `mainEntityOfPage` typé, pas de `wordCount`, `keywords`, `articleSection`, ni `inLanguage`.
 
-Si aucun article n'est publié, la section ne s'affiche pas (aucun état vide sur la home).
+## Ce que je vais faire
 
-### 3. Lien "Blog" dans le footer
-Ajouter une entrée « Blog » dans le footer public, dans la même colonne que les autres liens de contenu (À propos, Guide, etc.).
+### 1. `src/routes/blog.$slug.tsx` — enrichir le schéma article
 
-### Ce qui ne change pas
-- Aucun changement backend, aucune migration, aucun changement d'RLS.
-- Le composant `PostCard`, les server functions `publicListPosts` et les routes `/blog*` existent déjà.
-- Aucune modification du CMS NCC ni du workflow de publication.
+- Passer `@type` de `Article` à **`BlogPosting`** (plus précis, mieux compris par Google).
+- Corriger `mainEntityOfPage` en objet typé : `{ "@type": "WebPage", "@id": url }`.
+- Ajouter :
+  - `inLanguage: "fr-FR"`
+  - `url` (canonical de l'article)
+  - `keywords` (à partir de `p.tags` si dispo, sinon `seo_keywords`)
+  - `articleSection` (nom de la catégorie principale si dispo)
+  - `wordCount` (calculé côté serveur à partir du contenu HTML nettoyé)
+  - `author` enrichi avec `url` si `author_url` existe
+  - `publisher.logo` avec `width`/`height`
+  - Objet `image` typé `ImageObject` avec dimensions par défaut si connues
+- Ajouter un **second script JSON-LD `BreadcrumbList`** : Accueil › Blog › [Catégorie] › Article.
 
-### Après déploiement
-Cliquer sur **Publier** pour que le nouveau menu, la section home et le footer soient visibles sur `nexora-iptv.com`.
+### 2. `src/routes/blog.index.tsx` — ajouter JSON-LD
+
+Deux blocs `application/ld+json` :
+- **`Blog`** avec `name`, `description`, `url`, `publisher`, et `blogPost[]` (les articles chargés côté loader, ou top 10).
+- **`BreadcrumbList`** : Accueil › Blog.
+
+### 3. `src/routes/blog.categorie.$slug.tsx` — ajouter JSON-LD
+
+- **`CollectionPage`** avec `mainEntity` = `ItemList` des articles de la catégorie.
+- **`BreadcrumbList`** : Accueil › Blog › Catégorie.
+
+### 4. Support backend (si nécessaire)
+
+- Vérifier que `publicGetPost` renvoie déjà `tags`, `category`, `content` bruts pour calculer `wordCount` et `keywords`. Si non, étendre le retour dans `src/lib/blog.functions.ts` (champs additionnels seulement, aucune régression).
+- Ajouter un helper `computeWordCount(html)` dans `src/lib/blog.server.ts` (strip HTML + split whitespace).
+
+## Détails techniques
+
+- Tout reste **SSR-safe** : JSON-LD injecté via l'API `head().scripts` de TanStack Start (déjà en place).
+- Aucune modif visuelle, aucun changement de logique métier.
+- URLs absolues `https://nexora-iptv.com/...` conformes aux règles du projet.
+- Zéro impact sur les pages hors blog.
+
+## Vérification
+
+Après build : contrôler avec l'outil Google Rich Results Test sur un article publié et sur `/blog`.
