@@ -136,12 +136,16 @@ export async function camerpayInitiate(input: CamerpayInitiateInput): Promise<Ca
     try {
       const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
       await (supabaseAdmin as any).from("integration_debug_logs").insert({
-        provider: "camerpay",
+        connector_id: "payment.camerpay",
         operation: "initiate",
-        status_code: status,
-        request_payload: { invoice_id: input.invoiceId, amount: input.amount },
-        response_payload: json ?? { raw: raw.slice(0, 400) },
-        error_message: typeof detail === "string" ? detail : JSON.stringify(detail).slice(0, 400),
+        method: "POST",
+        url: `${camerpayBaseUrl()}/api/payment/initiate`,
+        request_body: { invoice_id: input.invoiceId, amount: input.amount },
+        status,
+        response_body: json ?? { raw: raw.slice(0, 400) },
+        attempts: 3,
+        ok: false,
+        error: typeof detail === "string" ? detail : JSON.stringify(detail).slice(0, 400),
       });
     } catch { /* logging must never break checkout */ }
     if (status >= 500 || status === 429 || status === 0) {

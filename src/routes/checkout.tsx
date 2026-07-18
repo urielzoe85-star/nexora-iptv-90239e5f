@@ -188,7 +188,10 @@ function CheckoutPage() {
           data: { ref: order.order_ref, successUrl, failureUrl },
         });
         if (result.providerLink && typeof window !== "undefined") {
-          window.open(result.providerLink, "_blank", "noopener,noreferrer");
+          // Same-tab navigation is reliable on mobile; window.open after an
+          // awaited request is commonly blocked as an unsolicited popup.
+          window.location.assign(result.providerLink);
+          return;
         }
         setPending({
           orderRef: order.order_ref,
