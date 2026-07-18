@@ -26,19 +26,25 @@ export const Route = createFileRoute("/sitemap.xml")({
   server: {
     handlers: {
       GET: async () => {
+        const buildDate = new Date().toISOString().slice(0, 10);
         // Fetch published blog posts + categories via server publishable client.
         let blogUrls: { loc: string; lastmod?: string }[] = [];
+        let productUrls: { loc: string; lastmod?: string }[] = [];
         try {
           const { createClient } = await import("@supabase/supabase-js");
           const url = process.env.SUPABASE_URL!;
           const key = process.env.SUPABASE_PUBLISHABLE_KEY!;
           const sb = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
-          const [posts, cats] = await Promise.all([
+          const [posts, cats, products] = await Promise.all([
             sb.from("blog_posts").select("slug, updated_at").eq("status", "published").eq("noindex", false),
             sb.from("blog_categories").select("slug").eq("is_active", true),
+            sb.from("gallery_items").select("product_slug, updated_at").eq("active", true).not("product_slug", "is", null),
           ]);
           for (const p of (posts.data ?? []) as any[]) blogUrls.push({ loc: `${BASE_URL}/blog/${p.slug}`, lastmod: p.updated_at });
           for (const c of (cats.data ?? []) as any[]) blogUrls.push({ loc: `${BASE_URL}/blog/categorie/${c.slug}` });
+          for (const pr of (products.data ?? []) as any[]) {
+            if (pr.product_slug) productUrls.push({ loc: `${BASE_URL}/produits/${pr.product_slug}`, lastmod: pr.updated_at });
+          }
         } catch { /* ignore, keep static pages */ }
 
         const urls = PAGES.map((p) => {
@@ -49,6 +55,7 @@ export const Route = createFileRoute("/sitemap.xml")({
           return [
             `  <url>`,
             `    <loc>${BASE_URL}${p}</loc>`,
+            `    <lastmod>${buildDate}</lastmod>`,
             `    <changefreq>weekly</changefreq>`,
             `    <priority>${p === "/" ? "1.0" : "0.9"}</priority>`,
             alternates,
@@ -66,10 +73,20 @@ export const Route = createFileRoute("/sitemap.xml")({
           `  </url>`,
         ].filter(Boolean).join("\n")).join("\n");
 
+        const productXml = productUrls.map((u) => [
+          `  <url>`,
+          `    <loc>${u.loc}</loc>`,
+          u.lastmod ? `    <lastmod>${u.lastmod}</lastmod>` : null,
+          `    <changefreq>weekly</changefreq>`,
+          `    <priority>0.8</priority>`,
+          `  </url>`,
+        ].filter(Boolean).join("\n")).join("\n");
+
         const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
 ${urls}
 ${blogXml}
+${productXml}
 </urlset>`;
 
         return new Response(xml, {
