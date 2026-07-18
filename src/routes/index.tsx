@@ -24,6 +24,8 @@ import { useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getPublicPlans, type PublicPlan } from "@/lib/plans.functions";
+import { publicListPosts } from "@/lib/blog.functions";
+import { PostCard } from "@/components/blog/PostCard";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -88,6 +90,7 @@ export function NexoraLanding() {
         <Downloads />
         <Testimonials />
         <FAQ />
+        <LatestPosts />
         <Payments />
         <Share />
         <Support />
@@ -116,6 +119,7 @@ function Nav() {
           <a href="#pricing" className="hover:text-foreground transition">{t("nav.pricing")}</a>
           <Link to="/catalog" className="hover:text-foreground transition">{t("nav.catalog")}</Link>
           <Link to="/galerie" className="hover:text-foreground transition">Galerie</Link>
+          <Link to="/blog" className="hover:text-foreground transition">Blog</Link>
           <a href="#faq" className="hover:text-foreground transition">{t("nav.faq")}</a>
           <a href="#support" className="hover:text-foreground transition">{t("nav.support")}</a>
           <PortalClientLink className="hover:text-foreground transition">Espace client</PortalClientLink>
@@ -148,6 +152,7 @@ function Nav() {
             <a href="#pricing" onClick={close} className="hover:text-foreground transition">{t("nav.pricing")}</a>
             <Link to="/catalog" onClick={close} className="hover:text-foreground transition">{t("nav.catalog")}</Link>
             <Link to="/galerie" onClick={close} className="hover:text-foreground transition">Galerie</Link>
+            <Link to="/blog" onClick={close} className="hover:text-foreground transition">Blog</Link>
             <a href="#faq" onClick={close} className="hover:text-foreground transition">{t("nav.faq")}</a>
             <a href="#support" onClick={close} className="hover:text-foreground transition">{t("nav.support")}</a>
             <PortalClientLink onClick={close} className="hover:text-foreground transition">Espace client</PortalClientLink>
@@ -644,7 +649,7 @@ function Footer() {
   if (companyCol) {
     companyCol.links = [
       { label: t("footer.about"),   href: "#features" },
-      { label: t("footer.blog"),    href: "/blog/best-iptv-2026" },
+      { label: t("footer.blog"),    href: "/blog" },
       { label: t("footer.careers"), href: `mailto:${SUPPORT_EMAIL}?subject=Careers` },
       { label: t("footer.contact"), href: buildWhatsAppLink() },
     ];
@@ -685,6 +690,38 @@ function FloatingWhatsApp() {
        className="fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full btn-gold btn-gold-hover grid place-items-center shadow-[var(--shadow-gold)]">
       <MessageCircle className="h-6 w-6" />
     </a>
+  );
+}
+
+function LatestPosts() {
+  const list = useServerFn(publicListPosts);
+  const { data } = useQuery({
+    queryKey: ["home", "latest-posts"],
+    queryFn: () => list({ data: { page: 1, page_size: 3 } }),
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: true,
+    refetchOnMount: "always",
+    staleTime: 0,
+  });
+  const rows = (data?.rows ?? []) as any[];
+  if (rows.length === 0) return null;
+  return (
+    <section id="latest-posts" className="py-20 border-t border-[color:var(--gold)]/10">
+      <div className="max-w-7xl mx-auto px-6">
+        <div className="flex flex-wrap items-end justify-between gap-4 mb-10">
+          <div>
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight">Derniers articles du blog</h2>
+            <p className="mt-2 text-muted-foreground">Guides, tutoriels et actualités IPTV.</p>
+          </div>
+          <Link to="/blog" className="text-sm font-semibold text-[color:var(--gold)] hover:underline">
+            Voir tous les articles →
+          </Link>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {rows.map((p) => <PostCard key={p.id} post={p} />)}
+        </div>
+      </div>
+    </section>
   );
 }
 
