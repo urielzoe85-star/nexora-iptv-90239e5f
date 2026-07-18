@@ -13,10 +13,34 @@ export const Route = createFileRoute("/blog/categorie/$slug")({
   },
   head: ({ loaderData, params }) => {
     if (!loaderData) return { meta: [{ title: "Catégorie introuvable" }, { name: "robots", content: "noindex" }] };
-    const c = loaderData.cat;
+    const c: any = loaderData.cat;
     const url = `https://nexora-iptv.com/blog/categorie/${params.slug}`;
     const title = c.seo_title || `${c.name} — Blog Nexora`;
     const desc = c.seo_description || c.description || `Articles Nexora dans la catégorie ${c.name}.`;
+    const collectionPage = {
+      "@context": "https://schema.org",
+      "@type": "CollectionPage",
+      "@id": url,
+      name: title,
+      description: desc,
+      url,
+      inLanguage: "fr-FR",
+      isPartOf: { "@type": "Blog", "@id": "https://nexora-iptv.com/blog", name: "Blog Nexora IPTV" },
+      publisher: {
+        "@type": "Organization",
+        name: "Nexora IPTV",
+        logo: { "@type": "ImageObject", url: "https://nexora-iptv.com/icon-512.png", width: 512, height: 512 },
+      },
+    };
+    const breadcrumbs = {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Accueil", item: "https://nexora-iptv.com/" },
+        { "@type": "ListItem", position: 2, name: "Blog", item: "https://nexora-iptv.com/blog" },
+        { "@type": "ListItem", position: 3, name: c.name, item: url },
+      ],
+    };
     return {
       meta: [
         { title },
@@ -27,6 +51,10 @@ export const Route = createFileRoute("/blog/categorie/$slug")({
         { property: "og:type", content: "website" },
       ],
       links: [{ rel: "canonical", href: url }],
+      scripts: [
+        { type: "application/ld+json", children: JSON.stringify(collectionPage) },
+        { type: "application/ld+json", children: JSON.stringify(breadcrumbs) },
+      ],
     };
   },
   notFoundComponent: () => (
