@@ -1,30 +1,51 @@
 ## Objectif
-Remplacer les 6 icônes Lucide plates de la section "Pourquoi choisir Nexora IPTV" par des icônes 3D originales rendues (glassmorphism / claymorphism / isométrique) alignées sur la palette navy + or du site.
+Améliorer la vitesse/fluidité perçue du site, corriger deux avertissements console récurrents, resserrer le SEO et s'assurer que Google reçoit bien le sitemap à jour.
 
-## Approche
-Générer 6 icônes 3D PNG transparentes (1024×1024) via `imagegen`, chacune correspondant à une feature :
+## 1) Performance & fluidité
 
-1. **Bibliothèque immense** → écran TV 3D avec grille de chaînes
-2. **Films & séries** → clap de cinéma 3D
-3. **Livraison instantanée** → éclair 3D
-4. **Accès mondial** → globe 3D
-5. **Paiements sécurisés** → bouclier 3D avec cadenas
-6. **Support dédié** → casque support 3D
+- **Homepage `src/routes/index.tsx` (~1020 lignes, monolithique)** : passer les sections lourdes hors du fold en `React.lazy` + `<Suspense>` (Testimonials, Downloads, LatestPosts, FAQ, Footer) pour réduire le JS initial et améliorer LCP/TTI mobile.
+- **Preload hero** : le préchargement de `heroBg` est déclaré sur la route `/` mais chaque route localisée (`/fr`, `/en`, `/de`) réutilise `NexoraLanding` sans préloader la même image. Ajouter `links: preload` du hero dans `fr.index.tsx`, `en.index.tsx`, `de.index.tsx`.
+- **Polices Google Fonts** : actuellement chargées en `<link rel="stylesheet">` bloquant dans `__root.tsx`. Passer en pattern non-bloquant (`media="print"` + `onload="this.media='all'"`) avec fallback `<noscript>` — gain FCP notable mobile.
+- **`ResponsiveImage`** : `srcSet` génère 3 descripteurs pointant tous vers la même URL CDN → aucun bénéfice mais coût de parsing. Le simplifier (retirer `srcSet` quand la source n'est pas réellement redimensionnée).
+- **Warning console `fetchpriority`** : le `<link rel="preload">` dans `head()` de `index.tsx` utilise `fetchpriority` (minuscule) que React normalise mal en runtime → renommer en `fetchPriority` (camelCase) pour supprimer le warning.
+- **Warning code-split `NexoraLanding`** : composant exporté depuis un route file et réutilisé par `fr/en/de.index.tsx`. Extraire `NexoraLanding` dans `src/components/landing/NexoraLanding.tsx` et l'importer depuis les 4 routes → supprime le warning et améliore le splitting.
+- **PWA** : conserver la config existante, aucune modification.
 
-Style commun (pour cohérence entre les 6) :
-- Rendu 3D isométrique glossy, claymorph / soft-3D
-- Palette : bleu navy profond (#0B1E3F) + accents or (#D4AF37) — assortie au brand
-- Fond blanc solide → converti en PNG transparent via `transparent_background: true`
-- Ombres douces intégrées
+## 2) SEO — corrections ciblées
 
-## Changements techniques
-- Générer 6 fichiers dans `src/assets/features/feature-{1..6}.png` avec `model: "premium"` (qualité + détail élevés pour icônes).
-- Externaliser vers CDN via `lovable-assets` (fichiers > 100KB probables) — `.asset.json` à côté.
-- Modifier `src/routes/index.tsx` section `Features` (lignes 232-259) :
-  - Retirer l'array `{ Icon: Tv, ... }` et l'import Lucide `Tv`, `Film`, `Zap`, `Globe2`, `ShieldCheck`, `Headphones` s'ils ne servent nulle part ailleurs.
-  - Importer les 6 asset pointers.
-  - Remplacer le carré doré `<div className="h-12 w-12 rounded-xl bg-[image:var(--gradient-gold)]">…<Icon /></div>` par un `<img>` 3D (h-20 w-20 environ, `object-contain`, `loading="lazy"`, `decoding="async"`) sans le fond doré (l'icône 3D est autoportante).
-  - Conserver l'effet `group-hover:scale-110` et la carte glass.
+- **`og:image` sur `__root.tsx`** : actuellement défini au niveau root → il écrase les images sociales des routes filles (contre les règles du projet). Le déplacer sur `index.tsx` uniquement (les autres routes reprendront le fallback hosting).
+- **`twitter:site` = @Lovable** dans `__root.tsx` : remplacer par un handle Nexora ou supprimer.
+- **`hreflang` sur `<link>` dans root** : les `href` sont relatifs (`/fr`, `/en`, `/de`). Google recommande des URL absolues → passer en absolu.
+- **Canonical/og:url manquants** sur plusieurs routes publiques (`/catalog`, `/galerie`, `/reseller`, `/track`, `/legal-guide`, pages `/legal/*`). Audit + ajout des `head()` manquants (title unique + description + canonical self-référencé + og:title/og:description).
+- **`h1` unique** : vérifier `/` et `/blog` (audit rapide, correction si doublon).
+- **Sitemap** : le fichier est bien servi (HTTP 200, `content-type: application/xml`) et inclut la homepage, /fr /en /de, /catalog, /blog, /reseller, articles + catégories dynamiques. Ajouter `/produits/*` (routes marchandes) et `<lastmod>` sur les pages statiques (date de build) pour aider Google à recrawler.
 
-## Vérification
-Vérifier que `Tv/Film/Zap/Globe2/ShieldCheck/Headphones` ne sont pas réutilisés ailleurs dans index.tsx avant de retirer l'import ; sinon garder l'import. Build TypeScript + screenshot Playwright de la section.
+## 3) Google Search Console — sitemap
+
+Le connecteur Search Console n'est pas lié à ce projet (`GOOGLE_SEARCH_CONSOLE_API_KEY` absent). Deux options :
+
+- **Recommandé** : connecter le connecteur Google Search Console pour que je puisse (a) vérifier l'état d'indexation de `nexora-iptv.com`, (b) resoumettre `sitemap.xml` via l'API, (c) inspecter les URLs clés et lister les erreurs de couverture. Si tu confirmes, je déclenche la connexion à l'implémentation.
+- **Sans connecteur** : je ne peux que vérifier que le sitemap est accessible (fait : ✅ 200, bien formé) et que `robots.txt` le référence (fait : ✅). La resoumission doit alors être faite manuellement dans ton compte GSC.
+
+## Détails techniques
+
+```text
+Fichiers modifiés
+├── src/routes/__root.tsx           (fonts non-bloquantes, retrait og:image, twitter:site, hreflang absolus)
+├── src/routes/index.tsx            (lazy sections, fetchPriority, og:image ici, import NexoraLanding)
+├── src/routes/fr.index.tsx         (preload hero + import NexoraLanding)
+├── src/routes/en.index.tsx         (idem)
+├── src/routes/de.index.tsx         (idem)
+├── src/routes/sitemap[.]xml.ts     (ajout /produits + <lastmod>)
+├── src/routes/catalog.tsx | galerie.tsx | reseller.tsx | track.tsx
+│                                    (head() canonical + og:url + og:title/desc)
+├── src/routes/legal/*.tsx          (head() canonical + og:url)
+├── src/components/ResponsiveImage.tsx (srcSet simplifié)
+└── src/components/landing/NexoraLanding.tsx (nouveau — extraction)
+```
+
+Aucune logique métier, aucun changement backend, aucune migration DB. Tous les changements restent frontend/SEO.
+
+## Question avant implémentation
+
+Souhaites-tu que je **connecte Google Search Console** (option recommandée ci-dessus) pour piloter la resoumission du sitemap et l'audit d'indexation directement depuis l'app ?
