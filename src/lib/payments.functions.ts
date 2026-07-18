@@ -99,6 +99,8 @@ export const initSebPayCheckout = createServerFn({ method: "POST" })
       .from("orders")
       .update({
         status: "processing",
+        payment_provider: "sebpay",
+        provider_reference: sebpayId,
         sebpay_reference: sebpayId,
         metadata: {
           ...((order.metadata as any) ?? {}),
@@ -260,8 +262,26 @@ export const initCheckout = createServerFn({ method: "POST" })
       : pickPaymentProvider(momoCountry, data.providerOverride ?? undefined);
 
     if (provider === "camerpay") {
-      const res = await initCamerPayCheckout({ data });
-      return { provider: "camerpay" as const, ...res };
+      try {
+        const res = await initCamerPayCheckout({ data });
+        return { provider: "camerpay" as const, ...res };
+      } catch (error) {
+        // CamerPay is occasionally unavailable at its edge (HTTP 520). For
+        // Mobile Money, transparently continue through SebPay instead of
+        // leaving the customer with a pending, unusable order.
+        if (orderMethod !== "momo") throw error;
+        console.warn("[payments] CamerPay unavailable; falling back to SebPay", {
+          ref: data.ref,
+          country: momoCountry,
+          reason: error instanceof Error ? error.message : String(error),
+        });
+        const fallback = await initSebPayCheckout({ data });
+        return {
+          provider: "sebpay" as const,
+          ...fallback,
+          message: fallback.message ?? "Paiement Mobile Money redirigé vers notre passerelle de secours.",
+        };
+      }
     }
     const res = await initSebPayCheckout({ data });
     return { provider: "sebpay" as const, ...res };
