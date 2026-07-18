@@ -693,6 +693,38 @@ function FloatingWhatsApp() {
   );
 }
 
+function LatestPosts() {
+  const list = useServerFn(publicListPosts);
+  const { data } = useQuery({
+    queryKey: ["home", "latest-posts"],
+    queryFn: () => list({ data: { page: 1, page_size: 3 } }),
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: true,
+    refetchOnMount: "always",
+    staleTime: 0,
+  });
+  const rows = (data?.rows ?? []) as any[];
+  if (rows.length === 0) return null;
+  return (
+    <section id="latest-posts" className="py-20 border-t border-[color:var(--gold)]/10">
+      <div className="max-w-7xl mx-auto px-6">
+        <div className="flex flex-wrap items-end justify-between gap-4 mb-10">
+          <div>
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight">Derniers articles du blog</h2>
+            <p className="mt-2 text-muted-foreground">Guides, tutoriels et actualités IPTV.</p>
+          </div>
+          <Link to="/blog" className="text-sm font-semibold text-[color:var(--gold)] hover:underline">
+            Voir tous les articles →
+          </Link>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {rows.map((p) => <PostCard key={p.id} post={p} />)}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function Share() {
   const t = useT();
   const { locale } = useI18n();
