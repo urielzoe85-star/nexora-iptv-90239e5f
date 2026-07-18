@@ -284,16 +284,18 @@ function Devices() {
           />
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
             {devices.map(({ photo, key, label }) => (
-              <div key={key} className="flex flex-col items-center gap-2 p-4 rounded-xl glass hover:border-[color:var(--gold)]/40 transition">
-                <img
-                  src={photo}
-                  alt={label}
-                  width={56}
-                  height={56}
-                  loading="lazy"
-                  className="h-14 w-14 rounded-lg object-cover ring-1 ring-[color:var(--gold)]/20"
-                />
-                <span className="text-xs text-muted-foreground text-center">{t(key)}</span>
+              <div key={key} className="flex flex-col items-center rounded-xl glass overflow-hidden hover:border-[color:var(--gold)]/40 transition">
+                <div className="w-full aspect-square">
+                  <img
+                    src={photo}
+                    alt={label}
+                    width={160}
+                    height={160}
+                    loading="lazy"
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+                <span className="text-xs text-muted-foreground text-center py-2 px-2">{t(key)}</span>
               </div>
             ))}
           </div>
