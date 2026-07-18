@@ -1,34 +1,45 @@
-## Objectif
-Rendre la section "Avis clients" de la home plus crédible avec 4 portraits photoréalistes générés et 4 témoignages réécrits en langage plus naturel.
+Objectif : remplacer la section « compatibilité / devices » de la landing page par des photos réelles d’appareils pour renforcer la crédibilité.
 
-## Étapes
+Analyse actuelle
+- Fichier : `src/routes/index.tsx`, fonction `Devices()` (lignes ~244-276).
+- Grande image actuelle : `src/assets/devices.jpg` (image générée, faux logo, faux contenus).
+- Grille d’appareils : 7 icônes Lucide (Smart TV, Android TV, Fire TV, smartphone, tablette, laptop, desktop) avec des labels traduits.
 
-1. **Générer 4 portraits photoréalistes** (agent `generate_image`, premium, format carré 512×512, sauvegardés dans `src/assets/`) — 4 profils diversifiés cohérents avec les noms/villes :
-   - Homme afro-descendant ~30 ans, souriant, extérieur urbain (Lagos) → `testimonial-daniel.jpg`
-   - Femme blanche ~35 ans, cheveux châtains, sourire discret, intérieur parisien lumineux → `testimonial-amelie.jpg`
-   - Homme latino ~40 ans, barbe courte, terrasse ensoleillée (Madrid) → `testimonial-carlos.jpg`
-   - Femme africaine ~28 ans, foulard coloré, ambiance chaleureuse (Dakar) → `testimonial-fatou.jpg`
-   
-   (Portraits candides "selfie/photo perso" — pas de style studio publicitaire, pour éviter l'effet IA/stock.)
+Plan d’implémentation
+1. Générer des photos réelles de 7 appareils
+   - Smart TV (écran dans un salon, ambiance réelle).
+   - Android TV / Google TV (télécommande + écran).
+   - Amazon Fire TV Stick (branché sur un TV, gros plan).
+   - Smartphone (iPhone ou Android tenant l’app IPTV).
+   - Tablette (iPad ou Android tablette).
+   - Laptop (MacBook ou PC portable).
+   - Desktop / PC fixe (écran 24-27 pouces sur bureau).
+   - Style : photos produits réalistes, éclairage naturel, pas de rendu 3D, pas de logos tiers protégés. Contenus à l’écran resteront génériques ou floutés pour éviter les droits d’image.
 
-2. **Externaliser via `lovable-assets`** chaque JPG puis supprimer le binaire local, comme les autres assets du projet.
+2. Externaliser les images via Lovable Assets
+   - Upload de chaque photo avec `lovable-assets create`.
+   - Création des fichiers `.asset.json` sous `src/assets/devices/...`.
+   - Suppression des fichiers binaires sources après upload.
 
-3. **Réécrire les 4 témoignages** dans `src/routes/index.tsx` (fonction `Testimonials`, lignes 508–549) : ton plus parlé, détails concrets (nom d'appareil, chaîne préférée, moyen de paiement local, délai). Exemples de direction :
-   - Daniel : Canal+ Sport + Premier League sur Firestick, activation en 2 min.
-   - Amélie : beIN + Netflix VF sur Apple TV, support WhatsApp réactif.
-   - Carlos : LaLiga + films VOST, testé 4 concurrents avant.
-   - Fatou : bouquet Nollywood + dessins animés enfants, paiement Orange Money.
+3. Remplacer la grande image hero de la section
+   - Créer une image composite / collage des 7 appareils disposés dans un environnement réel (salon + bureau), ou bien une grille masonry de photos.
+   - Remplacer l’import `devicesImg` par le nouvel asset.
 
-4. **Remplacer l'avatar cercle-initiale par un vrai `<img>`** :
-   - Ajouter un champ `photo` dans chaque objet du tableau `testimonials` pointant vers `photo.url` (import du `.asset.json`).
-   - Remplacer le `<div>…{tt.name[0]}</div>` par `<img src={tt.photo} alt={tt.name} className="h-11 w-11 rounded-full object-cover ring-2 ring-[color:var(--gold)]/40" loading="lazy" />`.
-   - Garder la mise en page glass/étoiles inchangée.
+4. Remplacer les icônes Lucide par des thumbnails photo
+   - Modifier la grille `devices` pour pointer vers les assets photo correspondants.
+   - Afficher une petite photo carrée/arrondie (40-48 px) au-dessus du label, au lieu de l’icône dorée.
+   - Garder les labels (`t(key)`) et l’effet hover existant.
 
-## Détails techniques
+5. Vérifier et livrer
+   - `bun run build` ou `tsc --noEmit` pour vérifier les imports.
+   - Vérifier visuellement en preview desktop + mobile.
+   - Aucune modification de logique métier, ni de backend.
 
-- Aucune clé i18n modifiée (les témoignages sont déjà en dur dans le composant, pas dans `messages.ts`).
-- Aucune modification backend, DB, SEO, routes.
-- Les portraits sont générés en `premium` pour un rendu photoréaliste crédible, puis compressés côté CDN Lovable.
+Fichiers impactés
+- `src/routes/index.tsx` : composant `Devices()`.
+- Nouveaux fichiers : `src/assets/devices/*.jpg.asset.json` (7 images).
+- Fichier supprimé : `src/assets/devices.jpg` (remplacé par l’asset composite ou la grille).
 
-## Hors périmètre
-Pas de refonte des étoiles, du titre, ni du reste de la page. Pas de photos de vraies personnes (choix : IA photoréaliste).
+Questions pour affiner
+- Préfères-tu une seule grande photo composite (style actuel) ou une grille de 7 photos visibles directement ?
+- Veux-tu que les photos soient "lifestyle" (dans un salon/bureau) ou "produit" sur fond neutre ?
