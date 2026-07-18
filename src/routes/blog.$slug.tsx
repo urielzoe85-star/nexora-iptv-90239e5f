@@ -15,11 +15,54 @@ export const Route = createFileRoute("/blog/$slug")({
     if (!loaderData) {
       return { meta: [{ title: "Article introuvable" }, { name: "robots", content: "noindex" }] };
     }
-    const p = loaderData.post;
+    const p: any = loaderData.post;
     const url = `https://nexora-iptv.com/blog/${params.slug}`;
+    const canonical = p.canonical_url || url;
     const title = p.seo_title || p.title;
     const desc = p.seo_description || p.excerpt || "";
     const img = p.og_image_url || p.cover_image_url;
+    const tagNames: string[] = Array.isArray(p.tags) ? p.tags.map((t: any) => t?.name).filter(Boolean) : [];
+    const keywords = tagNames.length ? tagNames.join(", ") : (p.seo_keywords || undefined);
+    const wordCount = typeof p.content === "string"
+      ? p.content.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().split(" ").filter(Boolean).length
+      : undefined;
+    const catName: string | undefined = p.category?.name;
+    const catSlug: string | undefined = p.category?.slug;
+    const blogPosting = {
+      "@context": "https://schema.org",
+      "@type": "BlogPosting",
+      headline: p.title,
+      description: desc,
+      url: canonical,
+      inLanguage: p.locale || "fr-FR",
+      image: img ? { "@type": "ImageObject", url: img } : undefined,
+      datePublished: p.published_at,
+      dateModified: p.updated_at,
+      author: p.author_name
+        ? { "@type": "Person", name: p.author_name, ...(p.author_url ? { url: p.author_url } : {}) }
+        : undefined,
+      publisher: {
+        "@type": "Organization",
+        name: "Nexora IPTV",
+        logo: { "@type": "ImageObject", url: "https://nexora-iptv.com/icon-512.png", width: 512, height: 512 },
+      },
+      mainEntityOfPage: { "@type": "WebPage", "@id": canonical },
+      articleSection: catName,
+      keywords,
+      wordCount,
+    };
+    const breadcrumbs = {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Accueil", item: "https://nexora-iptv.com/" },
+        { "@type": "ListItem", position: 2, name: "Blog", item: "https://nexora-iptv.com/blog" },
+        ...(catName && catSlug
+          ? [{ "@type": "ListItem", position: 3, name: catName, item: `https://nexora-iptv.com/blog/categorie/${catSlug}` }]
+          : []),
+        { "@type": "ListItem", position: catName && catSlug ? 4 : 3, name: p.title, item: canonical },
+      ],
+    };
     return {
       meta: [
         { title },
@@ -34,28 +77,14 @@ export const Route = createFileRoute("/blog/$slug")({
         { property: "article:published_time", content: p.published_at ?? "" },
         { property: "article:modified_time", content: p.updated_at ?? "" },
         ...(p.author_name ? [{ name: "author", content: p.author_name }] : []),
+        ...(catName ? [{ property: "article:section", content: catName }] : []),
+        ...tagNames.map((t) => ({ property: "article:tag", content: t })),
+        ...(keywords ? [{ name: "keywords", content: keywords }] : []),
       ],
-      links: [{ rel: "canonical", href: p.canonical_url || url }],
+      links: [{ rel: "canonical", href: canonical }],
       scripts: [
-        {
-          type: "application/ld+json",
-          children: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "Article",
-            headline: p.title,
-            description: desc,
-            image: img ? [img] : undefined,
-            datePublished: p.published_at,
-            dateModified: p.updated_at,
-            author: p.author_name ? { "@type": "Person", name: p.author_name } : undefined,
-            publisher: {
-              "@type": "Organization",
-              name: "Nexora IPTV",
-              logo: { "@type": "ImageObject", url: "https://nexora-iptv.com/icon-512.png" },
-            },
-            mainEntityOfPage: url,
-          }),
-        },
+        { type: "application/ld+json", children: JSON.stringify(blogPosting) },
+        { type: "application/ld+json", children: JSON.stringify(breadcrumbs) },
       ],
     };
   },
