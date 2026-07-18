@@ -8,17 +8,46 @@ import { useState } from "react";
 import { Search, Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/blog/")({
-  head: () => ({
-    meta: [
-      { title: "Blog Nexora IPTV — Guides, tutoriels et actualités" },
-      { name: "description", content: "Guides d'installation IPTV, tutoriels Smart TV, Fire TV, Android, iPhone, actualités et conseils pour tirer le meilleur de votre abonnement Nexora." },
-      { property: "og:title", content: "Blog Nexora IPTV" },
-      { property: "og:description", content: "Guides, tutoriels et actualités IPTV." },
-      { property: "og:url", content: "https://nexora-iptv.com/blog" },
-      { property: "og:type", content: "website" },
-    ],
-    links: [{ rel: "canonical", href: "https://nexora-iptv.com/blog" }],
-  }),
+  head: () => {
+    const url = "https://nexora-iptv.com/blog";
+    const blog = {
+      "@context": "https://schema.org",
+      "@type": "Blog",
+      "@id": url,
+      name: "Blog Nexora IPTV",
+      description: "Guides d'installation IPTV, tutoriels Smart TV, Fire TV, Android, iPhone, actualités et conseils.",
+      url,
+      inLanguage: "fr-FR",
+      publisher: {
+        "@type": "Organization",
+        name: "Nexora IPTV",
+        logo: { "@type": "ImageObject", url: "https://nexora-iptv.com/icon-512.png", width: 512, height: 512 },
+      },
+    };
+    const breadcrumbs = {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Accueil", item: "https://nexora-iptv.com/" },
+        { "@type": "ListItem", position: 2, name: "Blog", item: url },
+      ],
+    };
+    return {
+      meta: [
+        { title: "Blog Nexora IPTV — Guides, tutoriels et actualités" },
+        { name: "description", content: "Guides d'installation IPTV, tutoriels Smart TV, Fire TV, Android, iPhone, actualités et conseils pour tirer le meilleur de votre abonnement Nexora." },
+        { property: "og:title", content: "Blog Nexora IPTV" },
+        { property: "og:description", content: "Guides, tutoriels et actualités IPTV." },
+        { property: "og:url", content: url },
+        { property: "og:type", content: "website" },
+      ],
+      links: [{ rel: "canonical", href: url }],
+      scripts: [
+        { type: "application/ld+json", children: JSON.stringify(blog) },
+        { type: "application/ld+json", children: JSON.stringify(breadcrumbs) },
+      ],
+    };
+  },
   component: BlogIndex,
 });
 
