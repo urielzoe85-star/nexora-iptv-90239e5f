@@ -4,6 +4,10 @@ import devicesImg from "@/assets/devices.jpg";
 import downloadIos from "@/assets/download-ios.jpg";
 import downloadAndroid from "@/assets/download-android.jpg";
 import downloadWindows from "@/assets/download-windows.jpg";
+import danielPhoto from "@/assets/testimonial-daniel.jpg.asset.json";
+import ameliePhoto from "@/assets/testimonial-amelie.jpg.asset.json";
+import carlosPhoto from "@/assets/testimonial-carlos.jpg.asset.json";
+import fatouPhoto from "@/assets/testimonial-fatou.jpg.asset.json";
 import {
   Accordion, AccordionContent, AccordionItem, AccordionTrigger,
 } from "@/components/ui/accordion";
@@ -508,10 +512,30 @@ function Downloads() {
 function Testimonials() {
   const t = useT();
   const testimonials = [
-    { name: "Daniel K.", role: "Lagos, Nigeria", text: "Activation was literally instant. The 4K stream is butter smooth on my Samsung TV." },
-    { name: "Amélie R.", role: "Paris, France", text: "Massive sports & movies catalog. Support replied in under 2 minutes on WhatsApp." },
-    { name: "Carlos M.", role: "Madrid, Spain", text: "I tried four IPTV providers — Nexora is the only one that just works, every single day." },
-    { name: "Fatou D.", role: "Dakar, Senegal", text: "Paid with Orange Money, got access in 3 minutes. Quality is unreal for the price." },
+    {
+      name: "Daniel K.",
+      role: "Lagos, Nigeria",
+      photo: danielPhoto.url,
+      text: "Honnêtement je m'attendais à galérer, mais j'ai reçu mes codes en 2 min sur WhatsApp. Je regarde Premier League et Canal+ Sport sur mon Firestick, zéro coupure même le week-end.",
+    },
+    {
+      name: "Amélie R.",
+      role: "Paris, France",
+      photo: ameliePhoto.url,
+      text: "Je cherchais une alternative propre à mon abo TV. beIN, Netflix VF, Disney+ — tout passe nickel sur l'Apple TV. Le support répond en moins de 5 min, ça change tout.",
+    },
+    {
+      name: "Carlos M.",
+      role: "Madrid, Spain",
+      photo: carlosPhoto.url,
+      text: "He probado 4 proveedores antes, siempre el mismo problema los días de LaLiga. Con Nexora ni un lag en 3 meses, y las películas están en VOSE. Por fin.",
+    },
+    {
+      name: "Fatou D.",
+      role: "Dakar, Senegal",
+      photo: fatouPhoto.url,
+      text: "J'ai payé avec Orange Money un dimanche soir, actif en 3 min. Mes enfants ont leurs dessins animés, moi Nollywood et les séries — pour le prix, franchement rien à dire.",
+    },
   ];
   return (
     <section className="py-28 relative">
@@ -534,7 +558,14 @@ function Testimonials() {
               </div>
               <p className="text-sm text-muted-foreground mb-6 leading-relaxed">"{tt.text}"</p>
               <div className="mt-auto flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-[image:var(--gradient-gold)] grid place-items-center text-black font-bold">{tt.name[0]}</div>
+                <img
+                  src={tt.photo}
+                  alt={tt.name}
+                  loading="lazy"
+                  width={44}
+                  height={44}
+                  className="h-11 w-11 rounded-full object-cover ring-2 ring-[color:var(--gold)]/40"
+                />
                 <div>
                   <p className="text-sm font-semibold">{tt.name}</p>
                   <p className="text-xs text-muted-foreground">{tt.role}</p>
