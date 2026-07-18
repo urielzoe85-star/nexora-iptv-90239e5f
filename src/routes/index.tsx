@@ -288,10 +288,10 @@ function Devices() {
                 <img
                   src={photo}
                   alt={label}
-                  width={56}
-                  height={56}
+                  width={80}
+                  height={80}
                   loading="lazy"
-                  className="h-14 w-14 rounded-lg object-cover ring-1 ring-[color:var(--gold)]/20"
+                  className="h-20 w-20 object-cover"
                 />
                 <span className="text-xs text-muted-foreground text-center">{t(key)}</span>
               </div>
