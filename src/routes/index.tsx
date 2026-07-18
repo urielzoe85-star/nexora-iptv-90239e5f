@@ -4,6 +4,10 @@ import devicesImg from "@/assets/devices.jpg";
 import downloadIos from "@/assets/download-ios.jpg";
 import downloadAndroid from "@/assets/download-android.jpg";
 import downloadWindows from "@/assets/download-windows.jpg";
+import danielPhoto from "@/assets/testimonial-daniel.jpg.asset.json";
+import ameliePhoto from "@/assets/testimonial-amelie.jpg.asset.json";
+import carlosPhoto from "@/assets/testimonial-carlos.jpg.asset.json";
+import fatouPhoto from "@/assets/testimonial-fatou.jpg.asset.json";
 import {
   Accordion, AccordionContent, AccordionItem, AccordionTrigger,
 } from "@/components/ui/accordion";
