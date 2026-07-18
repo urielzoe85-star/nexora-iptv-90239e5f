@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { listGalleryPublic, type GalleryItem } from "@/lib/gallery.functions";
+import { RatingBadge, RatingBadgeFloating } from "@/components/gallery/RatingBadge";
 
 const BASE_URL = "https://nexora-iptv.com";
 
@@ -32,6 +33,13 @@ export const Route = createFileRoute("/galerie")({
             price: it.price,
             priceCurrency: it.currency,
             availability: `https://schema.org/${it.availability === "in_stock" ? "InStock" : it.availability === "preorder" ? "PreOrder" : "OutOfStock"}`,
+          } : undefined,
+          aggregateRating: (it.rating_enabled && it.rating_avg && it.rating_count) ? {
+            "@type": "AggregateRating",
+            ratingValue: it.rating_avg,
+            reviewCount: it.rating_count,
+            bestRating: 5,
+            worstRating: 1,
           } : undefined,
           url: it.product_slug ? `${BASE_URL}/produits/${it.product_slug}` : `${BASE_URL}/#pricing${it.plan_slug ? "-" + it.plan_slug : ""}`,
         },
@@ -88,12 +96,20 @@ function GalleryPage() {
               const isExternal = it.link_type === "external_url";
               const inner = (
                 <div className="group glass rounded-2xl overflow-hidden hover-scale transition h-full flex flex-col">
-                  <div className="aspect-[4/3] overflow-hidden bg-muted">
+                  <div className="relative aspect-[4/3] overflow-hidden bg-muted">
+                    {it.rating_enabled && it.rating_avg != null && it.rating_count != null && (
+                      <RatingBadgeFloating avg={Number(it.rating_avg)} count={it.rating_count} />
+                    )}
                     <img src={it.image_url} alt={it.title} loading="lazy"
                       className="w-full h-full object-cover group-hover:scale-105 transition" />
                   </div>
                   <div className="p-5 flex-1 flex flex-col">
                     <h2 className="font-semibold text-lg">{it.title}</h2>
+                    {it.rating_enabled && it.rating_avg != null && it.rating_count != null && (
+                      <div className="mt-1.5">
+                        <RatingBadge avg={Number(it.rating_avg)} count={it.rating_count} size="sm" />
+                      </div>
+                    )}
                     {it.description && <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{it.description}</p>}
                     <div className="mt-auto pt-4 flex items-center justify-between">
                       {it.price != null ? (
