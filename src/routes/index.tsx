@@ -21,7 +21,6 @@ import {
 import {
   Tv, Film, Zap, Globe2, ShieldCheck, Headphones,
   Check, Star, MessageCircle, Send, Mail, Menu,
-  Smartphone, Tablet, Laptop, Monitor, Tv2,
   Download, Share2, Facebook, Twitter, Link2,
   BadgeCheck,
 } from "lucide-react";
