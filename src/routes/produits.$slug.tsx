@@ -1,5 +1,6 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { getGalleryItemBySlug, type GalleryItem } from "@/lib/gallery.functions";
+import { RatingBadge } from "@/components/gallery/RatingBadge";
 
 const BASE_URL = "https://nexora-iptv.com";
 
@@ -27,6 +28,13 @@ export const Route = createFileRoute("/produits/$slug")({
         price: it.price,
         priceCurrency: it.currency,
         availability: `https://schema.org/${it.availability === "in_stock" ? "InStock" : it.availability === "preorder" ? "PreOrder" : "OutOfStock"}`,
+      } : undefined,
+      aggregateRating: (it.rating_enabled && it.rating_avg && it.rating_count) ? {
+        "@type": "AggregateRating",
+        ratingValue: it.rating_avg,
+        reviewCount: it.rating_count,
+        bestRating: 5,
+        worstRating: 1,
       } : undefined,
     };
     return {
@@ -83,6 +91,11 @@ function ProductPage() {
           <div>
             {it.brand && <p className="text-sm uppercase tracking-[0.2em] text-[color:var(--gold)] mb-2">{it.brand}</p>}
             <h1 className="text-4xl font-bold">{it.title}</h1>
+            {it.rating_enabled && it.rating_avg != null && it.rating_count != null && (
+              <div className="mt-3">
+                <RatingBadge avg={Number(it.rating_avg)} count={it.rating_count} size="md" />
+              </div>
+            )}
             {it.price != null && (
               <div className="mt-6 flex items-baseline gap-2">
                 <span className="text-5xl font-bold text-gradient-gold">${it.price}</span>

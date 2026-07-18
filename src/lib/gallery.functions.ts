@@ -19,6 +19,9 @@ export type GalleryItem = {
   availability: "in_stock" | "out_of_stock" | "preorder";
   sort_order: number;
   active: boolean;
+  rating_avg: number | null;
+  rating_count: number | null;
+  rating_enabled: boolean;
   created_at: string;
   updated_at: string;
 };
@@ -49,6 +52,9 @@ const upsertSchema = z.object({
   availability: z.enum(["in_stock", "out_of_stock", "preorder"]).default("in_stock"),
   sort_order: z.number().int().default(0),
   active: z.boolean().default(true),
+  rating_avg: z.number().min(0).max(5).optional().nullable(),
+  rating_count: z.number().int().min(0).max(999999).optional().nullable(),
+  rating_enabled: z.boolean().optional(),
 });
 
 export const listGalleryPublic = createServerFn({ method: "GET" }).handler(async () => {

@@ -65,6 +65,9 @@ function GalleryAdmin() {
         availability: (f.availability ?? "in_stock") as "in_stock" | "out_of_stock" | "preorder",
         sort_order: Number(f.sort_order ?? 0),
         active: f.active ?? true,
+        rating_avg: f.rating_avg == null || (f.rating_avg as any) === "" ? null : Number(f.rating_avg),
+        rating_count: f.rating_count == null || (f.rating_count as any) === "" ? null : Number(f.rating_count),
+        rating_enabled: f.rating_enabled ?? true,
       } });
     },
     onSuccess: () => {
@@ -248,6 +251,22 @@ function GalleryAdmin() {
               <div>
                 <Label>Ordre d'affichage</Label>
                 <Input type="number" value={form.sort_order ?? 0} onChange={(e) => setForm((f) => ({ ...f, sort_order: Number(e.target.value) }))} />
+              </div>
+              <div>
+                <Label>Note (0–5, vide = auto)</Label>
+                <Input type="number" step="0.1" min="0" max="5" placeholder="auto"
+                  value={form.rating_avg ?? ""}
+                  onChange={(e) => setForm((f) => ({ ...f, rating_avg: e.target.value === "" ? null : Number(e.target.value) }))} />
+              </div>
+              <div>
+                <Label>Nombre d'avis (vide = auto)</Label>
+                <Input type="number" min="0" placeholder="auto"
+                  value={form.rating_count ?? ""}
+                  onChange={(e) => setForm((f) => ({ ...f, rating_count: e.target.value === "" ? null : Number(e.target.value) }))} />
+              </div>
+              <div className="col-span-2 flex items-center justify-between rounded border p-3">
+                <Label>Afficher la note sur le site</Label>
+                <Switch checked={form.rating_enabled ?? true} onCheckedChange={(v) => setForm((f) => ({ ...f, rating_enabled: v }))} />
               </div>
               <div className="col-span-2 flex items-center justify-between rounded border p-3">
                 <Label>Actif (visible sur le site)</Label>

@@ -981,6 +981,9 @@ export type Database = {
           plan_slug: string | null
           price: number | null
           product_slug: string | null
+          rating_avg: number | null
+          rating_count: number | null
+          rating_enabled: boolean
           sku: string | null
           sort_order: number
           title: string
@@ -1001,6 +1004,9 @@ export type Database = {
           plan_slug?: string | null
           price?: number | null
           product_slug?: string | null
+          rating_avg?: number | null
+          rating_count?: number | null
+          rating_enabled?: boolean
           sku?: string | null
           sort_order?: number
           title: string
@@ -1021,6 +1027,9 @@ export type Database = {
           plan_slug?: string | null
           price?: number | null
           product_slug?: string | null
+          rating_avg?: number | null
+          rating_count?: number | null
+          rating_enabled?: boolean
           sku?: string | null
           sort_order?: number
           title?: string
