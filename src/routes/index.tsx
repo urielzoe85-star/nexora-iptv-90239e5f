@@ -20,6 +20,9 @@ import {
   Accordion, AccordionContent, AccordionItem, AccordionTrigger,
 } from "@/components/ui/accordion";
 import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger,
+} from "@/components/ui/dialog";
+import {
   Tv, Film, Zap, Globe2, ShieldCheck, Headphones,
   Check, Star, MessageCircle, Send, Mail, Menu,
   Download, Share2, Facebook, Twitter, Link2,
@@ -476,6 +479,23 @@ function Downloads() {
       device: t("download.android.device"),
       href: "https://iptv-smarters-pro.fr.uptodown.com/android#",
       img: downloadAndroid,
+      options: [
+        {
+          name: "M-IBO Player",
+          desc: "APK direct — Android / Android TV",
+          href: "https://pub-32ee8b5200cb4935b28bee48941d5806.r2.dev/android/m-ibo.apk",
+        },
+        {
+          name: "IPTV Smarters Pro",
+          desc: "Android / Android TV — Uptodown",
+          href: "https://iptv-smarters-pro.fr.uptodown.com/android#",
+        },
+        {
+          name: "TiviMate",
+          desc: "Android TV / Fire TV Stick",
+          href: "https://tivimate.com/",
+        },
+      ],
       icon: (
         <svg viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
           <path d="M6 18c0 .55.45 1 1 1h1v3.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V19h2v3.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V19h1c.55 0 1-.45 1-1V8H6v10zM3.5 8C2.67 8 2 8.67 2 9.5v7c0 .83.67 1.5 1.5 1.5S5 17.33 5 16.5v-7C5 8.67 4.33 8 3.5 8zm17 0c-.83 0-1.5.67-1.5 1.5v7c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5v-7c0-.83-.67-1.5-1.5-1.5zm-4.44-4.19l1.13-1.97c.11-.18.05-.41-.13-.52-.18-.11-.41-.05-.52.13l-1.15 1.99c-1.45-.64-3.07-.99-4.79-.99s-3.34.35-4.79.99L6.44 2.42c-.11-.18-.34-.24-.52-.13-.18.11-.24.34-.13.52l1.13 1.97C4.14 6.16 2 9.24 2 12.76h20c0-3.52-2.14-6.6-5.44-7.95zM10 5.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5-.67 1.5-1.5 1.5S10 6.33 10 5.5z" />
@@ -504,42 +524,89 @@ function Downloads() {
           <p className="text-muted-foreground mt-4">{t("download.sub")}</p>
         </div>
         <div className="grid md:grid-cols-3 gap-6">
-          {apps.map((app) => (
-            <a
-              key={app.platform}
-              href={app.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group relative glass rounded-3xl p-6 transition hover-scale overflow-hidden"
-              style={{ animation: "glow-pulse 3s ease-in-out infinite" }}
-            >
-              <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent z-10" />
-              <div className="relative z-0 mb-6 -mx-6 -mt-6 overflow-hidden rounded-t-3xl">
-                <img
-                  src={app.img}
-                  alt={app.title}
-                  width={768}
-                  height={768}
-                  loading="lazy"
-                  className="w-full h-48 object-cover transition duration-500 group-hover:scale-105"
-                />
-              </div>
-              <div className="relative z-20 flex items-center gap-3 mb-2">
-                <div className="h-10 w-10 rounded-xl bg-[image:var(--gradient-gold)] grid place-items-center text-black">
-                  {app.icon}
+          {apps.map((app) => {
+            const cardInner = (
+              <>
+                <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent z-10" />
+                <div className="relative z-0 mb-6 -mx-6 -mt-6 overflow-hidden rounded-t-3xl">
+                  <img
+                    src={app.img}
+                    alt={app.title}
+                    width={768}
+                    height={768}
+                    loading="lazy"
+                    className="w-full h-48 object-cover transition duration-500 group-hover:scale-105"
+                  />
                 </div>
-                <div>
-                  <h3 className="text-lg font-semibold">{app.platform}</h3>
-                  <p className="text-xs text-muted-foreground">{app.device}</p>
+                <div className="relative z-20 flex items-center gap-3 mb-2">
+                  <div className="h-10 w-10 rounded-xl bg-[image:var(--gradient-gold)] grid place-items-center text-black">
+                    {app.icon}
+                  </div>
+                  <div className="text-left">
+                    <h3 className="text-lg font-semibold">{app.platform}</h3>
+                    <p className="text-xs text-muted-foreground">{app.device}</p>
+                  </div>
                 </div>
-              </div>
-              <p className="text-sm text-muted-foreground mb-4">{app.title}</p>
-              <div className="btn-gold btn-gold-hover px-5 py-2.5 rounded-full text-sm font-semibold inline-flex items-center gap-2">
-                <Download className="h-4 w-4" />
-                {t("download.btn")}
-              </div>
-            </a>
-          ))}
+                <p className="text-sm text-muted-foreground mb-4 text-left">{app.title}</p>
+                <div className="btn-gold btn-gold-hover px-5 py-2.5 rounded-full text-sm font-semibold inline-flex items-center gap-2">
+                  <Download className="h-4 w-4" />
+                  {t("download.btn")}
+                </div>
+              </>
+            );
+            const cardClass = "group relative glass rounded-3xl p-6 transition hover-scale overflow-hidden w-full text-left";
+            const cardStyle = { animation: "glow-pulse 3s ease-in-out infinite" } as const;
+
+            if (app.options) {
+              return (
+                <Dialog key={app.platform}>
+                  <DialogTrigger asChild>
+                    <button type="button" className={cardClass} style={cardStyle}>
+                      {cardInner}
+                    </button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Choisissez votre application {app.platform}</DialogTitle>
+                      <DialogDescription>
+                        Sélectionnez l'application compatible avec votre appareil.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-2 mt-2">
+                      {app.options.map((opt) => (
+                        <a
+                          key={opt.name}
+                          href={opt.href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="glass rounded-xl p-4 flex items-center gap-3 hover:border-[color:var(--gold)]/40 transition"
+                        >
+                          <div className="flex-1">
+                            <div className="font-semibold">{opt.name}</div>
+                            <div className="text-xs text-muted-foreground">{opt.desc}</div>
+                          </div>
+                          <Download className="h-4 w-4 text-[color:var(--gold)]" />
+                        </a>
+                      ))}
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              );
+            }
+
+            return (
+              <a
+                key={app.platform}
+                href={app.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={cardClass}
+                style={cardStyle}
+              >
+                {cardInner}
+              </a>
+            );
+          })}
         </div>
       </div>
     </section>
