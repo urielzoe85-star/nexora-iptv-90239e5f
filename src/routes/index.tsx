@@ -1,6 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import heroBg from "@/assets/hero-bg.jpg";
-import devicesImg from "@/assets/devices.jpg";
+import devicesMain from "@/assets/devices/devices-main.jpg.asset.json";
+import deviceSmartTv from "@/assets/devices/device-smarttv.jpg.asset.json";
+import deviceAndroidTv from "@/assets/devices/device-androidtv.jpg.asset.json";
+import deviceFireTv from "@/assets/devices/device-firetv.jpg.asset.json";
+import deviceSmartphone from "@/assets/devices/device-smartphone.jpg.asset.json";
+import deviceTablet from "@/assets/devices/device-tablet.jpg.asset.json";
+import deviceLaptop from "@/assets/devices/device-laptop.jpg.asset.json";
+import deviceDesktop from "@/assets/devices/device-desktop.jpg.asset.json";
 import downloadIos from "@/assets/download-ios.jpg";
 import downloadAndroid from "@/assets/download-android.jpg";
 import downloadWindows from "@/assets/download-windows.jpg";
