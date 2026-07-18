@@ -93,14 +93,27 @@ export function BlogEditor({ postId }: { postId?: string }) {
     input.onchange = async () => {
       const f = input.files?.[0]; if (!f) return;
       if (f.size > 8 * 1024 * 1024) return toast.error("Image trop lourde (max 8 Mo)");
-      const buf = await f.arrayBuffer();
-      const b64 = btoa(String.fromCharCode(...new Uint8Array(buf)));
+      const tId = toast.loading("Envoi de l'image…");
       try {
+        const b64 = await fileToBase64(f);
         const { url } = await upload({ data: { filename: f.name, content_type: f.type || "image/jpeg", data_base64: b64 } });
         setCover(url);
-      } catch (e: any) { toast.error(e?.message ?? "Erreur d'upload"); }
+        toast.success("Image téléversée", { id: tId });
+      } catch (e: any) { toast.error(e?.message ?? "Erreur d'upload", { id: tId }); }
     };
     input.click();
+  }
+
+  function fileToBase64(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => {
+        const s = r.result as string;
+        resolve(s.split(",")[1] ?? "");
+      };
+      r.onerror = () => reject(r.error ?? new Error("Lecture du fichier impossible"));
+      r.readAsDataURL(file);
+    });
   }
 
   async function addTag() {

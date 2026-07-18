@@ -7,12 +7,15 @@ const ALLOWED_TAGS = [
   "h1","h2","h3","h4","h5","h6","p","a","ul","ol","li","blockquote","hr","br",
   "strong","em","u","s","code","pre","img","figure","figcaption",
   "table","thead","tbody","tr","th","td","iframe","span","div",
+  "video","source",
 ];
 
 const ALLOWED_ATTR: sanitizeHtml.IOptions["allowedAttributes"] = {
   a: ["href","name","target","rel","title"],
   img: ["src","alt","title","width","height","loading","decoding"],
   iframe: ["src","width","height","allow","allowfullscreen","frameborder","title"],
+  video: ["src","controls","poster","width","height","preload","playsinline","muted","loop"],
+  source: ["src","type"],
   "*": ["class","style","id"],
 };
 
