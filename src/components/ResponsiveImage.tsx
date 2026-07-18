@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export interface ResponsiveImageProps {
   src: string;
@@ -21,7 +21,7 @@ export function ResponsiveImage({
   height,
   sizes,
   className = "",
-  srcSetWidths,
+  srcSetWidths: _srcSetWidths,
   loading = "lazy",
   fetchpriority = "low",
   decoding = "async",
@@ -52,15 +52,6 @@ export function ResponsiveImage({
     return () => observer.disconnect();
   }, [rootMargin]);
 
-  const srcSet = useMemo(() => {
-    if (!srcSetWidths || srcSetWidths.length === 0) return undefined;
-    // Les assets sont servis par le CDN Lovable sans redimensionnement dynamique.
-    // On expose quand même les descripteurs de largeur pour que le navigateur
-    // choisisse la source adaptée si le service évolue ou si un cache local
-    // d'une autre taille existe déjà.
-    return srcSetWidths.map((w) => `${src} ${w}w`).join(", ");
-  }, [src, srcSetWidths]);
-
   const paddingBottom = `${(height / width) * 100}%`;
 
   return (
@@ -72,7 +63,6 @@ export function ResponsiveImage({
       {isVisible ? (
         <img
           src={src}
-          srcSet={srcSet}
           sizes={sizes}
           alt={alt}
           width={width}
