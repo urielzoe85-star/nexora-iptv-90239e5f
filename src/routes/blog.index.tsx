@@ -26,10 +26,20 @@ function BlogIndex() {
   const list = useServerFn(publicListPosts);
   const listCats = useServerFn(publicListCategories);
   const [search, setSearch] = useState("");
-  const { data: cats } = useQuery({ queryKey: ["blog","cats"], queryFn: () => listCats() });
+  const { data: cats } = useQuery({
+    queryKey: ["blog","cats"],
+    queryFn: () => listCats(),
+    refetchInterval: 5 * 60_000,
+    refetchOnWindowFocus: true,
+    staleTime: 0,
+  });
   const { data, isLoading } = useQuery({
     queryKey: ["blog","posts", search],
     queryFn: () => list({ data: { search: search || undefined, page: 1, page_size: 24 } }),
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: true,
+    refetchOnMount: "always",
+    staleTime: 0,
   });
 
   return (
