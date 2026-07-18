@@ -48,7 +48,7 @@ export function mapCamerpayStatus(s: unknown): "paid" | "failed" | "cancelled" |
 
 async function camerpayFetch(
   path: string,
-  init: { method: "GET" | "POST"; body?: unknown },
+  init: { method: "GET" | "POST"; body?: unknown; retryOn5xx?: boolean },
 ): Promise<{ status: number; raw: string; json: any }> {
   const url = `${camerpayBaseUrl()}${path}`;
   const headers: Record<string, string> = {
@@ -57,28 +57,40 @@ async function camerpayFetch(
   };
   if (init.body !== undefined) headers["Content-Type"] = "application/json";
 
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), init.method === "GET" ? 8_000 : 20_000);
-  let res: Response;
-  try {
-    res = await fetch(url, {
-      method: init.method,
-      headers,
-      body: init.body !== undefined ? JSON.stringify(init.body) : undefined,
-      signal: ctrl.signal,
-    });
-  } catch (e: any) {
+  // Retry only on 5xx / 429 / timeout — never on 4xx (bad request / auth).
+  // idempotency_key = order_ref ensures CamerPay dedupes retried initiates.
+  const backoffsMs = init.retryOn5xx ? [400, 1200, 2500] : [0];
+  let lastErr: unknown = null;
+  for (let attempt = 0; attempt < backoffsMs.length; attempt++) {
+    if (attempt > 0) await new Promise((r) => setTimeout(r, backoffsMs[attempt - 1]));
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), init.method === "GET" ? 8_000 : 20_000);
+    let res: Response;
+    try {
+      res = await fetch(url, {
+        method: init.method,
+        headers,
+        body: init.body !== undefined ? JSON.stringify(init.body) : undefined,
+        signal: ctrl.signal,
+      });
+    } catch (e: any) {
+      clearTimeout(timer);
+      const aborted = e?.name === "AbortError";
+      lastErr = e;
+      console.error("[camerpay] fetch failed", { url, method: init.method, aborted, attempt, message: String(e?.message ?? e) });
+      if (init.retryOn5xx && attempt < backoffsMs.length - 1) continue;
+      throw new Error(aborted ? "CamerPay timeout" : `CamerPay network error: ${String(e?.message ?? e)}`);
+    }
     clearTimeout(timer);
-    const aborted = e?.name === "AbortError";
-    console.error("[camerpay] fetch failed", { url, method: init.method, aborted, message: String(e?.message ?? e) });
-    throw new Error(aborted ? "CamerPay timeout" : `CamerPay network error: ${String(e?.message ?? e)}`);
+    const raw = await res.text();
+    let json: any = null;
+    try { json = raw ? JSON.parse(raw) : null; } catch { /* non-JSON */ }
+    console.log("[camerpay] ←", res.status, url, "attempt", attempt, raw.slice(0, 500));
+    const shouldRetry = init.retryOn5xx && (res.status >= 500 || res.status === 429);
+    if (shouldRetry && attempt < backoffsMs.length - 1) continue;
+    return { status: res.status, raw, json };
   }
-  clearTimeout(timer);
-  const raw = await res.text();
-  let json: any = null;
-  try { json = raw ? JSON.parse(raw) : null; } catch { /* non-JSON */ }
-  console.log("[camerpay] ←", res.status, url, raw.slice(0, 1000));
-  return { status: res.status, raw, json };
+  throw new Error(`CamerPay unreachable: ${String((lastErr as any)?.message ?? lastErr ?? "unknown")}`);
 }
 
 export type CamerpayInitiateInput = {
@@ -116,11 +128,32 @@ export async function camerpayInitiate(input: CamerpayInitiateInput): Promise<Ca
   if (input.customerPhone) payload.customer_phone = input.customerPhone.replace(/\D/g, "");
   if (input.paymentMethod) payload.payment_method = input.paymentMethod;
 
-  const { status, raw, json } = await camerpayFetch("/api/payment/initiate", { method: "POST", body: payload });
+  const { status, raw, json } = await camerpayFetch("/api/payment/initiate", { method: "POST", body: payload, retryOn5xx: true });
   if (status < 200 || status >= 300 || !json?.transaction_uuid) {
     const detail = (json && (json.message || json.error)) || raw.slice(0, 400) || "(empty)";
-    console.error("[camerpay] initiate failed", { status, detail });
-    throw new Error("Le paiement CamerPay n'a pas pu être initialisé. Veuillez réessayer.");
+    console.error("[camerpay] initiate failed", { status, detail, invoiceId: input.invoiceId });
+    // Best-effort audit trail so the NCC can see when CamerPay is degraded.
+    try {
+      const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
+      await (supabaseAdmin as any).from("integration_debug_logs").insert({
+        provider: "camerpay",
+        operation: "initiate",
+        status_code: status,
+        request_payload: { invoice_id: input.invoiceId, amount: input.amount },
+        response_payload: json ?? { raw: raw.slice(0, 400) },
+        error_message: typeof detail === "string" ? detail : JSON.stringify(detail).slice(0, 400),
+      });
+    } catch { /* logging must never break checkout */ }
+    if (status >= 500 || status === 429 || status === 0) {
+      throw new Error(
+        `Notre passerelle de paiement est temporairement indisponible. Réessayez dans un instant, ou contactez-nous sur WhatsApp avec la référence ${input.invoiceId}.`,
+      );
+    }
+    throw new Error(
+      typeof detail === "string" && detail.length < 200
+        ? `Paiement refusé par CamerPay : ${detail}`
+        : "Le paiement CamerPay n'a pas pu être initialisé. Veuillez réessayer.",
+    );
   }
   return {
     transactionUuid: String(json.transaction_uuid),

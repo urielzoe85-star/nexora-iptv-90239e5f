@@ -577,7 +577,17 @@ function PaymentStep(props: {
       {errorMsg && (
         <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200 whitespace-pre-wrap break-words">
           <div className="font-semibold mb-1">Erreur de paiement</div>
-          {errorMsg}
+          <div>{errorMsg}</div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <a
+              href={`https://wa.me/237698608808?text=${encodeURIComponent("Bonjour Nexora, mon paiement n'a pas pu être initialisé — pouvez-vous m'aider ? 🙏")}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-full bg-[#25D366] text-white px-4 py-2 text-xs font-semibold hover:opacity-90"
+            >
+              Nous joindre sur WhatsApp
+            </a>
+          </div>
         </div>
       )}
 
