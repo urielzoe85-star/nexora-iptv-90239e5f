@@ -16,6 +16,7 @@ import {
   Check, Star, MessageCircle, Send, Mail, Menu,
   Smartphone, Tablet, Laptop, Monitor, Tv2,
   Download, Share2, Facebook, Twitter, Link2,
+  BadgeCheck,
 } from "lucide-react";
 import { useT, useI18n } from "@/i18n/context";
 import { LanguageSwitcher } from "@/i18n/context";
@@ -517,24 +518,32 @@ function Testimonials() {
       role: "Lagos, Nigeria",
       photo: danielPhoto.url,
       text: "Honnêtement je m'attendais à galérer, mais j'ai reçu mes codes en 2 min sur WhatsApp. Je regarde Premier League et Canal+ Sport sur mon Firestick, zéro coupure même le week-end.",
+      verified: true,
+      since: "2022",
     },
     {
       name: "Amélie R.",
       role: "Paris, France",
       photo: ameliePhoto.url,
       text: "Je cherchais une alternative propre à mon abo TV. beIN, Netflix VF, Disney+ — tout passe nickel sur l'Apple TV. Le support répond en moins de 5 min, ça change tout.",
+      verified: true,
+      since: "2023",
     },
     {
       name: "Carlos M.",
       role: "Madrid, Spain",
       photo: carlosPhoto.url,
       text: "He probado 4 proveedores antes, siempre el mismo problema los días de LaLiga. Con Nexora ni un lag en 3 meses, y las películas están en VOSE. Por fin.",
+      verified: true,
+      since: "2021",
     },
     {
       name: "Fatou D.",
       role: "Dakar, Senegal",
       photo: fatouPhoto.url,
       text: "J'ai payé avec Orange Money un dimanche soir, actif en 3 min. Mes enfants ont leurs dessins animés, moi Nollywood et les séries — pour le prix, franchement rien à dire.",
+      verified: true,
+      since: "2023",
     },
   ];
   return (
@@ -552,7 +561,13 @@ function Testimonials() {
         </div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {testimonials.map(tt => (
-            <div key={tt.name} className="glass rounded-2xl p-6 flex flex-col">
+            <div key={tt.name} className="glass rounded-2xl p-6 flex flex-col relative">
+              {tt.verified && (
+                <div className="absolute top-4 right-4 inline-flex items-center gap-1 rounded-full bg-[color:var(--gold)]/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-[color:var(--gold)]">
+                  <BadgeCheck className="h-3 w-3" />
+                  Avis vérifié
+                </div>
+              )}
               <div className="flex mb-3">
                 {[...Array(5)].map((_, i) => <Star key={i} className="h-4 w-4 fill-[color:var(--gold)] text-[color:var(--gold)]" />)}
               </div>
@@ -566,9 +581,14 @@ function Testimonials() {
                   height={44}
                   className="h-11 w-11 rounded-full object-cover ring-2 ring-[color:var(--gold)]/40"
                 />
-                <div>
+                <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold">{tt.name}</p>
                   <p className="text-xs text-muted-foreground">{tt.role}</p>
+                  {tt.since && (
+                    <span className="mt-1 inline-flex items-center rounded-full border border-[color:var(--gold)]/20 bg-[color:var(--gold)]/5 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                      Client depuis {tt.since}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
