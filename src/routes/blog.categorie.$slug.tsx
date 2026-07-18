@@ -54,6 +54,10 @@ function CategoryPage() {
   const { data, isLoading } = useQuery({
     queryKey: ["blog","cat", cat.slug],
     queryFn: () => list({ data: { category_slug: cat.slug, page: 1, page_size: 24 } }),
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: true,
+    refetchOnMount: "always",
+    staleTime: 0,
   });
   return (
     <div className="min-h-screen bg-background">
