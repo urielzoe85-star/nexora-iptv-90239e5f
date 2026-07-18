@@ -329,6 +329,34 @@ export const adminUploadBlogImage = createServerFn({ method: "POST" })
     return { url: signed.signedUrl, path };
   });
 
+// ─────────── Admin: Upload video ───────────
+export const adminUploadBlogVideo = createServerFn({ method: "POST" })
+  .middleware([requireAdmin])
+  .inputValidator((d: unknown) =>
+    z.object({
+      filename: z.string().trim().min(1).max(200),
+      content_type: z.string().trim().min(1).max(120),
+      data_base64: z.string().min(1).max(80_000_000),
+    }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
+    const buf = Buffer.from(data.data_base64, "base64");
+    const ext = (data.filename.split(".").pop() ?? "mp4").toLowerCase().replace(/[^a-z0-9]/g, "") || "mp4";
+    const safe = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+    const path = `videos/${safe}`;
+    const { error } = await supabaseAdmin.storage.from("blog-media").upload(path, buf, {
+      contentType: data.content_type || "video/mp4",
+      upsert: false,
+    });
+    if (error) throw new Error(error.message);
+    const { data: signed, error: sErr } = await supabaseAdmin.storage
+      .from("blog-media")
+      .createSignedUrl(path, 60 * 60 * 24 * 365 * 10);
+    if (sErr || !signed) throw new Error(sErr?.message ?? "Signed URL failed");
+    return { url: signed.signedUrl, path };
+  });
+
 // ─────────── Admin: settings ───────────
 export const adminGetBlogSettings = createServerFn({ method: "GET" })
   .middleware([requireAdmin])
