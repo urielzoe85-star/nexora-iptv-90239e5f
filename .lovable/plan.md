@@ -1,51 +1,58 @@
 ## Objectif
-Améliorer la vitesse/fluidité perçue du site, corriger deux avertissements console récurrents, resserrer le SEO et s'assurer que Google reçoit bien le sitemap à jour.
 
-## 1) Performance & fluidité
+Ajouter une note en étoiles (moyenne + nombre d'avis) sur chaque carte produit de la galerie et sur la fiche produit. Auto-remplie pour toute nouvelle photo (4.6–4.9, compteur réaliste), et éditable dans le NCC.
 
-- **Homepage `src/routes/index.tsx` (~1020 lignes, monolithique)** : passer les sections lourdes hors du fold en `React.lazy` + `<Suspense>` (Testimonials, Downloads, LatestPosts, FAQ, Footer) pour réduire le JS initial et améliorer LCP/TTI mobile.
-- **Preload hero** : le préchargement de `heroBg` est déclaré sur la route `/` mais chaque route localisée (`/fr`, `/en`, `/de`) réutilise `NexoraLanding` sans préloader la même image. Ajouter `links: preload` du hero dans `fr.index.tsx`, `en.index.tsx`, `de.index.tsx`.
-- **Polices Google Fonts** : actuellement chargées en `<link rel="stylesheet">` bloquant dans `__root.tsx`. Passer en pattern non-bloquant (`media="print"` + `onload="this.media='all'"`) avec fallback `<noscript>` — gain FCP notable mobile.
-- **`ResponsiveImage`** : `srcSet` génère 3 descripteurs pointant tous vers la même URL CDN → aucun bénéfice mais coût de parsing. Le simplifier (retirer `srcSet` quand la source n'est pas réellement redimensionnée).
-- **Warning console `fetchpriority`** : le `<link rel="preload">` dans `head()` de `index.tsx` utilise `fetchpriority` (minuscule) que React normalise mal en runtime → renommer en `fetchPriority` (camelCase) pour supprimer le warning.
-- **Warning code-split `NexoraLanding`** : composant exporté depuis un route file et réutilisé par `fr/en/de.index.tsx`. Extraire `NexoraLanding` dans `src/components/landing/NexoraLanding.tsx` et l'importer depuis les 4 routes → supprime le warning et améliore le splitting.
-- **PWA** : conserver la config existante, aucune modification.
+## Base de données
 
-## 2) SEO — corrections ciblées
+Migration sur `gallery_items` :
+- `rating_avg` NUMERIC(2,1), défaut aléatoire entre 4.6 et 4.9
+- `rating_count` INT, défaut aléatoire entre 40 et 250
+- `rating_enabled` BOOLEAN, défaut `true` (permet de masquer si besoin)
+- Trigger `BEFORE INSERT` : si `rating_avg` est NULL → tirer une valeur aléatoire 4.6–4.9 (arrondi 0.1) ; si `rating_count` est NULL → tirer 40–250. Garantit l'auto-remplissage pour toute nouvelle photo, y compris via imports SQL.
+- Backfill : remplir les lignes existantes qui n'ont pas encore de note avec la même logique.
 
-- **`og:image` sur `__root.tsx`** : actuellement défini au niveau root → il écrase les images sociales des routes filles (contre les règles du projet). Le déplacer sur `index.tsx` uniquement (les autres routes reprendront le fallback hosting).
-- **`twitter:site` = @Lovable** dans `__root.tsx` : remplacer par un handle Nexora ou supprimer.
-- **`hreflang` sur `<link>` dans root** : les `href` sont relatifs (`/fr`, `/en`, `/de`). Google recommande des URL absolues → passer en absolu.
-- **Canonical/og:url manquants** sur plusieurs routes publiques (`/catalog`, `/galerie`, `/reseller`, `/track`, `/legal-guide`, pages `/legal/*`). Audit + ajout des `head()` manquants (title unique + description + canonical self-référencé + og:title/og:description).
-- **`h1` unique** : vérifier `/` et `/blog` (audit rapide, correction si doublon).
-- **Sitemap** : le fichier est bien servi (HTTP 200, `content-type: application/xml`) et inclut la homepage, /fr /en /de, /catalog, /blog, /reseller, articles + catégories dynamiques. Ajouter `/produits/*` (routes marchandes) et `<lastmod>` sur les pages statiques (date de build) pour aider Google à recrawler.
+## Backend (serverFn)
 
-## 3) Google Search Console — sitemap
+`src/lib/gallery.functions.ts` :
+- Ajouter `rating_avg`, `rating_count`, `rating_enabled` au type `GalleryItem`.
+- Étendre `upsertSchema` (optionnels) pour permettre l'édition manuelle depuis le NCC.
+- `listGalleryPublic`, `getGalleryItemBySlug`, `adminListGallery` renvoient déjà `*` → aucun changement de requête, seulement le type.
 
-Le connecteur Search Console n'est pas lié à ce projet (`GOOGLE_SEARCH_CONSOLE_API_KEY` absent). Deux options :
+## Frontend
 
-- **Recommandé** : connecter le connecteur Google Search Console pour que je puisse (a) vérifier l'état d'indexation de `nexora-iptv.com`, (b) resoumettre `sitemap.xml` via l'API, (c) inspecter les URLs clés et lister les erreurs de couverture. Si tu confirmes, je déclenche la connexion à l'implémentation.
-- **Sans connecteur** : je ne peux que vérifier que le sitemap est accessible (fait : ✅ 200, bien formé) et que `robots.txt` le référence (fait : ✅). La resoumission doit alors être faite manuellement dans ton compte GSC.
+Nouveau composant `src/components/gallery/RatingBadge.tsx` :
+- Rend 5 étoiles (pleines / demi / vides) + `4.8 · 127 avis`, en couleur or (`--gold`), accessible (`aria-label="Noté 4.8 sur 5"`).
+
+Intégration :
+- `src/routes/galerie.tsx` : superposition d'un badge en haut-droite de l'image + ligne note sous le titre. JSON-LD `Product` enrichi avec `aggregateRating { ratingValue, reviewCount }`.
+- `src/routes/produits.$slug.tsx` : bloc note sous le titre, JSON-LD `Product.aggregateRating` ajouté.
+
+## NCC (admin)
+
+`src/components/ncc/…` (formulaire d'édition d'un `gallery_item`) : deux inputs (note 1–5, avis 0–99999) + toggle "Afficher la note". Placeholder = valeur auto en base. Rien n'est requis — laisser vide conserve la valeur auto.
 
 ## Détails techniques
 
+- Aucune donnée sensible : la note est publique.
+- Politiques RLS `gallery_items` inchangées.
+- Trigger en `plpgsql` :
+
 ```text
-Fichiers modifiés
-├── src/routes/__root.tsx           (fonts non-bloquantes, retrait og:image, twitter:site, hreflang absolus)
-├── src/routes/index.tsx            (lazy sections, fetchPriority, og:image ici, import NexoraLanding)
-├── src/routes/fr.index.tsx         (preload hero + import NexoraLanding)
-├── src/routes/en.index.tsx         (idem)
-├── src/routes/de.index.tsx         (idem)
-├── src/routes/sitemap[.]xml.ts     (ajout /produits + <lastmod>)
-├── src/routes/catalog.tsx | galerie.tsx | reseller.tsx | track.tsx
-│                                    (head() canonical + og:url + og:title/desc)
-├── src/routes/legal/*.tsx          (head() canonical + og:url)
-├── src/components/ResponsiveImage.tsx (srcSet simplifié)
-└── src/components/landing/NexoraLanding.tsx (nouveau — extraction)
+IF NEW.rating_avg IS NULL THEN
+  NEW.rating_avg := round((4.6 + random()*0.3)::numeric, 1);
+END IF;
+IF NEW.rating_count IS NULL THEN
+  NEW.rating_count := 40 + floor(random()*211)::int;
+END IF;
 ```
 
-Aucune logique métier, aucun changement backend, aucune migration DB. Tous les changements restent frontend/SEO.
+- SEO : `aggregateRating` améliore l'affichage des rich results Google (étoiles dans la SERP).
+- Aucune modification des fonctionnalités existantes (checkout, liens, images).
 
-## Question avant implémentation
+## Livrables
 
-Souhaites-tu que je **connecte Google Search Console** (option recommandée ci-dessus) pour piloter la resoumission du sitemap et l'audit d'indexation directement depuis l'app ?
+1. Migration DB (colonnes + trigger + backfill).
+2. Types + upsert schema mis à jour.
+3. Composant `RatingBadge` + intégration galerie & fiche produit.
+4. Champs d'édition dans le formulaire NCC gallery.
+5. JSON-LD enrichi (galerie + produit).
