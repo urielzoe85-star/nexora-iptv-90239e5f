@@ -212,7 +212,14 @@ function Hero() {
         </div>
         <div className="hidden lg:block relative" style={{ animation: "float-slow 6s ease-in-out infinite" }}>
           <div className="absolute -inset-10 bg-[color:var(--gold)]/20 blur-3xl rounded-full" />
-          <img src={devicesImg} alt="Streaming on Smart TV, phone, tablet and laptop" width={1920} height={1080} className="relative rounded-2xl glass p-3" loading="eager" />
+          <img
+            src={devicesMain.url}
+            alt="Streaming on Smart TV, phone, tablet and laptop"
+            width={1344}
+            height={768}
+            className="relative rounded-2xl glass p-3 object-cover"
+            loading="eager"
+          />
         </div>
       </div>
     </section>
