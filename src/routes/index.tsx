@@ -649,7 +649,7 @@ function Footer() {
   if (companyCol) {
     companyCol.links = [
       { label: t("footer.about"),   href: "#features" },
-      { label: t("footer.blog"),    href: "/blog/best-iptv-2026" },
+      { label: t("footer.blog"),    href: "/blog" },
       { label: t("footer.careers"), href: `mailto:${SUPPORT_EMAIL}?subject=Careers` },
       { label: t("footer.contact"), href: buildWhatsAppLink() },
     ];
