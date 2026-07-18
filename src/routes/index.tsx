@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { ResponsiveImage } from "@/components/ResponsiveImage";
 import heroBg from "@/assets/hero-bg.jpg";
 import devicesMain from "@/assets/devices/devices-main.jpg.asset.json";
 import deviceSmartTv from "@/assets/devices/device-smarttv.jpg.asset.json";
