@@ -519,7 +519,7 @@ function Testimonials() {
       photo: danielPhoto.url,
       text: "Honnêtement je m'attendais à galérer, mais j'ai reçu mes codes en 2 min sur WhatsApp. Je regarde Premier League et Canal+ Sport sur mon Firestick, zéro coupure même le week-end.",
       verified: true,
-      since: "2022",
+      since: "2024",
     },
     {
       name: "Amélie R.",
@@ -527,7 +527,7 @@ function Testimonials() {
       photo: ameliePhoto.url,
       text: "Je cherchais une alternative propre à mon abo TV. beIN, Netflix VF, Disney+ — tout passe nickel sur l'Apple TV. Le support répond en moins de 5 min, ça change tout.",
       verified: true,
-      since: "2023",
+      since: "2026",
     },
     {
       name: "Carlos M.",
@@ -535,7 +535,7 @@ function Testimonials() {
       photo: carlosPhoto.url,
       text: "He probado 4 proveedores antes, siempre el mismo problema los días de LaLiga. Con Nexora ni un lag en 3 meses, y las películas están en VOSE. Por fin.",
       verified: true,
-      since: "2021",
+      since: "2024",
     },
     {
       name: "Fatou D.",
@@ -543,7 +543,7 @@ function Testimonials() {
       photo: fatouPhoto.url,
       text: "J'ai payé avec Orange Money un dimanche soir, actif en 3 min. Mes enfants ont leurs dessins animés, moi Nollywood et les séries — pour le prix, franchement rien à dire.",
       verified: true,
-      since: "2023",
+      since: "2025",
     },
   ];
   return (
