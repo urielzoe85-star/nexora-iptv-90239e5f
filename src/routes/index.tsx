@@ -257,9 +257,11 @@ function Features() {
               <img
                 src={icon}
                 alt=""
-                width={1024}
-                height={1024}
+                width={80}
+                height={80}
+                sizes="80px"
                 loading="lazy"
+                fetchPriority="low"
                 decoding="async"
                 className="h-20 w-20 object-contain mb-5 group-hover:scale-110 transition drop-shadow-[0_10px_20px_rgba(212,175,55,0.15)]"
               />
