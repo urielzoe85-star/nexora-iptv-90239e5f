@@ -5,9 +5,9 @@ import Image from "@tiptap/extension-image";
 import Placeholder from "@tiptap/extension-placeholder";
 import Youtube from "@tiptap/extension-youtube";
 import { Button } from "@/components/ui/button";
-import { Bold, Italic, Strikethrough, List, ListOrdered, Quote, Heading1, Heading2, Heading3, Link as LinkIcon, Image as ImageIcon, Youtube as YoutubeIcon, Undo, Redo } from "lucide-react";
+import { Bold, Italic, Strikethrough, List, ListOrdered, Quote, Heading1, Heading2, Heading3, Link as LinkIcon, Image as ImageIcon, Youtube as YoutubeIcon, Video as VideoIcon, Undo, Redo } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
-import { adminUploadBlogImage } from "@/lib/blog.functions";
+import { adminUploadBlogImage, adminUploadBlogVideo } from "@/lib/blog.functions";
 import { toast } from "sonner";
 import { useEffect } from "react";
 
@@ -15,6 +15,7 @@ export function TipTapEditor({
   value, onChange, placeholder = "Écrivez votre article…",
 }: { value: string; onChange: (html: string) => void; placeholder?: string }) {
   const upload = useServerFn(adminUploadBlogImage);
+  const uploadVideo = useServerFn(adminUploadBlogVideo);
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -40,6 +41,18 @@ export function TipTapEditor({
 
   if (!editor) return null;
 
+  function fileToBase64(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => {
+        const s = r.result as string;
+        resolve(s.split(",")[1] ?? "");
+      };
+      r.onerror = () => reject(r.error ?? new Error("Lecture du fichier impossible"));
+      r.readAsDataURL(file);
+    });
+  }
+
   async function insertImage() {
     const input = document.createElement("input");
     input.type = "file";
@@ -48,12 +61,33 @@ export function TipTapEditor({
       const file = input.files?.[0];
       if (!file) return;
       if (file.size > 8 * 1024 * 1024) return toast.error("Image trop lourde (max 8 Mo)");
-      const buf = await file.arrayBuffer();
-      const b64 = btoa(String.fromCharCode(...new Uint8Array(buf)));
+      const tId = toast.loading("Envoi de l'image…");
       try {
+        const b64 = await fileToBase64(file);
         const { url } = await upload({ data: { filename: file.name, content_type: file.type || "image/jpeg", data_base64: b64 } });
         editor?.chain().focus().setImage({ src: url, alt: file.name }).run();
-      } catch (e: any) { toast.error(e?.message ?? "Erreur d'upload"); }
+        toast.success("Image insérée", { id: tId });
+      } catch (e: any) { toast.error(e?.message ?? "Erreur d'upload", { id: tId }); }
+    };
+    input.click();
+  }
+
+  async function insertVideoFile() {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "video/mp4,video/webm,video/*";
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      if (file.size > 50 * 1024 * 1024) return toast.error("Vidéo trop lourde (max 50 Mo)");
+      const tId = toast.loading("Envoi de la vidéo… cela peut prendre un moment");
+      try {
+        const b64 = await fileToBase64(file);
+        const { url } = await uploadVideo({ data: { filename: file.name, content_type: file.type || "video/mp4", data_base64: b64 } });
+        const html = `<p><video controls preload="metadata" style="width:100%;max-width:100%;border-radius:8px" src="${url}"></video></p>`;
+        editor?.chain().focus().insertContent(html).run();
+        toast.success("Vidéo insérée", { id: tId });
+      } catch (e: any) { toast.error(e?.message ?? "Erreur d'upload", { id: tId }); }
     };
     input.click();
   }
@@ -84,6 +118,7 @@ export function TipTapEditor({
         <ToolbarBtn active={editor.isActive("blockquote")} onClick={() => editor.chain().focus().toggleBlockquote().run()}><Quote className="h-4 w-4" /></ToolbarBtn>
         <ToolbarBtn onClick={insertLink} active={editor.isActive("link")}><LinkIcon className="h-4 w-4" /></ToolbarBtn>
         <ToolbarBtn onClick={insertImage}><ImageIcon className="h-4 w-4" /></ToolbarBtn>
+        <ToolbarBtn onClick={insertVideoFile}><VideoIcon className="h-4 w-4" /></ToolbarBtn>
         <ToolbarBtn onClick={insertYoutube}><YoutubeIcon className="h-4 w-4" /></ToolbarBtn>
         <ToolbarBtn onClick={() => editor.chain().focus().undo().run()}><Undo className="h-4 w-4" /></ToolbarBtn>
         <ToolbarBtn onClick={() => editor.chain().focus().redo().run()}><Redo className="h-4 w-4" /></ToolbarBtn>
