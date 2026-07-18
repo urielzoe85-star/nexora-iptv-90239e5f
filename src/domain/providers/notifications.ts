@@ -71,8 +71,8 @@ class EmailChannel implements NotificationChannelAdapter {
         payload: {
           message_id: messageId,
           to,
-          from: "Nexora IPTV <noreply@send.nexora-iptv.com>",
-          sender_domain: "send.nexora-iptv.com",
+          from: "Nexora IPTV <noreply@sent.nexora-iptv.com>",
+          sender_domain: "sent.nexora-iptv.com",
           subject,
           html,
           text: bodyText,
