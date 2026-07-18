@@ -113,8 +113,7 @@ Un conseiller VIP vous accompagne 7j/7.
 // Templates de relance (bulk) — livraison, renouvellement, paiement.
 // Chaque template a une clé `scenario` pour le filtrage dans la page bulk.
 // ────────────────────────────────────────────────────────────────────────────
-export type BulkScenario = "delivery" | "renewal" | "payment_reminder";
-export type BulkScenarioExt = BulkScenario | "marketing" | "custom";
+export type BulkScenario = "delivery" | "renewal" | "payment_reminder" | "marketing";
 
 export interface BulkTemplate extends DeliveryTemplate {
   scenario: BulkScenario;
