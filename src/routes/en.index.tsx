@@ -10,6 +10,8 @@ export const Route = createFileRoute("/en/")({
       { property: "og:description", content: "Live TV, movies and series in HD/4K. Instant English-language setup across every device." },
       { property: "og:url", content: "https://nexora-iptv.com/en" },
       { property: "og:type", content: "website" },
+      { property: "og:image", content: "https://nexora-iptv.com/__l5e/assets-v1/a913768d-af44-4e4b-a0cd-79192a6fcc3c/nexora-og.jpg" },
+      { name: "twitter:image", content: "https://nexora-iptv.com/__l5e/assets-v1/a913768d-af44-4e4b-a0cd-79192a6fcc3c/nexora-og.jpg" },
     ],
     links: [{ rel: "canonical", href: "https://nexora-iptv.com/en" }],
   }),
