@@ -1,58 +1,30 @@
-## Objectif
+Intégration du Google tag (gtag.js) pour GA4
 
-Ajouter une note en étoiles (moyenne + nombre d'avis) sur chaque carte produit de la galerie et sur la fiche produit. Auto-remplie pour toute nouvelle photo (4.6–4.9, compteur réaliste), et éditable dans le NCC.
+Objectif
+- Ajouter le code de suivi fourni (G-MFZ9FD4YMB) sur toutes les pages du site afin de mesurer le trafic et les conversions.
+- Conserver la sécurité existante en mettant à jour la Content-Security-Policy.
 
-## Base de données
+Changements prévus
+1. Route racine (`src/routes/__root.tsx`)
+   - Ajouter deux scripts dans le bloc `scripts` de `head()` :
+     - Un script `async` vers `https://www.googletagmanager.com/gtag/js?id=G-MFZ9FD4YMB`.
+     - Un script inline initialisant `window.dataLayer` et appelant `gtag('js', new Date())` + `gtag('config', 'G-MFZ9FD4YMB')`.
+   - Les scripts seront positionnés avant/après le bloc JSON-LD existant, de manière à rester dans le `<head>`.
 
-Migration sur `gallery_items` :
-- `rating_avg` NUMERIC(2,1), défaut aléatoire entre 4.6 et 4.9
-- `rating_count` INT, défaut aléatoire entre 40 et 250
-- `rating_enabled` BOOLEAN, défaut `true` (permet de masquer si besoin)
-- Trigger `BEFORE INSERT` : si `rating_avg` est NULL → tirer une valeur aléatoire 4.6–4.9 (arrondi 0.1) ; si `rating_count` est NULL → tirer 40–250. Garantit l'auto-remplissage pour toute nouvelle photo, y compris via imports SQL.
-- Backfill : remplir les lignes existantes qui n'ont pas encore de note avec la même logique.
+2. Sécurité (`src/start.ts`)
+   - Mettre à jour `buildCsp()` pour inclure `https://www.googletagmanager.com` dans `script-src`.
+   - Ajouter `https://www.google-analytics.com https://www.googletagmanager.com` dans `connect-src` (pour les hits collectés par `gtag` / `analytics.js` et `gtm.js`).
+   - Ajouter `https://www.googletagmanager.com` dans `img-src` si le site utilise des pixels de mesure.
+   - Conserver le mode `Content-Security-Policy-Report-Only` par défaut (actuellement géré via `CSP_ENFORCE`).
 
-## Backend (serverFn)
+3. Vérifications
+   - S’assurer que le build TypeScript passe (`bun run build` ou équivalent) et que les scripts apparaissent dans le `<head>` de la page d’accueil.
+   - Vérifier que le header `Content-Security-Policy-Report-Only` n’émet pas de violations bloquantes pour Google Tag Manager en naviguant sur `/`.
 
-`src/lib/gallery.functions.ts` :
-- Ajouter `rating_avg`, `rating_count`, `rating_enabled` au type `GalleryItem`.
-- Étendre `upsertSchema` (optionnels) pour permettre l'édition manuelle depuis le NCC.
-- `listGalleryPublic`, `getGalleryItemBySlug`, `adminListGallery` renvoient déjà `*` → aucun changement de requête, seulement le type.
+Non inclus dans ce plan
+- Aucun suivi d’événements personnalisés (achat, conversion, etc.) — seule la mesure de pagevue de base est ajoutée.
+- Aucune modification de l’UI ou des pages existantes.
 
-## Frontend
-
-Nouveau composant `src/components/gallery/RatingBadge.tsx` :
-- Rend 5 étoiles (pleines / demi / vides) + `4.8 · 127 avis`, en couleur or (`--gold`), accessible (`aria-label="Noté 4.8 sur 5"`).
-
-Intégration :
-- `src/routes/galerie.tsx` : superposition d'un badge en haut-droite de l'image + ligne note sous le titre. JSON-LD `Product` enrichi avec `aggregateRating { ratingValue, reviewCount }`.
-- `src/routes/produits.$slug.tsx` : bloc note sous le titre, JSON-LD `Product.aggregateRating` ajouté.
-
-## NCC (admin)
-
-`src/components/ncc/…` (formulaire d'édition d'un `gallery_item`) : deux inputs (note 1–5, avis 0–99999) + toggle "Afficher la note". Placeholder = valeur auto en base. Rien n'est requis — laisser vide conserve la valeur auto.
-
-## Détails techniques
-
-- Aucune donnée sensible : la note est publique.
-- Politiques RLS `gallery_items` inchangées.
-- Trigger en `plpgsql` :
-
-```text
-IF NEW.rating_avg IS NULL THEN
-  NEW.rating_avg := round((4.6 + random()*0.3)::numeric, 1);
-END IF;
-IF NEW.rating_count IS NULL THEN
-  NEW.rating_count := 40 + floor(random()*211)::int;
-END IF;
-```
-
-- SEO : `aggregateRating` améliore l'affichage des rich results Google (étoiles dans la SERP).
-- Aucune modification des fonctionnalités existantes (checkout, liens, images).
-
-## Livrables
-
-1. Migration DB (colonnes + trigger + backfill).
-2. Types + upsert schema mis à jour.
-3. Composant `RatingBadge` + intégration galerie & fiche produit.
-4. Champs d'édition dans le formulaire NCC gallery.
-5. JSON-LD enrichi (galerie + produit).
+Risques / remarques
+- La CSP actuelle est en `Report-Only`. Même si le domaine de Google Tag Manager n’est pas encore présent, le site ne bloque pas encore les violations. L’ajout de la CSP est donc préventif pour le futur passage en mode enforce.
+- Le script `gtag` envoie des données vers Google. Les pages sont en HTTPS et les headers de sécurité restent conservateurs.
