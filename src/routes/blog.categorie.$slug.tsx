@@ -1,14 +1,21 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
 import { publicGetCategoryBySlug, publicListPosts } from "@/lib/blog.functions";
-import { useQuery } from "@tanstack/react-query";
+import { queryOptions, useSuspenseQuery, useQuery } from "@tanstack/react-query";
 import { PostCard } from "@/components/blog/PostCard";
-import { Loader2, ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
+
+const catPostsQO = (slug: string) =>
+  queryOptions({
+    queryKey: ["blog", "cat", slug],
+    queryFn: () => publicListPosts({ data: { category_slug: slug, page: 1, page_size: 24 } }),
+    staleTime: 0,
+  });
 
 export const Route = createFileRoute("/blog/categorie/$slug")({
-  loader: async ({ params }) => {
+  loader: async ({ params, context }) => {
     const cat = await publicGetCategoryBySlug({ data: { slug: params.slug } });
     if (!cat) throw notFound();
+    await context.queryClient.ensureQueryData(catPostsQO(params.slug));
     return { cat };
   },
   head: ({ loaderData, params }) => {
@@ -78,15 +85,8 @@ export const Route = createFileRoute("/blog/categorie/$slug")({
 
 function CategoryPage() {
   const { cat } = Route.useLoaderData();
-  const list = useServerFn(publicListPosts);
-  const { data, isLoading } = useQuery({
-    queryKey: ["blog","cat", cat.slug],
-    queryFn: () => list({ data: { category_slug: cat.slug, page: 1, page_size: 24 } }),
-    refetchInterval: 30_000,
-    refetchOnWindowFocus: true,
-    refetchOnMount: "always",
-    staleTime: 0,
-  });
+  const { data } = useSuspenseQuery(catPostsQO(cat.slug));
+  useQuery({ ...catPostsQO(cat.slug), refetchInterval: 60_000, refetchOnWindowFocus: true });
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-6xl mx-auto px-4 py-12">
@@ -95,9 +95,7 @@ function CategoryPage() {
           <h1 className="text-4xl font-bold tracking-tight">{cat.name}</h1>
           {cat.description && <p className="mt-2 text-muted-foreground">{cat.description}</p>}
         </header>
-        {isLoading ? (
-          <div className="flex justify-center py-20"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
-        ) : (data?.rows ?? []).length === 0 ? (
+        {(data?.rows ?? []).length === 0 ? (
           <div className="text-center py-20 text-muted-foreground">Aucun article dans cette catégorie.</div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
