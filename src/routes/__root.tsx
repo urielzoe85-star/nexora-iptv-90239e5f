@@ -14,6 +14,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { I18nProvider, useT } from "../i18n/context";
 import { FloatingWhatsApp } from "../components/FloatingWhatsApp";
 import { PwaManager } from "../components/pwa/PwaManager";
+import { BackButton } from "../components/BackButton";
 
 function NotFoundComponent() {
   const t = useT();
@@ -183,6 +184,7 @@ function RootComponent() {
         {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
         <Outlet />
         <FloatingWhatsApp />
+        <BackButton />
         <PwaManager />
       </I18nProvider>
     </QueryClientProvider>
