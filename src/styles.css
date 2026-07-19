@@ -197,3 +197,12 @@
   0%, 100% { border-color: oklch(0.78 0.13 85 / 0.15); }
   50% { border-color: oklch(0.78 0.13 85 / 0.6); }
 }
+
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+@utility animate-marquee {
+  animation: marquee 35s linear infinite;
+}
