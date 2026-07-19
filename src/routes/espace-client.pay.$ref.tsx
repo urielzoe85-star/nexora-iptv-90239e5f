@@ -211,6 +211,8 @@ function PayPage() {
           ← Retour au tableau de bord
         </Link>
       </div>
+
+      <PaymentMethodsMarquee />
     </div>
   );
 }
