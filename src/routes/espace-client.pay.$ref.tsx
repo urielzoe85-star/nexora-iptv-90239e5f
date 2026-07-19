@@ -5,6 +5,7 @@ import { getPortalOrderStatus } from "@/lib/portal.functions";
 import { initSebPayCheckout, initCheckout, submitBinanceProof } from "@/lib/payments.functions";
 import { Bitcoin, ExternalLink, Loader2, Clock, CheckCircle2, CreditCard, Wallet } from "lucide-react";
 import { useEffect, useState } from "react";
+import { PaymentMethodsMarquee } from "@/components/PaymentMethodsMarquee";
 
 export const Route = createFileRoute("/espace-client/pay/$ref")({
   component: PayPage,
