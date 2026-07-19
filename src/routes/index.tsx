@@ -37,6 +37,7 @@ import { useT, useI18n } from "@/i18n/context";
 import { LanguageSwitcher } from "@/i18n/context";
 import { buildWhatsAppLink } from "@/lib/whatsapp-contact";
 import { PORTAL_HOST, PORTAL_BASE_URL } from "@/lib/portal-url";
+import { PaymentMethodsMarquee } from "@/components/PaymentMethodsMarquee";
 
 const TELEGRAM_BOT_URL = "https://t.me/NexoraIPTVBot";
 const SUPPORT_EMAIL = "info@nexora-iptv.com";
@@ -750,21 +751,16 @@ function FAQ() {
 
 function Payments() {
   const t = useT();
-  const methods = ["VISA", "Mastercard", "Orange Money", "MTN MoMo", "Crypto"];
   return (
     <section className="py-20">
-      <div className="max-w-5xl mx-auto px-6">
-        <div className="glass rounded-2xl p-8 flex flex-col md:flex-row items-center justify-between gap-6">
-          <div>
+      <div className="max-w-6xl mx-auto px-6">
+        <div className="glass rounded-2xl p-8 md:p-10">
+          <div className="text-center mb-6">
             <p className="text-xs uppercase tracking-[0.2em] text-[color:var(--gold)] mb-2">{t("pay.kicker")}</p>
             <h3 className="text-2xl font-semibold">{t("pay.title")}</h3>
             <p className="text-sm text-muted-foreground mt-1">{t("pay.sub")}</p>
           </div>
-          <div className="flex flex-wrap gap-3 justify-center">
-            {methods.map(m => (
-              <div key={m} className="px-4 py-2 rounded-lg bg-black/40 border border-[color:var(--gold)]/20 text-xs font-semibold tracking-wide">{m}</div>
-            ))}
-          </div>
+          <PaymentMethodsMarquee title="" />
         </div>
       </div>
     </section>

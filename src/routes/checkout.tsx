@@ -13,6 +13,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getPublicPlans, type PublicPlan } from "@/lib/plans.functions";
 import { COUNTRIES, getCountry, convertUsdToLocal, type Operator } from "@/lib/countries";
+import { PaymentMethodsMarquee } from "@/components/PaymentMethodsMarquee";
 
 type Plan = { id: string; slug: string; name: string; price: number; period: string; save?: string; popular?: boolean };
 
@@ -282,6 +283,9 @@ function CheckoutPage() {
                 )}
               </div>
               <OrderSummary plan={selected} taxes={taxes} total={total} />
+            </div>
+            <div className="mt-10 max-w-5xl mx-auto">
+              <PaymentMethodsMarquee />
             </div>
           </>
         )}

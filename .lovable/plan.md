@@ -1,51 +1,42 @@
-# Fix : paiements CamerPay qui n'aboutissent pas
+# Carrousel de moyens de paiement
 
-## Diagnostic (confirmé)
+Ajouter une bande défilante (carrousel infini automatique) affichant les logos officiels des moyens de paiement acceptés : **Stripe, PayPal, Visa, Mastercard, Orange Money, MTN MoMo, Moov Money, Airtel Money, Binance Pay**.
 
-Les logs serveur montrent que **l'API CamerPay renvoie `HTTP 520` (Cloudflare "origin unreachable")** sur chaque tentative des 2 derniers jours :
+## Emplacements
+1. **Page d'accueil** (`src/routes/index.tsx`) — bande discrète juste au-dessus du footer (section "Paiements sécurisés & acceptés").
+2. **Checkout** (`src/routes/checkout.tsx`) — bande sous le récap de commande pour rassurer avant validation.
+3. **Page de paiement portail** (`src/routes/espace-client.pay.$ref.tsx`) — bande en bas du bloc de paiement.
 
-```
-[camerpay] initiate failed {"status":520,"detail":"error code: 520\n"}
-```
+## Composant
+Créer `src/components/PaymentMethodsMarquee.tsx` :
+- Défilement horizontal automatique en boucle (CSS `@keyframes` translateX, sans lib).
+- Pause au survol desktop.
+- Hauteur ~40–56px, logos en niveaux de gris clair + retour couleur au hover (optionnel : garder couleur d'origine si le client préfère).
+- Accessibilité : `aria-label="Moyens de paiement acceptés"`, logos avec `alt`, `role="list"`.
+- Duplication de la liste 2× pour un défilement continu sans "saut".
+- Responsive : logos plus petits en mobile.
 
-- Toutes les commandes récentes (`NX-ZVKMNDDGUQ`, `NX-S98CQYD83S`, …) restent en `pending`, `payment_provider = null`, aucune réponse CamerPay enregistrée.
-- Tu reçois quand même la notification Telegram/WhatsApp/email parce qu'elle est déclenchée à la **création de la commande** (workflow `order-created`), *avant* l'appel à CamerPay.
-- Le client, lui, voit "Le paiement CamerPay n'a pas pu être initialisé" et ne peut pas payer.
+## Assets
+Récupérer les 9 logos SVG/PNG officiels et les uploader via `lovable-assets` (CDN) dans `src/assets/payments/` :
+- `stripe.svg.asset.json`
+- `paypal.svg.asset.json`
+- `visa.svg.asset.json`
+- `mastercard.svg.asset.json`
+- `orange-money.png.asset.json`
+- `mtn-momo.png.asset.json`
+- `moov-money.png.asset.json`
+- `airtel-money.png.asset.json`
+- `binance-pay.svg.asset.json`
 
-C'est un incident côté CamerPay (leur origine derrière Cloudflare est down/instable), pas un bug de code. Mais on peut rendre le checkout beaucoup plus résilient.
+Source : logos officiels (wikimedia / brand kits). SVG privilégié pour Stripe/PayPal/Visa/MC/Binance, PNG transparent pour les opérateurs mobile money africains.
 
-## Ce que je vais faire
+## Animation CSS
+Ajouter dans `src/styles.css` un utility `@keyframes marquee` (translate -50% sur la piste dupliquée, durée ~30s linéaire infinie) + classe `.animate-marquee` + `.pause-on-hover:hover`.
 
-### 1. Retry automatique sur 5xx / timeout côté serveur
-Dans `src/lib/payments-camerpay.server.ts` (fonction `camerpayFetch` + `camerpayInitiate`) :
-- 3 tentatives max, backoff 400 ms → 1200 ms → 2500 ms.
-- On ne retry **que** sur `status >= 500`, `429`, ou `AbortError` (timeout).
-- On ne retry **jamais** sur 4xx (mauvaise requête / clé invalide) pour éviter de générer des doublons.
-- L'`idempotency_key = order_ref` est déjà envoyé, donc les retries sont sûrs côté CamerPay.
+## Aucun changement fonctionnel
+- Pas de modification du flux de paiement ni des providers actifs.
+- Purement visuel / rassurance de conversion.
 
-### 2. Message d'erreur client plus clair
-Aujourd'hui : "Le paiement CamerPay n'a pas pu être initialisé. Veuillez réessayer."
-Après :
-- Si 5xx persistant → "Notre passerelle de paiement est temporairement indisponible. Réessayez dans quelques instants ou contactez-nous sur WhatsApp pour finaliser votre commande **{order_ref}**."
-- Si 4xx → message précis renvoyé par CamerPay (ex. "montant invalide").
-
-### 3. Fallback visuel dans le checkout
-Sur la page checkout, quand `initCamerPayCheckout` échoue, afficher un encart avec :
-- Le bouton "Réessayer".
-- Le bouton WhatsApp existant (numéro admin déjà en place), pré-rempli avec la référence de commande.
-
-Aucun changement sur SebPay, Binance Pay, les webhooks, les workflows, ni les notifications.
-
-### 4. Traçabilité
-Chaque échec définitif (après retries) est loggé dans `integration_debug_logs` avec `provider=camerpay`, `status=520`, `order_ref`, afin qu'on puisse voir dans le NCC quand CamerPay retombe.
-
-## Détails techniques
-
-- Fichiers modifiés : `src/lib/payments-camerpay.server.ts`, `src/lib/payments.functions.ts`, le composant de checkout qui affiche l'erreur (`src/routes/checkout*` — je le repèrerai avant l'édition).
-- Aucune migration DB.
-- Aucun secret à ajouter.
-- Le fix n'active pas de "faux paid" : la commande reste `pending` tant que CamerPay ne confirme rien via webhook signé.
-
-## Action recommandée en parallèle (hors code)
-
-Contacte le support CamerPay pour signaler l'incident 520 sur `/api/payment/initiate` — c'est chez eux que la panne se règle définitivement. Le code ci-dessus rend juste ton checkout tolérant à leurs micro-coupures.
+## Vérification
+- Build passe.
+- Screenshot Playwright de la home + checkout pour confirmer le rendu du carrousel et le défilement.
