@@ -1,5 +1,4 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
 import { publicListPosts, publicListCategories } from "@/lib/blog.functions";
 import { queryOptions, useSuspenseQuery, useQuery } from "@tanstack/react-query";
 import { PostCard } from "@/components/blog/PostCard";
@@ -130,6 +129,3 @@ function BlogIndex() {
     </div>
   );
 }
-
-// Suppress unused-import lint (kept for potential future use)
-void useServerFn;
