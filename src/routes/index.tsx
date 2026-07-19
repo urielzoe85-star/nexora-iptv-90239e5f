@@ -302,18 +302,19 @@ function Devices() {
           <p className="text-muted-foreground mt-4">{t("devices.sub")}</p>
         </div>
         <div className="glass rounded-3xl p-8 md:p-12">
-          <ResponsiveImage
-            src={devicesMain.url}
-            alt="Premium streaming on multiple devices in a real living room"
-            width={1344}
-            height={768}
-            sizes="(max-width: 768px) 100vw, (max-width: 1280px) 90vw, 1200px"
-            srcSetWidths={[400, 800, 1200, 1600]}
-            className="rounded-2xl w-full mb-10"
-            loading="lazy"
-            fetchpriority="low"
-            decoding="async"
-          />
+          <div className="hidden md:block mb-10">
+            <ResponsiveImage
+              src={devicesMain.url}
+              alt="Premium streaming on multiple devices in a real living room"
+              width={1344}
+              height={768}
+              sizes="(max-width: 1280px) 90vw, 1200px"
+              className="rounded-2xl w-full"
+              loading="lazy"
+              fetchpriority="low"
+              decoding="async"
+            />
+          </div>
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
             {devices.map(({ photo, key, label }) => (
               <div key={key} className="flex flex-col items-center rounded-xl glass overflow-hidden hover:border-[color:var(--gold)]/40 transition">
