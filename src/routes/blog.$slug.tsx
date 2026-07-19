@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { publicGetPost, publicRelatedPosts } from "@/lib/blog.functions";
 import { useQuery } from "@tanstack/react-query";
 import { PostCard } from "@/components/blog/PostCard";
+import { ShareButtons } from "@/components/blog/ShareButtons";
 import { Loader2, ArrowLeft } from "lucide-react";
 
 export const Route = createFileRoute("/blog/$slug")({
@@ -114,6 +115,9 @@ function PostPage() {
     queryKey: ["blog","related", post.id],
     queryFn: () => related({ data: { post_id: post.id, limit: 3 } }),
   });
+  const shareUrl = (post as any).canonical_url || `https://nexora-iptv.com/blog/${(post as any).slug}`;
+  const shareTitle = (post as any).title as string;
+  const shareExcerpt = ((post as any).excerpt as string) || undefined;
 
   return (
     <article className="min-h-screen bg-background">
@@ -135,6 +139,9 @@ function PostPage() {
             {post.published_at && <time>· {new Date(post.published_at).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}</time>}
             {post.reading_time_min && <span>· {post.reading_time_min} min de lecture</span>}
           </div>
+          <div className="mt-5">
+            <ShareButtons url={shareUrl} title={shareTitle} excerpt={shareExcerpt} />
+          </div>
         </header>
 
         {post.cover_image_url && (
@@ -150,6 +157,10 @@ function PostPage() {
             ))}
           </div>
         )}
+
+        <div className="mt-10 border-t pt-6">
+          <ShareButtons url={shareUrl} title={shareTitle} excerpt={shareExcerpt} label="Cet article vous a plu ? Partagez-le :" />
+        </div>
 
         <div className="mt-12 p-6 rounded-lg border bg-gradient-to-br from-primary/10 to-primary/5 text-center">
           <h3 className="text-xl font-semibold mb-2">Prêt à profiter de Nexora IPTV ?</h3>
