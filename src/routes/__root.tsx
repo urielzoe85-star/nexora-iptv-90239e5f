@@ -109,6 +109,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "alternate", hrefLang: "en", href: "https://nexora-iptv.com/en" },
       { rel: "alternate", hrefLang: "de", href: "https://nexora-iptv.com/de" },
       { rel: "alternate", hrefLang: "x-default", href: "https://nexora-iptv.com/" },
+      { rel: "alternate", type: "application/rss+xml", title: "Blog Nexora IPTV — RSS", href: "https://nexora-iptv.com/rss.xml" },
     ],
     scripts: [
       {
