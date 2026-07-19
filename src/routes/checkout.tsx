@@ -284,6 +284,9 @@ function CheckoutPage() {
               </div>
               <OrderSummary plan={selected} taxes={taxes} total={total} />
             </div>
+            <div className="mt-10 max-w-5xl mx-auto">
+              <PaymentMethodsMarquee />
+            </div>
           </>
         )}
       </div>
