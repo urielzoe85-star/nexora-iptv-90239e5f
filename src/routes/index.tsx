@@ -37,6 +37,7 @@ import { useT, useI18n } from "@/i18n/context";
 import { LanguageSwitcher } from "@/i18n/context";
 import { buildWhatsAppLink } from "@/lib/whatsapp-contact";
 import { PORTAL_HOST, PORTAL_BASE_URL } from "@/lib/portal-url";
+import { PaymentMethodsMarquee } from "@/components/PaymentMethodsMarquee";
 
 const TELEGRAM_BOT_URL = "https://t.me/NexoraIPTVBot";
 const SUPPORT_EMAIL = "info@nexora-iptv.com";
