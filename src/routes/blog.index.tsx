@@ -1,13 +1,46 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
 import { publicListPosts, publicListCategories } from "@/lib/blog.functions";
-import { useQuery } from "@tanstack/react-query";
+import { queryOptions, useSuspenseQuery, useQuery } from "@tanstack/react-query";
 import { PostCard } from "@/components/blog/PostCard";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
-import { Search, Loader2 } from "lucide-react";
+import { Search } from "lucide-react";
+
+const postsQO = (search: string) =>
+  queryOptions({
+    queryKey: ["blog", "posts", search],
+    queryFn: () => publicListPosts({ data: { search: search || undefined, page: 1, page_size: 24 } }),
+    staleTime: 0,
+  });
+const catsQO = queryOptions({
+  queryKey: ["blog", "cats"],
+  queryFn: () => publicListCategories(),
+  staleTime: 60_000,
+});
 
 export const Route = createFileRoute("/blog/")({
+  loader: async ({ context }) => {
+    await Promise.all([
+      context.queryClient.ensureQueryData(postsQO("")),
+      context.queryClient.ensureQueryData(catsQO),
+    ]);
+  },
+  errorComponent: ({ error, reset }) => (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="text-center">
+        <p className="text-destructive mb-4">{error.message}</p>
+        <button className="text-primary hover:underline" onClick={reset}>Réessayer</button>
+      </div>
+    </div>
+  ),
+  notFoundComponent: () => (
+    <div className="min-h-screen flex items-center justify-center text-center">
+      <div>
+        <h1 className="text-2xl font-semibold mb-2">Page introuvable</h1>
+        <Link to="/blog" className="text-primary hover:underline">← Retour au blog</Link>
+      </div>
+    </div>
+  ),
   head: () => {
     const url = "https://nexora-iptv.com/blog";
     const blog = {
@@ -52,24 +85,22 @@ export const Route = createFileRoute("/blog/")({
 });
 
 function BlogIndex() {
-  const list = useServerFn(publicListPosts);
-  const listCats = useServerFn(publicListCategories);
   const [search, setSearch] = useState("");
-  const { data: cats } = useQuery({
-    queryKey: ["blog","cats"],
-    queryFn: () => listCats(),
-    refetchInterval: 5 * 60_000,
+  // SSR-primed initial data (search=""). Search filters use client-only query.
+  const { data: initial } = useSuspenseQuery(postsQO(""));
+  const { data: cats } = useSuspenseQuery(catsQO);
+  const { data: filtered } = useQuery({
+    ...postsQO(search),
+    enabled: search.length > 0,
     refetchOnWindowFocus: true,
-    staleTime: 0,
   });
-  const { data, isLoading } = useQuery({
-    queryKey: ["blog","posts", search],
-    queryFn: () => list({ data: { search: search || undefined, page: 1, page_size: 24 } }),
-    refetchInterval: 30_000,
+  // Keep list fresh: refetch base list on window focus / 60s.
+  useQuery({
+    ...postsQO(""),
+    refetchInterval: 60_000,
     refetchOnWindowFocus: true,
-    refetchOnMount: "always",
-    staleTime: 0,
   });
+  const data = search ? filtered : initial;
 
   return (
     <div className="min-h-screen bg-background">
@@ -95,9 +126,7 @@ function BlogIndex() {
           </nav>
         </div>
 
-        {isLoading ? (
-          <div className="flex justify-center py-20"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
-        ) : (data?.rows ?? []).length === 0 ? (
+        {(data?.rows ?? []).length === 0 ? (
           <div className="text-center py-20 text-muted-foreground">Aucun article publié pour le moment.</div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
