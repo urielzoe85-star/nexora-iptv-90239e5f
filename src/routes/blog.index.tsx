@@ -33,6 +33,14 @@ export const Route = createFileRoute("/blog/")({
       </div>
     </div>
   ),
+  notFoundComponent: () => (
+    <div className="min-h-screen flex items-center justify-center text-center">
+      <div>
+        <h1 className="text-2xl font-semibold mb-2">Page introuvable</h1>
+        <Link to="/blog" className="text-primary hover:underline">← Retour au blog</Link>
+      </div>
+    </div>
+  ),
   head: () => {
     const url = "https://nexora-iptv.com/blog";
     const blog = {
