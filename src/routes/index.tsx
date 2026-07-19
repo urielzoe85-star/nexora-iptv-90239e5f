@@ -285,13 +285,13 @@ function Features() {
 function Devices() {
   const t = useT();
   const devices = [
-    { photo: deviceSmartTv.url, key: "devices.smartTv", label: "Smart TV" },
-    { photo: deviceAndroidTv.url, key: "devices.androidTv", label: "Android TV" },
-    { photo: deviceFireTv.url, key: "devices.fireTv", label: "Fire TV" },
-    { photo: deviceSmartphone.url, key: "devices.smartphone", label: "Smartphone" },
-    { photo: deviceTablet.url, key: "devices.tablet", label: "Tablet" },
-    { photo: deviceLaptop.url, key: "devices.laptop", label: "Laptop" },
-    { photo: deviceDesktop.url, key: "devices.desktop", label: "Desktop" },
+    { photo: deviceSmartTv.url, key: "devices.smartTv", label: "Nexora IPTV streaming on Smart TV" },
+    { photo: deviceAndroidTv.url, key: "devices.androidTv", label: "Nexora IPTV app on Android TV box" },
+    { photo: deviceFireTv.url, key: "devices.fireTv", label: "Nexora IPTV on Amazon Fire TV stick" },
+    { photo: deviceSmartphone.url, key: "devices.smartphone", label: "Nexora IPTV on Android and iPhone smartphone" },
+    { photo: deviceTablet.url, key: "devices.tablet", label: "Nexora IPTV on tablet and iPad" },
+    { photo: deviceLaptop.url, key: "devices.laptop", label: "Nexora IPTV on laptop computer" },
+    { photo: deviceDesktop.url, key: "devices.desktop", label: "Nexora IPTV on desktop PC and Mac" },
   ];
   return (
     <section id="devices" className="py-28 relative">
