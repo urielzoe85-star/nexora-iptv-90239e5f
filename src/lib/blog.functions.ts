@@ -5,11 +5,11 @@ import { z } from "zod";
 // ─────────── Sitemap freshness helpers ───────────
 // Called after any slug/status change. Bumps a monotonic timestamp used as the
 // ETag for /sitemap.xml and /rss.xml so Google + browsers revalidate immediately.
-async function bumpSitemapCache(admin: { from: (t: string) => { upsert: (...a: unknown[]) => Promise<unknown> } }) {
+async function bumpSitemapCache(admin: any) {
   try {
     await admin.from("sitemap_cache_state").upsert(
       { id: 1, updated_at: new Date().toISOString() },
-      { onConflict: "id" } as never,
+      { onConflict: "id" },
     );
   } catch (e) {
     console.warn("bumpSitemapCache failed", e);
