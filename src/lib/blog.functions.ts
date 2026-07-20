@@ -142,6 +142,14 @@ export const adminUpdatePost = createServerFn({ method: "POST" })
     const html = sanitizeBlogHtml(data.content_html ?? "");
     const baseSlug = slugify(data.slug || data.title);
     const slug = await ensureUniqueSlug(supabaseAdmin, baseSlug, data.locale, data.id);
+    // If slug changes, save the old one as a redirect so shared links keep working.
+    const { data: prev } = await supabaseAdmin.from("blog_posts").select("slug").eq("id", data.id).maybeSingle();
+    if (prev?.slug && prev.slug !== slug) {
+      await supabaseAdmin.from("blog_post_redirects").upsert(
+        { old_slug: prev.slug, post_id: data.id },
+        { onConflict: "old_slug" },
+      );
+    }
     const publishedAt =
       data.status === "published" ? (data.published_at ?? new Date().toISOString()) : data.published_at ?? null;
     const { error } = await supabaseAdmin.from("blog_posts").update({
