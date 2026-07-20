@@ -25,26 +25,29 @@ const LOCALES: Record<string, string> = { fr: "fr", en: "en", de: "de" };
 export const Route = createFileRoute("/sitemap.xml")({
   server: {
     handlers: {
-      GET: async () => {
+      GET: async ({ request }) => {
         const buildDate = new Date().toISOString().slice(0, 10);
         // Fetch published blog posts + categories via server publishable client.
         let blogUrls: { loc: string; lastmod?: string }[] = [];
         let productUrls: { loc: string; lastmod?: string }[] = [];
+        let cacheStamp = new Date().toISOString();
         try {
           const { createClient } = await import("@supabase/supabase-js");
           const url = process.env.SUPABASE_URL!;
           const key = process.env.SUPABASE_PUBLISHABLE_KEY!;
           const sb = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
-          const [posts, cats, products] = await Promise.all([
+          const [posts, cats, products, stamp] = await Promise.all([
             sb.from("blog_posts").select("slug, updated_at").eq("status", "published").eq("noindex", false),
             sb.from("blog_categories").select("slug").eq("is_active", true),
             sb.from("gallery_items").select("product_slug, updated_at").eq("active", true).not("product_slug", "is", null),
+            sb.from("sitemap_cache_state").select("updated_at").eq("id", 1).maybeSingle(),
           ]);
           for (const p of (posts.data ?? []) as any[]) blogUrls.push({ loc: `${BASE_URL}/blog/${p.slug}`, lastmod: p.updated_at });
           for (const c of (cats.data ?? []) as any[]) blogUrls.push({ loc: `${BASE_URL}/blog/categorie/${c.slug}` });
           for (const pr of (products.data ?? []) as any[]) {
             if (pr.product_slug) productUrls.push({ loc: `${BASE_URL}/produits/${pr.product_slug}`, lastmod: pr.updated_at });
           }
+          if ((stamp as any)?.data?.updated_at) cacheStamp = (stamp as any).data.updated_at as string;
         } catch { /* ignore, keep static pages */ }
 
         const urls = PAGES.map((p) => {
@@ -89,8 +92,17 @@ ${blogXml}
 ${productXml}
 </urlset>`;
 
+        const etag = `W/"sm-${Buffer.from(cacheStamp).toString("base64")}"`;
+        if (request.headers.get("if-none-match") === etag) {
+          return new Response(null, { status: 304, headers: { ETag: etag, "Cache-Control": "public, max-age=0, s-maxage=60, stale-while-revalidate=300" } });
+        }
         return new Response(xml, {
-          headers: { "Content-Type": "application/xml", "Cache-Control": "public, max-age=300, s-maxage=300, must-revalidate" },
+          headers: {
+            "Content-Type": "application/xml",
+            "Cache-Control": "public, max-age=0, s-maxage=60, stale-while-revalidate=300",
+            "ETag": etag,
+            "Last-Modified": new Date(cacheStamp).toUTCString(),
+          },
         });
       },
     },

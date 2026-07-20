@@ -2,6 +2,32 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireAdmin } from "@/lib/require-admin";
 import { z } from "zod";
 
+// ─────────── Sitemap freshness helpers ───────────
+// Called after any slug/status change. Bumps a monotonic timestamp used as the
+// ETag for /sitemap.xml and /rss.xml so Google + browsers revalidate immediately.
+async function bumpSitemapCache(admin: any) {
+  try {
+    await admin.from("sitemap_cache_state").upsert(
+      { id: 1, updated_at: new Date().toISOString() },
+      { onConflict: "id" },
+    );
+  } catch (e) {
+    console.warn("bumpSitemapCache failed", e);
+  }
+}
+
+// Fire-and-forget ping to search engines. Never awaited on the critical path.
+function pingSearchEngines() {
+  const sitemap = "https://nexora-iptv.com/sitemap.xml";
+  const targets = [
+    `https://www.google.com/ping?sitemap=${encodeURIComponent(sitemap)}`,
+    `https://www.bing.com/ping?sitemap=${encodeURIComponent(sitemap)}`,
+  ];
+  for (const url of targets) {
+    fetch(url, { method: "GET" }).catch((e) => console.warn("pingSearchEngines", url, e));
+  }
+}
+
 // ─────────── Schemas ───────────
 const PostStatus = z.enum(["draft", "scheduled", "published", "archived"]);
 
@@ -130,6 +156,8 @@ export const adminCreatePost = createServerFn({ method: "POST" })
         data.tag_ids.map((tag_id) => ({ post_id: inserted.id, tag_id })),
       );
     }
+    await bumpSitemapCache(supabaseAdmin);
+    pingSearchEngines();
     return { id: inserted.id, slug };
   });
 
@@ -182,6 +210,8 @@ export const adminUpdatePost = createServerFn({ method: "POST" })
         data.tag_ids.map((tag_id) => ({ post_id: data.id, tag_id })),
       );
     }
+    await bumpSitemapCache(supabaseAdmin);
+    pingSearchEngines();
     return { id: data.id, slug };
   });
 
@@ -192,6 +222,8 @@ export const adminDeletePost = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
     const { error } = await supabaseAdmin.from("blog_posts").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
+    await bumpSitemapCache(supabaseAdmin);
+    pingSearchEngines();
     return { ok: true };
   });
 
@@ -211,6 +243,8 @@ export const adminChangePostStatus = createServerFn({ method: "POST" })
     if (data.status === "scheduled") patch.scheduled_at = data.scheduled_at ?? null;
     const { error } = await supabaseAdmin.from("blog_posts").update(patch).eq("id", data.id);
     if (error) throw new Error(error.message);
+    await bumpSitemapCache(supabaseAdmin);
+    pingSearchEngines();
     return { ok: true };
   });
 

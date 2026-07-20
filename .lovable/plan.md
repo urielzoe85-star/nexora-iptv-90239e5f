@@ -1,44 +1,46 @@
-## Diagnostic
+# Régénération automatique du sitemap après changement de slug
 
-Les articles publiés sont bien en ligne (HTTP 200 sur `/blog/<slug>`), mais leur champ **`canonical_url`** pointe vers un slug différent de celui réellement stocké. Résultat : les liens partagés (boutons Partager, `og:url`, résultats Google) mènent vers une URL qui n'existe pas → **"Page introuvable"**.
+## Objectif
+Quand un slug d'article change (édition CMS, redirection, publication), le sitemap.xml, le flux RSS et les caches doivent se rafraîchir immédiatement — sans attendre l'expiration du cache de 5 minutes — pour que Google et les navigateurs récupèrent toujours la bonne URL.
 
-Exemples réels en base :
+## Changements
 
-| Slug réel (fonctionne) | canonical_url (404) |
-|---|---|
-| `best-iptv-for-sports-in-2026-watch-live-games-without-cable` | `/blog/best-iptv-for-sports-2026` |
-| `how-to-install-iptv-on-fire-tv-stick-2026-guide-nexora-iptv` | `/blog/how-to-install-iptv-on-fire-tv-stick` |
-| `best-iptv-service` | `/blog/best-iptv-service` (ok) |
-| `why-more-americans-choose-iptv-2026` | `/blog/why-more-americans-choose-iptv-2026` (ok) |
+### 1. Invalidation de cache pilotée par la base
+- Ajouter une petite table `public.sitemap_cache_state` (une seule ligne) avec un champ `updated_at`, protégée en écriture par RLS (service_role uniquement).
+- Dans `src/lib/blog.functions.ts`, chaque fois qu'un slug ou statut change (`adminCreatePost`, `adminUpdatePost` — déjà en place pour la redirection —, `adminDeletePost`, changement de `status` published/scheduled), mettre à jour `updated_at = now()` via `supabaseAdmin`.
 
-## Correctifs
+### 2. Sitemap & RSS "always-fresh"
+- `src/routes/sitemap[.]xml.ts` et `src/routes/rss[.]xml.ts` :
+  - Lire `sitemap_cache_state.updated_at` en tête de handler.
+  - Passer le header en `Cache-Control: public, max-age=0, s-maxage=60, stale-while-revalidate=300` + `ETag` basé sur `updated_at`.
+  - Répondre `304 Not Modified` si l'`If-None-Match` du client correspond.
+- Effet : Google et les navigateurs revalident à chaque requête ; dès qu'un slug change, l'ETag change et ils récupèrent la nouvelle version.
 
-### 1. Aligner les slugs sur les canonical_url courts (meilleur SEO)
-Renommer les 2 slugs longs pour qu'ils correspondent à leur canonical déjà indexée par Google :
-- `best-iptv-for-sports-in-2026-watch-live-games-without-cable` → `best-iptv-for-sports-2026`
-- `how-to-install-iptv-on-fire-tv-stick-2026-guide-nexora-iptv` → `how-to-install-iptv-on-fire-tv-stick`
+### 3. Ping automatique des moteurs
+- Nouvelle server function `pingSearchEngines()` (fire-and-forget) qui, après un changement de slug, appelle :
+  - `https://www.google.com/ping?sitemap=https://nexora-iptv.com/sitemap.xml`
+  - `https://www.bing.com/ping?sitemap=https://nexora-iptv.com/sitemap.xml`
+- Déclenchée depuis `adminUpdatePost` / `adminCreatePost` / `adminDeletePost` sans bloquer la réponse (échec silencieux loggé).
 
-### 2. Table de redirection `blog_post_redirects`
-Créer une petite table (old_slug → post_id) + insérer automatiquement l'ancien slug lors de chaque renommage. Le loader `/blog/$slug` cherche d'abord le post ; si absent, consulte la table et **redirige en 301** vers le nouveau slug. Ainsi tout lien déjà partagé (ancien slug ou canonical inversé) fonctionnera à jamais.
-
-### 3. Garde-fou dans l'éditeur admin
-Dans `adminUpdatePost` : quand le slug change, insérer automatiquement l'ancien slug dans `blog_post_redirects`.
-Dans l'UI admin, avertir si `canonical_url` saisi ne correspond pas au slug local (avec bouton "Aligner").
-
-### 4. Bouton "Copier le lien" et partages
-Toujours partager `https://nexora-iptv.com/blog/<slug>` (URL réelle), pas `canonical_url` non vérifiée. Le canonical reste dans le `<head>` pour Google mais n'est plus utilisé côté client pour les liens.
-
-### 5. Purge des caches
-- Bump du sitemap + revalidation
-- Vider le cache Service Worker PWA sur les routes `/blog/*` (les visiteurs récurrents pouvaient recevoir une vieille version HTML mise en cache)
+### 4. Rafraîchissement côté client
+- Le composant `/blog` (déjà en polling 30 s) écoute déjà `blog_posts` ; aucune modif nécessaire.
+- Ajouter un `router.invalidate()` dans l'admin CMS après save pour purger le cache TanStack Query des articles.
 
 ## Détails techniques
 
-- Migration SQL : `create table public.blog_post_redirects (old_slug text primary key, post_id uuid references blog_posts on delete cascade, created_at timestamptz default now());` + GRANT + RLS (SELECT public).
-- Update SQL immédiat pour les 2 slugs cassés + insertion des anciens slugs comme redirects.
-- `src/routes/blog.$slug.tsx` loader : si `publicGetPost` renvoie `null`, appeler `publicResolveSlugRedirect` ; si trouvé, `throw redirect({ to: '/blog/$slug', params: { slug: newSlug }, statusCode: 301 })` ; sinon `throw notFound()`.
-- `src/lib/blog.functions.ts` : ajouter `publicResolveSlugRedirect(old_slug)`, et faire écrire automatiquement l'ancien slug dans `adminUpdatePost` quand `slug` change.
-- `src/routes/blog.$slug.tsx` : `shareUrl` = `https://nexora-iptv.com/blog/${post.slug}` (retirer le `canonical_url ||`).
-- `vite.config.ts` PWA : bump `additionalManifestEntries` version pour forcer un `skipWaiting` sur les visiteurs déjà en cache.
+```text
+adminUpdatePost(slug change)
+  ├─ insert into blog_post_redirects (déjà fait)
+  ├─ update sitemap_cache_state set updated_at = now()   ← nouveau
+  └─ fire-and-forget pingSearchEngines()                 ← nouveau
 
-Aucune modification du contenu ni de la mise en page des articles.
+GET /sitemap.xml
+  ├─ read sitemap_cache_state.updated_at → ETag
+  ├─ if If-None-Match match → 304
+  └─ else → 200 + Cache-Control: max-age=0, s-maxage=60, SWR=300
+```
+
+## Hors périmètre
+- Pas de changement des URLs existantes ni du contenu du sitemap.
+- Pas de modification du système de redirections 301 déjà en place.
+- Pas de touche à `og:image`, robots.txt, ou à la structure des routes.

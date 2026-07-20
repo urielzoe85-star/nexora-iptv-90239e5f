@@ -15,22 +15,27 @@ function esc(s: string): string {
 export const Route = createFileRoute("/rss.xml")({
   server: {
     handlers: {
-      GET: async () => {
+      GET: async ({ request }) => {
         let items = "";
         let lastBuild = new Date().toUTCString();
+        let cacheStamp = new Date().toISOString();
         try {
           const { createClient } = await import("@supabase/supabase-js");
           const sb = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_PUBLISHABLE_KEY!, {
             auth: { persistSession: false, autoRefreshToken: false },
           });
-          const { data } = await sb
+          const [{ data }, stamp] = await Promise.all([
+            sb
             .from("blog_posts")
             .select("slug,title,excerpt,published_at,updated_at,cover_image_url,author_name")
             .eq("status", "published")
             .eq("noindex", false)
             .lte("published_at", new Date().toISOString())
             .order("published_at", { ascending: false })
-            .limit(50);
+            .limit(50),
+            sb.from("sitemap_cache_state").select("updated_at").eq("id", 1).maybeSingle(),
+          ]);
+          if ((stamp as any)?.data?.updated_at) cacheStamp = (stamp as any).data.updated_at as string;
           const rows = (data ?? []) as Array<{
             slug: string; title: string; excerpt: string | null;
             published_at: string | null; updated_at: string | null;
@@ -74,10 +79,16 @@ ${items}
   </channel>
 </rss>`;
 
+        const etag = `W/"rss-${Buffer.from(cacheStamp).toString("base64")}"`;
+        if (request.headers.get("if-none-match") === etag) {
+          return new Response(null, { status: 304, headers: { ETag: etag, "Cache-Control": "public, max-age=0, s-maxage=60, stale-while-revalidate=300" } });
+        }
         return new Response(xml, {
           headers: {
             "Content-Type": "application/rss+xml; charset=utf-8",
-            "Cache-Control": "public, max-age=300, s-maxage=300, must-revalidate",
+            "Cache-Control": "public, max-age=0, s-maxage=60, stale-while-revalidate=300",
+            "ETag": etag,
+            "Last-Modified": new Date(cacheStamp).toUTCString(),
           },
         });
       },
