@@ -407,6 +407,32 @@ export type Database = {
           },
         ]
       }
+      blog_post_redirects: {
+        Row: {
+          created_at: string
+          old_slug: string
+          post_id: string
+        }
+        Insert: {
+          created_at?: string
+          old_slug: string
+          post_id: string
+        }
+        Update: {
+          created_at?: string
+          old_slug?: string
+          post_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blog_post_redirects_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "blog_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       blog_post_tags: {
         Row: {
           post_id: string
