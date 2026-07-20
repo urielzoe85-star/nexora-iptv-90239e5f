@@ -25,7 +25,7 @@ const LOCALES: Record<string, string> = { fr: "fr", en: "en", de: "de" };
 export const Route = createFileRoute("/sitemap.xml")({
   server: {
     handlers: {
-      GET: async () => {
+      GET: async ({ request }) => {
         const buildDate = new Date().toISOString().slice(0, 10);
         // Fetch published blog posts + categories via server publishable client.
         let blogUrls: { loc: string; lastmod?: string }[] = [];
@@ -93,8 +93,9 @@ ${productXml}
 </urlset>`;
 
         const etag = `W/"sm-${Buffer.from(cacheStamp).toString("base64")}"`;
-        const inm = (globalThis as any).__req_headers_hack;
-        // We can't access request here without changing signature; use a lightweight ETag anyway.
+        if (request.headers.get("if-none-match") === etag) {
+          return new Response(null, { status: 304, headers: { ETag: etag, "Cache-Control": "public, max-age=0, s-maxage=60, stale-while-revalidate=300" } });
+        }
         return new Response(xml, {
           headers: {
             "Content-Type": "application/xml",
