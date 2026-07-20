@@ -142,6 +142,14 @@ export const adminUpdatePost = createServerFn({ method: "POST" })
     const html = sanitizeBlogHtml(data.content_html ?? "");
     const baseSlug = slugify(data.slug || data.title);
     const slug = await ensureUniqueSlug(supabaseAdmin, baseSlug, data.locale, data.id);
+    // If slug changes, save the old one as a redirect so shared links keep working.
+    const { data: prev } = await supabaseAdmin.from("blog_posts").select("slug").eq("id", data.id).maybeSingle();
+    if (prev?.slug && prev.slug !== slug) {
+      await supabaseAdmin.from("blog_post_redirects").upsert(
+        { old_slug: prev.slug, post_id: data.id },
+        { onConflict: "old_slug" },
+      );
+    }
     const publishedAt =
       data.status === "published" ? (data.published_at ?? new Date().toISOString()) : data.published_at ?? null;
     const { error } = await supabaseAdmin.from("blog_posts").update({
@@ -501,4 +509,18 @@ export const publicListAllPostsForSitemap = createServerFn({ method: "GET" })
       .order("published_at", { ascending: false })
       .limit(2000);
     return data ?? [];
+  });
+
+export const publicResolveSlugRedirect = createServerFn({ method: "GET" })
+  .inputValidator((d: unknown) => z.object({ slug: z.string().trim().min(1).max(200) }).parse(d))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
+    const { data: row } = await supabaseAdmin
+      .from("blog_post_redirects")
+      .select("post_id, blog_posts!inner(slug,status,published_at)")
+      .eq("old_slug", data.slug)
+      .maybeSingle();
+    const p: any = (row as any)?.blog_posts;
+    if (!p || p.status !== "published" || (p.published_at && new Date(p.published_at) > new Date())) return null;
+    return { slug: p.slug as string };
   });
