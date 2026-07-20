@@ -130,6 +130,8 @@ export const adminCreatePost = createServerFn({ method: "POST" })
         data.tag_ids.map((tag_id) => ({ post_id: inserted.id, tag_id })),
       );
     }
+    await bumpSitemapCache(supabaseAdmin);
+    pingSearchEngines();
     return { id: inserted.id, slug };
   });
 
@@ -182,6 +184,8 @@ export const adminUpdatePost = createServerFn({ method: "POST" })
         data.tag_ids.map((tag_id) => ({ post_id: data.id, tag_id })),
       );
     }
+    await bumpSitemapCache(supabaseAdmin);
+    pingSearchEngines();
     return { id: data.id, slug };
   });
 
@@ -192,6 +196,8 @@ export const adminDeletePost = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
     const { error } = await supabaseAdmin.from("blog_posts").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
+    await bumpSitemapCache(supabaseAdmin);
+    pingSearchEngines();
     return { ok: true };
   });
 
@@ -211,6 +217,8 @@ export const adminChangePostStatus = createServerFn({ method: "POST" })
     if (data.status === "scheduled") patch.scheduled_at = data.scheduled_at ?? null;
     const { error } = await supabaseAdmin.from("blog_posts").update(patch).eq("id", data.id);
     if (error) throw new Error(error.message);
+    await bumpSitemapCache(supabaseAdmin);
+    pingSearchEngines();
     return { ok: true };
   });
 
