@@ -1916,6 +1916,21 @@ export type Database = {
         }
         Relationships: []
       }
+      sitemap_cache_state: {
+        Row: {
+          id: number
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       subscriptions: {
         Row: {
           created_at: string
