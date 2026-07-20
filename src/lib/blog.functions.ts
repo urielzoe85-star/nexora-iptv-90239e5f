@@ -502,3 +502,17 @@ export const publicListAllPostsForSitemap = createServerFn({ method: "GET" })
       .limit(2000);
     return data ?? [];
   });
+
+export const publicResolveSlugRedirect = createServerFn({ method: "GET" })
+  .inputValidator((d: unknown) => z.object({ slug: z.string().trim().min(1).max(200) }).parse(d))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
+    const { data: row } = await supabaseAdmin
+      .from("blog_post_redirects")
+      .select("post_id, blog_posts!inner(slug,status,published_at)")
+      .eq("old_slug", data.slug)
+      .maybeSingle();
+    const p: any = (row as any)?.blog_posts;
+    if (!p || p.status !== "published" || (p.published_at && new Date(p.published_at) > new Date())) return null;
+    return { slug: p.slug as string };
+  });
