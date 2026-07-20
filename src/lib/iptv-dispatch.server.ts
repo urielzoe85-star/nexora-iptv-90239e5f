@@ -93,8 +93,8 @@ async function sendEmailChannel(args: {
       payload: {
         message_id: messageId,
         to: recipient,
-        from: `Nexora IPTV <noreply@sent.nexora-iptv.com>`,
-        sender_domain: "sent.nexora-iptv.com",
+        from: `Nexora IPTV <noreply@notify.nexora-iptv.com>`,
+        sender_domain: "notify.nexora-iptv.com",
         subject, html, text,
         purpose: "transactional",
         label: "iptv-delivery",

@@ -151,8 +151,8 @@ async function sendEmail(sb: any, args: { subject: string; body: string; recipie
     payload: {
       message_id: messageId,
       to: args.recipient,
-      from: `Nexora IPTV <noreply@sent.nexora-iptv.com>`,
-      sender_domain: "sent.nexora-iptv.com",
+      from: `Nexora IPTV <noreply@notify.nexora-iptv.com>`,
+      sender_domain: "notify.nexora-iptv.com",
       subject: args.subject,
       html, text: args.body,
       purpose: "transactional",
