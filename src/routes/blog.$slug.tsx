@@ -1,6 +1,6 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, redirect } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { publicGetPost, publicRelatedPosts } from "@/lib/blog.functions";
+import { publicGetPost, publicRelatedPosts, publicResolveSlugRedirect } from "@/lib/blog.functions";
 import { useQuery } from "@tanstack/react-query";
 import { PostCard } from "@/components/blog/PostCard";
 import { ShareButtons } from "@/components/blog/ShareButtons";
@@ -9,7 +9,13 @@ import { Loader2, ArrowLeft } from "lucide-react";
 export const Route = createFileRoute("/blog/$slug")({
   loader: async ({ params }) => {
     const post = await publicGetPost({ data: { slug: params.slug } });
-    if (!post) throw notFound();
+    if (!post) {
+      const r = await publicResolveSlugRedirect({ data: { slug: params.slug } });
+      if (r?.slug && r.slug !== params.slug) {
+        throw redirect({ to: "/blog/$slug", params: { slug: r.slug }, statusCode: 301 });
+      }
+      throw notFound();
+    }
     return { post };
   },
   head: ({ loaderData, params }) => {
@@ -115,7 +121,7 @@ function PostPage() {
     queryKey: ["blog","related", post.id],
     queryFn: () => related({ data: { post_id: post.id, limit: 3 } }),
   });
-  const shareUrl = (post as any).canonical_url || `https://nexora-iptv.com/blog/${(post as any).slug}`;
+  const shareUrl = `https://nexora-iptv.com/blog/${(post as any).slug}`;
   const shareTitle = (post as any).title as string;
   const shareExcerpt = ((post as any).excerpt as string) || undefined;
 
