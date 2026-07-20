@@ -2,6 +2,32 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireAdmin } from "@/lib/require-admin";
 import { z } from "zod";
 
+// ─────────── Sitemap freshness helpers ───────────
+// Called after any slug/status change. Bumps a monotonic timestamp used as the
+// ETag for /sitemap.xml and /rss.xml so Google + browsers revalidate immediately.
+async function bumpSitemapCache(admin: { from: (t: string) => { upsert: (...a: unknown[]) => Promise<unknown> } }) {
+  try {
+    await admin.from("sitemap_cache_state").upsert(
+      { id: 1, updated_at: new Date().toISOString() },
+      { onConflict: "id" } as never,
+    );
+  } catch (e) {
+    console.warn("bumpSitemapCache failed", e);
+  }
+}
+
+// Fire-and-forget ping to search engines. Never awaited on the critical path.
+function pingSearchEngines() {
+  const sitemap = "https://nexora-iptv.com/sitemap.xml";
+  const targets = [
+    `https://www.google.com/ping?sitemap=${encodeURIComponent(sitemap)}`,
+    `https://www.bing.com/ping?sitemap=${encodeURIComponent(sitemap)}`,
+  ];
+  for (const url of targets) {
+    fetch(url, { method: "GET" }).catch((e) => console.warn("pingSearchEngines", url, e));
+  }
+}
+
 // ─────────── Schemas ───────────
 const PostStatus = z.enum(["draft", "scheduled", "published", "archived"]);
 
