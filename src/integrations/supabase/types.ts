@@ -14,6 +14,126 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_actions_log: {
+        Row: {
+          actor_user_id: string | null
+          created_at: string
+          error: string | null
+          id: string
+          input: Json | null
+          kind: string
+          model: string | null
+          output: Json | null
+          status: string
+          tokens_in: number | null
+          tokens_out: number | null
+        }
+        Insert: {
+          actor_user_id?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          input?: Json | null
+          kind: string
+          model?: string | null
+          output?: Json | null
+          status?: string
+          tokens_in?: number | null
+          tokens_out?: number | null
+        }
+        Update: {
+          actor_user_id?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          input?: Json | null
+          kind?: string
+          model?: string | null
+          output?: Json | null
+          status?: string
+          tokens_in?: number | null
+          tokens_out?: number | null
+        }
+        Relationships: []
+      }
+      ai_knowledge_base: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          section: string
+          title: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          content?: string
+          created_at?: string
+          id?: string
+          section: string
+          title: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          section?: string
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      ai_seo_suggestions: {
+        Row: {
+          action: string | null
+          created_at: string
+          created_by: string | null
+          difficulty: string | null
+          id: string
+          intent: string | null
+          keyword: string | null
+          meta: Json
+          score: number | null
+          status: string
+          target_id: string | null
+          target_kind: string
+          updated_at: string
+        }
+        Insert: {
+          action?: string | null
+          created_at?: string
+          created_by?: string | null
+          difficulty?: string | null
+          id?: string
+          intent?: string | null
+          keyword?: string | null
+          meta?: Json
+          score?: number | null
+          status?: string
+          target_id?: string | null
+          target_kind: string
+          updated_at?: string
+        }
+        Update: {
+          action?: string | null
+          created_at?: string
+          created_by?: string | null
+          difficulty?: string | null
+          id?: string
+          intent?: string | null
+          keyword?: string | null
+          meta?: Json
+          score?: number | null
+          status?: string
+          target_id?: string | null
+          target_kind?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       automation_queue: {
         Row: {
           attempts: number
