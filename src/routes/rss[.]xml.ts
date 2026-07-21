@@ -16,6 +16,13 @@ export const Route = createFileRoute("/rss.xml")({
   server: {
     handlers: {
       GET: async ({ request }) => {
+        const host = request.headers.get("host") ?? "";
+        if (host === "app.nexora-iptv.com" || host.endsWith(".app.nexora-iptv.com")) {
+          const empty = `<?xml version="1.0" encoding="UTF-8"?>\n<rss version="2.0"><channel><title>Nexora</title><link>${BASE_URL}</link><description></description></channel></rss>`;
+          return new Response(empty, {
+            headers: { "Content-Type": "application/rss+xml", "Cache-Control": "public, max-age=3600" },
+          });
+        }
         let items = "";
         let lastBuild = new Date().toUTCString();
         let cacheStamp = new Date().toISOString();
