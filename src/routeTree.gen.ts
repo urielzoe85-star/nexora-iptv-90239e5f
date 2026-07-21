@@ -87,6 +87,7 @@ import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]
 import { Route as NccSettingsIndexRouteImport } from './routes/ncc.settings.index'
 import { Route as NccIptvIndexRouteImport } from './routes/ncc.iptv.index'
 import { Route as NccBlogIndexRouteImport } from './routes/ncc.blog.index'
+import { Route as NccAiIndexRouteImport } from './routes/ncc.ai.index'
 import { Route as NccSettingsSectionRouteImport } from './routes/ncc.settings.$section'
 import { Route as NccPaymentsBinanceRouteImport } from './routes/ncc.payments.binance'
 import { Route as NccOrdersIdRouteImport } from './routes/ncc.orders.$id'
@@ -530,6 +531,11 @@ const NccBlogIndexRoute = NccBlogIndexRouteImport.update({
   path: '/blog/',
   getParentRoute: () => NccRoute,
 } as any)
+const NccAiIndexRoute = NccAiIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => NccAiRoute,
+} as any)
 const NccSettingsSectionRoute = NccSettingsSectionRouteImport.update({
   id: '/$section',
   path: '/$section',
@@ -833,7 +839,7 @@ export interface FileRoutesByFullPath {
   '/legal/refund': typeof LegalRefundRoute
   '/legal/sales': typeof LegalSalesRoute
   '/legal/terms': typeof LegalTermsRoute
-  '/ncc/ai': typeof NccAiRoute
+  '/ncc/ai': typeof NccAiRouteWithChildren
   '/ncc/analytics': typeof NccAnalyticsRoute
   '/ncc/automation': typeof NccAutomationRoute
   '/ncc/bots': typeof NccBotsRoute
@@ -891,6 +897,7 @@ export interface FileRoutesByFullPath {
   '/ncc/orders/$id': typeof NccOrdersIdRoute
   '/ncc/payments/binance': typeof NccPaymentsBinanceRoute
   '/ncc/settings/$section': typeof NccSettingsSectionRoute
+  '/ncc/ai/': typeof NccAiIndexRoute
   '/ncc/blog/': typeof NccBlogIndexRoute
   '/ncc/iptv/': typeof NccIptvIndexRoute
   '/ncc/settings/': typeof NccSettingsIndexRoute
@@ -956,7 +963,6 @@ export interface FileRoutesByTo {
   '/legal/refund': typeof LegalRefundRoute
   '/legal/sales': typeof LegalSalesRoute
   '/legal/terms': typeof LegalTermsRoute
-  '/ncc/ai': typeof NccAiRoute
   '/ncc/analytics': typeof NccAnalyticsRoute
   '/ncc/automation': typeof NccAutomationRoute
   '/ncc/bots': typeof NccBotsRoute
@@ -1012,6 +1018,7 @@ export interface FileRoutesByTo {
   '/ncc/orders/$id': typeof NccOrdersIdRoute
   '/ncc/payments/binance': typeof NccPaymentsBinanceRoute
   '/ncc/settings/$section': typeof NccSettingsSectionRoute
+  '/ncc/ai': typeof NccAiIndexRoute
   '/ncc/blog': typeof NccBlogIndexRoute
   '/ncc/iptv': typeof NccIptvIndexRoute
   '/ncc/settings': typeof NccSettingsIndexRoute
@@ -1083,7 +1090,7 @@ export interface FileRoutesById {
   '/legal/refund': typeof LegalRefundRoute
   '/legal/sales': typeof LegalSalesRoute
   '/legal/terms': typeof LegalTermsRoute
-  '/ncc/ai': typeof NccAiRoute
+  '/ncc/ai': typeof NccAiRouteWithChildren
   '/ncc/analytics': typeof NccAnalyticsRoute
   '/ncc/automation': typeof NccAutomationRoute
   '/ncc/bots': typeof NccBotsRoute
@@ -1141,6 +1148,7 @@ export interface FileRoutesById {
   '/ncc/orders/$id': typeof NccOrdersIdRoute
   '/ncc/payments/binance': typeof NccPaymentsBinanceRoute
   '/ncc/settings/$section': typeof NccSettingsSectionRoute
+  '/ncc/ai/': typeof NccAiIndexRoute
   '/ncc/blog/': typeof NccBlogIndexRoute
   '/ncc/iptv/': typeof NccIptvIndexRoute
   '/ncc/settings/': typeof NccSettingsIndexRoute
@@ -1271,6 +1279,7 @@ export interface FileRouteTypes {
     | '/ncc/orders/$id'
     | '/ncc/payments/binance'
     | '/ncc/settings/$section'
+    | '/ncc/ai/'
     | '/ncc/blog/'
     | '/ncc/iptv/'
     | '/ncc/settings/'
@@ -1336,7 +1345,6 @@ export interface FileRouteTypes {
     | '/legal/refund'
     | '/legal/sales'
     | '/legal/terms'
-    | '/ncc/ai'
     | '/ncc/analytics'
     | '/ncc/automation'
     | '/ncc/bots'
@@ -1392,6 +1400,7 @@ export interface FileRouteTypes {
     | '/ncc/orders/$id'
     | '/ncc/payments/binance'
     | '/ncc/settings/$section'
+    | '/ncc/ai'
     | '/ncc/blog'
     | '/ncc/iptv'
     | '/ncc/settings'
@@ -1520,6 +1529,7 @@ export interface FileRouteTypes {
     | '/ncc/orders/$id'
     | '/ncc/payments/binance'
     | '/ncc/settings/$section'
+    | '/ncc/ai/'
     | '/ncc/blog/'
     | '/ncc/iptv/'
     | '/ncc/settings/'
@@ -2155,6 +2165,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof NccBlogIndexRouteImport
       parentRoute: typeof NccRoute
     }
+    '/ncc/ai/': {
+      id: '/ncc/ai/'
+      path: '/'
+      fullPath: '/ncc/ai/'
+      preLoaderRoute: typeof NccAiIndexRouteImport
+      parentRoute: typeof NccAiRoute
+    }
     '/ncc/settings/$section': {
       id: '/ncc/settings/$section'
       path: '/$section'
@@ -2572,6 +2589,16 @@ const FrRouteChildren: FrRouteChildren = {
 
 const FrRouteWithChildren = FrRoute._addFileChildren(FrRouteChildren)
 
+interface NccAiRouteChildren {
+  NccAiIndexRoute: typeof NccAiIndexRoute
+}
+
+const NccAiRouteChildren: NccAiRouteChildren = {
+  NccAiIndexRoute: NccAiIndexRoute,
+}
+
+const NccAiRouteWithChildren = NccAiRoute._addFileChildren(NccAiRouteChildren)
+
 interface NccClientsRouteChildren {
   NccClientsIdRoute: typeof NccClientsIdRoute
 }
@@ -2658,7 +2685,7 @@ const NccSettingsRouteWithChildren = NccSettingsRoute._addFileChildren(
 )
 
 interface NccRouteChildren {
-  NccAiRoute: typeof NccAiRoute
+  NccAiRoute: typeof NccAiRouteWithChildren
   NccAnalyticsRoute: typeof NccAnalyticsRoute
   NccAutomationRoute: typeof NccAutomationRoute
   NccBotsRoute: typeof NccBotsRoute
@@ -2688,7 +2715,7 @@ interface NccRouteChildren {
 }
 
 const NccRouteChildren: NccRouteChildren = {
-  NccAiRoute: NccAiRoute,
+  NccAiRoute: NccAiRouteWithChildren,
   NccAnalyticsRoute: NccAnalyticsRoute,
   NccAutomationRoute: NccAutomationRoute,
   NccBotsRoute: NccBotsRoute,
