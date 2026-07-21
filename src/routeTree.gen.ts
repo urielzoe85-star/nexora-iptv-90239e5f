@@ -57,6 +57,7 @@ import { Route as NccBulkRouteImport } from './routes/ncc.bulk'
 import { Route as NccBotsRouteImport } from './routes/ncc.bots'
 import { Route as NccAutomationRouteImport } from './routes/ncc.automation'
 import { Route as NccAnalyticsRouteImport } from './routes/ncc.analytics'
+import { Route as NccAiRouteImport } from './routes/ncc.ai'
 import { Route as LegalTermsRouteImport } from './routes/legal.terms'
 import { Route as LegalSalesRouteImport } from './routes/legal.sales'
 import { Route as LegalRefundRouteImport } from './routes/legal.refund'
@@ -86,6 +87,7 @@ import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]
 import { Route as NccSettingsIndexRouteImport } from './routes/ncc.settings.index'
 import { Route as NccIptvIndexRouteImport } from './routes/ncc.iptv.index'
 import { Route as NccBlogIndexRouteImport } from './routes/ncc.blog.index'
+import { Route as NccAiIndexRouteImport } from './routes/ncc.ai.index'
 import { Route as NccSettingsSectionRouteImport } from './routes/ncc.settings.$section'
 import { Route as NccPaymentsBinanceRouteImport } from './routes/ncc.payments.binance'
 import { Route as NccOrdersIdRouteImport } from './routes/ncc.orders.$id'
@@ -106,6 +108,9 @@ import { Route as NccBlogTagsRouteImport } from './routes/ncc.blog.tags'
 import { Route as NccBlogNewRouteImport } from './routes/ncc.blog.new'
 import { Route as NccBlogCategoriesRouteImport } from './routes/ncc.blog.categories'
 import { Route as NccBlogIdRouteImport } from './routes/ncc.blog.$id'
+import { Route as NccAiSeoRouteImport } from './routes/ncc.ai.seo'
+import { Route as NccAiKnowledgeRouteImport } from './routes/ncc.ai.knowledge'
+import { Route as NccAiContentRouteImport } from './routes/ncc.ai.content'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as EspaceClientSuccessRefRouteImport } from './routes/espace-client.success.$ref'
 import { Route as EspaceClientPayRefRouteImport } from './routes/espace-client.pay.$ref'
@@ -375,6 +380,11 @@ const NccAnalyticsRoute = NccAnalyticsRouteImport.update({
   path: '/analytics',
   getParentRoute: () => NccRoute,
 } as any)
+const NccAiRoute = NccAiRouteImport.update({
+  id: '/ai',
+  path: '/ai',
+  getParentRoute: () => NccRoute,
+} as any)
 const LegalTermsRoute = LegalTermsRouteImport.update({
   id: '/legal/terms',
   path: '/legal/terms',
@@ -524,6 +534,11 @@ const NccBlogIndexRoute = NccBlogIndexRouteImport.update({
   path: '/blog/',
   getParentRoute: () => NccRoute,
 } as any)
+const NccAiIndexRoute = NccAiIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => NccAiRoute,
+} as any)
 const NccSettingsSectionRoute = NccSettingsSectionRouteImport.update({
   id: '/$section',
   path: '/$section',
@@ -623,6 +638,21 @@ const NccBlogIdRoute = NccBlogIdRouteImport.update({
   id: '/blog/$id',
   path: '/blog/$id',
   getParentRoute: () => NccRoute,
+} as any)
+const NccAiSeoRoute = NccAiSeoRouteImport.update({
+  id: '/seo',
+  path: '/seo',
+  getParentRoute: () => NccAiRoute,
+} as any)
+const NccAiKnowledgeRoute = NccAiKnowledgeRouteImport.update({
+  id: '/knowledge',
+  path: '/knowledge',
+  getParentRoute: () => NccAiRoute,
+} as any)
+const NccAiContentRoute = NccAiContentRouteImport.update({
+  id: '/content',
+  path: '/content',
+  getParentRoute: () => NccAiRoute,
 } as any)
 const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
   id: '/lovable/email/suppression',
@@ -827,6 +857,7 @@ export interface FileRoutesByFullPath {
   '/legal/refund': typeof LegalRefundRoute
   '/legal/sales': typeof LegalSalesRoute
   '/legal/terms': typeof LegalTermsRoute
+  '/ncc/ai': typeof NccAiRouteWithChildren
   '/ncc/analytics': typeof NccAnalyticsRoute
   '/ncc/automation': typeof NccAutomationRoute
   '/ncc/bots': typeof NccBotsRoute
@@ -864,6 +895,9 @@ export interface FileRoutesByFullPath {
   '/espace-client/pay/$ref': typeof EspaceClientPayRefRoute
   '/espace-client/success/$ref': typeof EspaceClientSuccessRefRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/ncc/ai/content': typeof NccAiContentRoute
+  '/ncc/ai/knowledge': typeof NccAiKnowledgeRoute
+  '/ncc/ai/seo': typeof NccAiSeoRoute
   '/ncc/blog/$id': typeof NccBlogIdRoute
   '/ncc/blog/categories': typeof NccBlogCategoriesRoute
   '/ncc/blog/new': typeof NccBlogNewRoute
@@ -884,6 +918,7 @@ export interface FileRoutesByFullPath {
   '/ncc/orders/$id': typeof NccOrdersIdRoute
   '/ncc/payments/binance': typeof NccPaymentsBinanceRoute
   '/ncc/settings/$section': typeof NccSettingsSectionRoute
+  '/ncc/ai/': typeof NccAiIndexRoute
   '/ncc/blog/': typeof NccBlogIndexRoute
   '/ncc/iptv/': typeof NccIptvIndexRoute
   '/ncc/settings/': typeof NccSettingsIndexRoute
@@ -984,6 +1019,9 @@ export interface FileRoutesByTo {
   '/espace-client/pay/$ref': typeof EspaceClientPayRefRoute
   '/espace-client/success/$ref': typeof EspaceClientSuccessRefRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/ncc/ai/content': typeof NccAiContentRoute
+  '/ncc/ai/knowledge': typeof NccAiKnowledgeRoute
+  '/ncc/ai/seo': typeof NccAiSeoRoute
   '/ncc/blog/$id': typeof NccBlogIdRoute
   '/ncc/blog/categories': typeof NccBlogCategoriesRoute
   '/ncc/blog/new': typeof NccBlogNewRoute
@@ -1004,6 +1042,7 @@ export interface FileRoutesByTo {
   '/ncc/orders/$id': typeof NccOrdersIdRoute
   '/ncc/payments/binance': typeof NccPaymentsBinanceRoute
   '/ncc/settings/$section': typeof NccSettingsSectionRoute
+  '/ncc/ai': typeof NccAiIndexRoute
   '/ncc/blog': typeof NccBlogIndexRoute
   '/ncc/iptv': typeof NccIptvIndexRoute
   '/ncc/settings': typeof NccSettingsIndexRoute
@@ -1075,6 +1114,7 @@ export interface FileRoutesById {
   '/legal/refund': typeof LegalRefundRoute
   '/legal/sales': typeof LegalSalesRoute
   '/legal/terms': typeof LegalTermsRoute
+  '/ncc/ai': typeof NccAiRouteWithChildren
   '/ncc/analytics': typeof NccAnalyticsRoute
   '/ncc/automation': typeof NccAutomationRoute
   '/ncc/bots': typeof NccBotsRoute
@@ -1112,6 +1152,9 @@ export interface FileRoutesById {
   '/espace-client/pay/$ref': typeof EspaceClientPayRefRoute
   '/espace-client/success/$ref': typeof EspaceClientSuccessRefRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/ncc/ai/content': typeof NccAiContentRoute
+  '/ncc/ai/knowledge': typeof NccAiKnowledgeRoute
+  '/ncc/ai/seo': typeof NccAiSeoRoute
   '/ncc/blog/$id': typeof NccBlogIdRoute
   '/ncc/blog/categories': typeof NccBlogCategoriesRoute
   '/ncc/blog/new': typeof NccBlogNewRoute
@@ -1132,6 +1175,7 @@ export interface FileRoutesById {
   '/ncc/orders/$id': typeof NccOrdersIdRoute
   '/ncc/payments/binance': typeof NccPaymentsBinanceRoute
   '/ncc/settings/$section': typeof NccSettingsSectionRoute
+  '/ncc/ai/': typeof NccAiIndexRoute
   '/ncc/blog/': typeof NccBlogIndexRoute
   '/ncc/iptv/': typeof NccIptvIndexRoute
   '/ncc/settings/': typeof NccSettingsIndexRoute
@@ -1204,6 +1248,7 @@ export interface FileRouteTypes {
     | '/legal/refund'
     | '/legal/sales'
     | '/legal/terms'
+    | '/ncc/ai'
     | '/ncc/analytics'
     | '/ncc/automation'
     | '/ncc/bots'
@@ -1241,6 +1286,9 @@ export interface FileRouteTypes {
     | '/espace-client/pay/$ref'
     | '/espace-client/success/$ref'
     | '/lovable/email/suppression'
+    | '/ncc/ai/content'
+    | '/ncc/ai/knowledge'
+    | '/ncc/ai/seo'
     | '/ncc/blog/$id'
     | '/ncc/blog/categories'
     | '/ncc/blog/new'
@@ -1261,6 +1309,7 @@ export interface FileRouteTypes {
     | '/ncc/orders/$id'
     | '/ncc/payments/binance'
     | '/ncc/settings/$section'
+    | '/ncc/ai/'
     | '/ncc/blog/'
     | '/ncc/iptv/'
     | '/ncc/settings/'
@@ -1361,6 +1410,9 @@ export interface FileRouteTypes {
     | '/espace-client/pay/$ref'
     | '/espace-client/success/$ref'
     | '/lovable/email/suppression'
+    | '/ncc/ai/content'
+    | '/ncc/ai/knowledge'
+    | '/ncc/ai/seo'
     | '/ncc/blog/$id'
     | '/ncc/blog/categories'
     | '/ncc/blog/new'
@@ -1381,6 +1433,7 @@ export interface FileRouteTypes {
     | '/ncc/orders/$id'
     | '/ncc/payments/binance'
     | '/ncc/settings/$section'
+    | '/ncc/ai'
     | '/ncc/blog'
     | '/ncc/iptv'
     | '/ncc/settings'
@@ -1451,6 +1504,7 @@ export interface FileRouteTypes {
     | '/legal/refund'
     | '/legal/sales'
     | '/legal/terms'
+    | '/ncc/ai'
     | '/ncc/analytics'
     | '/ncc/automation'
     | '/ncc/bots'
@@ -1488,6 +1542,9 @@ export interface FileRouteTypes {
     | '/espace-client/pay/$ref'
     | '/espace-client/success/$ref'
     | '/lovable/email/suppression'
+    | '/ncc/ai/content'
+    | '/ncc/ai/knowledge'
+    | '/ncc/ai/seo'
     | '/ncc/blog/$id'
     | '/ncc/blog/categories'
     | '/ncc/blog/new'
@@ -1508,6 +1565,7 @@ export interface FileRouteTypes {
     | '/ncc/orders/$id'
     | '/ncc/payments/binance'
     | '/ncc/settings/$section'
+    | '/ncc/ai/'
     | '/ncc/blog/'
     | '/ncc/iptv/'
     | '/ncc/settings/'
@@ -1933,6 +1991,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof NccAnalyticsRouteImport
       parentRoute: typeof NccRoute
     }
+    '/ncc/ai': {
+      id: '/ncc/ai'
+      path: '/ai'
+      fullPath: '/ncc/ai'
+      preLoaderRoute: typeof NccAiRouteImport
+      parentRoute: typeof NccRoute
+    }
     '/legal/terms': {
       id: '/legal/terms'
       path: '/legal/terms'
@@ -2136,6 +2201,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof NccBlogIndexRouteImport
       parentRoute: typeof NccRoute
     }
+    '/ncc/ai/': {
+      id: '/ncc/ai/'
+      path: '/'
+      fullPath: '/ncc/ai/'
+      preLoaderRoute: typeof NccAiIndexRouteImport
+      parentRoute: typeof NccAiRoute
+    }
     '/ncc/settings/$section': {
       id: '/ncc/settings/$section'
       path: '/$section'
@@ -2275,6 +2347,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/ncc/blog/$id'
       preLoaderRoute: typeof NccBlogIdRouteImport
       parentRoute: typeof NccRoute
+    }
+    '/ncc/ai/seo': {
+      id: '/ncc/ai/seo'
+      path: '/seo'
+      fullPath: '/ncc/ai/seo'
+      preLoaderRoute: typeof NccAiSeoRouteImport
+      parentRoute: typeof NccAiRoute
+    }
+    '/ncc/ai/knowledge': {
+      id: '/ncc/ai/knowledge'
+      path: '/knowledge'
+      fullPath: '/ncc/ai/knowledge'
+      preLoaderRoute: typeof NccAiKnowledgeRouteImport
+      parentRoute: typeof NccAiRoute
+    }
+    '/ncc/ai/content': {
+      id: '/ncc/ai/content'
+      path: '/content'
+      fullPath: '/ncc/ai/content'
+      preLoaderRoute: typeof NccAiContentRouteImport
+      parentRoute: typeof NccAiRoute
     }
     '/lovable/email/suppression': {
       id: '/lovable/email/suppression'
@@ -2553,6 +2646,22 @@ const FrRouteChildren: FrRouteChildren = {
 
 const FrRouteWithChildren = FrRoute._addFileChildren(FrRouteChildren)
 
+interface NccAiRouteChildren {
+  NccAiContentRoute: typeof NccAiContentRoute
+  NccAiKnowledgeRoute: typeof NccAiKnowledgeRoute
+  NccAiSeoRoute: typeof NccAiSeoRoute
+  NccAiIndexRoute: typeof NccAiIndexRoute
+}
+
+const NccAiRouteChildren: NccAiRouteChildren = {
+  NccAiContentRoute: NccAiContentRoute,
+  NccAiKnowledgeRoute: NccAiKnowledgeRoute,
+  NccAiSeoRoute: NccAiSeoRoute,
+  NccAiIndexRoute: NccAiIndexRoute,
+}
+
+const NccAiRouteWithChildren = NccAiRoute._addFileChildren(NccAiRouteChildren)
+
 interface NccClientsRouteChildren {
   NccClientsIdRoute: typeof NccClientsIdRoute
 }
@@ -2639,6 +2748,7 @@ const NccSettingsRouteWithChildren = NccSettingsRoute._addFileChildren(
 )
 
 interface NccRouteChildren {
+  NccAiRoute: typeof NccAiRouteWithChildren
   NccAnalyticsRoute: typeof NccAnalyticsRoute
   NccAutomationRoute: typeof NccAutomationRoute
   NccBotsRoute: typeof NccBotsRoute
@@ -2668,6 +2778,7 @@ interface NccRouteChildren {
 }
 
 const NccRouteChildren: NccRouteChildren = {
+  NccAiRoute: NccAiRouteWithChildren,
   NccAnalyticsRoute: NccAnalyticsRoute,
   NccAutomationRoute: NccAutomationRoute,
   NccBotsRoute: NccBotsRoute,
