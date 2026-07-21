@@ -112,22 +112,32 @@ export const sendTelegramAuto = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const sb = await adminClient(context.userId);
-    const LOVABLE_API_KEY = process.env.LOVABLE_API_KEY;
-    const TELEGRAM_API_KEY = process.env.TELEGRAM_API_KEY;
-    if (!LOVABLE_API_KEY || !TELEGRAM_API_KEY) {
-      throw new Error("Telegram non configuré (LOVABLE_API_KEY ou TELEGRAM_API_KEY manquant)");
+    if (!process.env.TELEGRAM_BOT_TOKEN) {
+      throw new Error("Telegram non configuré (TELEGRAM_BOT_TOKEN manquant)");
     }
-    const res = await fetch("https://connector-gateway.lovable.dev/telegram/sendMessage", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "X-Connection-Api-Key": TELEGRAM_API_KEY,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ chat_id: data.chat_id, text: data.text, disable_web_page_preview: true }),
-    });
-    const body = await res.json().catch(() => ({}));
-    const ok = res.ok && body?.ok !== false;
+    let ok = false;
+    let errMsg: string | null = null;
+    let messageId: number | undefined;
+    try {
+      const { tgSendMessage } = await import("@/lib/telegram.server");
+      // tgSendMessage throws on error and doesn't return message_id; call directly for id
+      const res = await fetch(
+        `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ chat_id: data.chat_id, text: data.text, disable_web_page_preview: true }),
+        },
+      );
+      const body = await res.json().catch(() => ({}));
+      ok = res.ok && body?.ok !== false;
+      errMsg = ok ? null : (body?.description ?? `HTTP ${res.status}`);
+      messageId = body?.result?.message_id;
+      void tgSendMessage;
+    } catch (e: any) {
+      ok = false;
+      errMsg = e?.message ?? "telegram_error";
+    }
     const { data: order } = await sb.from("orders").select("customer_id").eq("id", data.order_id).maybeSingle();
     await sb.from("delivery_logs").insert({
       order_id: data.order_id,
@@ -138,10 +148,10 @@ export const sendTelegramAuto = createServerFn({ method: "POST" })
       content: data.text,
       recipient: String(data.chat_id),
       admin_id: context.userId,
-      error: ok ? null : (body?.description ?? `HTTP ${res.status}`),
+      error: errMsg,
     });
-    if (!ok) throw new Error(body?.description ?? `Telegram error ${res.status}`);
-    return { ok: true, message_id: body?.result?.message_id };
+    if (!ok) throw new Error(errMsg ?? "Telegram error");
+    return { ok: true, message_id: messageId };
   });
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -239,6 +249,20 @@ export const sendEmailAuto = createServerFn({ method: "POST" })
       recipient_email: data.recipient, status: "pending",
     });
 
+    const { getOrCreateUnsubscribeToken } = await import("@/lib/email-unsubscribe.server");
+    let unsubscribeToken: string;
+    try {
+      unsubscribeToken = await getOrCreateUnsubscribeToken(data.recipient);
+    } catch (e: any) {
+      await sb.from("delivery_logs").insert({
+        order_id: data.order_id, channel: "email", status: "failed",
+        template_id: data.template_id ?? "iptv-delivery", content: data.message_override ?? subject,
+        recipient: data.recipient, admin_id: context.userId,
+        error: `unsubscribe_token: ${e?.message ?? e}`,
+      });
+      throw new Error(`Token désabonnement échoué: ${e?.message ?? e}`);
+    }
+
     const { error: enqueueErr } = await sb.rpc("enqueue_email", {
       queue_name: "transactional_emails",
       payload: {
@@ -255,6 +279,7 @@ export const sendEmailAuto = createServerFn({ method: "POST" })
         // garde la même clé tant que la commande n'a pas changé d'identifiant
         // d'abonnement — c'est ce qu'on veut pour l'anti-duplication.
         idempotency_key: `iptv-delivery-${data.order_id}`,
+        unsubscribe_token: unsubscribeToken,
         queued_at: new Date().toISOString(),
       },
     });
