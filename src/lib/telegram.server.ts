@@ -35,6 +35,12 @@ export async function notifyAdminTelegram(text: string): Promise<{ sent: boolean
   try {
     const chatId = process.env.TELEGRAM_ADMIN_CHAT_ID;
     if (!chatId) return { sent: false, reason: "TELEGRAM_ADMIN_CHAT_ID non défini" };
+    if (!/^-?\d+$/.test(chatId.trim())) {
+      return {
+        sent: false,
+        reason: `TELEGRAM_ADMIN_CHAT_ID doit être un chat_id numérique (reçu: « ${chatId} »). Écris /start à ton bot pour l'obtenir.`,
+      };
+    }
     await tgSendMessage(chatId, text);
     return { sent: true };
   } catch (e: any) {
