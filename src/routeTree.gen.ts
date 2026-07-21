@@ -34,6 +34,7 @@ import { Route as FrIndexRouteImport } from './routes/fr.index'
 import { Route as EspaceClientIndexRouteImport } from './routes/espace-client.index'
 import { Route as EnIndexRouteImport } from './routes/en.index'
 import { Route as BlogIndexRouteImport } from './routes/blog.index'
+import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as ProduitsSlugRouteImport } from './routes/produits.$slug'
 import { Route as PaymentSuccessRouteImport } from './routes/payment.success'
@@ -260,6 +261,11 @@ const BlogIndexRoute = BlogIndexRouteImport.update({
   id: '/blog/',
   path: '/blog/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AppIndexRoute = AppIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppRoute,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
@@ -790,7 +796,7 @@ const ApiPublicAutomationEmitTestRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
-  '/app': typeof AppRoute
+  '/app': typeof AppRouteWithChildren
   '/catalog': typeof CatalogRoute
   '/checkout': typeof CheckoutRoute
   '/dashboard': typeof DashboardRoute
@@ -858,6 +864,7 @@ export interface FileRoutesByFullPath {
   '/payment/success': typeof PaymentSuccessRoute
   '/produits/$slug': typeof ProduitsSlugRoute
   '/admin/': typeof AdminIndexRoute
+  '/app/': typeof AppIndexRoute
   '/blog/': typeof BlogIndexRoute
   '/en/': typeof EnIndexRoute
   '/espace-client/': typeof EspaceClientIndexRoute
@@ -917,7 +924,6 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/app': typeof AppRoute
   '/catalog': typeof CatalogRoute
   '/checkout': typeof CheckoutRoute
   '/dashboard': typeof DashboardRoute
@@ -979,6 +985,7 @@ export interface FileRoutesByTo {
   '/payment/success': typeof PaymentSuccessRoute
   '/produits/$slug': typeof ProduitsSlugRoute
   '/admin': typeof AdminIndexRoute
+  '/app': typeof AppIndexRoute
   '/blog': typeof BlogIndexRoute
   '/en': typeof EnIndexRoute
   '/espace-client': typeof EspaceClientIndexRoute
@@ -1040,7 +1047,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
-  '/app': typeof AppRoute
+  '/app': typeof AppRouteWithChildren
   '/catalog': typeof CatalogRoute
   '/checkout': typeof CheckoutRoute
   '/dashboard': typeof DashboardRoute
@@ -1108,6 +1115,7 @@ export interface FileRoutesById {
   '/payment/success': typeof PaymentSuccessRoute
   '/produits/$slug': typeof ProduitsSlugRoute
   '/admin/': typeof AdminIndexRoute
+  '/app/': typeof AppIndexRoute
   '/blog/': typeof BlogIndexRoute
   '/en/': typeof EnIndexRoute
   '/espace-client/': typeof EspaceClientIndexRoute
@@ -1238,6 +1246,7 @@ export interface FileRouteTypes {
     | '/payment/success'
     | '/produits/$slug'
     | '/admin/'
+    | '/app/'
     | '/blog/'
     | '/en/'
     | '/espace-client/'
@@ -1297,7 +1306,6 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/app'
     | '/catalog'
     | '/checkout'
     | '/dashboard'
@@ -1359,6 +1367,7 @@ export interface FileRouteTypes {
     | '/payment/success'
     | '/produits/$slug'
     | '/admin'
+    | '/app'
     | '/blog'
     | '/en'
     | '/espace-client'
@@ -1487,6 +1496,7 @@ export interface FileRouteTypes {
     | '/payment/success'
     | '/produits/$slug'
     | '/admin/'
+    | '/app/'
     | '/blog/'
     | '/en/'
     | '/espace-client/'
@@ -1548,7 +1558,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
-  AppRoute: typeof AppRoute
+  AppRoute: typeof AppRouteWithChildren
   CatalogRoute: typeof CatalogRoute
   CheckoutRoute: typeof CheckoutRoute
   DashboardRoute: typeof DashboardRoute
@@ -1784,6 +1794,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/blog/'
       preLoaderRoute: typeof BlogIndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/app/': {
+      id: '/app/'
+      path: '/'
+      fullPath: '/app/'
+      preLoaderRoute: typeof AppIndexRouteImport
+      parentRoute: typeof AppRoute
     }
     '/admin/': {
       id: '/admin/'
@@ -2517,6 +2534,16 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
+interface AppRouteChildren {
+  AppIndexRoute: typeof AppIndexRoute
+}
+
+const AppRouteChildren: AppRouteChildren = {
+  AppIndexRoute: AppIndexRoute,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+
 interface EnRouteChildren {
   EnGuideIptvRoute: typeof EnGuideIptvRoute
   EnIndexRoute: typeof EnIndexRoute
@@ -2721,7 +2748,7 @@ const NccRouteWithChildren = NccRoute._addFileChildren(NccRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
-  AppRoute: AppRoute,
+  AppRoute: AppRouteWithChildren,
   CatalogRoute: CatalogRoute,
   CheckoutRoute: CheckoutRoute,
   DashboardRoute: DashboardRoute,
