@@ -62,7 +62,7 @@ export const runSeoAudit = createServerFn({ method: "POST" })
         action: `Optimiser ${data.url} pour "${kw}"`,
         score: parsed.score,
         created_by: context.userId,
-        meta: { source: "seo_audit" } as unknown as Record<string, unknown>,
+        meta: { source: "seo_audit" } as never,
       }));
       if (rows.length) await supabaseAdmin.from("ai_seo_suggestions").insert(rows);
     } catch (e) {
@@ -105,7 +105,7 @@ export const researchKeyword = createServerFn({ method: "POST" })
         action: parsed.action,
         score: parsed.difficulty === "low" ? 80 : parsed.difficulty === "medium" ? 55 : 35,
         created_by: context.userId,
-        meta: { cluster: parsed.cluster, contentAngle: parsed.contentAngle } as unknown as Record<string, unknown>,
+        meta: { cluster: parsed.cluster, contentAngle: parsed.contentAngle } as never,
       });
     } catch (e) {
       console.warn("persist keyword suggestion failed", e);
