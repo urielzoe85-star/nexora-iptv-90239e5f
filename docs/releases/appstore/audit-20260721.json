@@ -1,0 +1,1210 @@
+{
+  "distDir": "dist/client",
+  "scannedFiles": 282,
+  "scannedBytes": 4328132,
+  "imageFiles": 24,
+  "imageNameLeaks": [],
+  "findings": [
+    {
+      "file": "assets/AccountsView-BoBkGtUL.js",
+      "line": 1,
+      "term": "iptv",
+      "snippet": "import{r as e}from\"./chunk-QTnfLwEv.js\";import{t}from\"./react-xd4aoMiW.js\";import{t as n}from\"./jsx-runtime-DsKLSDJq.js\";import{n as r}from\"./QueryClientProvider-BRvpvfvQ.js\";import{t as i}from\"./useM"
+    },
+    {
+      "file": "assets/AccountsView-BoBkGtUL.js",
+      "line": 1,
+      "term": "bouquet",
+      "snippet": "import{r as e}from\"./chunk-QTnfLwEv.js\";import{t}from\"./react-xd4aoMiW.js\";import{t as n}from\"./jsx-runtime-DsKLSDJq.js\";import{n as r}from\"./QueryClientProvider-BRvpvfvQ.js\";import{t as i}from\"./useM"
+    },
+    {
+      "file": "assets/AutomationPage-DaMqpS8L.js",
+      "line": 1,
+      "term": "iptv",
+      "snippet": "import{r as e}from\"./chunk-QTnfLwEv.js\";import{t}from\"./react-xd4aoMiW.js\";import{t as n}from\"./jsx-runtime-DsKLSDJq.js\";import{n as r}from\"./QueryClientProvider-BRvpvfvQ.js\";import{t as i}from\"./useM"
+    },
+    {
+      "file": "assets/AutomationPage-DaMqpS8L.js",
+      "line": 1,
+      "term": "replay",
+      "snippet": "import{r as e}from\"./chunk-QTnfLwEv.js\";import{t}from\"./react-xd4aoMiW.js\";import{t as n}from\"./jsx-runtime-DsKLSDJq.js\";import{n as r}from\"./QueryClientProvider-BRvpvfvQ.js\";import{t as i}from\"./useM"
+    },
+    {
+      "file": "assets/BlogEditor-DZmSNZYJ.js",
+      "line": 144,
+      "term": "iptv",
+      "snippet": "`):``,markdownTokenizer:{name:`taskList`,level:`block`,start(e){let t=e.match(/^\\s*[-+*]\\s+\\[([ xX])\\]\\s+/)?.index;return t===void 0?-1:t},tokenize(e,t,n){let r=e=>{let t=of(e,{itemPattern:/^(\\s*)([-+"
+    },
+    {
+      "file": "assets/DeliveryPreview-CU4P4aKV.js",
+      "line": 1,
+      "term": "iptv",
+      "snippet": "import{r as e}from\"./chunk-QTnfLwEv.js\";import{t}from\"./react-xd4aoMiW.js\";import{t as n}from\"./jsx-runtime-DsKLSDJq.js\";import{t as r}from\"./copy-BoTGFN2x.js\";import{t as i}from\"./tv-D49A2BQx.js\";imp"
+    },
+    {
+      "file": "assets/DeliveryPreview-CU4P4aKV.js",
+      "line": 1,
+      "term": "m3u/m3u8",
+      "snippet": "import{r as e}from\"./chunk-QTnfLwEv.js\";import{t}from\"./react-xd4aoMiW.js\";import{t as n}from\"./jsx-runtime-DsKLSDJq.js\";import{t as r}from\"./copy-BoTGFN2x.js\";import{t as i}from\"./tv-D49A2BQx.js\";imp"
+    },
+    {
+      "file": "assets/DeliveryPreview-CU4P4aKV.js",
+      "line": 1,
+      "term": "smart iptv",
+      "snippet": "import{r as e}from\"./chunk-QTnfLwEv.js\";import{t}from\"./react-xd4aoMiW.js\";import{t as n}from\"./jsx-runtime-DsKLSDJq.js\";import{t as r}from\"./copy-BoTGFN2x.js\";import{t as i}from\"./tv-D49A2BQx.js\";imp"
+    },
+    {
+      "file": "assets/DeliveryPreview-CU4P4aKV.js",
+      "line": 1,
+      "term": "smarters",
+      "snippet": "import{r as e}from\"./chunk-QTnfLwEv.js\";import{t}from\"./react-xd4aoMiW.js\";import{t as n}from\"./jsx-runtime-DsKLSDJq.js\";import{t as r}from\"./copy-BoTGFN2x.js\";import{t as i}from\"./tv-D49A2BQx.js\";imp"
+    },
+    {
+      "file": "assets/DeliveryPreview-CU4P4aKV.js",
+      "line": 1,
+      "term": "tivimate",
+      "snippet": "import{r as e}from\"./chunk-QTnfLwEv.js\";import{t}from\"./react-xd4aoMiW.js\";import{t as n}from\"./jsx-runtime-DsKLSDJq.js\";import{t as r}from\"./copy-BoTGFN2x.js\";import{t as i}from\"./tv-D49A2BQx.js\";imp"
+    },
+    {
+      "file": "assets/DeliveryPreview-CU4P4aKV.js",
+      "line": 1,
+      "term": "gse smart",
+      "snippet": "import{r as e}from\"./chunk-QTnfLwEv.js\";import{t}from\"./react-xd4aoMiW.js\";import{t as n}from\"./jsx-runtime-DsKLSDJq.js\";import{t as r}from\"./copy-BoTGFN2x.js\";import{t as i}from\"./tv-D49A2BQx.js\";imp"
+    },
+    {
+      "file": "assets/LegalLayout-DlPtgzQ5.js",
+      "line": 1,
+      "term": "iptv",
+      "snippet": "import{t as e}from\"./link-lPJT9w3U.js\";import{t}from\"./jsx-runtime-DsKLSDJq.js\";import{t as n}from\"./legal-version-BqBIxfHP.js\";var r=t();function i({title:t,intro:i,children:o}){return(0,r.jsxs)(`div"
+    },
+    {
+      "file": "assets/_._lovable.oauth.consent-RV9d2cMQ.js",
+      "line": 1,
+      "term": "iptv",
+      "snippet": "import{r as e}from\"./chunk-QTnfLwEv.js\";import{t}from\"./react-xd4aoMiW.js\";import{t as n}from\"./jsx-runtime-DsKLSDJq.js\";import{c as r,s as i}from\"./index-APi0Sp2-.js\";var a=e(t()),o=n();function s(){"
+    },
+    {
+      "file": "assets/admin-Du272iov.js",
+      "line": 1,
+      "term": "iptv",
+      "snippet": "import{r as e}from\"./chunk-QTnfLwEv.js\";import{t}from\"./react-xd4aoMiW.js\";import{t as n}from\"./link-lPJT9w3U.js\";import{t as r}from\"./jsx-runtime-DsKLSDJq.js\";import{t as i}from\"./layout-dashboard-Cu"
+    },
+    {
+      "file": "assets/admin.orders-DODPL1mb.js",
+      "line": 1,
+      "term": "iptv",
+      "snippet": "import{r as e}from\"./chunk-QTnfLwEv.js\";import{t}from\"./react-xd4aoMiW.js\";import{t as n}from\"./link-lPJT9w3U.js\";import{t as r}from\"./jsx-runtime-DsKLSDJq.js\";import{n as i}from\"./QueryClientProvider"
+    },
+    {
+      "file": "assets/admin.orders-DODPL1mb.js",
+      "line": 1,
+      "term": "m3u/m3u8",
+      "snippet": "import{r as e}from\"./chunk-QTnfLwEv.js\";import{t}from\"./react-xd4aoMiW.js\";import{t as n}from\"./link-lPJT9w3U.js\";import{t as r}from\"./jsx-runtime-DsKLSDJq.js\";import{n as i}from\"./QueryClientProvider"
+    },
+    {
+      "file": "assets/admin.orders-DODPL1mb.js",
+      "line": 1,
+      "term": "xtream",
+      "snippet": "import{r as e}from\"./chunk-QTnfLwEv.js\";import{t}from\"./react-xd4aoMiW.js\";import{t as n}from\"./link-lPJT9w3U.js\";import{t as r}from\"./jsx-runtime-DsKLSDJq.js\";import{n as i}from\"./QueryClientProvider"
+    },
+    {
+      "file": "assets/automation-CNjwwtak.js",
+      "line": 1,
+      "term": "iptv",
+      "snippet": "const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=[\"assets/supabase-admin.server-BAU0OurH.js\",\"assets/dist-BxPbE1Sw.js\",\"assets/preload-helper-zJ_50EbN.js\",\"assets/tslib.es6-Tae09705.js\",\"assets"
+    },
+    {
+      "file": "assets/automation-CNjwwtak.js",
+      "line": 2,
+      "term": "iptv",
+      "snippet": "import{t as e}from\"./preload-helper-zJ_50EbN.js\";var t=new class{byKey=new Map;register(e){if(this.byKey.has(e.key))throw Error(`Workflow \"${e.key}\" est déjà enregistré.`);this.byKey.set(e.key,e)}get("
+    },
+    {
+      "file": "assets/automation-CNjwwtak.js",
+      "line": 2,
+      "term": "replay",
+      "snippet": "import{t as e}from\"./preload-helper-zJ_50EbN.js\";var t=new class{byKey=new Map;register(e){if(this.byKey.has(e.key))throw Error(`Workflow \"${e.key}\" est déjà enregistré.`);this.byKey.set(e.key,e)}get("
+    },
+    {
+      "file": "assets/blog._slug-DvxXJNNk.js",
+      "line": 1,
+      "term": "iptv",
+      "snippet": "import{r as e}from\"./chunk-QTnfLwEv.js\";import{t}from\"./react-xd4aoMiW.js\";import{t as n}from\"./link-lPJT9w3U.js\";import{t as r}from\"./jsx-runtime-DsKLSDJq.js\";import{Ct as i,Dt as a,Gt as o,I as s,Ot"
+    },
+    {
+      "file": "assets/blog._slug-DvxXJNNk.js",
+      "line": 1,
+      "term": "vod",
+      "snippet": "import{r as e}from\"./chunk-QTnfLwEv.js\";import{t}from\"./react-xd4aoMiW.js\";import{t as n}from\"./link-lPJT9w3U.js\";import{t as r}from\"./jsx-runtime-DsKLSDJq.js\";import{Ct as i,Dt as a,Gt as o,I as s,Ot"
+    },
+    {
+      "file": "assets/blog.best-iptv-2026-BDH874SA.js",
+      "line": 1,
+      "term": "iptv",
+      "snippet": "import{t as e}from\"./link-lPJT9w3U.js\";import{t}from\"./jsx-runtime-DsKLSDJq.js\";import{t as n}from\"./circle-check-Cem72Km7.js\";import{t as r}from\"./headphones-C7hC5YJX.js\";import{t as i}from\"./shield-"
+    },
+    {
+      "file": "assets/blog.best-iptv-2026-BDH874SA.js",
+      "line": 1,
+      "term": "m3u/m3u8",
+      "snippet": "import{t as e}from\"./link-lPJT9w3U.js\";import{t}from\"./jsx-runtime-DsKLSDJq.js\";import{t as n}from\"./circle-check-Cem72Km7.js\";import{t as r}from\"./headphones-C7hC5YJX.js\";import{t as i}from\"./shield-"
+    },
+    {
+      "file": "assets/blog.best-iptv-2026-BDH874SA.js",
+      "line": 1,
+      "term": "xtream",
+      "snippet": "import{t as e}from\"./link-lPJT9w3U.js\";import{t}from\"./jsx-runtime-DsKLSDJq.js\";import{t as n}from\"./circle-check-Cem72Km7.js\";import{t as r}from\"./headphones-C7hC5YJX.js\";import{t as i}from\"./shield-"
+    },
+    {
+      "file": "assets/blog.best-iptv-2026-BDH874SA.js",
+      "line": 1,
+      "term": "epg",
+      "snippet": "import{t as e}from\"./link-lPJT9w3U.js\";import{t}from\"./jsx-runtime-DsKLSDJq.js\";import{t as n}from\"./circle-check-Cem72Km7.js\";import{t as r}from\"./headphones-C7hC5YJX.js\";import{t as i}from\"./shield-"
+    },
+    {
+      "file": "assets/blog.best-iptv-2026-BDH874SA.js",
+      "line": 1,
+      "term": "vod",
+      "snippet": "import{t as e}from\"./link-lPJT9w3U.js\";import{t}from\"./jsx-runtime-DsKLSDJq.js\";import{t as n}from\"./circle-check-Cem72Km7.js\";import{t as r}from\"./headphones-C7hC5YJX.js\";import{t as i}from\"./shield-"
+    },
+    {
+      "file": "assets/blog.best-iptv-2026-BDH874SA.js",
+      "line": 1,
+      "term": "bouquet",
+      "snippet": "import{t as e}from\"./link-lPJT9w3U.js\";import{t}from\"./jsx-runtime-DsKLSDJq.js\";import{t as n}from\"./circle-check-Cem72Km7.js\";import{t as r}from\"./headphones-C7hC5YJX.js\";import{t as i}from\"./shield-"
+    },
+    {
+      "file": "assets/blog.best-iptv-2026-BDH874SA.js",
+      "line": 1,
+      "term": "smart iptv",
+      "snippet": "import{t as e}from\"./link-lPJT9w3U.js\";import{t}from\"./jsx-runtime-DsKLSDJq.js\";import{t as n}from\"./circle-check-Cem72Km7.js\";import{t as r}from\"./headphones-C7hC5YJX.js\";import{t as i}from\"./shield-"
+    },
+    {
+      "file": "assets/blog.best-iptv-2026-BDH874SA.js",
+      "line": 1,
+      "term": "smarters",
+      "snippet": "import{t as e}from\"./link-lPJT9w3U.js\";import{t}from\"./jsx-runtime-DsKLSDJq.js\";import{t as n}from\"./circle-check-Cem72Km7.js\";import{t as r}from\"./headphones-C7hC5YJX.js\";import{t as i}from\"./shield-"
+    },
+    {
+      "file": "assets/blog.best-iptv-2026-BDH874SA.js",
+      "line": 1,
+      "term": "tivimate",
+      "snippet": "import{t as e}from\"./link-lPJT9w3U.js\";import{t}from\"./jsx-runtime-DsKLSDJq.js\";import{t as n}from\"./circle-check-Cem72Km7.js\";import{t as r}from\"./headphones-C7hC5YJX.js\";import{t as i}from\"./shield-"
+    },
+    {
+      "file": "assets/blog.index-DWhQs--d.js",
+      "line": 1,
+      "term": "iptv",
+      "snippet": "import{r as e}from\"./chunk-QTnfLwEv.js\";import{t}from\"./react-xd4aoMiW.js\";import{t as n}from\"./link-lPJT9w3U.js\";import{t as r}from\"./jsx-runtime-DsKLSDJq.js\";import{t as i}from\"./useSuspenseQuery-BT"
+    },
+    {
+      "file": "assets/catalog-RJKWoLjX.js",
+      "line": 1,
+      "term": "iptv",
+      "snippet": "import{r as e}from\"./chunk-QTnfLwEv.js\";import{t}from\"./react-xd4aoMiW.js\";import{t as n}from\"./link-lPJT9w3U.js\";import{t as r}from\"./jsx-runtime-DsKLSDJq.js\";import{t as i}from\"./createLucideIcon-CJ"
+    },
+    {
+      "file": "assets/catalog-RJKWoLjX.js",
+      "line": 1,
+      "term": "vod",
+      "snippet": "import{r as e}from\"./chunk-QTnfLwEv.js\";import{t}from\"./react-xd4aoMiW.js\";import{t as n}from\"./link-lPJT9w3U.js\";import{t as r}from\"./jsx-runtime-DsKLSDJq.js\";import{t as i}from\"./createLucideIcon-CJ"
+    },
+    {
+      "file": "assets/catalog-RJKWoLjX.js",
+      "line": 1,
+      "term": "replay",
+      "snippet": "import{r as e}from\"./chunk-QTnfLwEv.js\";import{t}from\"./react-xd4aoMiW.js\";import{t as n}from\"./link-lPJT9w3U.js\";import{t as r}from\"./jsx-runtime-DsKLSDJq.js\";import{t as i}from\"./createLucideIcon-CJ"
+    },
+    {
+      "file": "assets/catalog-RJKWoLjX.js",
+      "line": 1,
+      "term": "bouquet",
+      "snippet": "import{r as e}from\"./chunk-QTnfLwEv.js\";import{t}from\"./react-xd4aoMiW.js\";import{t as n}from\"./link-lPJT9w3U.js\";import{t as r}from\"./jsx-runtime-DsKLSDJq.js\";import{t as i}from\"./createLucideIcon-CJ"
+    },
+    {
+      "file": "assets/catalog-RJKWoLjX.js",
+      "line": 1,
+      "term": "canal+",
+      "snippet": "import{r as e}from\"./chunk-QTnfLwEv.js\";import{t}from\"./react-xd4aoMiW.js\";import{t as n}from\"./link-lPJT9w3U.js\";import{t as r}from\"./jsx-runtime-DsKLSDJq.js\";import{t as i}from\"./createLucideIcon-CJ"
+    },
+    {
+      "file": "assets/catalog-RJKWoLjX.js",
+      "line": 1,
+      "term": "bein sports",
+      "snippet": "import{r as e}from\"./chunk-QTnfLwEv.js\";import{t}from\"./react-xd4aoMiW.js\";import{t as n}from\"./link-lPJT9w3U.js\";import{t as r}from\"./jsx-runtime-DsKLSDJq.js\";import{t as i}from\"./createLucideIcon-CJ"
+    },
+    {
+      "file": "assets/catalog-RJKWoLjX.js",
+      "line": 1,
+      "term": "sky sports",
+      "snippet": "import{r as e}from\"./chunk-QTnfLwEv.js\";import{t}from\"./react-xd4aoMiW.js\";import{t as n}from\"./link-lPJT9w3U.js\";import{t as r}from\"./jsx-runtime-DsKLSDJq.js\";import{t as i}from\"./createLucideIcon-CJ"
+    },
+    {
+      "file": "assets/catalog-RJKWoLjX.js",
+      "line": 1,
+      "term": "dazn",
+      "snippet": "import{r as e}from\"./chunk-QTnfLwEv.js\";import{t}from\"./react-xd4aoMiW.js\";import{t as n}from\"./link-lPJT9w3U.js\";import{t as r}from\"./jsx-runtime-DsKLSDJq.js\";import{t as i}from\"./createLucideIcon-CJ"
+    },
+    {
+      "file": "assets/catalog-RJKWoLjX.js",
+      "line": 1,
+      "term": "hbo",
+      "snippet": "import{r as e}from\"./chunk-QTnfLwEv.js\";import{t}from\"./react-xd4aoMiW.js\";import{t as n}from\"./link-lPJT9w3U.js\";import{t as r}from\"./jsx-runtime-DsKLSDJq.js\";import{t as i}from\"./createLucideIcon-CJ"
+    },
+    {
+      "file": "assets/checkout-viNnUYgH.js",
+      "line": 1,
+      "term": "iptv",
+      "snippet": "import{r as e}from\"./chunk-QTnfLwEv.js\";import{t}from\"./react-xd4aoMiW.js\";import{t as n}from\"./link-lPJT9w3U.js\";import{t as r}from\"./jsx-runtime-DsKLSDJq.js\";import{t as i}from\"./createLucideIcon-CJ"
+    },
+    {
+      "file": "assets/checkout-viNnUYgH.js",
+      "line": 2,
+      "term": "iptv",
+      "snippet": "${o?`bg-[image:var(--gradient-gold)] text-black`:a?`border border-[color:var(--gold)] text-[color:var(--gold)]`:`border border-white/10 text-muted-foreground`}`,children:o?(0,L.jsx)(g,{className:`h-4 "
+    },
+    {
+      "file": "assets/dashboard-DTsCblkG.js",
+      "line": 1,
+      "term": "iptv",
+      "snippet": "import{r as e}from\"./chunk-QTnfLwEv.js\";import{t}from\"./react-xd4aoMiW.js\";import{t as n}from\"./link-lPJT9w3U.js\";import{t as r}from\"./jsx-runtime-DsKLSDJq.js\";import{t as i}from\"./package-D2A8_ngT.js"
+    },
+    {
+      "file": "assets/dist-BxPbE1Sw.js",
+      "line": 2,
+      "term": "replay",
+      "snippet": "`),()=>this.onerror(`timeout`),e=>{this.awaitingBatchAck=!1,!e||e.status!==200?(this.onerror(e&&e.status),this.closeAndRetry(1011,`internal server error`,!1)):this.batchBuffer.length>0&&(this.batchSen"
+    },
+    {
+      "file": "assets/dist-Xp7o1dRA.js",
+      "line": 131,
+      "term": "replay",
+      "snippet": "]))(?:[^\\\\s\\\\\\\\]|[ \t]+(?:(?![ \t\"])|`+n+`)|\\\\\\\\[\\\\r\\\\n]+(?:[#;].*[\\\\r\\\\n]+)*(?![#;]))*`),lookbehind:!0,greedy:!0,alias:`attr-value`,inside:{comment:t,quoted:{pattern:RegExp(`(^|\\\\s)`+n),lookbehind:!0,g"
+    },
+    {
+      "file": "assets/dist-Xp7o1dRA.js",
+      "line": 206,
+      "term": "replay",
+      "snippet": "}`,interfaces:[`CSSViewTransitionRule`],groups:[`CSS View Transitions`],descriptors:{navigation:{syntax:`auto | none`,media:`all`,initial:`none`,percentages:`no`,computed:`asSpecified`,order:`uniqueOr"
+    },
+    {
+      "file": "assets/en.guide-iptv-DFZKQXVx.js",
+      "line": 1,
+      "term": "iptv",
+      "snippet": "import{t as e}from\"./link-lPJT9w3U.js\";import{t}from\"./jsx-runtime-DsKLSDJq.js\";import{t as n}from\"./circle-check-Cem72Km7.js\";import{t as r}from\"./circle-play-CvjGZnuD.js\";import{t as i}from\"./circle"
+    },
+    {
+      "file": "assets/en.guide-iptv-DFZKQXVx.js",
+      "line": 1,
+      "term": "m3u/m3u8",
+      "snippet": "import{t as e}from\"./link-lPJT9w3U.js\";import{t}from\"./jsx-runtime-DsKLSDJq.js\";import{t as n}from\"./circle-check-Cem72Km7.js\";import{t as r}from\"./circle-play-CvjGZnuD.js\";import{t as i}from\"./circle"
+    },
+    {
+      "file": "assets/en.guide-iptv-DFZKQXVx.js",
+      "line": 1,
+      "term": "xtream",
+      "snippet": "import{t as e}from\"./link-lPJT9w3U.js\";import{t}from\"./jsx-runtime-DsKLSDJq.js\";import{t as n}from\"./circle-check-Cem72Km7.js\";import{t as r}from\"./circle-play-CvjGZnuD.js\";import{t as i}from\"./circle"
+    },
+    {
+      "file": "assets/en.guide-iptv-DFZKQXVx.js",
+      "line": 1,
+      "term": "epg",
+      "snippet": "import{t as e}from\"./link-lPJT9w3U.js\";import{t}from\"./jsx-runtime-DsKLSDJq.js\";import{t as n}from\"./circle-check-Cem72Km7.js\";import{t as r}from\"./circle-play-CvjGZnuD.js\";import{t as i}from\"./circle"
+    },
+    {
+      "file": "assets/en.guide-iptv-DFZKQXVx.js",
+      "line": 1,
+      "term": "vod",
+      "snippet": "import{t as e}from\"./link-lPJT9w3U.js\";import{t}from\"./jsx-runtime-DsKLSDJq.js\";import{t as n}from\"./circle-check-Cem72Km7.js\";import{t as r}from\"./circle-play-CvjGZnuD.js\";import{t as i}from\"./circle"
+    },
+    {
+      "file": "assets/en.guide-iptv-DFZKQXVx.js",
+      "line": 1,
+      "term": "bouquet",
+      "snippet": "import{t as e}from\"./link-lPJT9w3U.js\";import{t}from\"./jsx-runtime-DsKLSDJq.js\";import{t as n}from\"./circle-check-Cem72Km7.js\";import{t as r}from\"./circle-play-CvjGZnuD.js\";import{t as i}from\"./circle"
+    },
+    {
+      "file": "assets/en.guide-iptv-DFZKQXVx.js",
+      "line": 1,
+      "term": "live TV",
+      "snippet": "import{t as e}from\"./link-lPJT9w3U.js\";import{t}from\"./jsx-runtime-DsKLSDJq.js\";import{t as n}from\"./circle-check-Cem72Km7.js\";import{t as r}from\"./circle-play-CvjGZnuD.js\";import{t as i}from\"./circle"
+    },
+    {
+      "file": "assets/en.guide-iptv-DFZKQXVx.js",
+      "line": 1,
+      "term": "smart iptv",
+      "snippet": "import{t as e}from\"./link-lPJT9w3U.js\";import{t}from\"./jsx-runtime-DsKLSDJq.js\";import{t as n}from\"./circle-check-Cem72Km7.js\";import{t as r}from\"./circle-play-CvjGZnuD.js\";import{t as i}from\"./circle"
+    },
+    {
+      "file": "assets/en.guide-iptv-DFZKQXVx.js",
+      "line": 1,
+      "term": "smarters",
+      "snippet": "import{t as e}from\"./link-lPJT9w3U.js\";import{t}from\"./jsx-runtime-DsKLSDJq.js\";import{t as n}from\"./circle-check-Cem72Km7.js\";import{t as r}from\"./circle-play-CvjGZnuD.js\";import{t as i}from\"./circle"
+    },
+    {
+      "file": "assets/en.guide-iptv-DFZKQXVx.js",
+      "line": 1,
+      "term": "tivimate",
+      "snippet": "import{t as e}from\"./link-lPJT9w3U.js\";import{t}from\"./jsx-runtime-DsKLSDJq.js\";import{t as n}from\"./circle-check-Cem72Km7.js\";import{t as r}from\"./circle-play-CvjGZnuD.js\";import{t as i}from\"./circle"
+    },
+    {
+      "file": "assets/en.guide-iptv-DFZKQXVx.js",
+      "line": 1,
+      "term": "gse smart",
+      "snippet": "import{t as e}from\"./link-lPJT9w3U.js\";import{t}from\"./jsx-runtime-DsKLSDJq.js\";import{t as n}from\"./circle-check-Cem72Km7.js\";import{t as r}from\"./circle-play-CvjGZnuD.js\";import{t as i}from\"./circle"
+    },
+    {
+      "file": "assets/espace-client-BWPeFoU8.js",
+      "line": 1,
+      "term": "iptv",
+      "snippet": "import{r as e}from\"./chunk-QTnfLwEv.js\";import{t}from\"./react-xd4aoMiW.js\";import{t as n}from\"./link-lPJT9w3U.js\";import{t as r}from\"./jsx-runtime-DsKLSDJq.js\";import{t as i}from\"./useRouter-taNZoCdo."
+    },
+    {
+      "file": "assets/espace-client.dashboard-BqIbJaGU.js",
+      "line": 1,
+      "term": "iptv",
+      "snippet": "import{r as e}from\"./chunk-QTnfLwEv.js\";import{t}from\"./react-xd4aoMiW.js\";import{t as n}from\"./link-lPJT9w3U.js\";import{t as r}from\"./jsx-runtime-DsKLSDJq.js\";import{t as i}from\"./useRouter-taNZoCdo."
+    },
+    {
+      "file": "assets/espace-client.downloads-CYgZiGcA.js",
+      "line": 1,
+      "term": "iptv",
+      "snippet": "import{t as e}from\"./link-lPJT9w3U.js\";import{t}from\"./jsx-runtime-DsKLSDJq.js\";import{t as n}from\"./monitor-CMkipW6V.js\";import{t as r}from\"./smartphone-CL3ZcWB5.js\";import{t as i}from\"./tv-minimal-B"
+    },
+    {
+      "file": "assets/espace-client.downloads-CYgZiGcA.js",
+      "line": 1,
+      "term": "smart iptv",
+      "snippet": "import{t as e}from\"./link-lPJT9w3U.js\";import{t}from\"./jsx-runtime-DsKLSDJq.js\";import{t as n}from\"./monitor-CMkipW6V.js\";import{t as r}from\"./smartphone-CL3ZcWB5.js\";import{t as i}from\"./tv-minimal-B"
+    },
+    {
+      "file": "assets/espace-client.downloads-CYgZiGcA.js",
+      "line": 1,
+      "term": "smarters",
+      "snippet": "import{t as e}from\"./link-lPJT9w3U.js\";import{t}from\"./jsx-runtime-DsKLSDJq.js\";import{t as n}from\"./monitor-CMkipW6V.js\";import{t as r}from\"./smartphone-CL3ZcWB5.js\";import{t as i}from\"./tv-minimal-B"
+    },
+    {
+      "file": "assets/espace-client.downloads-CYgZiGcA.js",
+      "line": 1,
+      "term": "tivimate",
+      "snippet": "import{t as e}from\"./link-lPJT9w3U.js\";import{t}from\"./jsx-runtime-DsKLSDJq.js\";import{t as n}from\"./monitor-CMkipW6V.js\";import{t as r}from\"./smartphone-CL3ZcWB5.js\";import{t as i}from\"./tv-minimal-B"
+    },
+    {
+      "file": "assets/espace-client.downloads-CYgZiGcA.js",
+      "line": 1,
+      "term": "m-ibo",
+      "snippet": "import{t as e}from\"./link-lPJT9w3U.js\";import{t}from\"./jsx-runtime-DsKLSDJq.js\";import{t as n}from\"./monitor-CMkipW6V.js\";import{t as r}from\"./smartphone-CL3ZcWB5.js\";import{t as i}from\"./tv-minimal-B"
+    },
+    {
+      "file": "assets/espace-client.downloads-CYgZiGcA.js",
+      "line": 1,
+      "term": "gse smart",
+      "snippet": "import{t as e}from\"./link-lPJT9w3U.js\";import{t}from\"./jsx-runtime-DsKLSDJq.js\";import{t as n}from\"./monitor-CMkipW6V.js\";import{t as r}from\"./smartphone-CL3ZcWB5.js\";import{t as i}from\"./tv-minimal-B"
+    },
+    {
+      "file": "assets/espace-client.index-ByeeIxUu.js",
+      "line": 1,
+      "term": "iptv",
+      "snippet": "import{r as e}from\"./chunk-QTnfLwEv.js\";import{t}from\"./react-xd4aoMiW.js\";import{t as n}from\"./jsx-runtime-DsKLSDJq.js\";import{t as r}from\"./useRouter-taNZoCdo.js\";import{t as i}from\"./key-round-DQjV"
+    },
+    {
+      "file": "assets/espace-client.renew-DvhRLHNy.js",
+      "line": 1,
+      "term": "iptv",
+      "snippet": "import{r as e}from\"./chunk-QTnfLwEv.js\";import{t}from\"./react-xd4aoMiW.js\";import{t as n}from\"./jsx-runtime-DsKLSDJq.js\";import{t as r}from\"./useRouter-taNZoCdo.js\";import{t as i}from\"./bitcoin-CtzXGi"
+    },
+    {
+      "file": "assets/espace-client.success._ref-C8G8W8Bs.js",
+      "line": 1,
+      "term": "iptv",
+      "snippet": "import{t as e}from\"./link-lPJT9w3U.js\";import{t}from\"./jsx-runtime-DsKLSDJq.js\";import{t as n}from\"./calendar-JGjh5kck.js\";import{t as r}from\"./circle-check-Cem72Km7.js\";import{t as i}from\"./zap-hbpHT"
+    },
+    {
+      "file": "assets/fr.guide-iptv-ExcfuTvV.js",
+      "line": 1,
+      "term": "iptv",
+      "snippet": "import{t as e}from\"./link-lPJT9w3U.js\";import{t}from\"./jsx-runtime-DsKLSDJq.js\";import{t as n}from\"./circle-check-Cem72Km7.js\";import{t as r}from\"./circle-play-CvjGZnuD.js\";import{t as i}from\"./circle"
+    },
+    {
+      "file": "assets/fr.guide-iptv-ExcfuTvV.js",
+      "line": 1,
+      "term": "m3u/m3u8",
+      "snippet": "import{t as e}from\"./link-lPJT9w3U.js\";import{t}from\"./jsx-runtime-DsKLSDJq.js\";import{t as n}from\"./circle-check-Cem72Km7.js\";import{t as r}from\"./circle-play-CvjGZnuD.js\";import{t as i}from\"./circle"
+    },
+    {
+      "file": "assets/fr.guide-iptv-ExcfuTvV.js",
+      "line": 1,
+      "term": "xtream",
+      "snippet": "import{t as e}from\"./link-lPJT9w3U.js\";import{t}from\"./jsx-runtime-DsKLSDJq.js\";import{t as n}from\"./circle-check-Cem72Km7.js\";import{t as r}from\"./circle-play-CvjGZnuD.js\";import{t as i}from\"./circle"
+    },
+    {
+      "file": "assets/fr.guide-iptv-ExcfuTvV.js",
+      "line": 1,
+      "term": "epg",
+      "snippet": "import{t as e}from\"./link-lPJT9w3U.js\";import{t}from\"./jsx-runtime-DsKLSDJq.js\";import{t as n}from\"./circle-check-Cem72Km7.js\";import{t as r}from\"./circle-play-CvjGZnuD.js\";import{t as i}from\"./circle"
+    },
+    {
+      "file": "assets/fr.guide-iptv-ExcfuTvV.js",
+      "line": 1,
+      "term": "vod",
+      "snippet": "import{t as e}from\"./link-lPJT9w3U.js\";import{t}from\"./jsx-runtime-DsKLSDJq.js\";import{t as n}from\"./circle-check-Cem72Km7.js\";import{t as r}from\"./circle-play-CvjGZnuD.js\";import{t as i}from\"./circle"
+    },
+    {
+      "file": "assets/fr.guide-iptv-ExcfuTvV.js",
+      "line": 1,
+      "term": "bouquet",
+      "snippet": "import{t as e}from\"./link-lPJT9w3U.js\";import{t}from\"./jsx-runtime-DsKLSDJq.js\";import{t as n}from\"./circle-check-Cem72Km7.js\";import{t as r}from\"./circle-play-CvjGZnuD.js\";import{t as i}from\"./circle"
+    },
+    {
+      "file": "assets/fr.guide-iptv-ExcfuTvV.js",
+      "line": 1,
+      "term": "live TV",
+      "snippet": "import{t as e}from\"./link-lPJT9w3U.js\";import{t}from\"./jsx-runtime-DsKLSDJq.js\";import{t as n}from\"./circle-check-Cem72Km7.js\";import{t as r}from\"./circle-play-CvjGZnuD.js\";import{t as i}from\"./circle"
+    },
+    {
+      "file": "assets/fr.guide-iptv-ExcfuTvV.js",
+      "line": 1,
+      "term": "smart iptv",
+      "snippet": "import{t as e}from\"./link-lPJT9w3U.js\";import{t}from\"./jsx-runtime-DsKLSDJq.js\";import{t as n}from\"./circle-check-Cem72Km7.js\";import{t as r}from\"./circle-play-CvjGZnuD.js\";import{t as i}from\"./circle"
+    },
+    {
+      "file": "assets/fr.guide-iptv-ExcfuTvV.js",
+      "line": 1,
+      "term": "smarters",
+      "snippet": "import{t as e}from\"./link-lPJT9w3U.js\";import{t}from\"./jsx-runtime-DsKLSDJq.js\";import{t as n}from\"./circle-check-Cem72Km7.js\";import{t as r}from\"./circle-play-CvjGZnuD.js\";import{t as i}from\"./circle"
+    },
+    {
+      "file": "assets/fr.guide-iptv-ExcfuTvV.js",
+      "line": 1,
+      "term": "tivimate",
+      "snippet": "import{t as e}from\"./link-lPJT9w3U.js\";import{t}from\"./jsx-runtime-DsKLSDJq.js\";import{t as n}from\"./circle-check-Cem72Km7.js\";import{t as r}from\"./circle-play-CvjGZnuD.js\";import{t as i}from\"./circle"
+    },
+    {
+      "file": "assets/fr.guide-iptv-ExcfuTvV.js",
+      "line": 1,
+      "term": "gse smart",
+      "snippet": "import{t as e}from\"./link-lPJT9w3U.js\";import{t}from\"./jsx-runtime-DsKLSDJq.js\";import{t as n}from\"./circle-check-Cem72Km7.js\";import{t as r}from\"./circle-play-CvjGZnuD.js\";import{t as i}from\"./circle"
+    },
+    {
+      "file": "assets/index-APi0Sp2-.js",
+      "line": 1,
+      "term": "iptv",
+      "snippet": "const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=[\"assets/unsubscribe-Dhi60ASn.js\",\"assets/chunk-QTnfLwEv.js\",\"assets/jsx-runtime-DsKLSDJq.js\",\"assets/react-xd4aoMiW.js\",\"assets/track-BfuzMurZ."
+    },
+    {
+      "file": "assets/index-APi0Sp2-.js",
+      "line": 1,
+      "term": "reseller",
+      "snippet": "const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=[\"assets/unsubscribe-Dhi60ASn.js\",\"assets/chunk-QTnfLwEv.js\",\"assets/jsx-runtime-DsKLSDJq.js\",\"assets/react-xd4aoMiW.js\",\"assets/track-BfuzMurZ."
+    },
+    {
+      "file": "assets/index-APi0Sp2-.js",
+      "line": 10,
+      "term": "iptv",
+      "snippet": "`).replace(jd,``)}function Nd(e,t){return t=Md(t),Md(e)===t}function Q(e,t,n,r,i,a){switch(n){case`children`:typeof r==`string`?t===`body`||t===`textarea`&&r===``||$t(e,r):(typeof r==`number`||typeof "
+    },
+    {
+      "file": "assets/index-APi0Sp2-.js",
+      "line": 10,
+      "term": "vod",
+      "snippet": "`).replace(jd,``)}function Nd(e,t){return t=Md(t),Md(e)===t}function Q(e,t,n,r,i,a){switch(n){case`children`:typeof r==`string`?t===`body`||t===`textarea`&&r===``||$t(e,r):(typeof r==`number`||typeof "
+    },
+    {
+      "file": "assets/index-APi0Sp2-.js",
+      "line": 10,
+      "term": "replay",
+      "snippet": "`).replace(jd,``)}function Nd(e,t){return t=Md(t),Md(e)===t}function Q(e,t,n,r,i,a){switch(n){case`children`:typeof r==`string`?t===`body`||t===`textarea`&&r===``||$t(e,r):(typeof r==`number`||typeof "
+    },
+    {
+      "file": "assets/index-APi0Sp2-.js",
+      "line": 10,
+      "term": "bouquet",
+      "snippet": "`).replace(jd,``)}function Nd(e,t){return t=Md(t),Md(e)===t}function Q(e,t,n,r,i,a){switch(n){case`children`:typeof r==`string`?t===`body`||t===`textarea`&&r===``||$t(e,r):(typeof r==`number`||typeof "
+    },
+    {
+      "file": "assets/index-APi0Sp2-.js",
+      "line": 10,
+      "term": "reseller",
+      "snippet": "`).replace(jd,``)}function Nd(e,t){return t=Md(t),Md(e)===t}function Q(e,t,n,r,i,a){switch(n){case`children`:typeof r==`string`?t===`body`||t===`textarea`&&r===``||$t(e,r):(typeof r==`number`||typeof "
+    },
+    {
+      "file": "assets/index-APi0Sp2-.js",
+      "line": 10,
+      "term": "live TV",
+      "snippet": "`).replace(jd,``)}function Nd(e,t){return t=Md(t),Md(e)===t}function Q(e,t,n,r,i,a){switch(n){case`children`:typeof r==`string`?t===`body`||t===`textarea`&&r===``||$t(e,r):(typeof r==`number`||typeof "
+    },
+    {
+      "file": "assets/index-APi0Sp2-.js",
+      "line": 10,
+      "term": "smarters",
+      "snippet": "`).replace(jd,``)}function Nd(e,t){return t=Md(t),Md(e)===t}function Q(e,t,n,r,i,a){switch(n){case`children`:typeof r==`string`?t===`body`||t===`textarea`&&r===``||$t(e,r):(typeof r==`number`||typeof "
+    },
+    {
+      "file": "assets/index-APi0Sp2-.js",
+      "line": 15,
+      "term": "iptv",
+      "snippet": "`}]}),shellComponent:vo,component:yo,notFoundComponent:go,errorComponent:_o});function vo({children:e}){return(0,M.jsxs)(`html`,{lang:`en`,children:[(0,M.jsx)(`head`,{children:(0,M.jsx)(gi,{})}),(0,M."
+    },
+    {
+      "file": "assets/index-APi0Sp2-.js",
+      "line": 15,
+      "term": "m3u/m3u8",
+      "snippet": "`}]}),shellComponent:vo,component:yo,notFoundComponent:go,errorComponent:_o});function vo({children:e}){return(0,M.jsxs)(`html`,{lang:`en`,children:[(0,M.jsx)(`head`,{children:(0,M.jsx)(gi,{})}),(0,M."
+    },
+    {
+      "file": "assets/index-APi0Sp2-.js",
+      "line": 15,
+      "term": "xtream",
+      "snippet": "`}]}),shellComponent:vo,component:yo,notFoundComponent:go,errorComponent:_o});function vo({children:e}){return(0,M.jsxs)(`html`,{lang:`en`,children:[(0,M.jsx)(`head`,{children:(0,M.jsx)(gi,{})}),(0,M."
+    },
+    {
+      "file": "assets/index-APi0Sp2-.js",
+      "line": 15,
+      "term": "vod",
+      "snippet": "`}]}),shellComponent:vo,component:yo,notFoundComponent:go,errorComponent:_o});function vo({children:e}){return(0,M.jsxs)(`html`,{lang:`en`,children:[(0,M.jsx)(`head`,{children:(0,M.jsx)(gi,{})}),(0,M."
+    },
+    {
+      "file": "assets/index-APi0Sp2-.js",
+      "line": 15,
+      "term": "bouquet",
+      "snippet": "`}]}),shellComponent:vo,component:yo,notFoundComponent:go,errorComponent:_o});function vo({children:e}){return(0,M.jsxs)(`html`,{lang:`en`,children:[(0,M.jsx)(`head`,{children:(0,M.jsx)(gi,{})}),(0,M."
+    },
+    {
+      "file": "assets/index-APi0Sp2-.js",
+      "line": 15,
+      "term": "reseller",
+      "snippet": "`}]}),shellComponent:vo,component:yo,notFoundComponent:go,errorComponent:_o});function vo({children:e}){return(0,M.jsxs)(`html`,{lang:`en`,children:[(0,M.jsx)(`head`,{children:(0,M.jsx)(gi,{})}),(0,M."
+    },
+    {
+      "file": "assets/index-APi0Sp2-.js",
+      "line": 15,
+      "term": "canal+",
+      "snippet": "`}]}),shellComponent:vo,component:yo,notFoundComponent:go,errorComponent:_o});function vo({children:e}){return(0,M.jsxs)(`html`,{lang:`en`,children:[(0,M.jsx)(`head`,{children:(0,M.jsx)(gi,{})}),(0,M."
+    },
+    {
+      "file": "assets/index-APi0Sp2-.js",
+      "line": 15,
+      "term": "dazn",
+      "snippet": "`}]}),shellComponent:vo,component:yo,notFoundComponent:go,errorComponent:_o});function vo({children:e}){return(0,M.jsxs)(`html`,{lang:`en`,children:[(0,M.jsx)(`head`,{children:(0,M.jsx)(gi,{})}),(0,M."
+    },
+    {
+      "file": "assets/index-APi0Sp2-.js",
+      "line": 19,
+      "term": "iptv",
+      "snippet": "For more information, see https://radix-ui.com/primitives/docs/components/${t.docsSlug}`;return j.useEffect(()=>{e&&(document.getElementById(e)||console.error(n))},[n,e]),null},al=`DialogDescriptionWa"
+    },
+    {
+      "file": "assets/index-APi0Sp2-.js",
+      "line": 19,
+      "term": "m3u/m3u8",
+      "snippet": "For more information, see https://radix-ui.com/primitives/docs/components/${t.docsSlug}`;return j.useEffect(()=>{e&&(document.getElementById(e)||console.error(n))},[n,e]),null},al=`DialogDescriptionWa"
+    },
+    {
+      "file": "assets/index-APi0Sp2-.js",
+      "line": 19,
+      "term": "xtream",
+      "snippet": "For more information, see https://radix-ui.com/primitives/docs/components/${t.docsSlug}`;return j.useEffect(()=>{e&&(document.getElementById(e)||console.error(n))},[n,e]),null},al=`DialogDescriptionWa"
+    },
+    {
+      "file": "assets/index-APi0Sp2-.js",
+      "line": 19,
+      "term": "epg",
+      "snippet": "For more information, see https://radix-ui.com/primitives/docs/components/${t.docsSlug}`;return j.useEffect(()=>{e&&(document.getElementById(e)||console.error(n))},[n,e]),null},al=`DialogDescriptionWa"
+    },
+    {
+      "file": "assets/index-APi0Sp2-.js",
+      "line": 19,
+      "term": "vod",
+      "snippet": "For more information, see https://radix-ui.com/primitives/docs/components/${t.docsSlug}`;return j.useEffect(()=>{e&&(document.getElementById(e)||console.error(n))},[n,e]),null},al=`DialogDescriptionWa"
+    },
+    {
+      "file": "assets/index-APi0Sp2-.js",
+      "line": 19,
+      "term": "bouquet",
+      "snippet": "For more information, see https://radix-ui.com/primitives/docs/components/${t.docsSlug}`;return j.useEffect(()=>{e&&(document.getElementById(e)||console.error(n))},[n,e]),null},al=`DialogDescriptionWa"
+    },
+    {
+      "file": "assets/index-APi0Sp2-.js",
+      "line": 19,
+      "term": "smart iptv",
+      "snippet": "For more information, see https://radix-ui.com/primitives/docs/components/${t.docsSlug}`;return j.useEffect(()=>{e&&(document.getElementById(e)||console.error(n))},[n,e]),null},al=`DialogDescriptionWa"
+    },
+    {
+      "file": "assets/index-APi0Sp2-.js",
+      "line": 19,
+      "term": "smarters",
+      "snippet": "For more information, see https://radix-ui.com/primitives/docs/components/${t.docsSlug}`;return j.useEffect(()=>{e&&(document.getElementById(e)||console.error(n))},[n,e]),null},al=`DialogDescriptionWa"
+    },
+    {
+      "file": "assets/index-APi0Sp2-.js",
+      "line": 19,
+      "term": "tivimate",
+      "snippet": "For more information, see https://radix-ui.com/primitives/docs/components/${t.docsSlug}`;return j.useEffect(()=>{e&&(document.getElementById(e)||console.error(n))},[n,e]),null},al=`DialogDescriptionWa"
+    },
+    {
+      "file": "assets/index-APi0Sp2-.js",
+      "line": 19,
+      "term": "m-ibo",
+      "snippet": "For more information, see https://radix-ui.com/primitives/docs/components/${t.docsSlug}`;return j.useEffect(()=>{e&&(document.getElementById(e)||console.error(n))},[n,e]),null},al=`DialogDescriptionWa"
+    },
+    {
+      "file": "assets/index-APi0Sp2-.js",
+      "line": 19,
+      "term": "gse smart",
+      "snippet": "For more information, see https://radix-ui.com/primitives/docs/components/${t.docsSlug}`;return j.useEffect(()=>{e&&(document.getElementById(e)||console.error(n))},[n,e]),null},al=`DialogDescriptionWa"
+    },
+    {
+      "file": "assets/index-APi0Sp2-.js",
+      "line": 19,
+      "term": "canal+",
+      "snippet": "For more information, see https://radix-ui.com/primitives/docs/components/${t.docsSlug}`;return j.useEffect(()=>{e&&(document.getElementById(e)||console.error(n))},[n,e]),null},al=`DialogDescriptionWa"
+    },
+    {
+      "file": "assets/index-APi0Sp2-.js",
+      "line": 19,
+      "term": "netflix",
+      "snippet": "For more information, see https://radix-ui.com/primitives/docs/components/${t.docsSlug}`;return j.useEffect(()=>{e&&(document.getElementById(e)||console.error(n))},[n,e]),null},al=`DialogDescriptionWa"
+    },
+    {
+      "file": "assets/index-APi0Sp2-.js",
+      "line": 19,
+      "term": "disney+",
+      "snippet": "For more information, see https://radix-ui.com/primitives/docs/components/${t.docsSlug}`;return j.useEffect(()=>{e&&(document.getElementById(e)||console.error(n))},[n,e]),null},al=`DialogDescriptionWa"
+    },
+    {
+      "file": "assets/index-APi0Sp2-.js",
+      "line": 82,
+      "term": "iptv",
+      "snippet": "Set the \\`cycles\\` parameter to \\`\"ref\"\\` to resolve cyclical schemas with defs.`)}for(let n of e.seen.entries()){let r=n[1];if(t===n[0]){a(n);continue}if(e.external){let r=e.external.registry.get(n[0"
+    },
+    {
+      "file": "assets/index-APi0Sp2-.js",
+      "line": 82,
+      "term": "m3u/m3u8",
+      "snippet": "Set the \\`cycles\\` parameter to \\`\"ref\"\\` to resolve cyclical schemas with defs.`)}for(let n of e.seen.entries()){let r=n[1];if(t===n[0]){a(n);continue}if(e.external){let r=e.external.registry.get(n[0"
+    },
+    {
+      "file": "assets/index-APi0Sp2-.js",
+      "line": 82,
+      "term": "xtream",
+      "snippet": "Set the \\`cycles\\` parameter to \\`\"ref\"\\` to resolve cyclical schemas with defs.`)}for(let n of e.seen.entries()){let r=n[1];if(t===n[0]){a(n);continue}if(e.external){let r=e.external.registry.get(n[0"
+    },
+    {
+      "file": "assets/index-APi0Sp2-.js",
+      "line": 82,
+      "term": "vod",
+      "snippet": "Set the \\`cycles\\` parameter to \\`\"ref\"\\` to resolve cyclical schemas with defs.`)}for(let n of e.seen.entries()){let r=n[1];if(t===n[0]){a(n);continue}if(e.external){let r=e.external.registry.get(n[0"
+    },
+    {
+      "file": "assets/index-APi0Sp2-.js",
+      "line": 82,
+      "term": "bouquet",
+      "snippet": "Set the \\`cycles\\` parameter to \\`\"ref\"\\` to resolve cyclical schemas with defs.`)}for(let n of e.seen.entries()){let r=n[1];if(t===n[0]){a(n);continue}if(e.external){let r=e.external.registry.get(n[0"
+    },
+    {
+      "file": "assets/index-APi0Sp2-.js",
+      "line": 82,
+      "term": "reseller",
+      "snippet": "Set the \\`cycles\\` parameter to \\`\"ref\"\\` to resolve cyclical schemas with defs.`)}for(let n of e.seen.entries()){let r=n[1];if(t===n[0]){a(n);continue}if(e.external){let r=e.external.registry.get(n[0"
+    },
+    {
+      "file": "assets/index-APi0Sp2-.js",
+      "line": 82,
+      "term": "live TV",
+      "snippet": "Set the \\`cycles\\` parameter to \\`\"ref\"\\` to resolve cyclical schemas with defs.`)}for(let n of e.seen.entries()){let r=n[1];if(t===n[0]){a(n);continue}if(e.external){let r=e.external.registry.get(n[0"
+    },
+    {
+      "file": "assets/index-APi0Sp2-.js",
+      "line": 82,
+      "term": "TV channels",
+      "snippet": "Set the \\`cycles\\` parameter to \\`\"ref\"\\` to resolve cyclical schemas with defs.`)}for(let n of e.seen.entries()){let r=n[1];if(t===n[0]){a(n);continue}if(e.external){let r=e.external.registry.get(n[0"
+    },
+    {
+      "file": "assets/index-APi0Sp2-.js",
+      "line": 82,
+      "term": "smart iptv",
+      "snippet": "Set the \\`cycles\\` parameter to \\`\"ref\"\\` to resolve cyclical schemas with defs.`)}for(let n of e.seen.entries()){let r=n[1];if(t===n[0]){a(n);continue}if(e.external){let r=e.external.registry.get(n[0"
+    },
+    {
+      "file": "assets/index-APi0Sp2-.js",
+      "line": 82,
+      "term": "smarters",
+      "snippet": "Set the \\`cycles\\` parameter to \\`\"ref\"\\` to resolve cyclical schemas with defs.`)}for(let n of e.seen.entries()){let r=n[1];if(t===n[0]){a(n);continue}if(e.external){let r=e.external.registry.get(n[0"
+    },
+    {
+      "file": "assets/index-APi0Sp2-.js",
+      "line": 82,
+      "term": "tivimate",
+      "snippet": "Set the \\`cycles\\` parameter to \\`\"ref\"\\` to resolve cyclical schemas with defs.`)}for(let n of e.seen.entries()){let r=n[1];if(t===n[0]){a(n);continue}if(e.external){let r=e.external.registry.get(n[0"
+    },
+    {
+      "file": "assets/index-APi0Sp2-.js",
+      "line": 82,
+      "term": "gse smart",
+      "snippet": "Set the \\`cycles\\` parameter to \\`\"ref\"\\` to resolve cyclical schemas with defs.`)}for(let n of e.seen.entries()){let r=n[1];if(t===n[0]){a(n);continue}if(e.external){let r=e.external.registry.get(n[0"
+    },
+    {
+      "file": "assets/integration-hub-R4W4sryb.js",
+      "line": 2,
+      "term": "iptv",
+      "snippet": "import{n as e}from\"./chunk-QTnfLwEv.js\";import{t}from\"./preload-helper-zJ_50EbN.js\";import{t as n}from\"./registry-CcMeQahh.js\";import{t as r}from\"./__vite-browser-external-DOOah4Mz.js\";function i(e,t,"
+    },
+    {
+      "file": "assets/integration-hub-R4W4sryb.js",
+      "line": 2,
+      "term": "m3u/m3u8",
+      "snippet": "import{n as e}from\"./chunk-QTnfLwEv.js\";import{t}from\"./preload-helper-zJ_50EbN.js\";import{t as n}from\"./registry-CcMeQahh.js\";import{t as r}from\"./__vite-browser-external-DOOah4Mz.js\";function i(e,t,"
+    },
+    {
+      "file": "assets/integration-hub-R4W4sryb.js",
+      "line": 2,
+      "term": "xtream",
+      "snippet": "import{n as e}from\"./chunk-QTnfLwEv.js\";import{t}from\"./preload-helper-zJ_50EbN.js\";import{t as n}from\"./registry-CcMeQahh.js\";import{t as r}from\"./__vite-browser-external-DOOah4Mz.js\";function i(e,t,"
+    },
+    {
+      "file": "assets/iptv-delivery-CUjspXYc.js",
+      "line": 1,
+      "term": "iptv",
+      "snippet": "import{r as e}from\"./chunk-QTnfLwEv.js\";import{t}from\"./react-xd4aoMiW.js\";import{t as n}from\"./jsx-runtime-DsKLSDJq.js\";import{Pt as r}from\"./index-APi0Sp2-.js\";var i=e(t(),1),a=n(),o=[`margin`,`marg"
+    },
+    {
+      "file": "assets/iptv-delivery-CUjspXYc.js",
+      "line": 3,
+      "term": "iptv",
+      "snippet": "${o.dns_link?`🔗 DNS : ${o.dns_link}\\n`:``}${o.dns_link_samsung_lg?`📺 Samsung/LG : ${o.dns_link_samsung_lg}\\n`:``}${o.m3u_url?`📥 M3U : ${o.m3u_url}\\n`:``}${o.enigma_url?`📡 Enigma : ${o.enigma_url}\\"
+    },
+    {
+      "file": "assets/iptv-delivery-CUjspXYc.js",
+      "line": 3,
+      "term": "m3u/m3u8",
+      "snippet": "${o.dns_link?`🔗 DNS : ${o.dns_link}\\n`:``}${o.dns_link_samsung_lg?`📺 Samsung/LG : ${o.dns_link_samsung_lg}\\n`:``}${o.m3u_url?`📥 M3U : ${o.m3u_url}\\n`:``}${o.enigma_url?`📡 Enigma : ${o.enigma_url}\\"
+    },
+    {
+      "file": "assets/iptv-delivery-CUjspXYc.js",
+      "line": 3,
+      "term": "smart iptv",
+      "snippet": "${o.dns_link?`🔗 DNS : ${o.dns_link}\\n`:``}${o.dns_link_samsung_lg?`📺 Samsung/LG : ${o.dns_link_samsung_lg}\\n`:``}${o.m3u_url?`📥 M3U : ${o.m3u_url}\\n`:``}${o.enigma_url?`📡 Enigma : ${o.enigma_url}\\"
+    },
+    {
+      "file": "assets/iptv-delivery-CUjspXYc.js",
+      "line": 3,
+      "term": "smarters",
+      "snippet": "${o.dns_link?`🔗 DNS : ${o.dns_link}\\n`:``}${o.dns_link_samsung_lg?`📺 Samsung/LG : ${o.dns_link_samsung_lg}\\n`:``}${o.m3u_url?`📥 M3U : ${o.m3u_url}\\n`:``}${o.enigma_url?`📡 Enigma : ${o.enigma_url}\\"
+    },
+    {
+      "file": "assets/iptv-delivery-CUjspXYc.js",
+      "line": 3,
+      "term": "tivimate",
+      "snippet": "${o.dns_link?`🔗 DNS : ${o.dns_link}\\n`:``}${o.dns_link_samsung_lg?`📺 Samsung/LG : ${o.dns_link_samsung_lg}\\n`:``}${o.m3u_url?`📥 M3U : ${o.m3u_url}\\n`:``}${o.enigma_url?`📡 Enigma : ${o.enigma_url}\\"
+    },
+    {
+      "file": "assets/iptv-delivery-CUjspXYc.js",
+      "line": 3,
+      "term": "gse smart",
+      "snippet": "${o.dns_link?`🔗 DNS : ${o.dns_link}\\n`:``}${o.dns_link_samsung_lg?`📺 Samsung/LG : ${o.dns_link_samsung_lg}\\n`:``}${o.m3u_url?`📥 M3U : ${o.m3u_url}\\n`:``}${o.enigma_url?`📡 Enigma : ${o.enigma_url}\\"
+    },
+    {
+      "file": "assets/iptv-delivery.builder-Bieqph45.js",
+      "line": 1,
+      "term": "iptv",
+      "snippet": "import{Pt as e}from\"./index-APi0Sp2-.js\";import{t}from\"./__vite-browser-external-DOOah4Mz.js\";var n=t();function r(){return({}.PUBLIC_SITE_URL||`https://nexora-iptv.com`).replace(/\\/+$/,``)}function i"
+    },
+    {
+      "file": "assets/iptv-delivery.builder-Bieqph45.js",
+      "line": 1,
+      "term": "m3u/m3u8",
+      "snippet": "import{Pt as e}from\"./index-APi0Sp2-.js\";import{t}from\"./__vite-browser-external-DOOah4Mz.js\";var n=t();function r(){return({}.PUBLIC_SITE_URL||`https://nexora-iptv.com`).replace(/\\/+$/,``)}function i"
+    },
+    {
+      "file": "assets/iptv-delivery.builder-Bieqph45.js",
+      "line": 1,
+      "term": "bouquet",
+      "snippet": "import{Pt as e}from\"./index-APi0Sp2-.js\";import{t}from\"./__vite-browser-external-DOOah4Mz.js\";var n=t();function r(){return({}.PUBLIC_SITE_URL||`https://nexora-iptv.com`).replace(/\\/+$/,``)}function i"
+    },
+    {
+      "file": "assets/iptv-dispatch.server-BV8Jcd3k.js",
+      "line": 1,
+      "term": "iptv",
+      "snippet": "const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=[\"assets/client.server-UzcuLwXh.js\",\"assets/dist-BxPbE1Sw.js\",\"assets/preload-helper-zJ_50EbN.js\",\"assets/tslib.es6-Tae09705.js\",\"assets/react-x"
+    },
+    {
+      "file": "assets/iptv-dispatch.server-BV8Jcd3k.js",
+      "line": 2,
+      "term": "iptv",
+      "snippet": "import{r as e}from\"./chunk-QTnfLwEv.js\";import{t}from\"./preload-helper-zJ_50EbN.js\";import{buildPlainTextDeliveryMessage as n}from\"./iptv-delivery.builder-Bieqph45.js\";async function r(){let{supabaseA"
+    },
+    {
+      "file": "assets/iptv-import.functions-Cg0SHwWB.js",
+      "line": 1,
+      "term": "m3u/m3u8",
+      "snippet": "import{n as e,t}from\"./createServerFn-DNPAiuhB.js\";import{t as n}from\"./require-ncc-unlock-BTcH2-Xf.js\";var r=[`Username`,`Password`,`Mac`,`Code`,`Type`,`Owner`,`Package`,`DNS`,`Paid`,`Trial`,`Expirat"
+    },
+    {
+      "file": "assets/iptv-import.functions-Cg0SHwWB.js",
+      "line": 1,
+      "term": "bouquet",
+      "snippet": "import{n as e,t}from\"./createServerFn-DNPAiuhB.js\";import{t as n}from\"./require-ncc-unlock-BTcH2-Xf.js\";var r=[`Username`,`Password`,`Mac`,`Code`,`Type`,`Owner`,`Package`,`DNS`,`Paid`,`Trial`,`Expirat"
+    },
+    {
+      "file": "assets/iptv-import.functions-Cg0SHwWB.js",
+      "line": 1,
+      "term": "reseller",
+      "snippet": "import{n as e,t}from\"./createServerFn-DNPAiuhB.js\";import{t as n}from\"./require-ncc-unlock-BTcH2-Xf.js\";var r=[`Username`,`Password`,`Mac`,`Code`,`Type`,`Owner`,`Package`,`DNS`,`Paid`,`Trial`,`Expirat"
+    },
+    {
+      "file": "assets/iptv-megaott.functions-DhZj0v-P.js",
+      "line": 1,
+      "term": "iptv",
+      "snippet": "import{n as e,t}from\"./createServerFn-DNPAiuhB.js\";import{t as n}from\"./registry-CcMeQahh.js\";import{n as r}from\"./integration-hub-R4W4sryb.js\";import{t as i}from\"./require-ncc-unlock-BTcH2-Xf.js\";n.h"
+    },
+    {
+      "file": "assets/legal-guide-DEbTZ9BT.js",
+      "line": 1,
+      "term": "iptv",
+      "snippet": "import{t as e}from\"./link-lPJT9w3U.js\";import{t}from\"./jsx-runtime-DsKLSDJq.js\";import{t as n}from\"./createLucideIcon-CJP-tiyj.js\";import{t as r}from\"./circle-check-Cem72Km7.js\";import{t as i}from\"./e"
+    },
+    {
+      "file": "assets/legal-guide-DEbTZ9BT.js",
+      "line": 1,
+      "term": "vod",
+      "snippet": "import{t as e}from\"./link-lPJT9w3U.js\";import{t}from\"./jsx-runtime-DsKLSDJq.js\";import{t as n}from\"./createLucideIcon-CJP-tiyj.js\";import{t as r}from\"./circle-check-Cem72Km7.js\";import{t as i}from\"./e"
+    },
+    {
+      "file": "assets/legal-guide-DEbTZ9BT.js",
+      "line": 1,
+      "term": "TV channels",
+      "snippet": "import{t as e}from\"./link-lPJT9w3U.js\";import{t}from\"./jsx-runtime-DsKLSDJq.js\";import{t as n}from\"./createLucideIcon-CJP-tiyj.js\";import{t as r}from\"./circle-check-Cem72Km7.js\";import{t as i}from\"./e"
+    },
+    {
+      "file": "assets/legal.notice-CwwZUMb4.js",
+      "line": 1,
+      "term": "iptv",
+      "snippet": "import{t as e}from\"./jsx-runtime-DsKLSDJq.js\";import{t}from\"./LegalLayout-DlPtgzQ5.js\";var n=e();function r(){return(0,n.jsxs)(t,{title:`Mentions légales`,children:[(0,n.jsx)(`h2`,{children:`Éditeur`}"
+    },
+    {
+      "file": "assets/legal.privacy-DCLYX_vg.js",
+      "line": 1,
+      "term": "iptv",
+      "snippet": "import{t as e}from\"./jsx-runtime-DsKLSDJq.js\";import{t}from\"./LegalLayout-DlPtgzQ5.js\";var n=e();function r(){return(0,n.jsxs)(t,{title:`Politique de confidentialité`,intro:`Nexora IPTV attache une im"
+    },
+    {
+      "file": "assets/legal.refund-BasIAawk.js",
+      "line": 1,
+      "term": "iptv",
+      "snippet": "import{t as e}from\"./jsx-runtime-DsKLSDJq.js\";import{t}from\"./LegalLayout-DlPtgzQ5.js\";var n=e();function r(){return(0,n.jsxs)(t,{title:`Politique de remboursement`,intro:`Cette politique complète les"
+    },
+    {
+      "file": "assets/legal.sales-CQuSBQfo.js",
+      "line": 1,
+      "term": "iptv",
+      "snippet": "import{t as e}from\"./jsx-runtime-DsKLSDJq.js\";import{t}from\"./LegalLayout-DlPtgzQ5.js\";var n=e();function r(){return(0,n.jsxs)(t,{title:`Conditions Générales de Vente`,intro:`Les présentes CGV régisse"
+    },
+    {
+      "file": "assets/legal.sales-CQuSBQfo.js",
+      "line": 1,
+      "term": "m3u/m3u8",
+      "snippet": "import{t as e}from\"./jsx-runtime-DsKLSDJq.js\";import{t}from\"./LegalLayout-DlPtgzQ5.js\";var n=e();function r(){return(0,n.jsxs)(t,{title:`Conditions Générales de Vente`,intro:`Les présentes CGV régisse"
+    },
+    {
+      "file": "assets/legal.terms-ZtGzeh-Z.js",
+      "line": 1,
+      "term": "iptv",
+      "snippet": "import{t as e}from\"./jsx-runtime-DsKLSDJq.js\";import{t}from\"./LegalLayout-DlPtgzQ5.js\";var n=e();function r(){return(0,n.jsxs)(t,{title:`Conditions Générales d'Utilisation`,intro:`Les présentes CGU ré"
+    },
+    {
+      "file": "assets/legal.terms-ZtGzeh-Z.js",
+      "line": 1,
+      "term": "bouquet",
+      "snippet": "import{t as e}from\"./jsx-runtime-DsKLSDJq.js\";import{t}from\"./LegalLayout-DlPtgzQ5.js\";var n=e();function r(){return(0,n.jsxs)(t,{title:`Conditions Générales d'Utilisation`,intro:`Les présentes CGU ré"
+    },
+    {
+      "file": "assets/legal.terms-ZtGzeh-Z.js",
+      "line": 1,
+      "term": "revendeur",
+      "snippet": "import{t as e}from\"./jsx-runtime-DsKLSDJq.js\";import{t}from\"./LegalLayout-DlPtgzQ5.js\";var n=e();function r(){return(0,n.jsxs)(t,{title:`Conditions Générales d'Utilisation`,intro:`Les présentes CGU ré"
+    },
+    {
+      "file": "assets/message-engine-D9BJ0Ill.js",
+      "line": 1,
+      "term": "iptv",
+      "snippet": "var e=e=>{if(!e)return`—`;try{return new Date(e).toLocaleDateString()}catch{return`—`}};function t(t){let n=t.delivery??{},r=t.order??{},i=t.customer??{},a=(n.portal_link??`https://nexora-iptv.com/das"
+    },
+    {
+      "file": "assets/modules-CdbNtNZs.js",
+      "line": 1,
+      "term": "iptv",
+      "snippet": "import{t as e}from\"./createLucideIcon-CJP-tiyj.js\";import{t}from\"./bell-Cq2R4q_9.js\";import{t as n}from\"./book-open-CJSn6D-6.js\";import{t as r}from\"./bot-DALeb9qe.js\";import{t as i}from\"./chart-column"
+    },
+    {
+      "file": "assets/ncc.ai.content-CoEcd9_f.js",
+      "line": 1,
+      "term": "iptv",
+      "snippet": "import{r as e}from\"./chunk-QTnfLwEv.js\";import{t}from\"./react-xd4aoMiW.js\";import{n,t as r}from\"./createServerFn-DNPAiuhB.js\";import{t as i}from\"./link-lPJT9w3U.js\";import{t as a}from\"./jsx-runtime-Ds"
+    },
+    {
+      "file": "assets/ncc.ai.seo-S3Wqf6M5.js",
+      "line": 1,
+      "term": "iptv",
+      "snippet": "import{r as e}from\"./chunk-QTnfLwEv.js\";import{t}from\"./react-xd4aoMiW.js\";import{n,t as r}from\"./createServerFn-DNPAiuhB.js\";import{t as i}from\"./jsx-runtime-DsKLSDJq.js\";import{t as a}from\"./require"
+    },
+    {
+      "file": "assets/ncc.gallery-CuaXlZuG.js",
+      "line": 1,
+      "term": "iptv",
+      "snippet": "import{r as e}from\"./chunk-QTnfLwEv.js\";import{t}from\"./react-xd4aoMiW.js\";import{t as n}from\"./jsx-runtime-DsKLSDJq.js\";import{n as r}from\"./QueryClientProvider-BRvpvfvQ.js\";import{t as i}from\"./useM"
+    },
+    {
+      "file": "assets/ncc.index-Bfl4PxZd.js",
+      "line": 1,
+      "term": "iptv",
+      "snippet": "import{t as e}from\"./jsx-runtime-DsKLSDJq.js\";import{t}from\"./credit-card-BfHyWsdX.js\";import{t as n}from\"./gift-USITEc11.js\";import{t as r}from\"./layout-dashboard-Cup7frz2.js\";import{t as i}from\"./li"
+    },
+    {
+      "file": "assets/ncc.iptv-CgDxMi2G.js",
+      "line": 1,
+      "term": "iptv",
+      "snippet": "import{t as e}from\"./link-lPJT9w3U.js\";import{t}from\"./jsx-runtime-DsKLSDJq.js\";import{t as n}from\"./useLocation-CbLwyvDm.js\";import{t as r}from\"./tv-minimal-BNA-L2LF.js\";import{qt as i}from\"./index-A"
+    },
+    {
+      "file": "assets/ncc.iptv.debug-BXCXlg9_.js",
+      "line": 1,
+      "term": "iptv",
+      "snippet": "import{r as e}from\"./chunk-QTnfLwEv.js\";import{t}from\"./react-xd4aoMiW.js\";import{t as n}from\"./jsx-runtime-DsKLSDJq.js\";import{t as r}from\"./createLucideIcon-CJP-tiyj.js\";import{t as i}from\"./refresh"
+    },
+    {
+      "file": "assets/ncc.iptv.history-Dk1nx_iy.js",
+      "line": 1,
+      "term": "iptv",
+      "snippet": "import{t as e}from\"./jsx-runtime-DsKLSDJq.js\";import{Gt as t,zt as n}from\"./index-APi0Sp2-.js\";import{n as r,t as i}from\"./card-SgXqVwHg.js\";import{a,i as o,n as s,o as c,r as l,t as u}from\"./table-zd"
+    },
+    {
+      "file": "assets/ncc.iptv.import-D5Foujvo.js",
+      "line": 1,
+      "term": "iptv",
+      "snippet": "import{r as e}from\"./chunk-QTnfLwEv.js\";import{t}from\"./react-xd4aoMiW.js\";import{t as n}from\"./jsx-runtime-DsKLSDJq.js\";import{n as r}from\"./QueryClientProvider-BRvpvfvQ.js\";import{t as i}from\"./useM"
+    },
+    {
+      "file": "assets/ncc.iptv.index-DyyqcdwI.js",
+      "line": 1,
+      "term": "iptv",
+      "snippet": "import{t as e}from\"./jsx-runtime-DsKLSDJq.js\";import{t}from\"./createLucideIcon-CJP-tiyj.js\";import{t as n}from\"./activity-BHizbxD2.js\";import{t as r}from\"./gift-USITEc11.js\";import{t as i}from\"./refre"
+    },
+    {
+      "file": "assets/ncc.iptv.inventory-D_325rCb.js",
+      "line": 1,
+      "term": "iptv",
+      "snippet": "import{r as e}from\"./chunk-QTnfLwEv.js\";import{t}from\"./react-xd4aoMiW.js\";import{t as n}from\"./jsx-runtime-DsKLSDJq.js\";import{a as r,i,n as a,r as o,t as s}from\"./select-B0NUKc0U.js\";import{Gt as c,"
+    },
+    {
+      "file": "assets/ncc.iptv.inventory-D_325rCb.js",
+      "line": 1,
+      "term": "bouquet",
+      "snippet": "import{r as e}from\"./chunk-QTnfLwEv.js\";import{t}from\"./react-xd4aoMiW.js\";import{t as n}from\"./jsx-runtime-DsKLSDJq.js\";import{a as r,i,n as a,r as o,t as s}from\"./select-B0NUKc0U.js\";import{Gt as c,"
+    },
+    {
+      "file": "assets/ncc.iptv.providers-FxCT1bzG.js",
+      "line": 1,
+      "term": "iptv",
+      "snippet": "import{r as e}from\"./chunk-QTnfLwEv.js\";import{t}from\"./react-xd4aoMiW.js\";import{t as n}from\"./jsx-runtime-DsKLSDJq.js\";import{n as r}from\"./QueryClientProvider-BRvpvfvQ.js\";import{t as i}from\"./useM"
+    },
+    {
+      "file": "assets/ncc.iptv.providers-FxCT1bzG.js",
+      "line": 1,
+      "term": "m3u/m3u8",
+      "snippet": "import{r as e}from\"./chunk-QTnfLwEv.js\";import{t}from\"./react-xd4aoMiW.js\";import{t as n}from\"./jsx-runtime-DsKLSDJq.js\";import{n as r}from\"./QueryClientProvider-BRvpvfvQ.js\";import{t as i}from\"./useM"
+    },
+    {
+      "file": "assets/ncc.iptv.subscriptions-Dj9wvrm9.js",
+      "line": 1,
+      "term": "iptv",
+      "snippet": "import{r as e}from\"./chunk-QTnfLwEv.js\";import{t}from\"./react-xd4aoMiW.js\";import{t as n}from\"./jsx-runtime-DsKLSDJq.js\";import{n as r}from\"./QueryClientProvider-BRvpvfvQ.js\";import{t as i}from\"./useM"
+    },
+    {
+      "file": "assets/ncc.logs-3t-H7Rp2.js",
+      "line": 1,
+      "term": "iptv",
+      "snippet": "import{r as e}from\"./chunk-QTnfLwEv.js\";import{t}from\"./react-xd4aoMiW.js\";import{n,t as r}from\"./createServerFn-DNPAiuhB.js\";import{t as i}from\"./jsx-runtime-DsKLSDJq.js\";import{t as a}from\"./require"
+    },
+    {
+      "file": "assets/ncc.logs-3t-H7Rp2.js",
+      "line": 3,
+      "term": "iptv",
+      "snippet": "`+e],{type:`text/csv`}),n=URL.createObjectURL(t),r=document.createElement(`a`);r.href=n,r.download=`nexora-logs-${new Date().toISOString()}.csv`,r.click(),URL.revokeObjectURL(n)},disabled:!N.length,ch"
+    },
+    {
+      "file": "assets/ncc.orders._id-BMS3CmIM.js",
+      "line": 1,
+      "term": "iptv",
+      "snippet": "import{r as e}from\"./chunk-QTnfLwEv.js\";import{t}from\"./react-xd4aoMiW.js\";import{n,t as r}from\"./createServerFn-DNPAiuhB.js\";import{t as i}from\"./link-lPJT9w3U.js\";import{t as a}from\"./jsx-runtime-Ds"
+    },
+    {
+      "file": "assets/ncc.orders._id-BMS3CmIM.js",
+      "line": 15,
+      "term": "iptv",
+      "snippet": "— L'équipe NEXORA`},{id:`en_standard`,name:`English — Standard`,channel:`any`,language:`en`,subject:`Your NEXORA IPTV credentials — {{order_ref}}`,body:`Hello {{client_name}},"
+    },
+    {
+      "file": "assets/ncc.orders._id-BMS3CmIM.js",
+      "line": 29,
+      "term": "iptv",
+      "snippet": "— The NEXORA Team`},{id:`short`,name:`Court`,channel:`any`,language:`fr`,subject:`Vos accès IPTV`,body:`{{client_name}}, vos accès :"
+    },
+    {
+      "file": "assets/ncc.orders._id-BMS3CmIM.js",
+      "line": 62,
+      "term": "iptv",
+      "snippet": "— NEXORA VIP`}],ge=r({method:`POST`}).middleware([R]).handler(n(`2fda4eef3ca94a227c6b43a93bdf891ccdb832f27f912c5774c18b128c412f39`)),_e=r({method:`POST`}).middleware([R]).handler(n(`2f5277e3a3512822f4"
+    },
+    {
+      "file": "assets/ncc.orders._id-BMS3CmIM.js",
+      "line": 62,
+      "term": "bouquet",
+      "snippet": "— NEXORA VIP`}],ge=r({method:`POST`}).middleware([R]).handler(n(`2fda4eef3ca94a227c6b43a93bdf891ccdb832f27f912c5774c18b128c412f39`)),_e=r({method:`POST`}).middleware([R]).handler(n(`2f5277e3a3512822f4"
+    },
+    {
+      "file": "assets/ncc.payments.binance-CHGrgAHD.js",
+      "line": 1,
+      "term": "iptv",
+      "snippet": "import{r as e}from\"./chunk-QTnfLwEv.js\";import{t}from\"./react-xd4aoMiW.js\";import{t as n}from\"./jsx-runtime-DsKLSDJq.js\";import{n as r}from\"./QueryClientProvider-BRvpvfvQ.js\";import{t as i}from\"./circ"
+    },
+    {
+      "file": "assets/ncc.products-DCkTu7Pc.js",
+      "line": 1,
+      "term": "iptv",
+      "snippet": "import{r as e}from\"./chunk-QTnfLwEv.js\";import{t}from\"./react-xd4aoMiW.js\";import{t as n}from\"./jsx-runtime-DsKLSDJq.js\";import{n as r}from\"./QueryClientProvider-BRvpvfvQ.js\";import{t as i}from\"./useM"
+    },
+    {
+      "file": "assets/ncc.settings._section-Cl4OTiJU.js",
+      "line": 1,
+      "term": "iptv",
+      "snippet": "import{r as e}from\"./chunk-QTnfLwEv.js\";import{t}from\"./react-xd4aoMiW.js\";import{a as n}from\"./redirect-DCb_aIiF.js\";import{t as r}from\"./link-lPJT9w3U.js\";import{t as i}from\"./jsx-runtime-DsKLSDJq.j"
+    },
+    {
+      "file": "assets/payment.failed-DUvAF5ws.js",
+      "line": 1,
+      "term": "iptv",
+      "snippet": "import{r as e}from\"./chunk-QTnfLwEv.js\";import{t}from\"./react-xd4aoMiW.js\";import{t as n}from\"./link-lPJT9w3U.js\";import{t as r}from\"./jsx-runtime-DsKLSDJq.js\";import{t as i}from\"./circle-x-D3QhHlSk.j"
+    },
+    {
+      "file": "assets/payment.success-DBdf3eKF.js",
+      "line": 1,
+      "term": "iptv",
+      "snippet": "import{r as e}from\"./chunk-QTnfLwEv.js\";import{t}from\"./react-xd4aoMiW.js\";import{t as n}from\"./link-lPJT9w3U.js\";import{t as r}from\"./jsx-runtime-DsKLSDJq.js\";import{t as i}from\"./useRouter-taNZoCdo."
+    },
+    {
+      "file": "assets/portal.server-Coc3qMhW.js",
+      "line": 2,
+      "term": "iptv",
+      "snippet": "import{t as e}from\"./preload-helper-zJ_50EbN.js\";import{t}from\"./__vite-browser-external-DOOah4Mz.js\";t();async function n(t){let n=`Nexora IPTV — Abonnement renouvelé (${t.orderRef})`,r=[`Bonjour,`,`"
+    },
+    {
+      "file": "assets/reseller-BNKMIzPK.js",
+      "line": 1,
+      "term": "iptv",
+      "snippet": "import{t as e}from\"./link-lPJT9w3U.js\";import{t}from\"./jsx-runtime-DsKLSDJq.js\";import{t as n}from\"./createLucideIcon-CJP-tiyj.js\";import{t as r}from\"./circle-check-Cem72Km7.js\";import{t as i}from\"./h"
+    },
+    {
+      "file": "assets/reseller-BNKMIzPK.js",
+      "line": 1,
+      "term": "m3u/m3u8",
+      "snippet": "import{t as e}from\"./link-lPJT9w3U.js\";import{t}from\"./jsx-runtime-DsKLSDJq.js\";import{t as n}from\"./createLucideIcon-CJP-tiyj.js\";import{t as r}from\"./circle-check-Cem72Km7.js\";import{t as i}from\"./h"
+    },
+    {
+      "file": "assets/reseller-BNKMIzPK.js",
+      "line": 1,
+      "term": "xtream",
+      "snippet": "import{t as e}from\"./link-lPJT9w3U.js\";import{t}from\"./jsx-runtime-DsKLSDJq.js\";import{t as n}from\"./createLucideIcon-CJP-tiyj.js\";import{t as r}from\"./circle-check-Cem72Km7.js\";import{t as i}from\"./h"
+    },
+    {
+      "file": "assets/reseller-BNKMIzPK.js",
+      "line": 1,
+      "term": "epg",
+      "snippet": "import{t as e}from\"./link-lPJT9w3U.js\";import{t}from\"./jsx-runtime-DsKLSDJq.js\";import{t as n}from\"./createLucideIcon-CJP-tiyj.js\";import{t as r}from\"./circle-check-Cem72Km7.js\";import{t as i}from\"./h"
+    },
+    {
+      "file": "assets/reseller-BNKMIzPK.js",
+      "line": 1,
+      "term": "vod",
+      "snippet": "import{t as e}from\"./link-lPJT9w3U.js\";import{t}from\"./jsx-runtime-DsKLSDJq.js\";import{t as n}from\"./createLucideIcon-CJP-tiyj.js\";import{t as r}from\"./circle-check-Cem72Km7.js\";import{t as i}from\"./h"
+    },
+    {
+      "file": "assets/reseller-BNKMIzPK.js",
+      "line": 1,
+      "term": "reseller",
+      "snippet": "import{t as e}from\"./link-lPJT9w3U.js\";import{t}from\"./jsx-runtime-DsKLSDJq.js\";import{t as n}from\"./createLucideIcon-CJP-tiyj.js\";import{t as r}from\"./circle-check-Cem72Km7.js\";import{t as i}from\"./h"
+    },
+    {
+      "file": "assets/server.browser-DwWCRIDo.js",
+      "line": 21,
+      "term": "replay",
+      "snippet": "`+e;break a}n=En(n+(t?` [`+t+`]`:``))}return n}}switch(e){case h:return En(`SuspenseList`);case m:return En(`Suspense`)}return``}function An(e,t){return(500<t.byteSize||!1)&&t.contentPreamble===null}f"
+    },
+    {
+      "file": "assets/server.browser-DwWCRIDo.js",
+      "line": 23,
+      "term": "replay",
+      "snippet": "`+e.stack}return Object.defineProperty(t,\"componentStack\",{value:i}),i}}),t}function Un(e,t,n){if(e=e.onError,t=e(t,n),t==null||typeof t==`string`)return t}function Wn(e,t){var n=e.onShellError,r=e.on"
+    },
+    {
+      "file": "assets/server.browser-DwWCRIDo.js",
+      "line": 51,
+      "term": "replay",
+      "snippet": "`+e;break a}n=Mi(n+(t?` [`+t+`]`:``))}return n}}switch(e){case h:return Mi(`SuspenseList`);case m:return Mi(`Suspense`)}return``}function Ii(e,t){return(500<t.byteSize||Er(t.contentState))&&t.contentP"
+    },
+    {
+      "file": "assets/server.browser-DwWCRIDo.js",
+      "line": 53,
+      "term": "replay",
+      "snippet": "`+e.stack}return Object.defineProperty(t,\"componentStack\",{value:i}),i}}),t}function Qi(e,t,n){if(e=e.onError,t=e(t,n),t==null||typeof t==`string`)return t}function $i(e,t){var n=e.onShellError,r=e.on"
+    },
+    {
+      "file": "assets/track-BfuzMurZ.js",
+      "line": 2,
+      "term": "iptv",
+      "snippet": "${e.state===`done`?`bg-[image:var(--gradient-gold)] text-black border-transparent`:e.state===`active`?`border-[color:var(--gold)] text-[color:var(--gold)] bg-[color:var(--gold)]/5`:e.state===`failed`?"
+    },
+    {
+      "file": "assets/track-BfuzMurZ.js",
+      "line": 2,
+      "term": "m3u/m3u8",
+      "snippet": "${e.state===`done`?`bg-[image:var(--gradient-gold)] text-black border-transparent`:e.state===`active`?`border-[color:var(--gold)] text-[color:var(--gold)] bg-[color:var(--gold)]/5`:e.state===`failed`?"
+    },
+    {
+      "file": "assets/types-CxIBVd1d.js",
+      "line": 1,
+      "term": "iptv",
+      "snippet": "var e=[`iptv`,`digital`,`service`,`license`,`subscription`],t=[`pending`,`paid`,`processing`,`completed`,`cancelled`,`refunded`],n=[`email`,`whatsapp`,`telegram`,`sms`,`in_app`],r={pending:[`paid`,`ca"
+    },
+    {
+      "file": "assets/unsubscribe-Dhi60ASn.js",
+      "line": 1,
+      "term": "iptv",
+      "snippet": "import{r as e}from\"./chunk-QTnfLwEv.js\";import{t}from\"./react-xd4aoMiW.js\";import{t as n}from\"./jsx-runtime-DsKLSDJq.js\";var r=e(t()),i=n();function a(){let[e,t]=(0,r.useState)(`loading`),[n,a]=(0,r.u"
+    },
+    {
+      "file": "llms.txt",
+      "line": 1,
+      "term": "iptv",
+      "snippet": "# Nexora IPTV"
+    },
+    {
+      "file": "llms.txt",
+      "line": 3,
+      "term": "iptv",
+      "snippet": "> Premium IPTV subscription service — thousands of live channels, movies and series in HD/FHD/4K across Smart TV, mobile, tablet and PC. Instant activation, multi-device, 24/7 support."
+    },
+    {
+      "file": "manifest.webmanifest",
+      "line": 2,
+      "term": "iptv",
+      "snippet": "\"name\": \"Nexora IPTV\","
+    },
+    {
+      "file": "manifest.webmanifest",
+      "line": 4,
+      "term": "iptv",
+      "snippet": "\"description\": \"Nexora IPTV — divertissement illimité, une seule application.\","
+    }
+  ],
+  "pass": false
+}
