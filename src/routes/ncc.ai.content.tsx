@@ -10,8 +10,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FileText, Loader2, ExternalLink } from "lucide-react";
+import { FileText, Loader2, ExternalLink, Sparkles } from "lucide-react";
 import { toast } from "sonner";
+import { Switch } from "@/components/ui/switch";
 
 export const Route = createFileRoute("/ncc/ai/content")({
   component: ContentCreator,
@@ -27,6 +28,9 @@ function ContentCreator() {
     length: "medium" as "short" | "medium" | "long",
     locale: "fr" as "fr" | "en",
     ctaTarget: "/produits",
+    generateImages: true,
+    illustrationsCount: 2,
+    imageStyle: "photorealistic" as "photorealistic" | "editorial" | "3d_isometric" | "minimal",
   });
 
   const gen = useMutation({
@@ -110,11 +114,56 @@ function ContentCreator() {
         </Card>
 
         <Card>
+          <CardHeader><CardTitle className="text-base flex items-center gap-2"><Sparkles className="h-4 w-4" /> Images premium IA</CardTitle></CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-sm">Generer les images automatiquement</Label>
+                <p className="text-xs text-muted-foreground">Cover + illustrations photo-realistes integrees a l'article.</p>
+              </div>
+              <Switch checked={form.generateImages} onCheckedChange={(v) => setForm({ ...form, generateImages: v })} />
+            </div>
+            {form.generateImages && (
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label>Illustrations</Label>
+                  <Select value={String(form.illustrationsCount)} onValueChange={(v) => setForm({ ...form, illustrationsCount: Number(v) })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="0">Cover seulement</SelectItem>
+                      <SelectItem value="1">1 illustration</SelectItem>
+                      <SelectItem value="2">2 illustrations</SelectItem>
+                      <SelectItem value="3">3 illustrations</SelectItem>
+                      <SelectItem value="4">4 illustrations</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label>Style visuel</Label>
+                  <Select value={form.imageStyle} onValueChange={(v) => setForm({ ...form, imageStyle: v as typeof form.imageStyle })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="photorealistic">Photo-realiste</SelectItem>
+                      <SelectItem value="editorial">Editorial</SelectItem>
+                      <SelectItem value="3d_isometric">3D isometrique</SelectItem>
+                      <SelectItem value="minimal">Minimaliste</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
           <CardHeader><CardTitle className="text-base">Apercu</CardTitle></CardHeader>
           <CardContent className="space-y-3 text-sm">
             {!gen.data && <p className="text-muted-foreground">L'apercu apparaitra ici apres generation.</p>}
             {gen.data && (
               <>
+                {gen.data.images?.cover && (
+                  <img src={gen.data.images.cover} alt={gen.data.images.coverAlt ?? ""} className="w-full rounded border object-cover aspect-video" />
+                )}
                 <div>
                   <div className="text-xs uppercase text-muted-foreground">Titre</div>
                   <p className="font-medium">{gen.data.preview.title}</p>
@@ -128,6 +177,11 @@ function ContentCreator() {
                   <p className="text-xs"><strong>Title:</strong> {gen.data.preview.metaTitle}</p>
                   <p className="text-xs"><strong>Description:</strong> {gen.data.preview.metaDescription}</p>
                 </div>
+                {gen.data.images && (
+                  <div className="text-xs text-muted-foreground">
+                    {gen.data.images.log.filter((l) => l.ok).length} image(s) generee(s) · {gen.data.images.log.filter((l) => !l.ok).length} echec(s)
+                  </div>
+                )}
                 <Button asChild variant="outline" size="sm">
                   <Link to="/ncc/blog/$id" params={{ id: gen.data.id }}>
                     <ExternalLink className="h-4 w-4 mr-2" /> Ouvrir le brouillon
