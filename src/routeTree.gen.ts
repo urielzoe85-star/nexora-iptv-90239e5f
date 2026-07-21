@@ -26,7 +26,6 @@ import { Route as DeRouteImport } from './routes/de'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as CatalogRouteImport } from './routes/catalog'
-import { Route as AppRouteImport } from './routes/app'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as NccIndexRouteImport } from './routes/ncc.index'
@@ -34,7 +33,6 @@ import { Route as FrIndexRouteImport } from './routes/fr.index'
 import { Route as EspaceClientIndexRouteImport } from './routes/espace-client.index'
 import { Route as EnIndexRouteImport } from './routes/en.index'
 import { Route as BlogIndexRouteImport } from './routes/blog.index'
-import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as ProduitsSlugRouteImport } from './routes/produits.$slug'
 import { Route as PaymentSuccessRouteImport } from './routes/payment.success'
@@ -77,10 +75,6 @@ import { Route as EnGuideIptvRouteImport } from './routes/en.guide-iptv'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as BlogBestIptv2026RouteImport } from './routes/blog.best-iptv-2026'
 import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
-import { Route as AppHelpRouteImport } from './routes/app.help'
-import { Route as AppCompatibilityRouteImport } from './routes/app.compatibility'
-import { Route as AppAppsRouteImport } from './routes/app.apps'
-import { Route as AppAboutRouteImport } from './routes/app.about'
 import { Route as AdminPlansRouteImport } from './routes/admin.plans'
 import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
@@ -226,11 +220,6 @@ const CatalogRoute = CatalogRouteImport.update({
   path: '/catalog',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AppRoute = AppRouteImport.update({
-  id: '/app',
-  path: '/app',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -265,11 +254,6 @@ const BlogIndexRoute = BlogIndexRouteImport.update({
   id: '/blog/',
   path: '/blog/',
   getParentRoute: () => rootRouteImport,
-} as any)
-const AppIndexRoute = AppIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AppRoute,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
@@ -482,26 +466,6 @@ const BlogSlugRoute = BlogSlugRouteImport.update({
   id: '/blog/$slug',
   path: '/blog/$slug',
   getParentRoute: () => rootRouteImport,
-} as any)
-const AppHelpRoute = AppHelpRouteImport.update({
-  id: '/help',
-  path: '/help',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppCompatibilityRoute = AppCompatibilityRouteImport.update({
-  id: '/compatibility',
-  path: '/compatibility',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppAppsRoute = AppAppsRouteImport.update({
-  id: '/apps',
-  path: '/apps',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppAboutRoute = AppAboutRouteImport.update({
-  id: '/about',
-  path: '/about',
-  getParentRoute: () => AppRoute,
 } as any)
 const AdminPlansRoute = AdminPlansRouteImport.update({
   id: '/plans',
@@ -820,7 +784,6 @@ const ApiPublicAutomationEmitTestRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
-  '/app': typeof AppRouteWithChildren
   '/catalog': typeof CatalogRoute
   '/checkout': typeof CheckoutRoute
   '/dashboard': typeof DashboardRoute
@@ -846,10 +809,6 @@ export interface FileRoutesByFullPath {
   '/admin/login': typeof AdminLoginRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/plans': typeof AdminPlansRoute
-  '/app/about': typeof AppAboutRoute
-  '/app/apps': typeof AppAppsRoute
-  '/app/compatibility': typeof AppCompatibilityRoute
-  '/app/help': typeof AppHelpRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/blog/best-iptv-2026': typeof BlogBestIptv2026Route
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
@@ -892,7 +851,6 @@ export interface FileRoutesByFullPath {
   '/payment/success': typeof PaymentSuccessRoute
   '/produits/$slug': typeof ProduitsSlugRoute
   '/admin/': typeof AdminIndexRoute
-  '/app/': typeof AppIndexRoute
   '/blog/': typeof BlogIndexRoute
   '/en/': typeof EnIndexRoute
   '/espace-client/': typeof EspaceClientIndexRoute
@@ -973,10 +931,6 @@ export interface FileRoutesByTo {
   '/admin/login': typeof AdminLoginRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/plans': typeof AdminPlansRoute
-  '/app/about': typeof AppAboutRoute
-  '/app/apps': typeof AppAppsRoute
-  '/app/compatibility': typeof AppCompatibilityRoute
-  '/app/help': typeof AppHelpRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/blog/best-iptv-2026': typeof BlogBestIptv2026Route
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
@@ -1017,7 +971,6 @@ export interface FileRoutesByTo {
   '/payment/success': typeof PaymentSuccessRoute
   '/produits/$slug': typeof ProduitsSlugRoute
   '/admin': typeof AdminIndexRoute
-  '/app': typeof AppIndexRoute
   '/blog': typeof BlogIndexRoute
   '/en': typeof EnIndexRoute
   '/espace-client': typeof EspaceClientIndexRoute
@@ -1079,7 +1032,6 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
-  '/app': typeof AppRouteWithChildren
   '/catalog': typeof CatalogRoute
   '/checkout': typeof CheckoutRoute
   '/dashboard': typeof DashboardRoute
@@ -1105,10 +1057,6 @@ export interface FileRoutesById {
   '/admin/login': typeof AdminLoginRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/plans': typeof AdminPlansRoute
-  '/app/about': typeof AppAboutRoute
-  '/app/apps': typeof AppAppsRoute
-  '/app/compatibility': typeof AppCompatibilityRoute
-  '/app/help': typeof AppHelpRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/blog/best-iptv-2026': typeof BlogBestIptv2026Route
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
@@ -1151,7 +1099,6 @@ export interface FileRoutesById {
   '/payment/success': typeof PaymentSuccessRoute
   '/produits/$slug': typeof ProduitsSlugRoute
   '/admin/': typeof AdminIndexRoute
-  '/app/': typeof AppIndexRoute
   '/blog/': typeof BlogIndexRoute
   '/en/': typeof EnIndexRoute
   '/espace-client/': typeof EspaceClientIndexRoute
@@ -1214,7 +1161,6 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
-    | '/app'
     | '/catalog'
     | '/checkout'
     | '/dashboard'
@@ -1240,10 +1186,6 @@ export interface FileRouteTypes {
     | '/admin/login'
     | '/admin/orders'
     | '/admin/plans'
-    | '/app/about'
-    | '/app/apps'
-    | '/app/compatibility'
-    | '/app/help'
     | '/blog/$slug'
     | '/blog/best-iptv-2026'
     | '/email/unsubscribe'
@@ -1286,7 +1228,6 @@ export interface FileRouteTypes {
     | '/payment/success'
     | '/produits/$slug'
     | '/admin/'
-    | '/app/'
     | '/blog/'
     | '/en/'
     | '/espace-client/'
@@ -1367,10 +1308,6 @@ export interface FileRouteTypes {
     | '/admin/login'
     | '/admin/orders'
     | '/admin/plans'
-    | '/app/about'
-    | '/app/apps'
-    | '/app/compatibility'
-    | '/app/help'
     | '/blog/$slug'
     | '/blog/best-iptv-2026'
     | '/email/unsubscribe'
@@ -1411,7 +1348,6 @@ export interface FileRouteTypes {
     | '/payment/success'
     | '/produits/$slug'
     | '/admin'
-    | '/app'
     | '/blog'
     | '/en'
     | '/espace-client'
@@ -1472,7 +1408,6 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/admin'
-    | '/app'
     | '/catalog'
     | '/checkout'
     | '/dashboard'
@@ -1498,10 +1433,6 @@ export interface FileRouteTypes {
     | '/admin/login'
     | '/admin/orders'
     | '/admin/plans'
-    | '/app/about'
-    | '/app/apps'
-    | '/app/compatibility'
-    | '/app/help'
     | '/blog/$slug'
     | '/blog/best-iptv-2026'
     | '/email/unsubscribe'
@@ -1544,7 +1475,6 @@ export interface FileRouteTypes {
     | '/payment/success'
     | '/produits/$slug'
     | '/admin/'
-    | '/app/'
     | '/blog/'
     | '/en/'
     | '/espace-client/'
@@ -1606,7 +1536,6 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
-  AppRoute: typeof AppRouteWithChildren
   CatalogRoute: typeof CatalogRoute
   CheckoutRoute: typeof CheckoutRoute
   DashboardRoute: typeof DashboardRoute
@@ -1787,13 +1716,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CatalogRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/app': {
-      id: '/app'
-      path: '/app'
-      fullPath: '/app'
-      preLoaderRoute: typeof AppRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/admin': {
       id: '/admin'
       path: '/admin'
@@ -1842,13 +1764,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/blog/'
       preLoaderRoute: typeof BlogIndexRouteImport
       parentRoute: typeof rootRouteImport
-    }
-    '/app/': {
-      id: '/app/'
-      path: '/'
-      fullPath: '/app/'
-      preLoaderRoute: typeof AppIndexRouteImport
-      parentRoute: typeof AppRoute
     }
     '/admin/': {
       id: '/admin/'
@@ -2143,34 +2058,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/blog/$slug'
       preLoaderRoute: typeof BlogSlugRouteImport
       parentRoute: typeof rootRouteImport
-    }
-    '/app/help': {
-      id: '/app/help'
-      path: '/help'
-      fullPath: '/app/help'
-      preLoaderRoute: typeof AppHelpRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/compatibility': {
-      id: '/app/compatibility'
-      path: '/compatibility'
-      fullPath: '/app/compatibility'
-      preLoaderRoute: typeof AppCompatibilityRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/apps': {
-      id: '/app/apps'
-      path: '/apps'
-      fullPath: '/app/apps'
-      preLoaderRoute: typeof AppAppsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/about': {
-      id: '/app/about'
-      path: '/about'
-      fullPath: '/app/about'
-      preLoaderRoute: typeof AppAboutRouteImport
-      parentRoute: typeof AppRoute
     }
     '/admin/plans': {
       id: '/admin/plans'
@@ -2610,24 +2497,6 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
-interface AppRouteChildren {
-  AppAboutRoute: typeof AppAboutRoute
-  AppAppsRoute: typeof AppAppsRoute
-  AppCompatibilityRoute: typeof AppCompatibilityRoute
-  AppHelpRoute: typeof AppHelpRoute
-  AppIndexRoute: typeof AppIndexRoute
-}
-
-const AppRouteChildren: AppRouteChildren = {
-  AppAboutRoute: AppAboutRoute,
-  AppAppsRoute: AppAppsRoute,
-  AppCompatibilityRoute: AppCompatibilityRoute,
-  AppHelpRoute: AppHelpRoute,
-  AppIndexRoute: AppIndexRoute,
-}
-
-const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
-
 interface EnRouteChildren {
   EnGuideIptvRoute: typeof EnGuideIptvRoute
   EnIndexRoute: typeof EnIndexRoute
@@ -2832,7 +2701,6 @@ const NccRouteWithChildren = NccRoute._addFileChildren(NccRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
-  AppRoute: AppRouteWithChildren,
   CatalogRoute: CatalogRoute,
   CheckoutRoute: CheckoutRoute,
   DashboardRoute: DashboardRoute,

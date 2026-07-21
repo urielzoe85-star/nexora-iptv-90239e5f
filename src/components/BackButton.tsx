@@ -22,8 +22,6 @@ export function BackButton({ fallback = "/" }: { fallback?: string }) {
     pathname === "/de" ||
     pathname.startsWith("/ncc") ||
     pathname.startsWith("/admin") ||
-    pathname === "/app" ||
-    pathname.startsWith("/app/") ||
     pathname.startsWith("/api") ||
     pathname.startsWith("/.well-known") ||
     pathname.startsWith("/.mcp");
