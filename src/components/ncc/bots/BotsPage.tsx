@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Bot, Send, Webhook, ShieldCheck, ShieldAlert, RefreshCw, Radio } from "lucide-react";
+import { Bot, Send, Webhook, ShieldCheck, ShieldAlert, RefreshCw, Radio, MessageCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,8 @@ import {
   setupTelegramWebhook,
   broadcastTelegram,
   testAdminAlert,
+  getWhatsAppStatus,
+  testAdminWhatsApp,
 } from "@/lib/bots.functions";
 
 export function BotsPage() {
@@ -21,6 +23,8 @@ export function BotsPage() {
   const setupHook = useServerFn(setupTelegramWebhook);
   const broadcast = useServerFn(broadcastTelegram);
   const testAlert = useServerFn(testAdminAlert);
+  const waStatus = useServerFn(getWhatsAppStatus);
+  const waTest = useServerFn(testAdminWhatsApp);
 
   const defaultUrl =
     typeof window !== "undefined"
@@ -30,6 +34,7 @@ export function BotsPage() {
   const [message, setMessage] = useState("");
 
   const q = useQuery({ queryKey: ["bots", "status"], queryFn: () => status() });
+  const wq = useQuery({ queryKey: ["bots", "whatsapp"], queryFn: () => waStatus() });
 
   const mSetup = useMutation({
     mutationFn: () => setupHook({ data: { url: webhookUrl } }),
@@ -43,6 +48,12 @@ export function BotsPage() {
     onError: (e) => toast.error((e as Error).message),
   });
 
+  const mWaTest = useMutation({
+    mutationFn: () => waTest(),
+    onSuccess: (r: any) => r?.sent ? toast.success("Test WhatsApp envoyé") : toast.warning(r?.reason ?? "Non envoyé"),
+    onError: (e) => toast.error((e as Error).message),
+  });
+
   const mBroadcast = useMutation({
     mutationFn: (dryRun: boolean) => broadcast({ data: { message, dryRun } }),
     onSuccess: (r: any) => {
@@ -53,6 +64,7 @@ export function BotsPage() {
   });
 
   const s = q.data;
+  const w = wq.data;
 
   return (
     <div className="space-y-6">
@@ -123,9 +135,66 @@ export function BotsPage() {
           <p className="text-sm text-muted-foreground">
             Les nouvelles commandes, paiements confirmés et échecs sont envoyés dans le chat défini par <code className="text-xs">TELEGRAM_ADMIN_CHAT_ID</code>. Écris <code className="text-xs">/start</code> à ton bot pour obtenir ton chat_id, puis renseigne-le en secret projet.
           </p>
+          {s && s.adminChatConfigured && !s.adminChatIsNumeric && (
+            <p className="text-xs text-destructive">
+              ⚠️ TELEGRAM_ADMIN_CHAT_ID ne ressemble pas à un chat_id (attendu : nombre entier). Un numéro de téléphone ne fonctionne pas.
+            </p>
+          )}
           <Button variant="outline" onClick={() => mTest.mutate()} disabled={mTest.isPending}>
             {mTest.isPending ? "Envoi…" : "Envoyer un test"}
           </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <MessageCircle className="h-4 w-4 text-emerald-500" /> WhatsApp Cloud API
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {w?.configured ? (
+            <>
+              {w.phone ? (
+                <div className="text-sm">
+                  <div className="font-semibold">{w.phone.display_phone_number} · {w.phone.verified_name}</div>
+                  <div className="text-xs text-muted-foreground">
+                    Qualité : {w.phone.quality_rating ?? "n/a"} · Vérification : {w.phone.code_verification_status ?? "n/a"} · Phone ID {w.phoneNumberId}
+                  </div>
+                  <Badge className="mt-2 bg-emerald-500/15 text-emerald-500 border-emerald-500/20">
+                    <ShieldCheck className="h-3 w-3 mr-1" /> Connecté
+                  </Badge>
+                </div>
+              ) : (
+                <Badge variant="destructive">
+                  <ShieldAlert className="h-3 w-3 mr-1" /> {w.error ?? "Erreur inconnue"}
+                </Badge>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Note Meta : hors fenêtre 24h, seuls les <strong>templates approuvés</strong> passent (erreur <code>#131047</code>). Le texte libre ne fonctionne qu'après un message entrant du client.
+              </p>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => wq.refetch()}>
+                  <RefreshCw className="h-4 w-4 mr-1" /> Rafraîchir
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => mWaTest.mutate()}
+                  disabled={mWaTest.isPending || !w.adminPhoneConfigured}
+                >
+                  {mWaTest.isPending ? "Envoi…" : "Envoyer un test à l'admin"}
+                </Button>
+              </div>
+              {!w.adminPhoneConfigured && (
+                <p className="text-xs text-muted-foreground">Définis <code>WHATSAPP_ADMIN_PHONE</code> (E.164) pour activer le test.</p>
+              )}
+            </>
+          ) : (
+            <Badge variant="secondary">
+              <ShieldAlert className="h-3 w-3 mr-1" /> {w?.error ?? "WHATSAPP_PHONE_NUMBER_ID ou WHATSAPP_ACCESS_TOKEN manquant"}
+            </Badge>
+          )}
         </CardContent>
       </Card>
 
