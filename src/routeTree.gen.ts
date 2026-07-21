@@ -108,6 +108,7 @@ import { Route as NccBlogTagsRouteImport } from './routes/ncc.blog.tags'
 import { Route as NccBlogNewRouteImport } from './routes/ncc.blog.new'
 import { Route as NccBlogCategoriesRouteImport } from './routes/ncc.blog.categories'
 import { Route as NccBlogIdRouteImport } from './routes/ncc.blog.$id'
+import { Route as NccAiSeoRouteImport } from './routes/ncc.ai.seo'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as EspaceClientSuccessRefRouteImport } from './routes/espace-client.success.$ref'
 import { Route as EspaceClientPayRefRouteImport } from './routes/espace-client.pay.$ref'
@@ -636,6 +637,11 @@ const NccBlogIdRoute = NccBlogIdRouteImport.update({
   path: '/blog/$id',
   getParentRoute: () => NccRoute,
 } as any)
+const NccAiSeoRoute = NccAiSeoRouteImport.update({
+  id: '/seo',
+  path: '/seo',
+  getParentRoute: () => NccAiRoute,
+} as any)
 const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
   id: '/lovable/email/suppression',
   path: '/lovable/email/suppression',
@@ -877,6 +883,7 @@ export interface FileRoutesByFullPath {
   '/espace-client/pay/$ref': typeof EspaceClientPayRefRoute
   '/espace-client/success/$ref': typeof EspaceClientSuccessRefRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/ncc/ai/seo': typeof NccAiSeoRoute
   '/ncc/blog/$id': typeof NccBlogIdRoute
   '/ncc/blog/categories': typeof NccBlogCategoriesRoute
   '/ncc/blog/new': typeof NccBlogNewRoute
@@ -998,6 +1005,7 @@ export interface FileRoutesByTo {
   '/espace-client/pay/$ref': typeof EspaceClientPayRefRoute
   '/espace-client/success/$ref': typeof EspaceClientSuccessRefRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/ncc/ai/seo': typeof NccAiSeoRoute
   '/ncc/blog/$id': typeof NccBlogIdRoute
   '/ncc/blog/categories': typeof NccBlogCategoriesRoute
   '/ncc/blog/new': typeof NccBlogNewRoute
@@ -1128,6 +1136,7 @@ export interface FileRoutesById {
   '/espace-client/pay/$ref': typeof EspaceClientPayRefRoute
   '/espace-client/success/$ref': typeof EspaceClientSuccessRefRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/ncc/ai/seo': typeof NccAiSeoRoute
   '/ncc/blog/$id': typeof NccBlogIdRoute
   '/ncc/blog/categories': typeof NccBlogCategoriesRoute
   '/ncc/blog/new': typeof NccBlogNewRoute
@@ -1259,6 +1268,7 @@ export interface FileRouteTypes {
     | '/espace-client/pay/$ref'
     | '/espace-client/success/$ref'
     | '/lovable/email/suppression'
+    | '/ncc/ai/seo'
     | '/ncc/blog/$id'
     | '/ncc/blog/categories'
     | '/ncc/blog/new'
@@ -1380,6 +1390,7 @@ export interface FileRouteTypes {
     | '/espace-client/pay/$ref'
     | '/espace-client/success/$ref'
     | '/lovable/email/suppression'
+    | '/ncc/ai/seo'
     | '/ncc/blog/$id'
     | '/ncc/blog/categories'
     | '/ncc/blog/new'
@@ -1509,6 +1520,7 @@ export interface FileRouteTypes {
     | '/espace-client/pay/$ref'
     | '/espace-client/success/$ref'
     | '/lovable/email/suppression'
+    | '/ncc/ai/seo'
     | '/ncc/blog/$id'
     | '/ncc/blog/categories'
     | '/ncc/blog/new'
@@ -2312,6 +2324,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof NccBlogIdRouteImport
       parentRoute: typeof NccRoute
     }
+    '/ncc/ai/seo': {
+      id: '/ncc/ai/seo'
+      path: '/seo'
+      fullPath: '/ncc/ai/seo'
+      preLoaderRoute: typeof NccAiSeoRouteImport
+      parentRoute: typeof NccAiRoute
+    }
     '/lovable/email/suppression': {
       id: '/lovable/email/suppression'
       path: '/lovable/email/suppression'
@@ -2590,10 +2609,12 @@ const FrRouteChildren: FrRouteChildren = {
 const FrRouteWithChildren = FrRoute._addFileChildren(FrRouteChildren)
 
 interface NccAiRouteChildren {
+  NccAiSeoRoute: typeof NccAiSeoRoute
   NccAiIndexRoute: typeof NccAiIndexRoute
 }
 
 const NccAiRouteChildren: NccAiRouteChildren = {
+  NccAiSeoRoute: NccAiSeoRoute,
   NccAiIndexRoute: NccAiIndexRoute,
 }
 
