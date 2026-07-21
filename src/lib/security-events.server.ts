@@ -32,9 +32,8 @@ async function sendTelegramAlert(
   chatId: string,
   evt: SecurityEventInput,
 ): Promise<void> {
-  const LOVABLE_API_KEY = process.env.LOVABLE_API_KEY;
-  const TELEGRAM_API_KEY = process.env.TELEGRAM_API_KEY;
-  if (!LOVABLE_API_KEY || !TELEGRAM_API_KEY) return;
+  const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+  if (!TELEGRAM_BOT_TOKEN) return;
 
   const emoji = evt.severity === "critical" ? "🚨" : "⚠️";
   const lines = [
@@ -48,13 +47,9 @@ async function sendTelegramAlert(
   ].filter(Boolean);
 
   try {
-    await fetch("https://connector-gateway.lovable.dev/telegram/sendMessage", {
+    await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "X-Connection-Api-Key": TELEGRAM_API_KEY,
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         chat_id: chatId,
         text: lines.join("\n"),
