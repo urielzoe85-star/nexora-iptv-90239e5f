@@ -3,7 +3,7 @@ import { buildWhatsAppLink } from "@/lib/whatsapp-contact";
 
 export function FloatingWhatsApp() {
   const path = useRouterState({ select: (s) => s.location.pathname });
-  if (path.startsWith("/admin") || path.startsWith("/ncc")) return null;
+  if (path.startsWith("/admin") || path.startsWith("/ncc") || path.startsWith("/app")) return null;
 
   const href = buildWhatsAppLink({
     message: "Bonjour Nexora, je souhaite en savoir plus sur vos abonnements IPTV 🙏",
