@@ -102,8 +102,37 @@ export function AppStoreGate() {
     if (manifestLink) manifestLink.href = "/manifest.appstore.webmanifest";
     document.documentElement.setAttribute("data-app-store-mode", "1");
 
+    // Inject robots noindex once
+    if (!document.querySelector("meta[name='robots'][data-appstore]")) {
+      const m = document.createElement("meta");
+      m.setAttribute("name", "robots");
+      m.setAttribute("content", "noindex,nofollow,noarchive");
+      m.setAttribute("data-appstore", "1");
+      document.head.appendChild(m);
+    }
+
+    // Sanitize meta tags (description, og:*, twitter:*) and strip canonical/hreflang
+    const sweepMeta = () => {
+      document.querySelectorAll<HTMLMetaElement>(
+        "meta[name='description'],meta[name='twitter:title'],meta[name='twitter:description'],meta[property^='og:']"
+      ).forEach((el) => {
+        const v = el.getAttribute("content");
+        if (v) {
+          const s = sanitize(v);
+          if (s !== v) el.setAttribute("content", s);
+        }
+      });
+      document.querySelectorAll<HTMLLinkElement>(
+        "link[rel='canonical'],link[rel='alternate'][hreflang]"
+      ).forEach((el) => el.parentElement?.removeChild(el));
+    };
+    sweepMeta();
+    const metaObs = new MutationObserver(sweepMeta);
+    metaObs.observe(document.head, { childList: true, subtree: true, attributes: true, attributeFilter: ["content", "href"] });
+
     return () => {
       observer.disconnect();
+      metaObs.disconnect();
       unsub();
     };
   }, [router]);
