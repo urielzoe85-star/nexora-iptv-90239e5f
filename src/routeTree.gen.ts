@@ -77,6 +77,7 @@ import { Route as EnGuideIptvRouteImport } from './routes/en.guide-iptv'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as BlogBestIptv2026RouteImport } from './routes/blog.best-iptv-2026'
 import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
+import { Route as AppAppsRouteImport } from './routes/app.apps'
 import { Route as AdminPlansRouteImport } from './routes/admin.plans'
 import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
@@ -479,6 +480,11 @@ const BlogSlugRoute = BlogSlugRouteImport.update({
   path: '/blog/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppAppsRoute = AppAppsRouteImport.update({
+  id: '/apps',
+  path: '/apps',
+  getParentRoute: () => AppRoute,
+} as any)
 const AdminPlansRoute = AdminPlansRouteImport.update({
   id: '/plans',
   path: '/plans',
@@ -822,6 +828,7 @@ export interface FileRoutesByFullPath {
   '/admin/login': typeof AdminLoginRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/plans': typeof AdminPlansRoute
+  '/app/apps': typeof AppAppsRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/blog/best-iptv-2026': typeof BlogBestIptv2026Route
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
@@ -945,6 +952,7 @@ export interface FileRoutesByTo {
   '/admin/login': typeof AdminLoginRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/plans': typeof AdminPlansRoute
+  '/app/apps': typeof AppAppsRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/blog/best-iptv-2026': typeof BlogBestIptv2026Route
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
@@ -1073,6 +1081,7 @@ export interface FileRoutesById {
   '/admin/login': typeof AdminLoginRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/plans': typeof AdminPlansRoute
+  '/app/apps': typeof AppAppsRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/blog/best-iptv-2026': typeof BlogBestIptv2026Route
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
@@ -1204,6 +1213,7 @@ export interface FileRouteTypes {
     | '/admin/login'
     | '/admin/orders'
     | '/admin/plans'
+    | '/app/apps'
     | '/blog/$slug'
     | '/blog/best-iptv-2026'
     | '/email/unsubscribe'
@@ -1327,6 +1337,7 @@ export interface FileRouteTypes {
     | '/admin/login'
     | '/admin/orders'
     | '/admin/plans'
+    | '/app/apps'
     | '/blog/$slug'
     | '/blog/best-iptv-2026'
     | '/email/unsubscribe'
@@ -1454,6 +1465,7 @@ export interface FileRouteTypes {
     | '/admin/login'
     | '/admin/orders'
     | '/admin/plans'
+    | '/app/apps'
     | '/blog/$slug'
     | '/blog/best-iptv-2026'
     | '/email/unsubscribe'
@@ -2096,6 +2108,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BlogSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app/apps': {
+      id: '/app/apps'
+      path: '/apps'
+      fullPath: '/app/apps'
+      preLoaderRoute: typeof AppAppsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/admin/plans': {
       id: '/admin/plans'
       path: '/plans'
@@ -2535,10 +2554,12 @@ const AdminRouteChildren: AdminRouteChildren = {
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 interface AppRouteChildren {
+  AppAppsRoute: typeof AppAppsRoute
   AppIndexRoute: typeof AppIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppAppsRoute: AppAppsRoute,
   AppIndexRoute: AppIndexRoute,
 }
 
