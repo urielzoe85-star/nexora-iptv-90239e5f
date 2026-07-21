@@ -7,7 +7,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import nexoraBrand from "@/assets/nexora-brand.jpg.asset.json";
 
-const GROUP_ORDER: ModuleGroup[] = ["cockpit", "sales", "services", "content", "ops", "system"];
+const GROUP_ORDER: ModuleGroup[] = ["cockpit", "intelligence", "sales", "services", "content", "ops", "system"];
 
 export function NccSidebar() {
   const path = useRouterState({ select: (s) => s.location.pathname });
