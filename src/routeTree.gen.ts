@@ -109,6 +109,7 @@ import { Route as NccBlogNewRouteImport } from './routes/ncc.blog.new'
 import { Route as NccBlogCategoriesRouteImport } from './routes/ncc.blog.categories'
 import { Route as NccBlogIdRouteImport } from './routes/ncc.blog.$id'
 import { Route as NccAiSeoRouteImport } from './routes/ncc.ai.seo'
+import { Route as NccAiKnowledgeRouteImport } from './routes/ncc.ai.knowledge'
 import { Route as NccAiContentRouteImport } from './routes/ncc.ai.content'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as EspaceClientSuccessRefRouteImport } from './routes/espace-client.success.$ref'
@@ -643,6 +644,11 @@ const NccAiSeoRoute = NccAiSeoRouteImport.update({
   path: '/seo',
   getParentRoute: () => NccAiRoute,
 } as any)
+const NccAiKnowledgeRoute = NccAiKnowledgeRouteImport.update({
+  id: '/knowledge',
+  path: '/knowledge',
+  getParentRoute: () => NccAiRoute,
+} as any)
 const NccAiContentRoute = NccAiContentRouteImport.update({
   id: '/content',
   path: '/content',
@@ -890,6 +896,7 @@ export interface FileRoutesByFullPath {
   '/espace-client/success/$ref': typeof EspaceClientSuccessRefRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/ncc/ai/content': typeof NccAiContentRoute
+  '/ncc/ai/knowledge': typeof NccAiKnowledgeRoute
   '/ncc/ai/seo': typeof NccAiSeoRoute
   '/ncc/blog/$id': typeof NccBlogIdRoute
   '/ncc/blog/categories': typeof NccBlogCategoriesRoute
@@ -1013,6 +1020,7 @@ export interface FileRoutesByTo {
   '/espace-client/success/$ref': typeof EspaceClientSuccessRefRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/ncc/ai/content': typeof NccAiContentRoute
+  '/ncc/ai/knowledge': typeof NccAiKnowledgeRoute
   '/ncc/ai/seo': typeof NccAiSeoRoute
   '/ncc/blog/$id': typeof NccBlogIdRoute
   '/ncc/blog/categories': typeof NccBlogCategoriesRoute
@@ -1145,6 +1153,7 @@ export interface FileRoutesById {
   '/espace-client/success/$ref': typeof EspaceClientSuccessRefRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/ncc/ai/content': typeof NccAiContentRoute
+  '/ncc/ai/knowledge': typeof NccAiKnowledgeRoute
   '/ncc/ai/seo': typeof NccAiSeoRoute
   '/ncc/blog/$id': typeof NccBlogIdRoute
   '/ncc/blog/categories': typeof NccBlogCategoriesRoute
@@ -1278,6 +1287,7 @@ export interface FileRouteTypes {
     | '/espace-client/success/$ref'
     | '/lovable/email/suppression'
     | '/ncc/ai/content'
+    | '/ncc/ai/knowledge'
     | '/ncc/ai/seo'
     | '/ncc/blog/$id'
     | '/ncc/blog/categories'
@@ -1401,6 +1411,7 @@ export interface FileRouteTypes {
     | '/espace-client/success/$ref'
     | '/lovable/email/suppression'
     | '/ncc/ai/content'
+    | '/ncc/ai/knowledge'
     | '/ncc/ai/seo'
     | '/ncc/blog/$id'
     | '/ncc/blog/categories'
@@ -1532,6 +1543,7 @@ export interface FileRouteTypes {
     | '/espace-client/success/$ref'
     | '/lovable/email/suppression'
     | '/ncc/ai/content'
+    | '/ncc/ai/knowledge'
     | '/ncc/ai/seo'
     | '/ncc/blog/$id'
     | '/ncc/blog/categories'
@@ -2343,6 +2355,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof NccAiSeoRouteImport
       parentRoute: typeof NccAiRoute
     }
+    '/ncc/ai/knowledge': {
+      id: '/ncc/ai/knowledge'
+      path: '/knowledge'
+      fullPath: '/ncc/ai/knowledge'
+      preLoaderRoute: typeof NccAiKnowledgeRouteImport
+      parentRoute: typeof NccAiRoute
+    }
     '/ncc/ai/content': {
       id: '/ncc/ai/content'
       path: '/content'
@@ -2629,12 +2648,14 @@ const FrRouteWithChildren = FrRoute._addFileChildren(FrRouteChildren)
 
 interface NccAiRouteChildren {
   NccAiContentRoute: typeof NccAiContentRoute
+  NccAiKnowledgeRoute: typeof NccAiKnowledgeRoute
   NccAiSeoRoute: typeof NccAiSeoRoute
   NccAiIndexRoute: typeof NccAiIndexRoute
 }
 
 const NccAiRouteChildren: NccAiRouteChildren = {
   NccAiContentRoute: NccAiContentRoute,
+  NccAiKnowledgeRoute: NccAiKnowledgeRoute,
   NccAiSeoRoute: NccAiSeoRoute,
   NccAiIndexRoute: NccAiIndexRoute,
 }
