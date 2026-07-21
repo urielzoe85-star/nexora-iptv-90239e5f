@@ -753,7 +753,7 @@ function FAQ() {
 function Payments() {
   const t = useT();
   return (
-    <section className="py-20">
+    <section className="py-20" data-app-store="hide">
       <div className="max-w-6xl mx-auto px-6">
         <div className="glass rounded-2xl p-8 md:p-10">
           <div className="text-center mb-6">
