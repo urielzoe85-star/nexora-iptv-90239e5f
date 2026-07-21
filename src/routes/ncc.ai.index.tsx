@@ -24,7 +24,7 @@ function AiDashboard() {
         icon={Sparkles}
         title="NEXORA AI Center"
         description="NEXORA Intelligence - votre directeur marketing IA."
-        actions={
+        action={
           <Button onClick={() => q.refetch()} disabled={q.isFetching} size="sm" variant="outline">
             <RefreshCw className={`h-4 w-4 mr-2 ${q.isFetching ? "animate-spin" : ""}`} />
             Rafraichir
