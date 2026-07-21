@@ -13,8 +13,15 @@
 
 export function isAppStoreMode(): boolean {
   try {
-    return import.meta.env.VITE_APP_STORE_MODE === "1"
-      || import.meta.env.VITE_APP_STORE_MODE === "true";
+    if (import.meta.env.VITE_APP_STORE_MODE === "1"
+      || import.meta.env.VITE_APP_STORE_MODE === "true") return true;
+    if (typeof window !== "undefined") {
+      const h = window.location.hostname;
+      if (h === "app.nexora-iptv.com" || h.endsWith(".app.nexora-iptv.com")) return true;
+      const proto = window.location.protocol;
+      if (proto === "capacitor:" || proto === "ionic:") return true;
+    }
+    return false;
   } catch {
     return false;
   }
@@ -39,11 +46,18 @@ export const SANITIZE_DICT: Array<[RegExp, string]> = [
   [/\bTiviMate\b/gi, "lecteur compatible"],
   [/\bM-?IBO(?:\s*Player)?\b/gi, "lecteur compatible"],
   [/\bGSE\s*Smart\s*IPTV\b/gi, "lecteur compatible"],
+  [/\bSmart\s*IPTV\b/gi, "lecteur compatible"],
+  [/\bflux\s+TV\b/gi, "flux multimédia"],
+  [/\bVOD\b/g, "vidéo"],
+  [/\breplays?\b/gi, "rediffusions"],
+  [/\bdécodeurs?\b/gi, "boîtiers"],
+  [/\bEPG\b/g, "programme"],
 
   // Contenu
   [/\bchaînes?\s+TV\s+live\b/gi, "flux multimédia"],
   [/\bchaînes?\s+live\b/gi, "flux live"],
   [/\bchaînes?\s+TV\b/gi, "contenus"],
+  [/\bchaînes?\b/gi, "contenus"],
   [/\bchannels?\s+live\b/gi, "live media"],
   [/\blive\s+TV\s+channels?\b/gi, "live media"],
   [/\bTV\s+channels?\b/gi, "media"],
@@ -54,6 +68,8 @@ export const SANITIZE_DICT: Array<[RegExp, string]> = [
   [/\bIPTV\s+subscription\b/gi, "premium subscription"],
   [/\bIPTV\s+reseller\b/gi, "partner program"],
   [/\brevendeur\s+IPTV\b/gi, "partenaire"],
+  [/\breseller\b/gi, "partner"],
+  [/\brevendeurs?\b/gi, "partenaires"],
 
   // Marques protégées
   [/\bCanal\+?\b/g, ""],
@@ -90,6 +106,11 @@ const BLOCKED_ROUTE_PATTERNS: RegExp[] = [
   /^\/(fr|en|de)\/guide-iptv(\/|$)/i,
   /^\/espace-client\/downloads(\/|$)/i,
   /^\/gallery(\/|$)/i,
+  /^\/galerie(\/|$)/i,
+  /^\/downloads(\/|$)/i,
+  /^\/blog(\/|$)/i,
+  /^\/catalog(\/|$)/i,
+  /^\/legal-guide(\/|$)/i,
 ];
 
 export function isRouteBlocked(pathname: string): boolean {

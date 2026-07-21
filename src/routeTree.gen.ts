@@ -13,6 +13,7 @@ import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
 import { Route as TrackRouteImport } from './routes/track'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as RssDotxmlRouteImport } from './routes/rss[.]xml'
+import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as ResellerRouteImport } from './routes/reseller'
 import { Route as NccRouteImport } from './routes/ncc'
 import { Route as MerchantFeedDotxmlRouteImport } from './routes/merchant-feed[.]xml'
@@ -158,6 +159,11 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
 const RssDotxmlRoute = RssDotxmlRouteImport.update({
   id: '/rss.xml',
   path: '/rss.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
+  id: '/robots.txt',
+  path: '/robots.txt',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ResellerRoute = ResellerRouteImport.update({
@@ -827,6 +833,7 @@ export interface FileRoutesByFullPath {
   '/merchant-feed.xml': typeof MerchantFeedDotxmlRoute
   '/ncc': typeof NccRouteWithChildren
   '/reseller': typeof ResellerRoute
+  '/robots.txt': typeof RobotsDottxtRoute
   '/rss.xml': typeof RssDotxmlRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/track': typeof TrackRoute
@@ -954,6 +961,7 @@ export interface FileRoutesByTo {
   '/mcp': typeof McpRoute
   '/merchant-feed.xml': typeof MerchantFeedDotxmlRoute
   '/reseller': typeof ResellerRoute
+  '/robots.txt': typeof RobotsDottxtRoute
   '/rss.xml': typeof RssDotxmlRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/track': typeof TrackRoute
@@ -1084,6 +1092,7 @@ export interface FileRoutesById {
   '/merchant-feed.xml': typeof MerchantFeedDotxmlRoute
   '/ncc': typeof NccRouteWithChildren
   '/reseller': typeof ResellerRoute
+  '/robots.txt': typeof RobotsDottxtRoute
   '/rss.xml': typeof RssDotxmlRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/track': typeof TrackRoute
@@ -1218,6 +1227,7 @@ export interface FileRouteTypes {
     | '/merchant-feed.xml'
     | '/ncc'
     | '/reseller'
+    | '/robots.txt'
     | '/rss.xml'
     | '/sitemap.xml'
     | '/track'
@@ -1345,6 +1355,7 @@ export interface FileRouteTypes {
     | '/mcp'
     | '/merchant-feed.xml'
     | '/reseller'
+    | '/robots.txt'
     | '/rss.xml'
     | '/sitemap.xml'
     | '/track'
@@ -1474,6 +1485,7 @@ export interface FileRouteTypes {
     | '/merchant-feed.xml'
     | '/ncc'
     | '/reseller'
+    | '/robots.txt'
     | '/rss.xml'
     | '/sitemap.xml'
     | '/track'
@@ -1607,6 +1619,7 @@ export interface RootRouteChildren {
   MerchantFeedDotxmlRoute: typeof MerchantFeedDotxmlRoute
   NccRoute: typeof NccRouteWithChildren
   ResellerRoute: typeof ResellerRoute
+  RobotsDottxtRoute: typeof RobotsDottxtRoute
   RssDotxmlRoute: typeof RssDotxmlRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TrackRoute: typeof TrackRoute
@@ -1681,6 +1694,13 @@ declare module '@tanstack/react-router' {
       path: '/rss.xml'
       fullPath: '/rss.xml'
       preLoaderRoute: typeof RssDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/robots.txt': {
+      id: '/robots.txt'
+      path: '/robots.txt'
+      fullPath: '/robots.txt'
+      preLoaderRoute: typeof RobotsDottxtRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reseller': {
@@ -2825,6 +2845,7 @@ const rootRouteChildren: RootRouteChildren = {
   MerchantFeedDotxmlRoute: MerchantFeedDotxmlRoute,
   NccRoute: NccRouteWithChildren,
   ResellerRoute: ResellerRoute,
+  RobotsDottxtRoute: RobotsDottxtRoute,
   RssDotxmlRoute: RssDotxmlRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TrackRoute: TrackRoute,
