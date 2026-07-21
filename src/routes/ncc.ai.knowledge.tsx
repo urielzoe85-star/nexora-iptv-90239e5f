@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { BookOpen, Plus, Trash2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -23,13 +24,15 @@ function Knowledge() {
   const delFn = useServerFn(deleteKnowledge);
   const qc = useQueryClient();
   const q = useQuery({ queryKey: ["ai-kb"], queryFn: () => listFn() });
-  const [form, setForm] = useState({ id: "", category: "brand", title: "", content: "" });
+  const SECTIONS = ["brand", "products", "pricing", "tone", "faq", "guides"] as const;
+  type Section = (typeof SECTIONS)[number];
+  const [form, setForm] = useState<{ id: string; section: Section; title: string; content: string }>({ id: "", section: "brand", title: "", content: "" });
 
   const save = useMutation({
-    mutationFn: () => saveFn({ data: { ...form, id: form.id || undefined } }),
+    mutationFn: () => saveFn({ data: { section: form.section, title: form.title, content: form.content, id: form.id || undefined } }),
     onSuccess: () => {
       toast.success("Enregistre");
-      setForm({ id: "", category: "brand", title: "", content: "" });
+      setForm({ id: "", section: "brand", title: "", content: "" });
       qc.invalidateQueries({ queryKey: ["ai-kb"] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -48,8 +51,13 @@ function Knowledge() {
           <CardHeader><CardTitle className="text-base">{form.id ? "Modifier" : "Ajouter"}</CardTitle></CardHeader>
           <CardContent className="space-y-3">
             <div className="space-y-1">
-              <Label>Categorie</Label>
-              <Input value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} placeholder="brand, pricing, tone, faq..." />
+              <Label>Section</Label>
+              <Select value={form.section} onValueChange={(v) => setForm({ ...form, section: v as Section })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {SECTIONS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-1">
               <Label>Titre</Label>
@@ -65,7 +73,7 @@ function Knowledge() {
                 Enregistrer
               </Button>
               {form.id && (
-                <Button variant="ghost" onClick={() => setForm({ id: "", category: "brand", title: "", content: "" })}>Annuler</Button>
+                <Button variant="ghost" onClick={() => setForm({ id: "", section: "brand", title: "", content: "" })}>Annuler</Button>
               )}
             </div>
           </CardContent>
@@ -73,16 +81,16 @@ function Knowledge() {
 
         <div className="lg:col-span-2 space-y-3">
           {q.isLoading && <p className="text-sm text-muted-foreground">Chargement...</p>}
-          {q.data?.map((entry) => (
+          {q.data?.rows.map((entry) => (
             <Card key={entry.id}>
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
                   <div className="space-y-1">
                     <CardTitle className="text-sm">{entry.title}</CardTitle>
-                    <Badge variant="outline" className="text-[10px]">{entry.category}</Badge>
+                    <Badge variant="outline" className="text-[10px]">{entry.section}</Badge>
                   </div>
                   <div className="flex gap-1">
-                    <Button size="sm" variant="ghost" onClick={() => setForm({ id: entry.id, category: entry.category, title: entry.title, content: entry.content })}>Editer</Button>
+                    <Button size="sm" variant="ghost" onClick={() => setForm({ id: entry.id, section: entry.section as Section, title: entry.title, content: entry.content })}>Editer</Button>
                     <Button size="sm" variant="ghost" onClick={() => del.mutate(entry.id)}><Trash2 className="h-4 w-4" /></Button>
                   </div>
                 </div>
@@ -90,7 +98,7 @@ function Knowledge() {
               <CardContent className="text-sm whitespace-pre-wrap">{entry.content}</CardContent>
             </Card>
           ))}
-          {q.data && !q.data.length && <p className="text-sm text-muted-foreground">Aucune entree.</p>}
+          {q.data && !q.data.rows.length && <p className="text-sm text-muted-foreground">Aucune entree.</p>}
         </div>
       </div>
     </div>
