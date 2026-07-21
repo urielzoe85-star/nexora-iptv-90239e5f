@@ -88,6 +88,8 @@ async function sendEmailChannel(args: {
       message_id: messageId, template_name: "iptv-delivery",
       recipient_email: recipient, status: "pending",
     });
+    const { getOrCreateUnsubscribeToken } = await import("@/lib/email-unsubscribe.server");
+    const unsubscribeToken = await getOrCreateUnsubscribeToken(recipient);
     const { error } = await sb.rpc("enqueue_email", {
       queue_name: "transactional_emails",
       payload: {
@@ -99,6 +101,7 @@ async function sendEmailChannel(args: {
         purpose: "transactional",
         label: "iptv-delivery",
         idempotency_key: `iptv-delivery-auto-${args.order.id}`,
+        unsubscribe_token: unsubscribeToken,
         queued_at: new Date().toISOString(),
       },
     });
@@ -130,19 +133,14 @@ async function sendTelegramChannel(args: {
 }): Promise<Outcome> {
   const chatId = args.customer?.metadata?.telegram_chat_id;
   if (!chatId) return { ok: false, skipped: true, reason: "telegram_not_configured" };
-  const LOVABLE_API_KEY = process.env.LOVABLE_API_KEY;
-  const TELEGRAM_API_KEY = process.env.TELEGRAM_API_KEY;
-  if (!LOVABLE_API_KEY || !TELEGRAM_API_KEY) {
+  const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+  if (!TELEGRAM_BOT_TOKEN) {
     return { ok: false, skipped: true, reason: "telegram_credentials_missing" };
   }
   try {
-    const res = await fetch("https://connector-gateway.lovable.dev/telegram/sendMessage", {
+    const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "X-Connection-Api-Key": TELEGRAM_API_KEY,
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ chat_id: chatId, text: args.text, disable_web_page_preview: true }),
     });
     const body = await res.json().catch(() => ({}));
