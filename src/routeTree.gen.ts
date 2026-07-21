@@ -80,6 +80,7 @@ import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as AppHelpRouteImport } from './routes/app.help'
 import { Route as AppCompatibilityRouteImport } from './routes/app.compatibility'
 import { Route as AppAppsRouteImport } from './routes/app.apps'
+import { Route as AppAboutRouteImport } from './routes/app.about'
 import { Route as AdminPlansRouteImport } from './routes/admin.plans'
 import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
@@ -497,6 +498,11 @@ const AppAppsRoute = AppAppsRouteImport.update({
   path: '/apps',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAboutRoute = AppAboutRouteImport.update({
+  id: '/about',
+  path: '/about',
+  getParentRoute: () => AppRoute,
+} as any)
 const AdminPlansRoute = AdminPlansRouteImport.update({
   id: '/plans',
   path: '/plans',
@@ -840,6 +846,7 @@ export interface FileRoutesByFullPath {
   '/admin/login': typeof AdminLoginRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/plans': typeof AdminPlansRoute
+  '/app/about': typeof AppAboutRoute
   '/app/apps': typeof AppAppsRoute
   '/app/compatibility': typeof AppCompatibilityRoute
   '/app/help': typeof AppHelpRoute
@@ -966,6 +973,7 @@ export interface FileRoutesByTo {
   '/admin/login': typeof AdminLoginRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/plans': typeof AdminPlansRoute
+  '/app/about': typeof AppAboutRoute
   '/app/apps': typeof AppAppsRoute
   '/app/compatibility': typeof AppCompatibilityRoute
   '/app/help': typeof AppHelpRoute
@@ -1097,6 +1105,7 @@ export interface FileRoutesById {
   '/admin/login': typeof AdminLoginRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/plans': typeof AdminPlansRoute
+  '/app/about': typeof AppAboutRoute
   '/app/apps': typeof AppAppsRoute
   '/app/compatibility': typeof AppCompatibilityRoute
   '/app/help': typeof AppHelpRoute
@@ -1231,6 +1240,7 @@ export interface FileRouteTypes {
     | '/admin/login'
     | '/admin/orders'
     | '/admin/plans'
+    | '/app/about'
     | '/app/apps'
     | '/app/compatibility'
     | '/app/help'
@@ -1357,6 +1367,7 @@ export interface FileRouteTypes {
     | '/admin/login'
     | '/admin/orders'
     | '/admin/plans'
+    | '/app/about'
     | '/app/apps'
     | '/app/compatibility'
     | '/app/help'
@@ -1487,6 +1498,7 @@ export interface FileRouteTypes {
     | '/admin/login'
     | '/admin/orders'
     | '/admin/plans'
+    | '/app/about'
     | '/app/apps'
     | '/app/compatibility'
     | '/app/help'
@@ -2153,6 +2165,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAppsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/about': {
+      id: '/app/about'
+      path: '/about'
+      fullPath: '/app/about'
+      preLoaderRoute: typeof AppAboutRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/admin/plans': {
       id: '/admin/plans'
       path: '/plans'
@@ -2592,6 +2611,7 @@ const AdminRouteChildren: AdminRouteChildren = {
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 interface AppRouteChildren {
+  AppAboutRoute: typeof AppAboutRoute
   AppAppsRoute: typeof AppAppsRoute
   AppCompatibilityRoute: typeof AppCompatibilityRoute
   AppHelpRoute: typeof AppHelpRoute
@@ -2599,6 +2619,7 @@ interface AppRouteChildren {
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppAboutRoute: AppAboutRoute,
   AppAppsRoute: AppAppsRoute,
   AppCompatibilityRoute: AppCompatibilityRoute,
   AppHelpRoute: AppHelpRoute,
