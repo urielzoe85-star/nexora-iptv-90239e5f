@@ -243,6 +243,9 @@ export function BlogEditor({ postId }: { postId?: string }) {
             {cover && <img src={cover} alt={coverAlt} className="w-full rounded border object-cover aspect-video" />}
             <div className="flex gap-2">
               <Button variant="outline" size="sm" onClick={uploadCover}><Upload className="h-4 w-4 mr-2" />Téléverser</Button>
+              <Button variant="outline" size="sm" onClick={generateCoverAI} disabled={aiBusy}>
+                {aiBusy ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}IA
+              </Button>
               {cover && <Button variant="ghost" size="sm" onClick={() => setCover("")}><X className="h-4 w-4" /></Button>}
             </div>
             <Input placeholder="Texte alternatif (accessibilité + SEO)" value={coverAlt} onChange={(e) => setCoverAlt(e.target.value)} />
