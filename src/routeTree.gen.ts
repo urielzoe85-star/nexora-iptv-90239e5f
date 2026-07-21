@@ -57,6 +57,7 @@ import { Route as NccBulkRouteImport } from './routes/ncc.bulk'
 import { Route as NccBotsRouteImport } from './routes/ncc.bots'
 import { Route as NccAutomationRouteImport } from './routes/ncc.automation'
 import { Route as NccAnalyticsRouteImport } from './routes/ncc.analytics'
+import { Route as NccAiRouteImport } from './routes/ncc.ai'
 import { Route as LegalTermsRouteImport } from './routes/legal.terms'
 import { Route as LegalSalesRouteImport } from './routes/legal.sales'
 import { Route as LegalRefundRouteImport } from './routes/legal.refund'
@@ -373,6 +374,11 @@ const NccAutomationRoute = NccAutomationRouteImport.update({
 const NccAnalyticsRoute = NccAnalyticsRouteImport.update({
   id: '/analytics',
   path: '/analytics',
+  getParentRoute: () => NccRoute,
+} as any)
+const NccAiRoute = NccAiRouteImport.update({
+  id: '/ai',
+  path: '/ai',
   getParentRoute: () => NccRoute,
 } as any)
 const LegalTermsRoute = LegalTermsRouteImport.update({
@@ -827,6 +833,7 @@ export interface FileRoutesByFullPath {
   '/legal/refund': typeof LegalRefundRoute
   '/legal/sales': typeof LegalSalesRoute
   '/legal/terms': typeof LegalTermsRoute
+  '/ncc/ai': typeof NccAiRoute
   '/ncc/analytics': typeof NccAnalyticsRoute
   '/ncc/automation': typeof NccAutomationRoute
   '/ncc/bots': typeof NccBotsRoute
@@ -949,6 +956,7 @@ export interface FileRoutesByTo {
   '/legal/refund': typeof LegalRefundRoute
   '/legal/sales': typeof LegalSalesRoute
   '/legal/terms': typeof LegalTermsRoute
+  '/ncc/ai': typeof NccAiRoute
   '/ncc/analytics': typeof NccAnalyticsRoute
   '/ncc/automation': typeof NccAutomationRoute
   '/ncc/bots': typeof NccBotsRoute
@@ -1075,6 +1083,7 @@ export interface FileRoutesById {
   '/legal/refund': typeof LegalRefundRoute
   '/legal/sales': typeof LegalSalesRoute
   '/legal/terms': typeof LegalTermsRoute
+  '/ncc/ai': typeof NccAiRoute
   '/ncc/analytics': typeof NccAnalyticsRoute
   '/ncc/automation': typeof NccAutomationRoute
   '/ncc/bots': typeof NccBotsRoute
@@ -1204,6 +1213,7 @@ export interface FileRouteTypes {
     | '/legal/refund'
     | '/legal/sales'
     | '/legal/terms'
+    | '/ncc/ai'
     | '/ncc/analytics'
     | '/ncc/automation'
     | '/ncc/bots'
@@ -1326,6 +1336,7 @@ export interface FileRouteTypes {
     | '/legal/refund'
     | '/legal/sales'
     | '/legal/terms'
+    | '/ncc/ai'
     | '/ncc/analytics'
     | '/ncc/automation'
     | '/ncc/bots'
@@ -1451,6 +1462,7 @@ export interface FileRouteTypes {
     | '/legal/refund'
     | '/legal/sales'
     | '/legal/terms'
+    | '/ncc/ai'
     | '/ncc/analytics'
     | '/ncc/automation'
     | '/ncc/bots'
@@ -1931,6 +1943,13 @@ declare module '@tanstack/react-router' {
       path: '/analytics'
       fullPath: '/ncc/analytics'
       preLoaderRoute: typeof NccAnalyticsRouteImport
+      parentRoute: typeof NccRoute
+    }
+    '/ncc/ai': {
+      id: '/ncc/ai'
+      path: '/ai'
+      fullPath: '/ncc/ai'
+      preLoaderRoute: typeof NccAiRouteImport
       parentRoute: typeof NccRoute
     }
     '/legal/terms': {
@@ -2639,6 +2658,7 @@ const NccSettingsRouteWithChildren = NccSettingsRoute._addFileChildren(
 )
 
 interface NccRouteChildren {
+  NccAiRoute: typeof NccAiRoute
   NccAnalyticsRoute: typeof NccAnalyticsRoute
   NccAutomationRoute: typeof NccAutomationRoute
   NccBotsRoute: typeof NccBotsRoute
@@ -2668,6 +2688,7 @@ interface NccRouteChildren {
 }
 
 const NccRouteChildren: NccRouteChildren = {
+  NccAiRoute: NccAiRoute,
   NccAnalyticsRoute: NccAnalyticsRoute,
   NccAutomationRoute: NccAutomationRoute,
   NccBotsRoute: NccBotsRoute,
