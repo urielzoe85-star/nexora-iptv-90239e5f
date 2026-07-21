@@ -23,17 +23,13 @@ function safeEqual(a: string, b: string) {
   return A.length === B.length && timingSafeEqual(A, B);
 }
 
-const GATEWAY = "https://connector-gateway.lovable.dev/telegram";
-
 async function tgSend(chatId: number | string, text: string) {
   try {
-    await fetch(`${GATEWAY}/sendMessage`, {
+    const token = process.env.TELEGRAM_BOT_TOKEN;
+    if (!token) return;
+    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${process.env.LOVABLE_API_KEY}`,
-        "X-Connection-Api-Key": process.env.TELEGRAM_API_KEY!,
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ chat_id: chatId, text, disable_web_page_preview: true, parse_mode: "Markdown" }),
     });
   } catch { /* swallow — webhook must always 200 */ }
@@ -43,10 +39,10 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const TELEGRAM_API_KEY = process.env.TELEGRAM_API_KEY;
-        if (!TELEGRAM_API_KEY) return new Response("Not configured", { status: 503 });
+        const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+        if (!TELEGRAM_BOT_TOKEN) return new Response("Not configured", { status: 503 });
 
-        const expected = deriveSecret(TELEGRAM_API_KEY);
+        const expected = deriveSecret(TELEGRAM_BOT_TOKEN);
         const provided = request.headers.get("X-Telegram-Bot-Api-Secret-Token") ?? "";
         if (!safeEqual(provided, expected)) return new Response("Unauthorized", { status: 401 });
 

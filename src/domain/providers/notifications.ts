@@ -59,6 +59,14 @@ class EmailChannel implements NotificationChannelAdapter {
         .from("suppressed_emails").select("id").eq("email", to.toLowerCase()).maybeSingle();
       if (suppressed) return { status: "failed", error: "recipient_suppressed" };
 
+      const { getOrCreateUnsubscribeToken } = await import("@/lib/email-unsubscribe.server");
+      let unsubscribeToken: string;
+      try {
+        unsubscribeToken = await getOrCreateUnsubscribeToken(to);
+      } catch (e: any) {
+        return { status: "failed", error: e?.message ?? "unsubscribe_token_error" };
+      }
+
       const messageId = crypto.randomUUID();
       await sb.from("email_send_log").insert({
         message_id: messageId,
@@ -79,6 +87,7 @@ class EmailChannel implements NotificationChannelAdapter {
           purpose: "transactional",
           label: "ncc-notification",
           idempotency_key: `ncc-notif-${messageId}`,
+          unsubscribe_token: unsubscribeToken,
           queued_at: new Date().toISOString(),
         },
       });
@@ -97,7 +106,7 @@ class TelegramChannel implements NotificationChannelAdapter {
   readonly label = "Telegram";
   get enabled() {
     if (typeof process === "undefined" || !process.env) return false;
-    return Boolean(process.env.LOVABLE_API_KEY && process.env.TELEGRAM_API_KEY);
+    return Boolean(process.env.TELEGRAM_BOT_TOKEN);
   }
   async send(input: NotificationDispatchInput): Promise<NotificationDispatchResult> {
     try {
