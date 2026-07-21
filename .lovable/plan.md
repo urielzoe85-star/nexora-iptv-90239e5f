@@ -1,31 +1,57 @@
-## Diagnostic (vérifié via `email_send_log` + statut domaines)
+## Objectif
 
-Le bouton **Test** de Cloud → Emails fonctionne parce qu'il utilise le domaine du projet, qui est **`account.nexora-iptv.com`** (sous-domaine expéditeur `notify.account.nexora-iptv.com`, seul domaine vérifié pour ce projet).
+Vérifier que les 3 canaux (Email, WhatsApp, Telegram) fonctionnent bout-en-bout depuis les deux points d'entrée admin du NCC, et remonter les erreurs exactes en cas d'échec.
 
-Toutes les autres routes d'envoi (NCC → Notifications, NCC → Services, livraison IPTV, bulk) codent en dur `notify.nexora-iptv.com` comme `sender_domain`. Ce domaine n'est **pas vérifié** sur ce projet → le processor renvoie `403 domain_not_verified` et le message file en DLQ. Deux échecs de ce type ce soir (22:02 et 22:04 UTC) sur `urielzoe85@gmail.com`, template `ncc-notification`.
+## Points d'entrée testés
 
-WhatsApp et Telegram utilisent les bons secrets (WHATSAPP_ACCESS_TOKEN / TELEGRAM_API_KEY présents). Si un envoi échoue, c'est côté destinataire (numéro / chat_id manquant sur la commande) — la couche envoi elle-même est saine. Une fois le canal email réparé, on re-teste WA/TG et on complète seulement si un vrai échec remonte.
+1. **NCC → Notifications** (`/ncc/notifications`) — appel de `sendNotification` via `NotificationsView`, qui passe par `NOTIFICATION_CHANNELS_REGISTRY` (`src/domain/providers/notifications.ts`).
+2. **NCC → Services** (composer de livraison / delivery admin) — appel des helpers `sendEmailAuto`, `sendWhatsAppAuto`, `sendTelegramAuto` dans `src/lib/delivery.functions.ts`.
 
-## Fix
+## Déroulé du test
 
-Remplacer partout la paire hardcodée :
-- `from: "Nexora IPTV <noreply@notify.nexora-iptv.com>"` → `noreply@notify.account.nexora-iptv.com`
-- `sender_domain: "notify.nexora-iptv.com"` → `notify.account.nexora-iptv.com`
+Pour chaque point d'entrée × chaque canal (6 combinaisons) :
 
-Fichiers concernés (4) :
-1. `src/domain/providers/notifications.ts` (NCC → Notifications — cause directe des DLQ observés)
-2. `src/lib/delivery.functions.ts` (NCC → Services / Composer, `sendEmailAuto`)
-3. `src/lib/iptv-dispatch.server.ts` (dispatch multi-canal payment-confirmed)
-4. `src/lib/bulk-send.functions.ts` (envoi en masse)
+1. Déclencher un envoi réel via un server function call authentifié admin
+   (Playwright sur `localhost:8080` avec session Supabase injectée) avec des
+   destinataires de test :
+   - Email → adresse fournie par l'utilisateur (à confirmer, voir Questions).
+   - WhatsApp → numéro admin `698608808` (déjà configuré côté secrets).
+   - Telegram → `TELEGRAM_ADMIN_CHAT_ID` du projet.
+2. Capturer :
+   - Réponse immédiate du server fn (status/error).
+   - Ligne insérée dans `notifications` (status, error).
+   - Pour email : ligne(s) `email_send_log` (`pending` → `sent`/`dlq` + `error_message`).
+   - Pour WhatsApp : code Meta Graph + `data.error.message`.
+   - Pour Telegram : réponse du gateway Lovable.
+3. Après ~15s, rejouer une lecture des mêmes tables pour attraper l'état final
+   après passage du cron `process-email-queue`.
 
-Aucun changement de logique, seul le domaine expéditeur change. Templates, files pgmq, cron, RLS, `email_send_log` restent identiques.
+## Diagnostic & rapport
 
-## Nettoyage & vérification
+Produire un tableau récapitulatif :
 
-1. Reprocess ou marquer `failed` les entrées DLQ récentes `ncc-notification` du 20 juillet (elles ne peuvent pas partir avec l'ancien domaine).
-2. Envoyer un email test depuis NCC → Notifications sur `urielzoe85@gmail.com` et vérifier `email_send_log.status = 'sent'`.
-3. Tester un envoi WhatsApp et Telegram depuis NCC → Services sur une commande ayant `phone` + `metadata.telegram_chat_id`. Si erreur, on ouvrira un correctif ciblé avec le message provider exact — pas de spéculation avant.
+```text
+Canal      | Point d'entrée   | Résultat | Erreur exacte
+-----------+------------------+----------+---------------------------
+email      | Notifications    | ?        | ?
+email      | Services         | ?        | ?
+whatsapp   | Notifications    | ?        | ?
+whatsapp   | Services         | ?        | ?
+telegram   | Notifications    | ?        | ?
+telegram   | Services         | ?        | ?
+```
 
-## Détails techniques
+Pour chaque KO : citer la ligne SQL / le status HTTP / le message provider
+(ex. `403 domain_not_verified`, `chat not found`, `#131030 recipient not in
+allowed list`) et proposer le correctif ciblé (secret, domaine, opt-in
+WhatsApp, template requis hors fenêtre 24h, etc.).
 
-Le domaine du projet est fixé au niveau Cloud (`account.nexora-iptv.com`), pas modifiable via code. `notify.nexora-iptv.com` reste en `initiated` (jamais validé) — ne pas essayer de l'utiliser tant que la vérification DNS n'aboutit pas.
+## Aucune modification de code prévue
+
+Ce plan est purement diagnostic. Les correctifs éventuels feront l'objet d'un
+plan de suivi une fois les erreurs exactes identifiées.
+
+## Questions avant exécution
+
+- Adresse email de test à utiliser pour la réception réelle ?
+- OK pour envoyer sur le numéro WhatsApp admin `698608808` et le chat Telegram admin ?
