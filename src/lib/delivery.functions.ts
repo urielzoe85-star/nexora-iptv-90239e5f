@@ -115,6 +115,12 @@ export const sendTelegramAuto = createServerFn({ method: "POST" })
     if (!process.env.TELEGRAM_BOT_TOKEN) {
       throw new Error("Telegram non configuré (TELEGRAM_BOT_TOKEN manquant)");
     }
+    const chatIdStr = String(data.chat_id).trim();
+    if (!/^-?\d+$/.test(chatIdStr)) {
+      throw new Error(
+        `chat_id Telegram invalide (« ${chatIdStr} »). Ce n'est pas un numéro de téléphone : le client doit ouvrir t.me/NexoraIPTVBot?start=REF pour lier son chat.`,
+      );
+    }
     let ok = false;
     let errMsg: string | null = null;
     let messageId: number | undefined;
@@ -126,7 +132,7 @@ export const sendTelegramAuto = createServerFn({ method: "POST" })
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ chat_id: data.chat_id, text: data.text, disable_web_page_preview: true }),
+          body: JSON.stringify({ chat_id: chatIdStr, text: data.text, disable_web_page_preview: true }),
         },
       );
       const body = await res.json().catch(() => ({}));

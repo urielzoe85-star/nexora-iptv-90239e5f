@@ -8,14 +8,13 @@ import { requireAdmin } from "@/lib/require-admin";
 export const getBotsStatus = createServerFn({ method: "GET" })
   .middleware([requireAdmin])
   .handler(async () => {
-    const hasLovable = Boolean(process.env.LOVABLE_API_KEY);
-    const hasTelegram = Boolean(process.env.TELEGRAM_API_KEY);
+    const hasTelegram = Boolean(process.env.TELEGRAM_BOT_TOKEN);
     const adminChatId = process.env.TELEGRAM_ADMIN_CHAT_ID ?? null;
 
     let bot: any = null;
     let webhook: any = null;
     let error: string | null = null;
-    if (hasLovable && hasTelegram) {
+    if (hasTelegram) {
       try {
         const { getBotInfo, getWebhookInfo } = await import("@/lib/telegram.server");
         const [b, w] = await Promise.all([getBotInfo(), getWebhookInfo()]);
@@ -33,14 +32,69 @@ export const getBotsStatus = createServerFn({ method: "GET" })
       .select("id", { count: "exact", head: true })
       .not("metadata->>telegram_chat_id", "is", null);
 
+    const adminChatIsNumeric = adminChatId ? /^-?\d+$/.test(adminChatId.trim()) : false;
+
     return {
-      configured: hasLovable && hasTelegram,
+      configured: hasTelegram,
       adminChatConfigured: Boolean(adminChatId),
+      adminChatIsNumeric,
       bot,
       webhook,
       subscribers: count ?? 0,
       error,
     };
+  });
+
+// ── WhatsApp Cloud API diagnostics ──────────────────────────────────────────
+export const getWhatsAppStatus = createServerFn({ method: "GET" })
+  .middleware([requireAdmin])
+  .handler(async () => {
+    const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID ?? null;
+    const hasToken = Boolean(process.env.WHATSAPP_ACCESS_TOKEN);
+    const adminPhone = process.env.WHATSAPP_ADMIN_PHONE ?? null;
+    const configured = Boolean(phoneNumberId && hasToken);
+
+    let phone: any = null;
+    let error: string | null = null;
+    if (configured) {
+      try {
+        const res = await fetch(
+          `https://graph.facebook.com/v21.0/${phoneNumberId}?fields=display_phone_number,verified_name,quality_rating,code_verification_status,platform_type`,
+          { headers: { Authorization: `Bearer ${process.env.WHATSAPP_ACCESS_TOKEN}` } },
+        );
+        const body = await res.json().catch(() => ({} as any));
+        if (!res.ok || body?.error) {
+          error = body?.error?.message
+            ? `[${body.error.code ?? res.status}] ${body.error.message}`
+            : `HTTP ${res.status}`;
+          if (res.status === 401 || res.status === 403) {
+            try {
+              const { noteSecretInvalid } = await import("@/lib/secret-guard.server");
+              await noteSecretInvalid("WHATSAPP_ACCESS_TOKEN", { route: "bots.status" }, error);
+            } catch { /* optional */ }
+          }
+        } else {
+          phone = body;
+        }
+      } catch (e: any) {
+        error = e?.message ?? String(e);
+      }
+    }
+
+    return {
+      configured,
+      phoneNumberId,
+      adminPhoneConfigured: Boolean(adminPhone),
+      phone,
+      error,
+    };
+  });
+
+export const testAdminWhatsApp = createServerFn({ method: "POST" })
+  .middleware([requireAdmin])
+  .handler(async () => {
+    const { notifyAdminWhatsApp } = await import("@/lib/whatsapp.server");
+    return notifyAdminWhatsApp("🔔 Test Nexora — canal WhatsApp opérationnel.");
   });
 
 export const setupTelegramWebhook = createServerFn({ method: "POST" })
