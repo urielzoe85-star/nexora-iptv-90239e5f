@@ -6,6 +6,7 @@ import {
   adminCreatePost, adminUpdatePost, adminGetPost, adminListCategories,
   adminListTags, adminUpsertTag, adminUploadBlogImage,
 } from "@/lib/blog.functions";
+import { generateBlogImage } from "@/lib/ai-center/image.functions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { TipTapEditor } from "./TipTapEditor";
 import { SeoPanel } from "./SeoPanel";
-import { Loader2, Save, X, Upload } from "lucide-react";
+import { Loader2, Save, X, Upload, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 function slugifyClient(s: string) {
@@ -33,6 +34,8 @@ export function BlogEditor({ postId }: { postId?: string }) {
   const listTags = useServerFn(adminListTags);
   const upsertTag = useServerFn(adminUpsertTag);
   const upload = useServerFn(adminUploadBlogImage);
+  const aiImage = useServerFn(generateBlogImage);
+  const [aiBusy, setAiBusy] = useState(false);
 
   const { data: cats } = useQuery({ queryKey: ["ncc","blog","cats"], queryFn: () => listCats() });
   const { data: tags } = useQuery({ queryKey: ["ncc","blog","tags"], queryFn: () => listTags() });
@@ -102,6 +105,28 @@ export function BlogEditor({ postId }: { postId?: string }) {
       } catch (e: any) { toast.error(e?.message ?? "Erreur d'upload", { id: tId }); }
     };
     input.click();
+  }
+
+  async function generateCoverAI() {
+    const promptText = window.prompt(
+      "Décris l'image à générer (sujet, ambiance, cadrage)",
+      title ? `Illustration éditoriale pour "${title}"` : "",
+    );
+    if (!promptText || promptText.trim().length < 4) return;
+    const tId = toast.loading("Génération de l'image IA…");
+    setAiBusy(true);
+    try {
+      const { url } = await aiImage({
+        data: { prompt: promptText.trim(), slot: "cover", style: "photorealistic", alt: coverAlt || title },
+      });
+      setCover(url);
+      if (!coverAlt && title) setCoverAlt(title);
+      toast.success("Image IA générée", { id: tId });
+    } catch (e: any) {
+      toast.error(e?.message ?? "Erreur IA", { id: tId });
+    } finally {
+      setAiBusy(false);
+    }
   }
 
   function fileToBase64(file: File): Promise<string> {
