@@ -117,18 +117,13 @@ async function sendWhatsApp(text: string, phone: string) {
 }
 
 async function sendTelegram(text: string, chatId: string | number) {
-  const LOVABLE_API_KEY = process.env.LOVABLE_API_KEY;
-  const TELEGRAM_API_KEY = process.env.TELEGRAM_API_KEY;
-  if (!LOVABLE_API_KEY || !TELEGRAM_API_KEY) {
+  const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+  if (!TELEGRAM_BOT_TOKEN) {
     return { ok: false, error: "telegram_not_configured" };
   }
-  const res = await fetch("https://connector-gateway.lovable.dev/telegram/sendMessage", {
+  const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${LOVABLE_API_KEY}`,
-      "X-Connection-Api-Key": TELEGRAM_API_KEY,
-      "Content-Type": "application/json",
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ chat_id: chatId, text, disable_web_page_preview: true }),
   });
   const body = await res.json().catch(() => ({}));
@@ -146,6 +141,10 @@ async function sendEmail(sb: any, args: { subject: string; body: string; recipie
     message_id: messageId, template_name: args.label,
     recipient_email: args.recipient, status: "pending",
   });
+  const { getOrCreateUnsubscribeToken } = await import("@/lib/email-unsubscribe.server");
+  let unsubscribeToken: string;
+  try { unsubscribeToken = await getOrCreateUnsubscribeToken(args.recipient); }
+  catch (e: any) { return { ok: false, error: `unsubscribe_token: ${e?.message ?? e}` }; }
   const { error } = await sb.rpc("enqueue_email", {
     queue_name: "transactional_emails",
     payload: {
@@ -158,6 +157,7 @@ async function sendEmail(sb: any, args: { subject: string; body: string; recipie
       purpose: "transactional",
       label: args.label,
       idempotency_key: `bulk-${args.label}-${args.orderId ?? args.recipient}-${Date.now()}`,
+      unsubscribe_token: unsubscribeToken,
       queued_at: new Date().toISOString(),
     },
   });
