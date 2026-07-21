@@ -1,26 +1,17 @@
-// Serveur — utilitaires Telegram partagés (gateway Lovable + BotFather).
+// Serveur — utilitaires Telegram partagés (Bot API directe).
 // Importer uniquement côté serveur (server functions, routes API, actions).
 
-const GATEWAY = "https://connector-gateway.lovable.dev/telegram";
-
-function creds() {
-  const LOVABLE_API_KEY = process.env.LOVABLE_API_KEY;
-  const TELEGRAM_API_KEY = process.env.TELEGRAM_API_KEY;
-  if (!LOVABLE_API_KEY || !TELEGRAM_API_KEY) {
-    throw new Error("Telegram non configuré (LOVABLE_API_KEY ou TELEGRAM_API_KEY manquant)");
-  }
-  return { LOVABLE_API_KEY, TELEGRAM_API_KEY };
+function botToken(): string {
+  const t = process.env.TELEGRAM_BOT_TOKEN;
+  if (!t) throw new Error("Telegram non configuré (TELEGRAM_BOT_TOKEN manquant)");
+  return t;
 }
 
 async function tgCall(method: string, body: Record<string, unknown>): Promise<any> {
-  const { LOVABLE_API_KEY, TELEGRAM_API_KEY } = creds();
-  const res = await fetch(`${GATEWAY}/${method}`, {
+  const token = botToken();
+  const res = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${LOVABLE_API_KEY}`,
-      "X-Connection-Api-Key": TELEGRAM_API_KEY,
-      "Content-Type": "application/json",
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
   const data = await res.json().catch(() => ({}));
@@ -54,39 +45,19 @@ export async function notifyAdminTelegram(text: string): Promise<{ sent: boolean
 
 /** Récupère les infos du webhook Telegram enregistré. */
 export async function getWebhookInfo(): Promise<any> {
-  const { LOVABLE_API_KEY, TELEGRAM_API_KEY } = creds();
-  const res = await fetch(`${GATEWAY}/getWebhookInfo`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${LOVABLE_API_KEY}`,
-      "X-Connection-Api-Key": TELEGRAM_API_KEY,
-      "Content-Type": "application/json",
-    },
-    body: "{}",
-  });
-  return res.json();
+  return tgCall("getWebhookInfo", {});
 }
 
 /** Récupère les infos du bot (getMe). */
 export async function getBotInfo(): Promise<any> {
-  const { LOVABLE_API_KEY, TELEGRAM_API_KEY } = creds();
-  const res = await fetch(`${GATEWAY}/getMe`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${LOVABLE_API_KEY}`,
-      "X-Connection-Api-Key": TELEGRAM_API_KEY,
-      "Content-Type": "application/json",
-    },
-    body: "{}",
-  });
-  return res.json();
+  return tgCall("getMe", {});
 }
 
-/** Enregistre le webhook (secret dérivé de TELEGRAM_API_KEY, cf. route publique). */
+/** Enregistre le webhook (secret dérivé de TELEGRAM_BOT_TOKEN, cf. route publique). */
 export async function setWebhook(url: string): Promise<any> {
   const { createHash } = await import("crypto");
   const secret_token = createHash("sha256")
-    .update(`telegram-webhook:${process.env.TELEGRAM_API_KEY}`)
+    .update(`telegram-webhook:${botToken()}`)
     .digest("base64url");
   return tgCall("setWebhook", {
     url,
