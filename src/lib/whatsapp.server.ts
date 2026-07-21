@@ -48,11 +48,16 @@ async function waCall(path: string, body: Record<string, unknown>): Promise<{
   const data = await res.json().catch(() => ({} as any));
   const ok = res.ok && !data?.error;
   if (!ok) await noteAuthFailure(res.status);
+  const errMsg = ok
+    ? undefined
+    : data?.error?.message
+      ? `[${data.error.code ?? res.status}${data.error.error_subcode ? "/" + data.error.error_subcode : ""}] ${data.error.message}${data.error.error_data?.details ? ` — ${data.error.error_data.details}` : ""}`
+      : `HTTP ${res.status}`;
   return {
     ok,
     status: res.status,
     data,
-    error: ok ? undefined : (data?.error?.message ?? `HTTP ${res.status}`),
+    error: errMsg,
     messageId: data?.messages?.[0]?.id,
   };
 }
@@ -63,7 +68,9 @@ async function waCall(path: string, body: Record<string, unknown>): Promise<{
  */
 export async function sendWhatsAppText(to: string, body: string) {
   const phone = normalizeWaNumber(to);
-  if (!phone) return { ok: false, status: 0, data: null, error: "phone_missing" } as const;
+  if (!phone || phone.length < 8) {
+    return { ok: false, status: 0, data: null, error: `invalid_phone (${to})` } as const;
+  }
   return waCall("messages", {
     messaging_product: "whatsapp",
     recipient_type: "individual",
