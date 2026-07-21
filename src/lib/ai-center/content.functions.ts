@@ -87,7 +87,7 @@ export const generateBlogDraft = createServerFn({ method: "POST" })
     let coverUrl: string | null = null;
     let coverAlt: string | null = null;
     const inlineImages: Array<{ url: string; alt: string; placement?: string }> = [];
-    const imageLogs: Array<Record<string, unknown>> = [];
+    const imageLogs: Array<{ ok: boolean; model?: string; slot?: string; path?: string; error?: string }> = [];
 
     if (wantImages && parsed.imagePrompts?.length) {
       const { generateNexoraImage, insertInlineImages } = await import("./image-gen.server");
