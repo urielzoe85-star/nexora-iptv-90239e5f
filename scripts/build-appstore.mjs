@@ -46,7 +46,6 @@ const DELETE_PATHS = [
   "src/components/ncc",
   "src/components/admin",
   "src/components/ai",
-  "src/lib/email-templates",
 ];
 
 // Files kept-but-stubbed: their exports may still be imported by kept
