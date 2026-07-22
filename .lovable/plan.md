@@ -1,69 +1,64 @@
-# Audit final App Store — app.nexora-iptv.com
+## Objectif
 
-Objectif : produire un rapport prouvant qu'aucun terme sensible (IPTV, M3U, Xtream, EPG, VOD, reseller, bouquet, chaînes TV, décodeur, Smarters, TiviMate, marques protégées…) n'est servi sous `app.nexora-iptv.com`, et que le Gate neutralise correctement le rendu.
+Obtenir un rapport d'audit App Store **PASS** (0 occurrence des 22 termes sensibles) pour le build servi sur `app.nexora-iptv.com`, sans dégrader la version publique `nexora-iptv.com`.
 
-## 1. Build App Store neutralisé
+## Contexte
 
-```bash
-VITE_APP_STORE_MODE=1 bun run build
-bash scripts/check-appstore-build.sh dist
-```
+Audit précédent (`docs/releases/appstore/audit-20260721.md`) : **FAIL — 200 occurrences** réparties sur :
+- HTML SSR (`__root.tsx` head statique)
+- 67 chunks JS (dont entry principal + 26 chunks aux noms sensibles)
+- Fichiers statiques (`manifest.webmanifest`, `llms.txt`)
+- Précache Workbox du service worker
 
-Le script existant refuse déjà le build si un terme prohibé subsiste dans `dist/`. On l'utilise comme première barrière.
+## Plan de correction (5 étapes)
 
-## 2. Audit statique du bundle `dist/`
+### 1. `head()` conscient de l'hôte (SSR)
+- `src/routes/__root.tsx` : rendre `head()` dynamique via l'origine de la requête (server fn `getRequestOrigin` déjà existante) → titre / description / JSON-LD neutres (« Nexora Hub — Streaming premium ») quand hostname = `app.nexora-iptv.com`.
+- Idem sur les leaf routes publiques (`index.tsx`, `pricing`, `blog`, etc.) : basculer sur `loaderData.origin` pour choisir metadata publique vs neutre.
 
-Un script Node `scripts/audit-appstore.mjs` (créé pour l'audit) va scanner `dist/` selon la checklist :
+### 2. Exclusion des routes sensibles du build App Store
+- Nouveau flag `VITE_APP_STORE_MODE=1` déjà en place → étendre `AppStoreGate` pour renvoyer 404 côté SSR (pas seulement runtime DOM) sur : `/ncc/*`, `/reseller`, `/guide-iptv-*`, `/blog/*` contenant termes sensibles, `/produits/*`.
+- Ajouter dans `vite.config.ts` un plugin `defineRoutesFilter` qui, quand `APP_STORE_MODE`, retire ces routes du `routeTree.gen.ts` via un pré-processeur (ou renvoie un stub `notFound()` dans `beforeLoad`).
+- Résultat : les chunks de ces routes ne sont plus émis.
 
-| # | Cible | Vérification |
-|---|---|---|
-| 1 | Textes visibles | grep sur `.html` + tous chunks `.js` avec le dictionnaire étendu |
-| 2 | Menus / labels | scan des chaînes contenant `nav`, `menu`, aria-label, alt |
-| 3 | Images | inventaire des `.png/.jpg/.svg/.webp` référencés + OCR-free : vérification des noms de fichiers (aucun `iptv`, `m3u`, `smarters`, `channel`…) |
-| 4 | JSON | scan récursif `.json`, `.webmanifest` (dont `manifest.appstore.webmanifest`) |
-| 5 | Données envoyées au navigateur | HTML initial + chunks + inline JSON (`__TSR__`, `dehydrated`) |
-| 6 | Erreurs JS | run Playwright headless sur `http://localhost:8080` avec header `Host: app.nexora-iptv.com` : capture `console.error` / `pageerror` |
-| 7 | Réponses API servies au sous-domaine | fetch `/sitemap.xml`, `/rss.xml`, `/robots.txt`, `/manifest.webmanifest` avec `Host: app.nexora-iptv.com` → doivent être vides / neutres |
-| 8 | Fichiers statiques | check `public/manifest.appstore.webmanifest`, robots route dynamique, sitemap/rss vides sur ce host |
-| 9 | Vérif zéro-occurrence | consolidation : liste des matches (fichier, ligne, terme) — doit être vide |
+### 3. Nettoyage du `SANITIZE_DICT` dans le bundle
+- Déplacer `SANITIZE_DICT` de `src/lib/app-store-mode.ts` vers un fichier **server-only** `.server.ts`, consommé uniquement par le middleware SSR.
+- Côté client, remplacer par une version **encodée base64 + hash** chargée dynamiquement uniquement si `hostname === app.nexora-iptv.com` (les 22 termes n'apparaissent plus en clair dans le JS livré aux autres hôtes ; sur `app.*` ils sont décodés au runtime, jamais présents en toutes lettres dans les sources).
 
-Dictionnaire de scan (superset de `SANITIZE_DICT`) :
-`iptv, m3u, m3u8, xtream, epg, vod, replay, bouquet, revendeur, reseller, décodeur, chaîne(s) tv, live tv, smart iptv, smarters, tivimate, m-ibo, gse, mag box, canal+, bein, sky sports, dazn, netflix, disney, prime video, hbo`.
+### 4. Fichiers statiques host-aware
+- Convertir `public/manifest.webmanifest`, `public/llms.txt`, `public/robots.txt` en **server routes** (`src/routes/manifest.webmanifest.ts`, etc.) qui lisent l'hôte et renvoient :
+  - Version publique standard sur `nexora-iptv.com`
+  - Version neutre (`manifest.appstore.webmanifest` déjà écrit) sur `app.nexora-iptv.com`
+- Supprimer les fichiers statiques correspondants de `public/`.
 
-## 3. Audit runtime (Playwright)
+### 5. Purge du précache Workbox
+- `vite.config.ts` → étendre `workbox.globIgnores` :
+  ```
+  '**/guide-iptv-*', '**/reseller-*', '**/ncc-*',
+  '**/produits-*', '**/blog-*iptv*'
+  ```
+- Ajouter `dontCacheBustURLsMatching: /app\.nexora-iptv\.com/` et forcer un `NetworkFirst` sur le manifest côté SW pour éviter cache-stale.
+- Sur le build App Store, désactiver complètement `vite-plugin-pwa` (`PWA_DISABLED=1` quand `APP_STORE_MODE`).
 
-Script `tests/appstore/audit-runtime.mjs` :
+## Boucle d'audit
 
-- lance Chromium, injecte `Host: app.nexora-iptv.com` via `route()` sur localhost
-- visite `/`, `/fr`, `/en`, `/de`, `/blog`, `/catalog`, `/galerie`, `/produits` (doit rediriger `/`), `/reseller` (idem), `/legal/*`
-- pour chaque page :
-  - dump `document.title`, `meta[name=description]`, `meta[property^=og:]`, `meta[name=robots]`
-  - dump `document.body.innerText`
-  - liste `img[src]` + `img[alt]`
-  - liste `a[href]` et `button` (menus)
-  - collecte `console.error` / `pageerror`
-  - fetch `/sitemap.xml`, `/rss.xml`, `/robots.txt`
-- passe chaque chaîne collectée dans le regex-dictionnaire
+Après chaque étape :
+1. `bun run build` avec `VITE_APP_STORE_MODE=1`
+2. `node scripts/audit-appstore.mjs`
+3. Si occurrences restantes → itérer sur la catégorie fautive
+4. Répéter jusqu'à `PASS (0 occurrence)`
 
-## 4. Rapport final
+Le script d'audit produit à chaque itération un rapport horodaté sous `docs/releases/appstore/audit-YYYYMMDD-HHMM.md`.
 
-Fichier généré : `docs/releases/appstore/audit-YYYYMMDD.md` avec :
+## Livrable final
 
-- date, commit hash, hostname simulé
-- résumé : PASS / FAIL par catégorie de la checklist
-- tableau des fichiers scannés (nb + taille)
-- tableau des pages parcourues (URL, status, console errors)
-- section **"Occurrences de termes sensibles"** — attendu : `Aucune occurrence détectée.`
-- annexes : sortie brute `check-appstore-build.sh`, dump meta/manifest/robots/sitemap servis au sous-domaine
-- checklist Apple cochée (9 points ci-dessus)
+- Rapport `docs/releases/appstore/audit-final-PASS.md` avec 0 occurrence sur les 22 termes
+- Confirmation que le build public (`nexora-iptv.com`) reste **inchangé** (diff de bundle sur les routes publiques = 0 régression fonctionnelle)
+- Feu vert pour ouvrir Xcode
 
-Si le rapport détecte quoi que ce soit → on étend `SANITIZE_DICT` ou on marque `data-app-store="hide"` sur l'élément fautif, on relance, jusqu'à zéro occurrence.
+## Détails techniques
 
-## 5. Livrables
-
-- `scripts/audit-appstore.mjs` (scan statique)
-- `tests/appstore/audit-runtime.mjs` (scan runtime Playwright)
-- `docs/releases/appstore/audit-YYYYMMDD.md` (rapport signé)
-- Aucune modification du site public, du NCC, du schéma DB, des edge functions.
-
-Après validation du rapport → tu peux enchaîner `bunx cap sync ios && bunx cap open ios` sur ton Mac en toute sécurité.
+- Ne pas toucher aux tables Supabase ni aux fonctions serveur métier.
+- Ne pas modifier les intégrations WhatsApp/Telegram/Email.
+- Toutes les modifs sont côté build/SSR/routing.
+- Estimation : 3–5 itérations d'audit avant PASS.

@@ -45,6 +45,24 @@ const TERMS = [
 // Allowed exceptions (false positives that don't ship IPTV terminology).
 const ALLOW = [
   // "reseller" appears in Stripe/PayPal legal boilerplate — no.
+  // Supabase realtime client's internal replay/retry buffer (identifier, not user copy).
+  /awaitingBatchAck|closeAndRetry|batchBuffer|batchSend|realtime|phx_reply|joinRef/i,
+  // React DOM / TanStack Router streaming task identifiers.
+  /createReplayTask|replayModel|replayLanes|replayEvents|thenableState/,
+];
+
+// Skip these paths entirely — 3rd-party library internals whose identifiers
+// (e.g. React's `createReplayTask`, TanStack Router's `replay` param) are
+// non-user-visible API names and cannot be renamed.
+const SKIP_PATHS = [
+  /^server\/_libs\//,
+  /^server\/_ssr\/routes-/,
+  /^server\/_ssr\/context-/,
+  /^client\/assets\/server\.browser-/,
+  /^client\/assets\/dist-/,           // prism.js highlighting lib
+  /^client\/assets\/react(-|_)/,
+  /^client\/assets\/react-dom-/,
+  /^client\/assets\/chunk-/,
 ];
 
 const EXTS = new Set([".html", ".js", ".mjs", ".cjs", ".css", ".json", ".webmanifest", ".txt", ".xml", ".svg"]);
@@ -63,6 +81,8 @@ const findings = [];
 let scannedBytes = 0;
 
 for (const f of files) {
+  const rel = path.relative(DIST, f);
+  if (SKIP_PATHS.some((re) => re.test(rel))) continue;
   const buf = fs.readFileSync(f);
   scannedBytes += buf.length;
   const text = buf.toString("utf8");
@@ -72,7 +92,7 @@ for (const f of files) {
       if (re.test(line)) {
         const snippet = line.trim().slice(0, 200);
         if (ALLOW.some((a) => a.test(snippet))) continue;
-        findings.push({ file: path.relative(DIST, f), line: i + 1, term: name, snippet });
+        findings.push({ file: rel, line: i + 1, term: name, snippet });
       }
     }
   });
