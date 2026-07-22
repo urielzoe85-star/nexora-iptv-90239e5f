@@ -86,8 +86,10 @@ const SANITIZE = [
   [/\bXtream(?:\s*Codes?)?\b/gi, "compte"],
   [/\bEPG\b/g, "guide"],
   [/\bMAG\s*Box\b/gi, "boitier"],
-  // URLs referencing IPTV players — replace the whole URL.
-  [/https?:\/\/[^\s"'`)]*(?:smarters?|tivimate|m-?ibo|gse[-_.]?smart|iptv|xtream|smart-?tv-?stream)[^\s"'`)]*/gi, "https://nexora-iptv.com/"],
+  // URLs referencing IPTV players or the brand's IPTV domain — replace the whole URL.
+  [/https?:\/\/[^\s"'`)]*(?:smarters?|tivimate|m-?ibo|gse[-_.]?smart|iptv|xtream|smart-?tv-?stream|nexora-iptv)[^\s"'`)]*/gi, "https://nexora-hub.com/"],
+  // Bare hostname without protocol.
+  [/\bnexora-iptv\.com\b/gi, "nexora-hub.com"],
   // Player brand names (URL-safe + text forms)
   [/\bSmarters?[-_\s]*Pro\b/gi, "player"],
   [/\bSmarters?[-_\s]*Player[-_\s]*Lite\b/gi, "player"],
