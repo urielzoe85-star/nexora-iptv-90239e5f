@@ -10,6 +10,8 @@ export const Route = createFileRoute("/merchant-feed.xml")({
   server: {
     handlers: {
       GET: async () => {
+        const { createFileRoute: _u } = { createFileRoute: null as never };
+        void _u;
         const { createClient } = await import("@supabase/supabase-js");
         const sb = createClient(
           process.env.SUPABASE_URL!,
