@@ -41,27 +41,27 @@ const DELETE_ROUTES = [
   /^merchant-feed/i,
 ];
 
-// Additional non-route directories/files to purge from the build snapshot.
-// These trees are only used by deleted routes; purging them prevents
-// tree-shaken leftovers from shipping their sensitive copy.
+// Non-route trees that are only used by deleted routes. Deleted entirely.
 const DELETE_PATHS = [
   "src/components/ncc",
   "src/components/admin",
-  "src/components/blog",
   "src/components/ai",
   "src/lib/email-templates",
-  "src/lib/blog.functions.ts",
-  "src/lib/blog-comments.functions.ts",
-  "src/lib/ai.functions.ts",
-  "src/lib/rss.builder.ts",
-  "src/lib/sitemap.builder.ts",
-  "src/lib/merchant-feed.builder.ts",
-  "src/lib/reseller.functions.ts",
-  "src/lib/catalog.functions.ts",
-  "src/lib/gallery.functions.ts",
-  "src/lib/downloads.data.ts",
-  "src/lib/iptv-catalog.data.ts",
-  "src/lib/iptv-delivery.ts",
+];
+
+// Files kept-but-stubbed: their exports may still be imported by kept
+// components (homepage widgets, checkout, etc.). We replace the body with
+// a neutral stub that keeps every named export but returns empty data.
+const STUB_FILES = [
+  ["src/lib/blog.functions.ts", `import { createServerFn } from "@tanstack/react-start";
+export const publicListPosts = createServerFn({ method: "GET" }).handler(async () => []);
+export const publicGetPostBySlug = createServerFn({ method: "GET" }).handler(async () => null);
+export const publicListCategories = createServerFn({ method: "GET" }).handler(async () => []);
+export const publicListTags = createServerFn({ method: "GET" }).handler(async () => []);
+export const publicListPostsByCategory = createServerFn({ method: "GET" }).handler(async () => []);
+export const publicListPostsByTag = createServerFn({ method: "GET" }).handler(async () => []);
+export const publicListComments = createServerFn({ method: "GET" }).handler(async () => []);
+`],
 ];
 
 // Compiled at build time only — never shipped in client bundle.
