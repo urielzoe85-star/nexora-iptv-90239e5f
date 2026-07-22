@@ -346,6 +346,12 @@ async function main() {
     neutraliseAppStoreDict();
     writeNeutralStatic();
     stubServerHandlers();
+    for (const rel of DELETE_PATHS) {
+      const p = path.join(ROOT, rel);
+      if (fs.existsSync(p)) {
+        fs.rmSync(p, { recursive: true, force: true });
+      }
+    }
     // Rename files/dirs BEFORE sanitizing source text so import paths (which
     // get sanitized to the new names) actually resolve to files on disk.
     const rSrc = renameTreeSensitive(SRC);
