@@ -28,6 +28,7 @@ import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as CatalogRouteImport } from './routes/catalog'
 import { Route as AdminRouteImport } from './routes/admin'
+import { Route as AProposRouteImport } from './routes/a-propos'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as NccIndexRouteImport } from './routes/ncc.index'
 import { Route as FrIndexRouteImport } from './routes/fr.index'
@@ -234,6 +235,11 @@ const CatalogRoute = CatalogRouteImport.update({
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AProposRoute = AProposRouteImport.update({
+  id: '/a-propos',
+  path: '/a-propos',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -819,6 +825,7 @@ const ApiPublicAutomationEmitTestRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/a-propos': typeof AProposRoute
   '/admin': typeof AdminRouteWithChildren
   '/catalog': typeof CatalogRoute
   '/checkout': typeof CheckoutRoute
@@ -952,6 +959,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/a-propos': typeof AProposRoute
   '/catalog': typeof CatalogRoute
   '/checkout': typeof CheckoutRoute
   '/dashboard': typeof DashboardRoute
@@ -1078,6 +1086,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/a-propos': typeof AProposRoute
   '/admin': typeof AdminRouteWithChildren
   '/catalog': typeof CatalogRoute
   '/checkout': typeof CheckoutRoute
@@ -1213,6 +1222,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/a-propos'
     | '/admin'
     | '/catalog'
     | '/checkout'
@@ -1346,6 +1356,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/a-propos'
     | '/catalog'
     | '/checkout'
     | '/dashboard'
@@ -1471,6 +1482,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/a-propos'
     | '/admin'
     | '/catalog'
     | '/checkout'
@@ -1605,6 +1617,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AProposRoute: typeof AProposRoute
   AdminRoute: typeof AdminRouteWithChildren
   CatalogRoute: typeof CatalogRoute
   CheckoutRoute: typeof CheckoutRoute
@@ -1799,6 +1812,13 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/a-propos': {
+      id: '/a-propos'
+      path: '/a-propos'
+      fullPath: '/a-propos'
+      preLoaderRoute: typeof AProposRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -2831,6 +2851,7 @@ const NccRouteWithChildren = NccRoute._addFileChildren(NccRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AProposRoute: AProposRoute,
   AdminRoute: AdminRouteWithChildren,
   CatalogRoute: CatalogRoute,
   CheckoutRoute: CheckoutRoute,
