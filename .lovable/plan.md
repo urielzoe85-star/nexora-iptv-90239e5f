@@ -1,51 +1,42 @@
-# Diagnostic — app.nexora-iptv.com
+Plan de vérification Cloudflare — redirection 302 app.nexora-iptv.com → nexora-iptv.com
 
-## Cause exacte
+Contexte confirmé
+- HTTPS et certificat SSL fonctionnent pour app.nexora-iptv.com (HTTP/2 302).
+- Toutes les requêtes vers app.nexora-iptv.com (racine, /robots.txt, HTTP et HTTPS) sont redirigées en 302 vers le domaine principal nexora-iptv.com.
+- La réponse 302 ne contient pas le header x-deployment-id présent sur les réponses 200 de l’application. Elle provient donc de l’edge (Cloudflare ou Lovable), pas du code applicatif.
 
-Ce n'est **ni un bug de code, ni un problème de build**. C'est un problème **d'attachement de domaine côté Lovable**.
+Objectif
+Déterminer si la redirection peut être désactivée côté Cloudflare avant de revenir à la solution « domaine principal temporaire ».
 
-Ce que j'ai observé en live :
+Étapes du plan
 
-| Vérification | Résultat |
-|---|---|
-| DNS `app.nexora-iptv.com` | `CNAME → nexora-iptv.com` → `A 185.158.133.1` (IP Lovable). **DNS OK.** |
-| HTTP `http://app.nexora-iptv.com` | **`HTTP/1.1 409 Conflict`** servi par `Server: cloudflare` |
-| HTTPS `https://app.nexora-iptv.com` | **`TLS handshake failure (552)`** — aucun certificat n'est présenté |
+1. Inventaire d’accès Cloudflare
+   - Ouvrir le tableau de bord Cloudflare du compte qui gère nexora-iptv.com.
+   - Vérifier que le domaine est bien présent et que les enregistrements DNS A pour app.nexora-iptv.com pointent vers 185.158.133.1 (IP Lovable) avec le nuage orange « Proxied » activé.
 
-Traduction : le DNS pointe correctement vers l'edge Lovable/Cloudflare, mais l'edge **ne reconnaît pas** `app.nexora-iptv.com` comme un domaine attaché à un projet. Résultat :
-- Pas de certificat SSL émis pour ce hostname → handshake TLS échoue → « site inaccessible » en HTTPS.
-- En HTTP, l'edge renvoie **409 Conflict** (domaine non revendiqué).
+2. Vérifier les Page Rules
+   - Aller dans Rules → Page Rules (ou Redirect Rules).
+   - Rechercher toute règle contenant app.nexora-iptv.com ou un wildcard *.nexora-iptv.com qui forward/redirect vers nexora-iptv.com.
+   - Si une règle existe, la désactiver ou la supprimer, puis attendre 30–60 secondes et retester avec curl.
 
-Les domaines déjà connectés au projet sont `nexora-iptv.com`, `www.nexora-iptv.com`, `account.nexora-iptv.com`. `app.nexora-iptv.com` n'y figure pas encore — c'est pour ça que le code App Store Mode (qui se déclenche sur ce hostname) n'a jamais été atteint : Cloudflare bloque avant que la requête n'arrive à l'app.
+3. Vérifier les Redirect Rules et Bulk Redirects
+   - Aller dans Rules → Redirect Rules → Bulk Redirects.
+   - Vérifier l’absence de redirection globale de sous-domaines vers le domaine principal.
+   - Si une règle existe, la désactiver temporairement.
 
-Ce n'est donc :
-- ❌ pas un 404 route TanStack
-- ❌ pas un 502 origine down
-- ❌ pas un problème de build
-- ❌ pas un problème de vhost côté app
-- ✅ un **domaine non attaché** → **pas de certificat** → TLS handshake failure
+4. Vérifier les paramètres SSL/TLS
+   - SSL/TLS → Overview : confirmer que le mode est « Full (strict) » ou « Full » (pas « Flexible » qui pourrait forcer des redirections).
+   - SSL/TLS → Edge Certificates : vérifier que le certificat couvre *.nexora-iptv.com et nexora-iptv.com (pas seulement le root).
 
-## Correctif (action manuelle requise dans l'UI Lovable)
+5. Test après chaque modification
+   - curl -I -s https://app.nexora-iptv.com/
+   - curl -I -s http://app.nexora-iptv.com/
+   - Observer si le Location passe de https://nexora-iptv.com/ à https://app.nexora-iptv.com/.
 
-Je ne peux pas attacher un domaine depuis le code — cela se fait dans les paramètres du projet.
+6. Fallback si Cloudflare n’est pas la cause
+   - Si aucune règle Cloudflare n’est trouvée ou si le compte n’a pas accès au domaine (gestion Lovable côté edge), la redirection est appliquée par Lovable.
+   - Dans ce cas, passer au plan B : contacter le support Lovable pour demander la désactivation de la redirection de app.nexora-iptv.com, ou opter pour la solution « domaine principal temporaire » déjà évoquée.
 
-1. Ouvrir **Project Settings → Project → Domains**.
-2. Cliquer **Connect Domain**, saisir `app.nexora-iptv.com`.
-3. Le DNS existant (`A 185.158.133.1`) est déjà correct — la vérification devrait passer immédiatement.
-4. Attendre le passage `Verifying → Setting up → Active` (émission SSL Let's Encrypt, quelques minutes).
-
-Une fois `Active` :
-- HTTPS répondra avec un certificat valide.
-- La requête atteindra l'app, `AppStoreGate` détectera le hostname `app.nexora-iptv.com` et activera automatiquement le mode neutralisé (déjà codé, testé, audit PASS).
-
-## Vérification après attachement
-
-Je relancerai :
-```bash
-curl -I https://app.nexora-iptv.com
-```
-Attendu : `HTTP/2 200`, `content-type: text/html`, et titre `Nexora` (mode neutre). Si ce n'est pas le cas dans les 15 min après passage `Active`, je regarderai les logs SSR pour confirmer que le middleware account/portal ne redirige pas ce hostname par erreur.
-
-## Rien à changer dans le code pour l'instant
-
-Le code App Store Mode est prêt et audit PASS. Il faut juste que la requête arrive jusqu'à l'app — ce qui nécessite l'attachement du domaine.
+Critères de succès
+- Cloudflare est la cause : après suppression d’une règle, curl retourne HTTP/2 200 avec x-deployment-id et un contenu HTML neutralisé (App Store mode actif).
+- Cloudflare n’est pas la cause : on identifie clairement que la redirection est Lovable-native et on enchaîne sur le plan de contournement.
