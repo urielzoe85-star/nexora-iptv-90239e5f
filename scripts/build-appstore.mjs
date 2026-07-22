@@ -41,6 +41,29 @@ const DELETE_ROUTES = [
   /^merchant-feed/i,
 ];
 
+// Additional non-route directories/files to purge from the build snapshot.
+// These trees are only used by deleted routes; purging them prevents
+// tree-shaken leftovers from shipping their sensitive copy.
+const DELETE_PATHS = [
+  "src/components/ncc",
+  "src/components/admin",
+  "src/components/blog",
+  "src/components/ai",
+  "src/lib/email-templates",
+  "src/lib/blog.functions.ts",
+  "src/lib/blog-comments.functions.ts",
+  "src/lib/ai.functions.ts",
+  "src/lib/rss.builder.ts",
+  "src/lib/sitemap.builder.ts",
+  "src/lib/merchant-feed.builder.ts",
+  "src/lib/reseller.functions.ts",
+  "src/lib/catalog.functions.ts",
+  "src/lib/gallery.functions.ts",
+  "src/lib/downloads.data.ts",
+  "src/lib/iptv-catalog.data.ts",
+  "src/lib/iptv-delivery.ts",
+];
+
 // Compiled at build time only — never shipped in client bundle.
 const SANITIZE = [
   [/\bNexora\s*IPTV\b/g, "Nexora"],
