@@ -4,13 +4,6 @@
   "scannedBytes": 1940560,
   "imageFiles": 24,
   "imageNameLeaks": [],
-  "findings": [
-    {
-      "file": "client/assets/index-BDVYS5F8.js",
-      "line": 13,
-      "term": "replay",
-      "snippet": "`),()=>this.onerror(`timeout`),e=>{this.awaitingBatchAck=!1,!e||e.status!==200?(this.onerror(e&&e.status),this.closeAndRetry(1011,`internal server error`,!1)):this.batchBuffer.length>0&&(this.batchSen"
-    }
-  ],
-  "pass": false
+  "findings": [],
+  "pass": true
 }
