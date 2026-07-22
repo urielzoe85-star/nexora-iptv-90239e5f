@@ -64,8 +64,12 @@ export const publicListComments = createServerFn({ method: "GET" }).handler(asyn
   ["src/components/ncc/orders/DeliveryPreview.tsx", `export function DeliveryPreview(_props: { delivery?: unknown; orderRef?: string }) { return null; }
 export default DeliveryPreview;
 `],
-  ["src/lib/email-templates/iptv-delivery.tsx", `export default function StreamingDelivery(_props: Record<string, unknown>) { return null; }
-export function subjectForStreamingDelivery() { return "Delivery"; }
+  ["src/lib/email-templates/iptv-delivery.tsx", `export const template = {
+  id: "iptv-delivery",
+  subject: () => "Delivery",
+  render: () => "",
+};
+export default template;
 `],
 ];
 
