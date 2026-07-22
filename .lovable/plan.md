@@ -1,44 +1,37 @@
-## Contexte
-
-Un `curl -I https://app.nexora-iptv.com/` renvoie toujours **HTTP/2 302 → https://nexora-iptv.com/** (edge Cloudflare/Lovable, `server: cloudflare`, aucun `x-deployment-id`). Tant que le support Lovable n’a pas désactivé cette redirection, il est **impossible** d’obtenir un aperçu réel du sous-domaine via une URL publique : toute requête vers `app.nexora-iptv.com` est interceptée avant d’atteindre l’app, donc le `AppStoreGate` (qui s’active sur ce hostname) ne peut pas s’exécuter.
-
 ## Objectif
 
-Te fournir un aperçu visuel fidèle du rendu que verra Apple, sans attendre la réponse du support, en simulant localement le hostname `app.nexora-iptv.com`.
+Scoper la dernière refonte de `/legal/privacy` au sous-domaine App Store (`app.nexora-iptv.com`) uniquement. La page « À propos » reste inchangée et accessible sur les deux domaines.
 
-## Plan
+## Contexte
 
-1. **Build neutralisé local**
-   - Exécuter `VITE_APP_STORE_MODE=1 bun run build` (déjà scripté).
-   - Lancer `bash scripts/check-appstore-build.sh` pour confirmer 0 occurrence sensible.
+- Le même bundle sert `nexora-iptv.com` (public) et `app.nexora-iptv.com` (App Store review).
+- `src/lib/app-store-mode.ts` expose déjà `isAppStoreMode()` (activé par hostname `app.*` ou `VITE_APP_STORE_MODE`).
+- Dernière édition de `src/routes/legal.privacy.tsx` : ajout mention Google Analytics 4 (G-MFZ9FD4YMB) + lien vers `/a-propos` dans la section cookies.
+- L'utilisateur veut que le domaine public retrouve la version d'avant ; seul `app.*` doit afficher la nouvelle rédaction.
 
-2. **Servir le build en local**
-   - `bunx vite preview --port 4173` sur `dist/`.
-   - Le flag `VITE_APP_STORE_MODE=1` étant compilé, le Gate s’active quel que soit le hostname.
+## Changements
 
-3. **Captures Playwright multi-viewports**
-   - Ouvrir `http://localhost:4173/` en desktop (1280×1800) et mobile (390×844).
-   - Capturer :
-     - Accueil `/`
-     - `/blog`, `/espace-client`, `/downloads`
-     - Une route bloquée (ex. `/produits`) pour vérifier la redirection vers `/`
-     - `/robots.txt`, `/sitemap.xml`, `/rss.xml` (doivent renvoyer version vide/`Disallow: /`)
-   - Screenshots sauvegardés dans `/tmp/browser/appstore-preview/`.
+### 1. `src/routes/legal.privacy.tsx` — rendu conditionnel
 
-4. **Vérifications runtime dans les captures**
-   - `<title>`, meta description, OG/Twitter sanitizés (aucun terme sensible).
-   - `<meta name="robots" content="noindex,nofollow,noarchive">` présent.
-   - `link[rel=manifest]` pointe vers `/manifest.appstore.webmanifest`.
-   - Marquee paiements, bandeau reseller, boutons WhatsApp/Messenger flottants **masqués** (`data-app-store="hide"`).
+- Importer `isAppStoreMode` depuis `@/lib/app-store-mode`.
+- Composer deux variantes de la section « Cookies » et « À propos de nous » :
+  - **Version publique (par défaut)** : rétablir le texte cookies antérieur (cookies techniques strictement nécessaires, sans mention GA4 ni lien À propos dans cette section).
+  - **Version App Store** : conserver la rédaction actuelle (mention GA4 + lien vers `/a-propos`).
+- Sélectionner la variante via `isAppStoreMode()` au rendu.
+- Ne rien changer d'autre sur la page (titres, autres sections, `head()`).
 
-5. **Rapport visuel**
-   - Te renvoyer les screenshots clés + un résumé texte : « Aperçu conforme, 0 fuite détectée » ou liste des écarts à corriger.
+### 2. `src/routes/a-propos.tsx`
 
-6. **Optionnel — aperçu du redirect actuel**
-   - Screenshot du comportement public réel (`https://app.nexora-iptv.com/` → 302 → homepage IPTV normale) pour documenter l’état pré-support à joindre au ticket Lovable si utile.
+- Aucune modification. Reste accessible sur les deux domaines.
+- Note : `AppStoreGate` masque déjà les liens sensibles ; `/a-propos` n'est pas dans la liste sensible donc reste visible et navigable sur `app.*`.
 
-## Détails techniques
+## Hors périmètre
 
-- Aucune modification de code — uniquement build + preview + Playwright.
-- Aucun impact sur `nexora-iptv.com`, le NCC, la base ou les webhooks.
-- Le build App Store écrase temporairement `dist/` ; on peut le régénérer ensuite en mode normal si besoin de repasser en prod locale.
+- Pas de changement sur la nav, le header, le sitemap, ou le mode App Store.
+- Pas de modification des autres pages légales.
+
+## Vérification
+
+- Ouvrir `/legal/privacy` sur le preview public → section cookies = version antérieure (sans GA4, sans lien À propos).
+- Simuler `app.nexora-iptv.com` via `VITE_APP_STORE_MODE=1` → section cookies = version actuelle avec GA4 + lien À propos.
+- `/a-propos` accessible sur les deux.
