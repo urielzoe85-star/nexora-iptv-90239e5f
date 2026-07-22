@@ -66,6 +66,20 @@ export function AppStoreGate() {
       el.style.display = "none";
     });
 
+    // Masque tous les liens vers des routes sensibles ou vers WhatsApp / Messenger.
+    const SENSITIVE_HREF = /(wa\.me|api\.whatsapp\.com|whatsapp\.com|m\.me|messenger\.com|\/produits|\/reseller|\/catalog|\/galerie|\/gallery|\/blog|\/downloads|\/guide-iptv|\/legal-guide)/i;
+    const hideSensitiveLinks = (root: ParentNode) => {
+      root.querySelectorAll<HTMLAnchorElement>("a[href]").forEach((a) => {
+        const href = a.getAttribute("href") || "";
+        if (SENSITIVE_HREF.test(href)) {
+          a.style.display = "none";
+          a.setAttribute("aria-hidden", "true");
+          a.setAttribute("tabindex", "-1");
+        }
+      });
+    };
+    hideSensitiveLinks(document.body);
+
     const observer = new MutationObserver((mutations) => {
       for (const m of mutations) {
         if (m.type === "characterData" && m.target.nodeType === Node.TEXT_NODE) {
@@ -84,6 +98,7 @@ export function AppStoreGate() {
               (n as Element).querySelectorAll?.<HTMLElement>("[data-app-store='hide']").forEach((el) => {
                 el.style.display = "none";
               });
+              hideSensitiveLinks(n as Element);
             }
           });
         }
