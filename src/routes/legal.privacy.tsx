@@ -58,7 +58,10 @@ function PrivacyPage() {
       <p>Vous disposez des droits d'accès, de rectification, d'effacement, de limitation, de portabilité et d'opposition. Pour exercer un droit : <a href="mailto:privacy@nexora-iptv.com">privacy@nexora-iptv.com</a>. Vous pouvez également saisir l'autorité de contrôle compétente.</p>
 
       <h2>8. Cookies</h2>
-      <p>Le site utilise uniquement des cookies techniques strictement nécessaires (session, préférence de langue, sécurité NCC). Aucun cookie publicitaire ni analytique tiers n'est déposé sans consentement.</p>
+      <p>Le site utilise des cookies techniques strictement nécessaires (session, préférence de langue, sécurité NCC) ainsi que des cookies de mesure d'audience <strong>Google Analytics 4</strong> (identifiant <code>G-MFZ9FD4YMB</code>) afin d'améliorer l'expérience. Aucun cookie publicitaire tiers n'est déposé. Vous pouvez vous opposer au dépôt des cookies analytiques via les réglages de votre navigateur ou une extension type « Google Analytics Opt-out ».</p>
+
+      <h2>10. À propos de nous</h2>
+      <p>Pour en savoir plus sur notre mission, notre équipe et nos engagements, consultez la page <a href="/a-propos">À propos de Nexora</a>.</p>
 
       <h2>9. Sécurité</h2>
       <p>Les données sont hébergées sur infrastructure conforme SOC 2, avec chiffrement en transit (HTTPS/TLS 1.3) et au repos, isolation par RLS PostgreSQL et journalisation des accès administrateurs.</p>
