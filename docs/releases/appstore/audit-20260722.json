@@ -1,33 +1,15 @@
 {
   "distDir": "dist",
   "scannedFiles": 241,
-  "scannedBytes": 1940569,
+  "scannedBytes": 1940560,
   "imageFiles": 24,
   "imageNameLeaks": [],
   "findings": [
     {
-      "file": "client/assets/index-rsFoSH0I.js",
+      "file": "client/assets/index-BDVYS5F8.js",
       "line": 13,
       "term": "replay",
       "snippet": "`),()=>this.onerror(`timeout`),e=>{this.awaitingBatchAck=!1,!e||e.status!==200?(this.onerror(e&&e.status),this.closeAndRetry(1011,`internal server error`,!1)):this.batchBuffer.length>0&&(this.batchSen"
-    },
-    {
-      "file": "client/assets/index-rsFoSH0I.js",
-      "line": 66,
-      "term": "iptv",
-      "snippet": "For more information, see https://radix-ui.com/primitives/docs/components/${t.docsSlug}`;return N.useEffect(()=>{e&&(document.getElementById(e)||console.error(n))},[n,e]),null},cC=`DialogDescriptionWa"
-    },
-    {
-      "file": "client/assets/streaming-delivery.builder-tmWPAOLl.js",
-      "line": 1,
-      "term": "iptv",
-      "snippet": "import{y as e}from\"./index-rsFoSH0I.js\";import{t}from\"./__vite-browser-external-DOOah4Mz.js\";var n=t();function r(){return({}.PUBLIC_SITE_URL||`https://nexora-streaming.com`).replace(/\\/+$/,``)}functi"
-    },
-    {
-      "file": "server/_ssr/streaming-delivery.builder-C3sa6Ef1.mjs",
-      "line": 125,
-      "term": "iptv",
-      "snippet": "opts?.orderRef ? `📲 Recevoir aussi sur Telegram : https://nexora-iptv.com/` : \"\","
     }
   ],
   "pass": false
