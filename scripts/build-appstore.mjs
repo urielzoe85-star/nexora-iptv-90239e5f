@@ -352,6 +352,12 @@ async function main() {
         fs.rmSync(p, { recursive: true, force: true });
       }
     }
+    for (const [rel, body] of STUB_FILES) {
+      const p = path.join(ROOT, rel);
+      if (fs.existsSync(p)) {
+        fs.writeFileSync(p, body);
+      }
+    }
     // Rename files/dirs BEFORE sanitizing source text so import paths (which
     // get sanitized to the new names) actually resolve to files on disk.
     const rSrc = renameTreeSensitive(SRC);
