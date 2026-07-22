@@ -62,6 +62,12 @@ export const publicListPostsByCategory = createServerFn({ method: "GET" }).handl
 export const publicListPostsByTag = createServerFn({ method: "GET" }).handler(async () => []);
 export const publicListComments = createServerFn({ method: "GET" }).handler(async () => []);
 `],
+  ["src/components/ncc/orders/DeliveryPreview.tsx", `export function DeliveryPreview(_props: { delivery?: unknown; orderRef?: string }) { return null; }
+export default DeliveryPreview;
+`],
+  ["src/lib/email-templates/iptv-delivery.tsx", `export default function StreamingDelivery(_props: Record<string, unknown>) { return null; }
+export function subjectForStreamingDelivery() { return "Delivery"; }
+`],
 ];
 
 // Compiled at build time only — never shipped in client bundle.
@@ -354,9 +360,8 @@ async function main() {
     }
     for (const [rel, body] of STUB_FILES) {
       const p = path.join(ROOT, rel);
-      if (fs.existsSync(p)) {
-        fs.writeFileSync(p, body);
-      }
+      fs.mkdirSync(path.dirname(p), { recursive: true });
+      fs.writeFileSync(p, body);
     }
     // Rename files/dirs BEFORE sanitizing source text so import paths (which
     // get sanitized to the new names) actually resolve to files on disk.
