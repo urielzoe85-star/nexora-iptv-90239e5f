@@ -45,6 +45,10 @@ const TERMS = [
 // Allowed exceptions (false positives that don't ship IPTV terminology).
 const ALLOW = [
   // "reseller" appears in Stripe/PayPal legal boilerplate — no.
+  // Supabase realtime client's internal replay/retry buffer (identifier, not user copy).
+  /awaitingBatchAck|closeAndRetry|batchBuffer|batchSend|realtime|phx_reply|joinRef/i,
+  // React DOM / TanStack Router streaming task identifiers.
+  /createReplayTask|replayModel|replayLanes|replayEvents|thenableState/,
 ];
 
 // Skip these paths entirely — 3rd-party library internals whose identifiers
