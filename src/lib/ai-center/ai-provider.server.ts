@@ -27,7 +27,7 @@ export async function callLovableAI(messages: ChatMsg[], opts: CallOptions = {})
     messages,
     temperature: opts.temperature ?? 0.7,
   };
-  if (opts.maxTokens) body.max_completion_tokens = opts.maxTokens;
+  if (opts.maxTokens) body.max_tokens = opts.maxTokens;
   if (opts.responseFormatJson) body.response_format = { type: "json_object" };
 
   const res = await fetch(GATEWAY_URL, {

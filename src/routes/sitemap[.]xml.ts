@@ -26,14 +26,6 @@ export const Route = createFileRoute("/sitemap.xml")({
   server: {
     handlers: {
       GET: async ({ request }) => {
-        // App Store review subdomain must not expose an indexable sitemap.
-        const host = request.headers.get("host") ?? "";
-        if (host === "app.nexora-iptv.com" || host.endsWith(".app.nexora-iptv.com")) {
-          const empty = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>`;
-          return new Response(empty, {
-            headers: { "Content-Type": "application/xml", "Cache-Control": "public, max-age=3600" },
-          });
-        }
         const buildDate = new Date().toISOString().slice(0, 10);
         // Fetch published blog posts + categories via server publishable client.
         let blogUrls: { loc: string; lastmod?: string }[] = [];

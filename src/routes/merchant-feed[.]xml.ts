@@ -9,11 +9,7 @@ function esc(s: string): string {
 export const Route = createFileRoute("/merchant-feed.xml")({
   server: {
     handlers: {
-      GET: async ({ request }) => {
-        const host = request.headers.get("host") ?? "";
-        if (host === "app.nexora-iptv.com" || host.endsWith(".app.nexora-iptv.com")) {
-          return new Response("Not found", { status: 404 });
-        }
+      GET: async () => {
         const { createClient } = await import("@supabase/supabase-js");
         const sb = createClient(
           process.env.SUPABASE_URL!,

@@ -15,7 +15,6 @@ import { I18nProvider, useT } from "../i18n/context";
 import { FloatingWhatsApp } from "../components/FloatingWhatsApp";
 import { PwaManager } from "../components/pwa/PwaManager";
 import { BackButton } from "../components/BackButton";
-import { AppStoreGate } from "../components/AppStoreGate";
 
 function NotFoundComponent() {
   const t = useT();
@@ -187,7 +186,6 @@ function RootComponent() {
         <FloatingWhatsApp />
         <BackButton />
         <PwaManager />
-        <AppStoreGate />
       </I18nProvider>
     </QueryClientProvider>
   );

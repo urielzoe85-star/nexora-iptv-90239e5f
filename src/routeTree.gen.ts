@@ -13,7 +13,6 @@ import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
 import { Route as TrackRouteImport } from './routes/track'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as RssDotxmlRouteImport } from './routes/rss[.]xml'
-import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as ResellerRouteImport } from './routes/reseller'
 import { Route as NccRouteImport } from './routes/ncc'
 import { Route as MerchantFeedDotxmlRouteImport } from './routes/merchant-feed[.]xml'
@@ -28,7 +27,6 @@ import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as CatalogRouteImport } from './routes/catalog'
 import { Route as AdminRouteImport } from './routes/admin'
-import { Route as AProposRouteImport } from './routes/a-propos'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as NccIndexRouteImport } from './routes/ncc.index'
 import { Route as FrIndexRouteImport } from './routes/fr.index'
@@ -162,11 +160,6 @@ const RssDotxmlRoute = RssDotxmlRouteImport.update({
   path: '/rss.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
-const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
-  id: '/robots.txt',
-  path: '/robots.txt',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ResellerRoute = ResellerRouteImport.update({
   id: '/reseller',
   path: '/reseller',
@@ -235,11 +228,6 @@ const CatalogRoute = CatalogRouteImport.update({
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AProposRoute = AProposRouteImport.update({
-  id: '/a-propos',
-  path: '/a-propos',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -825,7 +813,6 @@ const ApiPublicAutomationEmitTestRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/a-propos': typeof AProposRoute
   '/admin': typeof AdminRouteWithChildren
   '/catalog': typeof CatalogRoute
   '/checkout': typeof CheckoutRoute
@@ -840,7 +827,6 @@ export interface FileRoutesByFullPath {
   '/merchant-feed.xml': typeof MerchantFeedDotxmlRoute
   '/ncc': typeof NccRouteWithChildren
   '/reseller': typeof ResellerRoute
-  '/robots.txt': typeof RobotsDottxtRoute
   '/rss.xml': typeof RssDotxmlRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/track': typeof TrackRoute
@@ -959,7 +945,6 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/a-propos': typeof AProposRoute
   '/catalog': typeof CatalogRoute
   '/checkout': typeof CheckoutRoute
   '/dashboard': typeof DashboardRoute
@@ -969,7 +954,6 @@ export interface FileRoutesByTo {
   '/mcp': typeof McpRoute
   '/merchant-feed.xml': typeof MerchantFeedDotxmlRoute
   '/reseller': typeof ResellerRoute
-  '/robots.txt': typeof RobotsDottxtRoute
   '/rss.xml': typeof RssDotxmlRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/track': typeof TrackRoute
@@ -1086,7 +1070,6 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/a-propos': typeof AProposRoute
   '/admin': typeof AdminRouteWithChildren
   '/catalog': typeof CatalogRoute
   '/checkout': typeof CheckoutRoute
@@ -1101,7 +1084,6 @@ export interface FileRoutesById {
   '/merchant-feed.xml': typeof MerchantFeedDotxmlRoute
   '/ncc': typeof NccRouteWithChildren
   '/reseller': typeof ResellerRoute
-  '/robots.txt': typeof RobotsDottxtRoute
   '/rss.xml': typeof RssDotxmlRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/track': typeof TrackRoute
@@ -1222,7 +1204,6 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/a-propos'
     | '/admin'
     | '/catalog'
     | '/checkout'
@@ -1237,7 +1218,6 @@ export interface FileRouteTypes {
     | '/merchant-feed.xml'
     | '/ncc'
     | '/reseller'
-    | '/robots.txt'
     | '/rss.xml'
     | '/sitemap.xml'
     | '/track'
@@ -1356,7 +1336,6 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/a-propos'
     | '/catalog'
     | '/checkout'
     | '/dashboard'
@@ -1366,7 +1345,6 @@ export interface FileRouteTypes {
     | '/mcp'
     | '/merchant-feed.xml'
     | '/reseller'
-    | '/robots.txt'
     | '/rss.xml'
     | '/sitemap.xml'
     | '/track'
@@ -1482,7 +1460,6 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
-    | '/a-propos'
     | '/admin'
     | '/catalog'
     | '/checkout'
@@ -1497,7 +1474,6 @@ export interface FileRouteTypes {
     | '/merchant-feed.xml'
     | '/ncc'
     | '/reseller'
-    | '/robots.txt'
     | '/rss.xml'
     | '/sitemap.xml'
     | '/track'
@@ -1617,7 +1593,6 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AProposRoute: typeof AProposRoute
   AdminRoute: typeof AdminRouteWithChildren
   CatalogRoute: typeof CatalogRoute
   CheckoutRoute: typeof CheckoutRoute
@@ -1632,7 +1607,6 @@ export interface RootRouteChildren {
   MerchantFeedDotxmlRoute: typeof MerchantFeedDotxmlRoute
   NccRoute: typeof NccRouteWithChildren
   ResellerRoute: typeof ResellerRoute
-  RobotsDottxtRoute: typeof RobotsDottxtRoute
   RssDotxmlRoute: typeof RssDotxmlRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TrackRoute: typeof TrackRoute
@@ -1707,13 +1681,6 @@ declare module '@tanstack/react-router' {
       path: '/rss.xml'
       fullPath: '/rss.xml'
       preLoaderRoute: typeof RssDotxmlRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/robots.txt': {
-      id: '/robots.txt'
-      path: '/robots.txt'
-      fullPath: '/robots.txt'
-      preLoaderRoute: typeof RobotsDottxtRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reseller': {
@@ -1812,13 +1779,6 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof AdminRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/a-propos': {
-      id: '/a-propos'
-      path: '/a-propos'
-      fullPath: '/a-propos'
-      preLoaderRoute: typeof AProposRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -2851,7 +2811,6 @@ const NccRouteWithChildren = NccRoute._addFileChildren(NccRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AProposRoute: AProposRoute,
   AdminRoute: AdminRouteWithChildren,
   CatalogRoute: CatalogRoute,
   CheckoutRoute: CheckoutRoute,
@@ -2866,7 +2825,6 @@ const rootRouteChildren: RootRouteChildren = {
   MerchantFeedDotxmlRoute: MerchantFeedDotxmlRoute,
   NccRoute: NccRouteWithChildren,
   ResellerRoute: ResellerRoute,
-  RobotsDottxtRoute: RobotsDottxtRoute,
   RssDotxmlRoute: RssDotxmlRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TrackRoute: TrackRoute,
