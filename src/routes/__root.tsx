@@ -15,6 +15,7 @@ import { I18nProvider, useT } from "../i18n/context";
 import { FloatingWhatsApp } from "../components/FloatingWhatsApp";
 import { PwaManager } from "../components/pwa/PwaManager";
 import { BackButton } from "../components/BackButton";
+import { NexoraAssistantWidget } from "../components/ai-chat/NexoraAssistantWidget";
 
 function NotFoundComponent() {
   const t = useT();
