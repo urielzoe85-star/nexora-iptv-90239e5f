@@ -1,36 +1,35 @@
-## Corrections SEO page d'accueil (FR)
+## Nouvelle page `/essai-gratuit` — Test IPTV 24h offert
 
-Cible : score SEO 72 → 90+, focus mot-clé « abonnement IPTV » pour le marché francophone.
+La route `/essai-gratuit` renvoie une 404 : les liens SEO ajoutés récemment (hero + section pricing) pointent dans le vide. Je propose de créer une vraie landing dédiée, alignée sur le style de `/reseller`, optimisée pour la conversion et le mot-clé « essai IPTV gratuit ».
 
-### 1. Métadonnées FR (src/routes/index.tsx `head()`)
-Remplacer les balises actuelles en anglais par :
-- **Title** : `Abonnement IPTV Premium Francophone 4K | Nexora IPTV`
-- **Description** : `Profitez de milliers de chaînes TV, films et séries en 4K avec Nexora IPTV. Activation instantanée, essai gratuit 24h et support 24/7.`
-- **og:title / og:description / twitter** : versions FR alignées, sans entités HTML brutes (pas de `&amp;` ni `&#x27;` — utiliser `et`, `&`, apostrophes typographiques `'`).
-- `og:locale` = `fr_FR`.
+### Contenu proposé (sections)
 
-### 2. Nettoyage entités HTML
-Auditer `src/i18n/messages.ts` (bloc FR) et titres/descriptions du `head()` pour supprimer toute occurrence brute `&amp;`, `&#x27;`, `&quot;`. Remplacer par `&`, `'`, `"` directs (React échappe automatiquement).
+1. **Hero** — titre « Essai IPTV gratuit 24h », sous-titre rassurant (aucune CB, activation instantanée), CTA principal « Activer mon essai » + CTA secondaire « Voir les offres ».
+2. **Ce qui est inclus dans l'essai** — 4 cartes : +20 000 chaînes live, VOD 4K, multi-appareils, EPG & replay. Cadrer clairement les limites (24h, 1 appareil, qualité FHD).
+3. **Comment ça marche en 3 étapes** — formulaire email/WhatsApp → réception des identifiants sous 5 min → configuration guidée sur l'appareil du client.
+4. **Formulaire de demande d'essai** — champs : email, WhatsApp/Telegram (au choix), appareil cible, pays. Soumission via server function qui crée une entrée `trials` (table déjà existante `ncc.trials`) et déclenche le workflow de livraison messagerie standard (WhatsApp/email).
+5. **FAQ essai gratuit** — 5–6 questions (Est-ce vraiment gratuit ? Ai-je besoin d'une CB ? Que se passe-t-il après 24h ? Puis-je tester sur Smart TV / Firestick / iOS ? Combien de temps pour recevoir mes accès ? Puis-je basculer en abonnement payant ?) + JSON-LD `FAQPage`.
+6. **Preuves sociales** — bandeau réutilisant 3 témoignages existants + badges paiement + logo « Avis vérifiés ».
+7. **CTA final** — rappel offre + lien contextuel vers `/reseller` (« Vous êtes revendeur ? Programme dédié ») et `/` (« Voir toutes les offres »).
 
-### 3. H2 sémantiques (mot-clé « abonnement IPTV »)
-Dans `src/i18n/messages.ts` (locale FR uniquement), enrichir :
-- `features.title` → « Pourquoi choisir un **abonnement IPTV Nexora** »
-- `pricing.title` → « Choisissez votre **abonnement IPTV** »
-- `devices.title` → « Regardez votre **abonnement IPTV** partout »
-- `how.title` → conserver mais viser « Activer son abonnement IPTV en 3 étapes »
+### SEO & maillage
 
-Les autres langues restent inchangées.
+- `head()` FR : title « Essai IPTV gratuit 24h — Test sans engagement | Nexora IPTV », description ciblée « essai IPTV gratuit », `og:title` / `og:description` / `twitter:*`, `canonical` `https://nexora-iptv.com/essai-gratuit`.
+- JSON-LD : `Service` + `FAQPage` + `BreadcrumbList`.
+- H1 unique + H2 sémantiques (« Pourquoi tester Nexora IPTV gratuitement », « Comment activer votre essai IPTV en 3 étapes », « Questions fréquentes sur l'essai gratuit »).
+- Liens internes contextuels : `/reseller`, `/blog`, `/` (offres).
+- Ajout de l'URL dans `src/routes/sitemap[.]xml.ts` avec `priority=0.9`.
 
-### 4. Maillage interne contextuel
-Ajouter dans le hero (ou juste sous le sous-titre) une phrase courte avec 2 liens TanStack `<Link>` :
-- vers `/essai-gratuit` (ancre « essai gratuit 24h »)
-- vers `/reseller` (ancre « programme revendeur IPTV »)
+### Détails techniques
 
-Ajouter aussi un lien contextuel « essai gratuit » dans la section pricing et un lien « devenir revendeur » dans le footer/CTA final si absent. Utiliser des ancres descriptives (pas « cliquez ici »).
-
-### 5. Vérification
-- Rebuild + inspection DOM pour confirmer titre/description FR, absence d'entités brutes, présence des liens internes.
-- Marquer les findings SEO comme fixed via `seo_chat--update_findings` après vérif.
+- Fichier : `src/routes/essai-gratuit.tsx` (route `/essai-gratuit`, structure inspirée de `src/routes/reseller.tsx`).
+- Server function : `requestFreeTrial` dans `src/lib/trials.functions.ts` (public, sans auth) — insertion dans la table `trials` existante (statut `pending`), rate-limit 1 requête par email/24h, `inputValidator` Zod (email, contact channel, pays, appareil, honeypot).
+- Livraison : réutilise le pipeline notifications existant (WhatsApp Cloud + email `notify.account.nexora-iptv.com`) via `notifications.actions.ts` sans nouvelle logique.
+- UI : composants shadcn existants (`Card`, `Button`, `Input`, `Accordion`), palette navy/gold, aucun nouveau design system.
+- Ajout entrée sitemap + ping search engines réutilisant `bumpSitemapCache`.
 
 ### Hors périmètre
-Aucun changement business logic, aucun changement sur `/en`, `/fr`, ou routes autres que l'accueil `/`.
+
+- Pas de nouvelle table (on utilise `trials` déjà présente).
+- Pas de modifications au provider IPTV / MegaOTT (l'activation réelle reste manuelle via NCC → `/ncc/iptv/trials` comme aujourd'hui).
+- Pas de refonte du hero d'accueil ni d'autres routes.
