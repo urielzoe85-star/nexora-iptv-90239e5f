@@ -141,8 +141,8 @@ import { Route as ApiPublicHooksBackupVerifyRouteImport } from './routes/api/pub
 import { Route as ApiPublicCamerpayWebhookRouteImport } from './routes/api/public/camerpay/webhook'
 import { Route as ApiPublicAutomationProcessQueueRouteImport } from './routes/api/public/automation/process-queue'
 import { Route as ApiPublicAutomationEmitTestRouteImport } from './routes/api/public/automation/emit-test'
+import { Route as ApiPublicAiChatVisitorRouteImport } from './routes/api/public/ai/chat.visitor'
 import { Route as ApiPublicAiChatNccRouteImport } from './routes/api/public/ai/chat.ncc'
-import { Route as ApiPublicAiChatClientRouteImport } from './routes/api/public/ai/chat.client'
 
 const UnsubscribeRoute = UnsubscribeRouteImport.update({
   id: '/unsubscribe',
@@ -824,14 +824,14 @@ const ApiPublicAutomationEmitTestRoute =
     path: '/api/public/automation/emit-test',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicAiChatVisitorRoute = ApiPublicAiChatVisitorRouteImport.update({
+  id: '/api/public/ai/chat/visitor',
+  path: '/api/public/ai/chat/visitor',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicAiChatNccRoute = ApiPublicAiChatNccRouteImport.update({
   id: '/api/public/ai/chat/ncc',
   path: '/api/public/ai/chat/ncc',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicAiChatClientRoute = ApiPublicAiChatClientRouteImport.update({
-  id: '/api/public/ai/chat/client',
-  path: '/api/public/ai/chat/client',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -968,8 +968,8 @@ export interface FileRoutesByFullPath {
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
-  '/api/public/ai/chat/client': typeof ApiPublicAiChatClientRoute
   '/api/public/ai/chat/ncc': typeof ApiPublicAiChatNccRoute
+  '/api/public/ai/chat/visitor': typeof ApiPublicAiChatVisitorRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -1096,8 +1096,8 @@ export interface FileRoutesByTo {
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
-  '/api/public/ai/chat/client': typeof ApiPublicAiChatClientRoute
   '/api/public/ai/chat/ncc': typeof ApiPublicAiChatNccRoute
+  '/api/public/ai/chat/visitor': typeof ApiPublicAiChatVisitorRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -1233,8 +1233,8 @@ export interface FileRoutesById {
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
-  '/api/public/ai/chat/client': typeof ApiPublicAiChatClientRoute
   '/api/public/ai/chat/ncc': typeof ApiPublicAiChatNccRoute
+  '/api/public/ai/chat/visitor': typeof ApiPublicAiChatVisitorRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -1371,8 +1371,8 @@ export interface FileRouteTypes {
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
-    | '/api/public/ai/chat/client'
     | '/api/public/ai/chat/ncc'
+    | '/api/public/ai/chat/visitor'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -1499,8 +1499,8 @@ export interface FileRouteTypes {
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
-    | '/api/public/ai/chat/client'
     | '/api/public/ai/chat/ncc'
+    | '/api/public/ai/chat/visitor'
   id:
     | '__root__'
     | '/'
@@ -1635,8 +1635,8 @@ export interface FileRouteTypes {
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
-    | '/api/public/ai/chat/client'
     | '/api/public/ai/chat/ncc'
+    | '/api/public/ai/chat/visitor'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1699,8 +1699,8 @@ export interface RootRouteChildren {
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
   LovableEmailTransactionalSendRoute: typeof LovableEmailTransactionalSendRoute
-  ApiPublicAiChatClientRoute: typeof ApiPublicAiChatClientRoute
   ApiPublicAiChatNccRoute: typeof ApiPublicAiChatNccRoute
+  ApiPublicAiChatVisitorRoute: typeof ApiPublicAiChatVisitorRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -2629,18 +2629,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAutomationEmitTestRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/ai/chat/visitor': {
+      id: '/api/public/ai/chat/visitor'
+      path: '/api/public/ai/chat/visitor'
+      fullPath: '/api/public/ai/chat/visitor'
+      preLoaderRoute: typeof ApiPublicAiChatVisitorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/ai/chat/ncc': {
       id: '/api/public/ai/chat/ncc'
       path: '/api/public/ai/chat/ncc'
       fullPath: '/api/public/ai/chat/ncc'
       preLoaderRoute: typeof ApiPublicAiChatNccRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/ai/chat/client': {
-      id: '/api/public/ai/chat/client'
-      path: '/api/public/ai/chat/client'
-      fullPath: '/api/public/ai/chat/client'
-      preLoaderRoute: typeof ApiPublicAiChatClientRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -2953,8 +2953,8 @@ const rootRouteChildren: RootRouteChildren = {
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
   LovableEmailTransactionalSendRoute: LovableEmailTransactionalSendRoute,
-  ApiPublicAiChatClientRoute: ApiPublicAiChatClientRoute,
   ApiPublicAiChatNccRoute: ApiPublicAiChatNccRoute,
+  ApiPublicAiChatVisitorRoute: ApiPublicAiChatVisitorRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

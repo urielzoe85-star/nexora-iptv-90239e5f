@@ -12,7 +12,7 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-export const Route = createFileRoute("/api/public/ai/chat/client")({
+export const Route = createFileRoute("/api/public/ai/chat/visitor")({
   server: {
     handlers: {
       OPTIONS: () => new Response(null, { status: 204, headers: corsHeaders }),
