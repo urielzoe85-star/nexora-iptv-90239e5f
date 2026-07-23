@@ -1,7 +1,7 @@
 // Public streaming chat endpoint for the floating Nexora Assistant widget.
 // No auth: available to any site visitor. Uses Lovable AI Gateway.
 import { createFileRoute } from "@tanstack/react-router";
-import { convertToModelMessages, streamText, type UIMessage } from "ai";
+import { convertToModelMessages, createUIMessageStreamResponse, streamText, type UIMessage } from "ai";
 import { createNexoraAiProvider, NEXORA_DEFAULT_CHAT_MODEL } from "@/lib/ai-chat/gateway.server";
 import { buildClientSystemPrompt } from "@/lib/ai-chat/system-prompts.server";
 import { buildClientTools, type ToolContext } from "@/lib/ai-chat/tools.server";
@@ -47,9 +47,12 @@ export const Route = createFileRoute("/api/public/ai/chat/visitor")({
               });
             }
             // No model call while a human is handling the thread.
-            // 204 tells the widget there is no assistant reply this turn;
-            // the polling bootstrap picks up the admin's messages.
-            return new Response(null, { status: 204, headers: corsHeaders });
+            // Return a well-formed empty UI-message stream so the SDK
+            // closes cleanly; admin replies arrive via the polling bootstrap.
+            return createUIMessageStreamResponse({
+              execute: () => {},
+              headers: corsHeaders,
+            });
           }
 
           const gateway = createNexoraAiProvider(key);
