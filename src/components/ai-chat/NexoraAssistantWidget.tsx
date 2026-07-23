@@ -6,7 +6,6 @@ import { DefaultChatTransport, type UIMessage } from "ai";
 import { X, Headset } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { aiAssistant } from "@/lib/ai-assistant";
-import { supabase } from "@/integrations/supabase/client";
 import nexoraAiLogo from "@/assets/nexora-ai-logo.png";
 import {
   Conversation, ConversationContent, ConversationEmptyState, ConversationScrollButton,
@@ -92,53 +91,54 @@ export function NexoraAssistantWidget() {
     return () => { cancelled = true; };
   }, [open, bootstrapped, sessionId, setMessages]);
 
-  // Realtime: subscribe to new admin messages + handoff status changes.
+  // Poll the server-side bootstrap endpoint for admin messages + handoff
+  // status changes. Direct anonymous reads on ai_chat_* are disabled for
+  // privacy; the server (admin client) scopes reads to this session.
   useEffect(() => {
-    if (!threadId) return;
-    const channel = supabase
-      .channel(`nxa-thread-${threadId}`)
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "ai_chat_messages", filter: `thread_id=eq.${threadId}` },
-        (payload: any) => {
-          const row = payload.new;
-          if (!row) return;
-          // Only append messages we don't already have (admin messages, or
-          // reloads inserting rows the AI SDK already streamed).
-          setMessages((prev) => {
-            if (prev.some((m) => m.id === row.id)) return prev;
-            // Skip visitor-echoed rows; useChat already tracks the user message locally.
-            if (row.sender === "visitor") return prev;
-            // Skip assistant AI rows if we already have an assistant turn with the same text
-            // (avoids duplicating the streamed AI answer).
-            if (row.sender === "assistant") {
+    if (!open || !threadId || !sessionId) return;
+    let cancelled = false;
+    const tick = async () => {
+      try {
+        const res = await fetch("/api/public/ai/chat/visitor/bootstrap", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ sessionId }),
+        });
+        if (!res.ok || cancelled) return;
+        const data = (await res.json()) as {
+          threadId: string; handoffStatus: HandoffStatus;
+          messages: Array<{ id: string; role: string; sender?: string; parts: any; content: string }>;
+        };
+        if (cancelled) return;
+        setHandoff(data.handoffStatus);
+        if (!Array.isArray(data.messages) || data.messages.length === 0) return;
+        setMessages((prev) => {
+          const known = new Set(prev.map((m) => m.id));
+          const additions = data.messages
+            .filter((row) => !known.has(row.id))
+            .filter((row) => row.sender !== "visitor")
+            .filter((row) => {
+              if (row.sender !== "assistant") return true;
               const last = prev[prev.length - 1];
               const lastText = last && last.role === "assistant"
                 ? (last.parts || []).filter((p: any) => p.type === "text").map((p: any) => p.text).join("\n")
                 : "";
-              if (lastText && lastText.trim() === String(row.content ?? "").trim()) return prev;
-            }
-            return [...prev, {
+              return !(lastText && lastText.trim() === String(row.content ?? "").trim());
+            })
+            .map((row) => ({
               id: row.id,
-              role: row.role,
+              role: row.role as any,
               parts: (Array.isArray(row.parts) && row.parts.length
                 ? row.parts
                 : [{ type: "text", text: row.content ?? "" }]) as any,
-            }];
-          });
-        },
-      )
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "ai_chat_threads", filter: `id=eq.${threadId}` },
-        (payload: any) => {
-          const s = payload?.new?.handoff_status as HandoffStatus | undefined;
-          if (s) setHandoff(s);
-        },
-      )
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [threadId, setMessages]);
+            }));
+          return additions.length ? [...prev, ...additions] : prev;
+        });
+      } catch { /* ignore transient errors */ }
+    };
+    const id = setInterval(tick, 4000);
+    return () => { cancelled = true; clearInterval(id); };
+  }, [open, threadId, sessionId, setMessages]);
 
   const banner =
     handoff === "requested"
