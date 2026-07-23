@@ -1,75 +1,48 @@
 
-## Problème
+## Problème observé
 
-Aujourd'hui, quand un visiteur (anonyme, pas encore client) demande à parler à un humain, l'IA crée une `ai_action_request` et envoie une notification Telegram à l'admin. Mais l'admin n'a aucun moyen de **répondre au visiteur dans la conversation en cours** : le visiteur n'est ni sur Telegram, ni identifié (pas d'email, pas de téléphone), il n'existe qu'à travers son `sessionId` navigateur et son `thread_id` en base.
+Les logs AI Gateway montrent une série d'erreurs `http 400` (upstream Gemini) sur `/api/public/ai/chat/visitor` — c'est ce qui fait que l'IA "ne sait plus quoi répondre" côté visiteur.
 
-## Objectif
+Cause principale identifiée dans `src/routes/api/public/ai/chat.visitor.ts` :
 
-Permettre à un admin NCC de reprendre la main sur n'importe quelle conversation visiteur et d'échanger en direct, sans quitter le widget de chat côté visiteur.
+Quand le thread passe en `handoff_status = "requested"` ou `"human"`, l'endpoint tente de renvoyer un flux "vide" en appelant quand même Gemini avec :
+```ts
+streamText({
+  model,
+  system: "Return an empty response.",
+  messages: [{ role: "user", content: "" }],
+  maxOutputTokens: 1,
+})
+```
+Gemini rejette ce payload (contenu utilisateur vide) → 400 → le widget affiche une bulle vide / plante et le visiteur ne reçoit plus rien après avoir demandé un humain.
 
-## Approche
+Effet secondaire : une fois le handoff demandé, chaque nouveau message visiteur retape ce chemin cassé.
 
-Introduire un **mode "handoff humain"** sur les threads visiteurs, avec messagerie temps réel via Supabase Realtime sur la table `ai_chat_messages` existante.
+Un second point fragile : dans la branche normale, `onFinish` persiste `prev` (user) + `last` (assistant), mais si le modèle a émis un tool-call sans texte final, `last` peut ne pas être `assistant` avec du texte, et rien n'est persisté → au prochain bootstrap le widget resynchronise sans le dernier tour et peut renvoyer des messages user consécutifs au modèle.
 
-### 1. Base de données (1 migration)
+## Correctifs (uniquement le chat visiteur, rien d'autre)
 
-- `ai_chat_threads` : ajouter
-  - `handoff_status` text (`ai` | `requested` | `human` | `closed`), défaut `ai`
-  - `assigned_admin_id` uuid null
-  - `handoff_requested_at`, `handoff_started_at`, `handoff_closed_at` timestamptz
-- `ai_chat_messages` : ajouter `sender` text (`visitor` | `assistant` | `admin`) pour distinguer un message humain d'un message IA (le `role` reste `user`/`assistant` pour l'AI SDK).
-- Policies : autoriser `anon` à INSERT/SELECT sur son propre thread via `session_id` (déjà présent) ; autoriser `authenticated` admins à tout lire/écrire.
-- Activer Realtime (`alter publication supabase_realtime add table ai_chat_messages, ai_chat_threads`).
+1. **`src/routes/api/public/ai/chat.visitor.ts` — supprimer l'appel Gemini "vide" pendant le handoff**
+   - Quand `handoff_status ∈ {requested, human}` :
+     - Persister le dernier message visiteur (comme aujourd'hui).
+     - Retourner **directement** une réponse UI-message stream vide et bien formée, sans passer par `streamText`. On construit un `ReadableStream` qui écrit uniquement les événements d'ouverture/fermeture attendus par `@ai-sdk/react` (`data: [DONE]` / message-finish) avec les headers `toUIMessageStreamResponse` (content-type `text/event-stream`, `x-vercel-ai-ui-message-stream: v1`, CORS).
+     - Alternative plus simple et sûre : renvoyer `new Response("", { status: 204, headers: corsHeaders })` et gérer côté widget l'absence de réponse assistant quand `handoff !== "ai"` (le widget affiche déjà la bannière "un conseiller rejoint la conversation").
+   - On garde l'appel modèle **uniquement** dans le cas `handoff === "ai"`.
 
-### 2. Outil IA `request_human_handoff`
+2. **`src/routes/api/public/ai/chat.visitor.ts` — persistance plus robuste dans `onFinish`**
+   - Toujours persister le dernier message user, même si l'assistant n'a produit que des tool-calls sans texte final (chercher le dernier message `role === "user"` non encore présent).
+   - Persister l'assistant seulement s'il contient au moins une part `text` non vide.
+   - Cela évite les désynchronisations qui font que le widget renvoie deux messages user d'affilée au tour suivant.
 
-Remplacer/compléter le pattern actuel `create_action_request({tool:"talk_to_agent"})` par un outil dédié qui, en plus de créer la demande, bascule `handoff_status='requested'` sur le thread et notifie Telegram avec un lien direct `/ncc/ai/inbox/<threadId>`.
+3. **`src/components/ai-chat/NexoraAssistantWidget.tsx` — tolérer une réponse vide en handoff**
+   - Si `handoff !== "ai"` au moment du `sendMessage`, ne pas attendre un flux assistant : la bannière suffit, et le polling bootstrap ramènera la réponse humaine quand l'admin écrira.
+   - Si le POST renvoie 204 (nouveau comportement), ne pas traiter cela comme une erreur.
+   - Aucune autre modification UI.
 
-### 3. Route API visiteur
+## Vérification
 
-- `chat.visitor.ts` : avant d'appeler `streamText`, lire `handoff_status` du thread. Si `human` → **ne pas appeler le modèle**, juste persister le message visiteur (`sender='visitor'`) et renvoyer un stream vide + un system-message léger ("Un conseiller vous répond en direct").
-- Nouveau endpoint `POST /api/public/ai/chat/visitor/poll` (ou souscription Realtime côté client) pour recevoir les messages admin.
+- Rejouer un tour visiteur en mode IA : réponse Gemini normale, un seul 200 dans les logs AI Gateway.
+- Demander "je veux parler à un humain" → l'IA appelle `request_human_handoff`, bannière "un conseiller rejoint la conversation" s'affiche, **plus de 400** dans les logs quand le visiteur continue à taper.
+- L'admin répond via `/ncc/ai/inbox/$threadId`, le message apparaît chez le visiteur via le polling existant.
 
-### 4. Nouveau module NCC "Boîte de réception IA" — `/ncc/ai/inbox`
-
-- Liste des threads visiteurs triés par `handoff_status` (requested en tête) + dernier message.
-- Vue thread `/ncc/ai/inbox/$threadId` :
-  - Historique complet (visiteur / IA / admin distingués visuellement).
-  - Boutons "Prendre en charge" (`handoff_status → human`, assigne l'admin) / "Rendre à l'IA" / "Clôturer".
-  - Composer admin qui insère un message `role='assistant', sender='admin'` — il apparaît instantanément côté visiteur via Realtime.
-- Server functions `assignHandoff`, `sendAdminMessage`, `closeHandoff` protégées par `requireSupabaseAuth` + `has_role('admin')`.
-
-### 5. Widget visiteur
-
-- S'abonner à Realtime sur `ai_chat_messages` filtré par `thread_id` dès qu'un `threadId` existe.
-- Injecter les messages `sender='admin'` dans le state `useChat` (via `setMessages`) pour qu'ils s'affichent inline.
-- Bandeau d'état en haut du widget : "🟢 Un conseiller Nexora est avec vous" quand `handoff_status='human'`.
-- Désactiver l'indicateur "IA écrit…" en mode humain.
-
-### 6. Notifications admin
-
-- Telegram : notification enrichie sur `handoff_status='requested'` avec le lien inbox + les 3 derniers messages du visiteur pour contexte.
-- Badge compteur "🔴 N" sur l'entrée de menu NCC "Boîte IA".
-
-## Détails techniques
-
-- **Realtime côté widget** : `supabase.channel('thread:'+threadId).on('postgres_changes', { event:'INSERT', table:'ai_chat_messages', filter:'thread_id=eq.'+threadId }, …)`. Filtrer `sender='admin'` pour éviter d'ajouter en double les messages déjà rendus par le stream.
-- **Identité visiteur** : rester sur `sessionId` navigateur. Optionnel : petit champ "prénom + email (facultatif)" affiché quand `handoff_status='requested'`, stocké dans `ai_chat_threads.visitor_meta jsonb` pour aider l'admin à recontacter hors-ligne.
-- **Persistance** : messages admin insérés directement (pas via AI SDK), avec `parts=[{type:'text',text:…}]` pour rester compatible avec le rendu existant.
-- **Zéro impact** sur l'expérience IA actuelle : tant que `handoff_status='ai'`, tout fonctionne comme aujourd'hui.
-
-## Livrables
-
-1. Migration SQL (colonnes + policies + realtime).
-2. Outil AI `request_human_handoff` + mise à jour `system-prompts.server.ts` (l'IA sait quand escalader).
-3. `chat.visitor.ts` : court-circuit du modèle en mode humain.
-4. Routes NCC : `ncc.ai.inbox.tsx` (liste) + `ncc.ai.inbox.$threadId.tsx` (conversation) + server functions.
-5. `NexoraAssistantWidget.tsx` : abonnement Realtime + bandeau handoff + affichage messages admin.
-6. Ajout entrée "Boîte IA" dans la sidebar NCC avec badge de threads en attente.
-
-## Hors périmètre (peut venir après)
-
-- App mobile admin dédiée.
-- Réponses canned / macros.
-- Transfert entre admins.
-- Chiffrement E2E.
+Aucun changement au NCC copilot, aux tools, à la DB ou aux policies RLS.
