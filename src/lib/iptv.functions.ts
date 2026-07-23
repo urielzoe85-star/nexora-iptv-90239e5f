@@ -147,12 +147,15 @@ export const checkProviderHealth = createServerFn({ method: "POST" })
 
 const ACC_STATUS = ["available", "assigned", "active", "expired", "suspended"] as const;
 const ACC_TYPE = ["trial", "premium"] as const;
+const ACC_PACKAGE = ["24 Hours", "1 Month", "3 Months", "6 Months", "1 Year"] as const;
+export type IptvPackage = (typeof ACC_PACKAGE)[number];
 
 const AccountCreateSchema = z.object({
   provider_id: z.string().uuid().nullable().optional(),
   username: z.string().trim().min(1).max(200),
   password: z.string().trim().max(500).nullable().optional(),
   account_type: z.enum(ACC_TYPE).default("premium"),
+  package: z.enum(ACC_PACKAGE).optional(),
   bouquet: z.string().trim().max(200).nullable().optional(),
   expires_at: z.string().datetime().nullable().optional(),
   notes: z.string().trim().max(2000).nullable().optional(),
@@ -169,6 +172,7 @@ export const listAccounts = createServerFn({ method: "POST" })
     search: z.string().trim().max(200).optional(),
     status: z.enum(ACC_STATUS).optional(),
     account_type: z.enum(ACC_TYPE).optional(),
+    package: z.enum(ACC_PACKAGE).optional(),
     provider_id: z.string().uuid().optional(),
     expiring_within_days: z.number().int().min(1).max(365).optional(),
     limit: z.number().int().min(1).max(500).default(200),
@@ -180,6 +184,7 @@ export const listAccounts = createServerFn({ method: "POST" })
       .order("created_at", { ascending: false }).limit(data.limit);
     if (data.status) q = q.eq("status", data.status);
     if (data.account_type) q = q.eq("account_type", data.account_type);
+    if (data.package) q = q.eq("package", data.package);
     if (data.provider_id) q = q.eq("provider_id", data.provider_id);
     if (data.search) {
       const s = `%${data.search}%`;
