@@ -118,6 +118,77 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_blog_suggestions: {
+        Row: {
+          angle: string | null
+          batch_id: string
+          created_at: string
+          created_by: string | null
+          cta_target: string | null
+          error: string | null
+          format: string
+          id: string
+          length: string
+          locale: string
+          post_id: string | null
+          primary_keyword: string
+          rationale: string | null
+          secondary_keywords: string[]
+          seo_score: number | null
+          status: string
+          topic: string
+          updated_at: string
+        }
+        Insert: {
+          angle?: string | null
+          batch_id: string
+          created_at?: string
+          created_by?: string | null
+          cta_target?: string | null
+          error?: string | null
+          format?: string
+          id?: string
+          length?: string
+          locale?: string
+          post_id?: string | null
+          primary_keyword: string
+          rationale?: string | null
+          secondary_keywords?: string[]
+          seo_score?: number | null
+          status?: string
+          topic: string
+          updated_at?: string
+        }
+        Update: {
+          angle?: string | null
+          batch_id?: string
+          created_at?: string
+          created_by?: string | null
+          cta_target?: string | null
+          error?: string | null
+          format?: string
+          id?: string
+          length?: string
+          locale?: string
+          post_id?: string | null
+          primary_keyword?: string
+          rationale?: string | null
+          secondary_keywords?: string[]
+          seo_score?: number | null
+          status?: string
+          topic?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_blog_suggestions_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "blog_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ai_chat_messages: {
         Row: {
           content: string | null
