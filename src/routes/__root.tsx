@@ -187,6 +187,7 @@ function RootComponent() {
         <FloatingWhatsApp />
         <BackButton />
         <PwaManager />
+        <NexoraAssistantWidget />
       </I18nProvider>
     </QueryClientProvider>
   );
