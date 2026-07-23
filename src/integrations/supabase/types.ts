@@ -14,6 +14,68 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_action_requests: {
+        Row: {
+          args: Json
+          created_at: string
+          decided_at: string | null
+          decided_by_user_id: string | null
+          error: string | null
+          id: string
+          requested_by_email: string | null
+          requested_by_label: string | null
+          requested_by_user_id: string | null
+          result: Json | null
+          scope: string
+          status: string
+          summary: string
+          thread_id: string | null
+          tool: string
+        }
+        Insert: {
+          args?: Json
+          created_at?: string
+          decided_at?: string | null
+          decided_by_user_id?: string | null
+          error?: string | null
+          id?: string
+          requested_by_email?: string | null
+          requested_by_label?: string | null
+          requested_by_user_id?: string | null
+          result?: Json | null
+          scope?: string
+          status?: string
+          summary: string
+          thread_id?: string | null
+          tool: string
+        }
+        Update: {
+          args?: Json
+          created_at?: string
+          decided_at?: string | null
+          decided_by_user_id?: string | null
+          error?: string | null
+          id?: string
+          requested_by_email?: string | null
+          requested_by_label?: string | null
+          requested_by_user_id?: string | null
+          result?: Json | null
+          scope?: string
+          status?: string
+          summary?: string
+          thread_id?: string | null
+          tool?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_action_requests_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "ai_chat_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ai_actions_log: {
         Row: {
           actor_user_id: string | null
@@ -53,6 +115,71 @@ export type Database = {
           status?: string
           tokens_in?: number | null
           tokens_out?: number | null
+        }
+        Relationships: []
+      }
+      ai_chat_messages: {
+        Row: {
+          content: string | null
+          created_at: string
+          id: string
+          parts: Json | null
+          role: string
+          thread_id: string
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string
+          id?: string
+          parts?: Json | null
+          role: string
+          thread_id: string
+        }
+        Update: {
+          content?: string | null
+          created_at?: string
+          id?: string
+          parts?: Json | null
+          role?: string
+          thread_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_chat_messages_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "ai_chat_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_chat_threads: {
+        Row: {
+          archived: boolean
+          created_at: string
+          id: string
+          owner_user_id: string | null
+          scope: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          archived?: boolean
+          created_at?: string
+          id?: string
+          owner_user_id?: string | null
+          scope?: string
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          archived?: boolean
+          created_at?: string
+          id?: string
+          owner_user_id?: string | null
+          scope?: string
+          title?: string
+          updated_at?: string
         }
         Relationships: []
       }

@@ -139,6 +139,8 @@ import { Route as ApiPublicHooksBackupVerifyRouteImport } from './routes/api/pub
 import { Route as ApiPublicCamerpayWebhookRouteImport } from './routes/api/public/camerpay/webhook'
 import { Route as ApiPublicAutomationProcessQueueRouteImport } from './routes/api/public/automation/process-queue'
 import { Route as ApiPublicAutomationEmitTestRouteImport } from './routes/api/public/automation/emit-test'
+import { Route as ApiAiChatNccRouteImport } from './routes/api/ai/chat.ncc'
+import { Route as ApiAiChatClientRouteImport } from './routes/api/ai/chat.client'
 
 const UnsubscribeRoute = UnsubscribeRouteImport.update({
   id: '/unsubscribe',
@@ -810,6 +812,16 @@ const ApiPublicAutomationEmitTestRoute =
     path: '/api/public/automation/emit-test',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiAiChatNccRoute = ApiAiChatNccRouteImport.update({
+  id: '/api/ai/chat/ncc',
+  path: '/api/ai/chat/ncc',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAiChatClientRoute = ApiAiChatClientRouteImport.update({
+  id: '/api/ai/chat/client',
+  path: '/api/ai/chat/client',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -922,6 +934,8 @@ export interface FileRoutesByFullPath {
   '/ncc/blog/': typeof NccBlogIndexRoute
   '/ncc/iptv/': typeof NccIptvIndexRoute
   '/ncc/settings/': typeof NccSettingsIndexRoute
+  '/api/ai/chat/client': typeof ApiAiChatClientRoute
+  '/api/ai/chat/ncc': typeof ApiAiChatNccRoute
   '/api/public/automation/emit-test': typeof ApiPublicAutomationEmitTestRoute
   '/api/public/automation/process-queue': typeof ApiPublicAutomationProcessQueueRoute
   '/api/public/camerpay/webhook': typeof ApiPublicCamerpayWebhookRoute
@@ -1046,6 +1060,8 @@ export interface FileRoutesByTo {
   '/ncc/blog': typeof NccBlogIndexRoute
   '/ncc/iptv': typeof NccIptvIndexRoute
   '/ncc/settings': typeof NccSettingsIndexRoute
+  '/api/ai/chat/client': typeof ApiAiChatClientRoute
+  '/api/ai/chat/ncc': typeof ApiAiChatNccRoute
   '/api/public/automation/emit-test': typeof ApiPublicAutomationEmitTestRoute
   '/api/public/automation/process-queue': typeof ApiPublicAutomationProcessQueueRoute
   '/api/public/camerpay/webhook': typeof ApiPublicCamerpayWebhookRoute
@@ -1179,6 +1195,8 @@ export interface FileRoutesById {
   '/ncc/blog/': typeof NccBlogIndexRoute
   '/ncc/iptv/': typeof NccIptvIndexRoute
   '/ncc/settings/': typeof NccSettingsIndexRoute
+  '/api/ai/chat/client': typeof ApiAiChatClientRoute
+  '/api/ai/chat/ncc': typeof ApiAiChatNccRoute
   '/api/public/automation/emit-test': typeof ApiPublicAutomationEmitTestRoute
   '/api/public/automation/process-queue': typeof ApiPublicAutomationProcessQueueRoute
   '/api/public/camerpay/webhook': typeof ApiPublicCamerpayWebhookRoute
@@ -1313,6 +1331,8 @@ export interface FileRouteTypes {
     | '/ncc/blog/'
     | '/ncc/iptv/'
     | '/ncc/settings/'
+    | '/api/ai/chat/client'
+    | '/api/ai/chat/ncc'
     | '/api/public/automation/emit-test'
     | '/api/public/automation/process-queue'
     | '/api/public/camerpay/webhook'
@@ -1437,6 +1457,8 @@ export interface FileRouteTypes {
     | '/ncc/blog'
     | '/ncc/iptv'
     | '/ncc/settings'
+    | '/api/ai/chat/client'
+    | '/api/ai/chat/ncc'
     | '/api/public/automation/emit-test'
     | '/api/public/automation/process-queue'
     | '/api/public/camerpay/webhook'
@@ -1569,6 +1591,8 @@ export interface FileRouteTypes {
     | '/ncc/blog/'
     | '/ncc/iptv/'
     | '/ncc/settings/'
+    | '/api/ai/chat/client'
+    | '/api/ai/chat/ncc'
     | '/api/public/automation/emit-test'
     | '/api/public/automation/process-queue'
     | '/api/public/camerpay/webhook'
@@ -1631,6 +1655,8 @@ export interface RootRouteChildren {
   ApiPublicCspReportRoute: typeof ApiPublicCspReportRoute
   BlogCategorieSlugRoute: typeof BlogCategorieSlugRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
+  ApiAiChatClientRoute: typeof ApiAiChatClientRoute
+  ApiAiChatNccRoute: typeof ApiAiChatNccRoute
   ApiPublicAutomationEmitTestRoute: typeof ApiPublicAutomationEmitTestRoute
   ApiPublicAutomationProcessQueueRoute: typeof ApiPublicAutomationProcessQueueRoute
   ApiPublicCamerpayWebhookRoute: typeof ApiPublicCamerpayWebhookRoute
@@ -2565,6 +2591,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAutomationEmitTestRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/ai/chat/ncc': {
+      id: '/api/ai/chat/ncc'
+      path: '/api/ai/chat/ncc'
+      fullPath: '/api/ai/chat/ncc'
+      preLoaderRoute: typeof ApiAiChatNccRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/ai/chat/client': {
+      id: '/api/ai/chat/client'
+      path: '/api/ai/chat/client'
+      fullPath: '/api/ai/chat/client'
+      preLoaderRoute: typeof ApiAiChatClientRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -2850,6 +2890,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicCspReportRoute: ApiPublicCspReportRoute,
   BlogCategorieSlugRoute: BlogCategorieSlugRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
+  ApiAiChatClientRoute: ApiAiChatClientRoute,
+  ApiAiChatNccRoute: ApiAiChatNccRoute,
   ApiPublicAutomationEmitTestRoute: ApiPublicAutomationEmitTestRoute,
   ApiPublicAutomationProcessQueueRoute: ApiPublicAutomationProcessQueueRoute,
   ApiPublicCamerpayWebhookRoute: ApiPublicCamerpayWebhookRoute,
@@ -2875,13 +2917,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
