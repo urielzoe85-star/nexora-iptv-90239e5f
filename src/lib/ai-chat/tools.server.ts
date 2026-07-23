@@ -171,6 +171,40 @@ export function buildClientTools(ctx: ToolContext) {
   return {
     ...readOnlyTools(),
     create_action_request: makeCreateActionRequest(ctx),
+    request_human_handoff: tool({
+      description:
+        "Marque la conversation visiteur comme nécessitant un agent humain Nexora. " +
+        "À utiliser dès que l'utilisateur demande explicitement « parler à un humain / un conseiller / un agent » " +
+        "ou face à un problème sensible (paiement bloqué, remboursement, litige). " +
+        "Ne renvoie l'utilisateur vers aucun autre canal : le conseiller répondra directement dans cette fenêtre.",
+      inputSchema: z.object({
+        reason: z.string().describe("Raison courte (1 phrase) — ce que veut l'utilisateur."),
+        contact_hint: z.string().optional().describe("Nom, email ou téléphone si l'utilisateur les a donnés."),
+      }),
+      execute: async ({ reason, contact_hint }) => {
+        if (!ctx.threadId) return { ok: false, error: "no_thread" };
+        const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
+        await (supabaseAdmin as any).from("ai_chat_threads")
+          .update({
+            handoff_status: "requested",
+            handoff_requested_at: new Date().toISOString(),
+            visitor_meta: (supabaseAdmin as any).rpc ? undefined : undefined,
+          })
+          .eq("id", ctx.threadId);
+        try {
+          const { notifyAdminTelegram } = await import("@/lib/telegram.server");
+          const url = `https://account.nexora-iptv.com/ncc/ai/inbox/${ctx.threadId}`;
+          await notifyAdminTelegram(
+            `🆘 <b>Un visiteur demande un humain</b>\n${reason}\n${contact_hint ? "Contact: " + contact_hint + "\n" : ""}→ ${url}`,
+          );
+        } catch { /* best-effort */ }
+        return {
+          ok: true,
+          message:
+            "Un conseiller Nexora rejoint la conversation. Reste sur cette page — sa réponse apparaîtra ici même dans quelques instants.",
+        };
+      },
+    }),
   };
 }
 
