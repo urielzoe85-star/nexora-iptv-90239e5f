@@ -49,22 +49,23 @@ export async function getOrCreateVisitorThread(
 
 export async function persistVisitorTurn(opts: {
   threadId: string;
-  userParts: unknown;
-  userText: string;
+  userParts?: unknown;
+  userText?: string;
   assistantParts?: unknown;
   assistantText?: string;
   assistantSender?: "assistant" | "admin";
 }): Promise<void> {
   const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
-  const rows: Array<Record<string, unknown>> = [
-    {
+  const rows: Array<Record<string, unknown>> = [];
+  if (opts.userText !== undefined || opts.userParts !== undefined) {
+    rows.push({
       thread_id: opts.threadId,
       role: "user",
       sender: "visitor",
-      content: opts.userText,
+      content: opts.userText ?? "",
       parts: opts.userParts,
-    },
-  ];
+    });
+  }
   if (opts.assistantParts && opts.assistantText) {
     rows.push({
       thread_id: opts.threadId,
@@ -74,6 +75,7 @@ export async function persistVisitorTurn(opts: {
       parts: opts.assistantParts,
     });
   }
+  if (rows.length === 0) return;
   await (supabaseAdmin as any).from("ai_chat_messages").insert(rows);
   await (supabaseAdmin as any).from("ai_chat_threads")
     .update({ updated_at: new Date().toISOString(), last_message_at: new Date().toISOString() })
