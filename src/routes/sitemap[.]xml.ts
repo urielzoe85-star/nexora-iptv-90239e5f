@@ -17,6 +17,8 @@ const PAGES = [
   "/blog", "/blog/best-iptv-2026", "/track",
   "/reseller",
   "/essai-gratuit",
+  "/en/reseller",
+  "/en/free-trial",
   // Sprint 3 · Bloc C — public compliance pages
   "/legal/terms", "/legal/sales", "/legal/privacy",
   "/legal/refund", "/legal/notice",

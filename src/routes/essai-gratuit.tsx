@@ -42,7 +42,12 @@ export const Route = createFileRoute("/essai-gratuit")({
       { name: "twitter:title", content: "Essai IPTV gratuit 24h — Nexora IPTV" },
       { name: "twitter:description", content: "Testez l'abonnement IPTV Nexora gratuitement pendant 24h. Sans carte bancaire, sans engagement." },
     ],
-    links: [{ rel: "canonical", href: "https://nexora-iptv.com/essai-gratuit" }],
+    links: [
+      { rel: "canonical", href: "https://nexora-iptv.com/essai-gratuit" },
+      { rel: "alternate", hrefLang: "fr", href: "https://nexora-iptv.com/essai-gratuit" },
+      { rel: "alternate", hrefLang: "en", href: "https://nexora-iptv.com/en/free-trial" },
+      { rel: "alternate", hrefLang: "x-default", href: "https://nexora-iptv.com/essai-gratuit" },
+    ],
     scripts: [
       {
         type: "application/ld+json",

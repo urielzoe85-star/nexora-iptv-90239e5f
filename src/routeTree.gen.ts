@@ -73,7 +73,9 @@ import { Route as EspaceClientOrdersRouteImport } from './routes/espace-client.o
 import { Route as EspaceClientDownloadsRouteImport } from './routes/espace-client.downloads'
 import { Route as EspaceClientDashboardRouteImport } from './routes/espace-client.dashboard'
 import { Route as EspaceClientAnnouncementsRouteImport } from './routes/espace-client.announcements'
+import { Route as EnResellerRouteImport } from './routes/en.reseller'
 import { Route as EnGuideIptvRouteImport } from './routes/en.guide-iptv'
+import { Route as EnFreeTrialRouteImport } from './routes/en.free-trial'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as BlogBestIptv2026RouteImport } from './routes/blog.best-iptv-2026'
 import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
@@ -470,9 +472,19 @@ const EspaceClientAnnouncementsRoute =
     path: '/announcements',
     getParentRoute: () => EspaceClientRoute,
   } as any)
+const EnResellerRoute = EnResellerRouteImport.update({
+  id: '/reseller',
+  path: '/reseller',
+  getParentRoute: () => EnRoute,
+} as any)
 const EnGuideIptvRoute = EnGuideIptvRouteImport.update({
   id: '/guide-iptv',
   path: '/guide-iptv',
+  getParentRoute: () => EnRoute,
+} as any)
+const EnFreeTrialRoute = EnFreeTrialRouteImport.update({
+  id: '/free-trial',
+  path: '/free-trial',
   getParentRoute: () => EnRoute,
 } as any)
 const EmailUnsubscribeRoute = EmailUnsubscribeRouteImport.update({
@@ -892,7 +904,9 @@ export interface FileRoutesByFullPath {
   '/blog/$slug': typeof BlogSlugRoute
   '/blog/best-iptv-2026': typeof BlogBestIptv2026Route
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
+  '/en/free-trial': typeof EnFreeTrialRoute
   '/en/guide-iptv': typeof EnGuideIptvRoute
+  '/en/reseller': typeof EnResellerRoute
   '/espace-client/announcements': typeof EspaceClientAnnouncementsRoute
   '/espace-client/dashboard': typeof EspaceClientDashboardRoute
   '/espace-client/downloads': typeof EspaceClientDownloadsRoute
@@ -1027,7 +1041,9 @@ export interface FileRoutesByTo {
   '/blog/$slug': typeof BlogSlugRoute
   '/blog/best-iptv-2026': typeof BlogBestIptv2026Route
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
+  '/en/free-trial': typeof EnFreeTrialRoute
   '/en/guide-iptv': typeof EnGuideIptvRoute
+  '/en/reseller': typeof EnResellerRoute
   '/espace-client/announcements': typeof EspaceClientAnnouncementsRoute
   '/espace-client/dashboard': typeof EspaceClientDashboardRoute
   '/espace-client/downloads': typeof EspaceClientDownloadsRoute
@@ -1165,7 +1181,9 @@ export interface FileRoutesById {
   '/blog/$slug': typeof BlogSlugRoute
   '/blog/best-iptv-2026': typeof BlogBestIptv2026Route
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
+  '/en/free-trial': typeof EnFreeTrialRoute
   '/en/guide-iptv': typeof EnGuideIptvRoute
+  '/en/reseller': typeof EnResellerRoute
   '/espace-client/announcements': typeof EspaceClientAnnouncementsRoute
   '/espace-client/dashboard': typeof EspaceClientDashboardRoute
   '/espace-client/downloads': typeof EspaceClientDownloadsRoute
@@ -1307,7 +1325,9 @@ export interface FileRouteTypes {
     | '/blog/$slug'
     | '/blog/best-iptv-2026'
     | '/email/unsubscribe'
+    | '/en/free-trial'
     | '/en/guide-iptv'
+    | '/en/reseller'
     | '/espace-client/announcements'
     | '/espace-client/dashboard'
     | '/espace-client/downloads'
@@ -1442,7 +1462,9 @@ export interface FileRouteTypes {
     | '/blog/$slug'
     | '/blog/best-iptv-2026'
     | '/email/unsubscribe'
+    | '/en/free-trial'
     | '/en/guide-iptv'
+    | '/en/reseller'
     | '/espace-client/announcements'
     | '/espace-client/dashboard'
     | '/espace-client/downloads'
@@ -1579,7 +1601,9 @@ export interface FileRouteTypes {
     | '/blog/$slug'
     | '/blog/best-iptv-2026'
     | '/email/unsubscribe'
+    | '/en/free-trial'
     | '/en/guide-iptv'
+    | '/en/reseller'
     | '/espace-client/announcements'
     | '/espace-client/dashboard'
     | '/espace-client/downloads'
@@ -2203,11 +2227,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EspaceClientAnnouncementsRouteImport
       parentRoute: typeof EspaceClientRoute
     }
+    '/en/reseller': {
+      id: '/en/reseller'
+      path: '/reseller'
+      fullPath: '/en/reseller'
+      preLoaderRoute: typeof EnResellerRouteImport
+      parentRoute: typeof EnRoute
+    }
     '/en/guide-iptv': {
       id: '/en/guide-iptv'
       path: '/guide-iptv'
       fullPath: '/en/guide-iptv'
       preLoaderRoute: typeof EnGuideIptvRouteImport
+      parentRoute: typeof EnRoute
+    }
+    '/en/free-trial': {
+      id: '/en/free-trial'
+      path: '/free-trial'
+      fullPath: '/en/free-trial'
+      preLoaderRoute: typeof EnFreeTrialRouteImport
       parentRoute: typeof EnRoute
     }
     '/email/unsubscribe': {
@@ -2747,12 +2785,16 @@ const AdminRouteChildren: AdminRouteChildren = {
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 interface EnRouteChildren {
+  EnFreeTrialRoute: typeof EnFreeTrialRoute
   EnGuideIptvRoute: typeof EnGuideIptvRoute
+  EnResellerRoute: typeof EnResellerRoute
   EnIndexRoute: typeof EnIndexRoute
 }
 
 const EnRouteChildren: EnRouteChildren = {
+  EnFreeTrialRoute: EnFreeTrialRoute,
   EnGuideIptvRoute: EnGuideIptvRoute,
+  EnResellerRoute: EnResellerRoute,
   EnIndexRoute: EnIndexRoute,
 }
 
