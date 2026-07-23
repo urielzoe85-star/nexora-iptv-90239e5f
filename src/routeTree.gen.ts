@@ -143,6 +143,7 @@ import { Route as ApiPublicAutomationProcessQueueRouteImport } from './routes/ap
 import { Route as ApiPublicAutomationEmitTestRouteImport } from './routes/api/public/automation/emit-test'
 import { Route as ApiPublicAiChatVisitorRouteImport } from './routes/api/public/ai/chat.visitor'
 import { Route as ApiPublicAiChatNccRouteImport } from './routes/api/public/ai/chat.ncc'
+import { Route as ApiPublicAiChatVisitorBootstrapRouteImport } from './routes/api/public/ai/chat.visitor.bootstrap'
 
 const UnsubscribeRoute = UnsubscribeRouteImport.update({
   id: '/unsubscribe',
@@ -834,6 +835,12 @@ const ApiPublicAiChatNccRoute = ApiPublicAiChatNccRouteImport.update({
   path: '/api/public/ai/chat/ncc',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicAiChatVisitorBootstrapRoute =
+  ApiPublicAiChatVisitorBootstrapRouteImport.update({
+    id: '/bootstrap',
+    path: '/bootstrap',
+    getParentRoute: () => ApiPublicAiChatVisitorRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -969,7 +976,8 @@ export interface FileRoutesByFullPath {
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
   '/api/public/ai/chat/ncc': typeof ApiPublicAiChatNccRoute
-  '/api/public/ai/chat/visitor': typeof ApiPublicAiChatVisitorRoute
+  '/api/public/ai/chat/visitor': typeof ApiPublicAiChatVisitorRouteWithChildren
+  '/api/public/ai/chat/visitor/bootstrap': typeof ApiPublicAiChatVisitorBootstrapRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -1097,7 +1105,8 @@ export interface FileRoutesByTo {
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
   '/api/public/ai/chat/ncc': typeof ApiPublicAiChatNccRoute
-  '/api/public/ai/chat/visitor': typeof ApiPublicAiChatVisitorRoute
+  '/api/public/ai/chat/visitor': typeof ApiPublicAiChatVisitorRouteWithChildren
+  '/api/public/ai/chat/visitor/bootstrap': typeof ApiPublicAiChatVisitorBootstrapRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -1234,7 +1243,8 @@ export interface FileRoutesById {
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
   '/api/public/ai/chat/ncc': typeof ApiPublicAiChatNccRoute
-  '/api/public/ai/chat/visitor': typeof ApiPublicAiChatVisitorRoute
+  '/api/public/ai/chat/visitor': typeof ApiPublicAiChatVisitorRouteWithChildren
+  '/api/public/ai/chat/visitor/bootstrap': typeof ApiPublicAiChatVisitorBootstrapRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -1373,6 +1383,7 @@ export interface FileRouteTypes {
     | '/lovable/email/transactional/send'
     | '/api/public/ai/chat/ncc'
     | '/api/public/ai/chat/visitor'
+    | '/api/public/ai/chat/visitor/bootstrap'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -1501,6 +1512,7 @@ export interface FileRouteTypes {
     | '/lovable/email/transactional/send'
     | '/api/public/ai/chat/ncc'
     | '/api/public/ai/chat/visitor'
+    | '/api/public/ai/chat/visitor/bootstrap'
   id:
     | '__root__'
     | '/'
@@ -1637,6 +1649,7 @@ export interface FileRouteTypes {
     | '/lovable/email/transactional/send'
     | '/api/public/ai/chat/ncc'
     | '/api/public/ai/chat/visitor'
+    | '/api/public/ai/chat/visitor/bootstrap'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1700,7 +1713,7 @@ export interface RootRouteChildren {
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
   LovableEmailTransactionalSendRoute: typeof LovableEmailTransactionalSendRoute
   ApiPublicAiChatNccRoute: typeof ApiPublicAiChatNccRoute
-  ApiPublicAiChatVisitorRoute: typeof ApiPublicAiChatVisitorRoute
+  ApiPublicAiChatVisitorRoute: typeof ApiPublicAiChatVisitorRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -2643,6 +2656,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAiChatNccRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/ai/chat/visitor/bootstrap': {
+      id: '/api/public/ai/chat/visitor/bootstrap'
+      path: '/bootstrap'
+      fullPath: '/api/public/ai/chat/visitor/bootstrap'
+      preLoaderRoute: typeof ApiPublicAiChatVisitorBootstrapRouteImport
+      parentRoute: typeof ApiPublicAiChatVisitorRoute
+    }
   }
 }
 
@@ -2891,6 +2911,20 @@ const NccRouteChildren: NccRouteChildren = {
 
 const NccRouteWithChildren = NccRoute._addFileChildren(NccRouteChildren)
 
+interface ApiPublicAiChatVisitorRouteChildren {
+  ApiPublicAiChatVisitorBootstrapRoute: typeof ApiPublicAiChatVisitorBootstrapRoute
+}
+
+const ApiPublicAiChatVisitorRouteChildren: ApiPublicAiChatVisitorRouteChildren =
+  {
+    ApiPublicAiChatVisitorBootstrapRoute: ApiPublicAiChatVisitorBootstrapRoute,
+  }
+
+const ApiPublicAiChatVisitorRouteWithChildren =
+  ApiPublicAiChatVisitorRoute._addFileChildren(
+    ApiPublicAiChatVisitorRouteChildren,
+  )
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
@@ -2954,7 +2988,7 @@ const rootRouteChildren: RootRouteChildren = {
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
   LovableEmailTransactionalSendRoute: LovableEmailTransactionalSendRoute,
   ApiPublicAiChatNccRoute: ApiPublicAiChatNccRoute,
-  ApiPublicAiChatVisitorRoute: ApiPublicAiChatVisitorRoute,
+  ApiPublicAiChatVisitorRoute: ApiPublicAiChatVisitorRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
