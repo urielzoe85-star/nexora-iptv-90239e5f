@@ -2,7 +2,7 @@ import {
   LayoutDashboard, Users, Package, ShoppingBag, CreditCard, Tv2, Gift,
   Bot, MessageCircle, Send, Mail, Bell, LifeBuoy, BarChart3, UserCog, Workflow,
   ScrollText, Settings, UserCircle, Images, Megaphone, FileText, FolderTree, Tags,
-  Sparkles, Search, PenSquare, BookOpen,
+  Sparkles, Search, PenSquare, BookOpen, MessagesSquare, ShieldCheck,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -36,6 +36,8 @@ export const NCC_MODULES: NccModule[] = [
   { id: "logs", label: "Journal système", description: "Tous les événements de la plateforme.", icon: ScrollText, to: "/ncc/logs", group: "cockpit", status: "ready" },
 
   { id: "ai-center", label: "NEXORA AI Center", description: "Directeur marketing IA : dashboard, SEO, contenu, mémoire.", icon: Sparkles, to: "/ncc/ai", group: "intelligence", status: "ready" },
+  { id: "ai-copilot", label: "Copilote IA", description: "Chat IA privé avec accès en lecture au business + demandes d'action.", icon: MessagesSquare, to: "/ncc/ai/copilot", group: "intelligence", status: "ready" },
+  { id: "ai-approvals", label: "Approbations IA", description: "Valide les actions proposées par l'IA (client & copilote).", icon: ShieldCheck, to: "/ncc/ai/approvals", group: "intelligence", status: "ready" },
   { id: "ai-seo", label: "SEO Intelligence", description: "Audit de page et recherche de mots-clés assistés par IA.", icon: Search, to: "/ncc/ai/seo", group: "intelligence", status: "ready" },
   { id: "ai-content", label: "Content Creator", description: "Génération d'articles prêts à relire et publier.", icon: PenSquare, to: "/ncc/ai/content", group: "intelligence", status: "ready" },
   { id: "ai-knowledge", label: "Knowledge Base", description: "Mémoire Nexora utilisée par toutes les IA.", icon: BookOpen, to: "/ncc/ai/knowledge", group: "intelligence", status: "ready" },

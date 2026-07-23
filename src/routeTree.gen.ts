@@ -110,7 +110,9 @@ import { Route as NccBlogCategoriesRouteImport } from './routes/ncc.blog.categor
 import { Route as NccBlogIdRouteImport } from './routes/ncc.blog.$id'
 import { Route as NccAiSeoRouteImport } from './routes/ncc.ai.seo'
 import { Route as NccAiKnowledgeRouteImport } from './routes/ncc.ai.knowledge'
+import { Route as NccAiCopilotRouteImport } from './routes/ncc.ai.copilot'
 import { Route as NccAiContentRouteImport } from './routes/ncc.ai.content'
+import { Route as NccAiApprovalsRouteImport } from './routes/ncc.ai.approvals'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as EspaceClientSuccessRefRouteImport } from './routes/espace-client.success.$ref'
 import { Route as EspaceClientPayRefRouteImport } from './routes/espace-client.pay.$ref'
@@ -139,6 +141,8 @@ import { Route as ApiPublicHooksBackupVerifyRouteImport } from './routes/api/pub
 import { Route as ApiPublicCamerpayWebhookRouteImport } from './routes/api/public/camerpay/webhook'
 import { Route as ApiPublicAutomationProcessQueueRouteImport } from './routes/api/public/automation/process-queue'
 import { Route as ApiPublicAutomationEmitTestRouteImport } from './routes/api/public/automation/emit-test'
+import { Route as ApiPublicAiChatNccRouteImport } from './routes/api/public/ai/chat.ncc'
+import { Route as ApiPublicAiChatClientRouteImport } from './routes/api/public/ai/chat.client'
 
 const UnsubscribeRoute = UnsubscribeRouteImport.update({
   id: '/unsubscribe',
@@ -649,9 +653,19 @@ const NccAiKnowledgeRoute = NccAiKnowledgeRouteImport.update({
   path: '/knowledge',
   getParentRoute: () => NccAiRoute,
 } as any)
+const NccAiCopilotRoute = NccAiCopilotRouteImport.update({
+  id: '/copilot',
+  path: '/copilot',
+  getParentRoute: () => NccAiRoute,
+} as any)
 const NccAiContentRoute = NccAiContentRouteImport.update({
   id: '/content',
   path: '/content',
+  getParentRoute: () => NccAiRoute,
+} as any)
+const NccAiApprovalsRoute = NccAiApprovalsRouteImport.update({
+  id: '/approvals',
+  path: '/approvals',
   getParentRoute: () => NccAiRoute,
 } as any)
 const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
@@ -810,6 +824,16 @@ const ApiPublicAutomationEmitTestRoute =
     path: '/api/public/automation/emit-test',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicAiChatNccRoute = ApiPublicAiChatNccRouteImport.update({
+  id: '/api/public/ai/chat/ncc',
+  path: '/api/public/ai/chat/ncc',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicAiChatClientRoute = ApiPublicAiChatClientRouteImport.update({
+  id: '/api/public/ai/chat/client',
+  path: '/api/public/ai/chat/client',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -895,7 +919,9 @@ export interface FileRoutesByFullPath {
   '/espace-client/pay/$ref': typeof EspaceClientPayRefRoute
   '/espace-client/success/$ref': typeof EspaceClientSuccessRefRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/ncc/ai/approvals': typeof NccAiApprovalsRoute
   '/ncc/ai/content': typeof NccAiContentRoute
+  '/ncc/ai/copilot': typeof NccAiCopilotRoute
   '/ncc/ai/knowledge': typeof NccAiKnowledgeRoute
   '/ncc/ai/seo': typeof NccAiSeoRoute
   '/ncc/blog/$id': typeof NccBlogIdRoute
@@ -942,6 +968,8 @@ export interface FileRoutesByFullPath {
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
+  '/api/public/ai/chat/client': typeof ApiPublicAiChatClientRoute
+  '/api/public/ai/chat/ncc': typeof ApiPublicAiChatNccRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -1019,7 +1047,9 @@ export interface FileRoutesByTo {
   '/espace-client/pay/$ref': typeof EspaceClientPayRefRoute
   '/espace-client/success/$ref': typeof EspaceClientSuccessRefRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/ncc/ai/approvals': typeof NccAiApprovalsRoute
   '/ncc/ai/content': typeof NccAiContentRoute
+  '/ncc/ai/copilot': typeof NccAiCopilotRoute
   '/ncc/ai/knowledge': typeof NccAiKnowledgeRoute
   '/ncc/ai/seo': typeof NccAiSeoRoute
   '/ncc/blog/$id': typeof NccBlogIdRoute
@@ -1066,6 +1096,8 @@ export interface FileRoutesByTo {
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
+  '/api/public/ai/chat/client': typeof ApiPublicAiChatClientRoute
+  '/api/public/ai/chat/ncc': typeof ApiPublicAiChatNccRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -1152,7 +1184,9 @@ export interface FileRoutesById {
   '/espace-client/pay/$ref': typeof EspaceClientPayRefRoute
   '/espace-client/success/$ref': typeof EspaceClientSuccessRefRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/ncc/ai/approvals': typeof NccAiApprovalsRoute
   '/ncc/ai/content': typeof NccAiContentRoute
+  '/ncc/ai/copilot': typeof NccAiCopilotRoute
   '/ncc/ai/knowledge': typeof NccAiKnowledgeRoute
   '/ncc/ai/seo': typeof NccAiSeoRoute
   '/ncc/blog/$id': typeof NccBlogIdRoute
@@ -1199,6 +1233,8 @@ export interface FileRoutesById {
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
+  '/api/public/ai/chat/client': typeof ApiPublicAiChatClientRoute
+  '/api/public/ai/chat/ncc': typeof ApiPublicAiChatNccRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -1286,7 +1322,9 @@ export interface FileRouteTypes {
     | '/espace-client/pay/$ref'
     | '/espace-client/success/$ref'
     | '/lovable/email/suppression'
+    | '/ncc/ai/approvals'
     | '/ncc/ai/content'
+    | '/ncc/ai/copilot'
     | '/ncc/ai/knowledge'
     | '/ncc/ai/seo'
     | '/ncc/blog/$id'
@@ -1333,6 +1371,8 @@ export interface FileRouteTypes {
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
+    | '/api/public/ai/chat/client'
+    | '/api/public/ai/chat/ncc'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -1410,7 +1450,9 @@ export interface FileRouteTypes {
     | '/espace-client/pay/$ref'
     | '/espace-client/success/$ref'
     | '/lovable/email/suppression'
+    | '/ncc/ai/approvals'
     | '/ncc/ai/content'
+    | '/ncc/ai/copilot'
     | '/ncc/ai/knowledge'
     | '/ncc/ai/seo'
     | '/ncc/blog/$id'
@@ -1457,6 +1499,8 @@ export interface FileRouteTypes {
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
+    | '/api/public/ai/chat/client'
+    | '/api/public/ai/chat/ncc'
   id:
     | '__root__'
     | '/'
@@ -1542,7 +1586,9 @@ export interface FileRouteTypes {
     | '/espace-client/pay/$ref'
     | '/espace-client/success/$ref'
     | '/lovable/email/suppression'
+    | '/ncc/ai/approvals'
     | '/ncc/ai/content'
+    | '/ncc/ai/copilot'
     | '/ncc/ai/knowledge'
     | '/ncc/ai/seo'
     | '/ncc/blog/$id'
@@ -1589,6 +1635,8 @@ export interface FileRouteTypes {
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
+    | '/api/public/ai/chat/client'
+    | '/api/public/ai/chat/ncc'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1651,6 +1699,8 @@ export interface RootRouteChildren {
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
   LovableEmailTransactionalSendRoute: typeof LovableEmailTransactionalSendRoute
+  ApiPublicAiChatClientRoute: typeof ApiPublicAiChatClientRoute
+  ApiPublicAiChatNccRoute: typeof ApiPublicAiChatNccRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -2362,11 +2412,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof NccAiKnowledgeRouteImport
       parentRoute: typeof NccAiRoute
     }
+    '/ncc/ai/copilot': {
+      id: '/ncc/ai/copilot'
+      path: '/copilot'
+      fullPath: '/ncc/ai/copilot'
+      preLoaderRoute: typeof NccAiCopilotRouteImport
+      parentRoute: typeof NccAiRoute
+    }
     '/ncc/ai/content': {
       id: '/ncc/ai/content'
       path: '/content'
       fullPath: '/ncc/ai/content'
       preLoaderRoute: typeof NccAiContentRouteImport
+      parentRoute: typeof NccAiRoute
+    }
+    '/ncc/ai/approvals': {
+      id: '/ncc/ai/approvals'
+      path: '/approvals'
+      fullPath: '/ncc/ai/approvals'
+      preLoaderRoute: typeof NccAiApprovalsRouteImport
       parentRoute: typeof NccAiRoute
     }
     '/lovable/email/suppression': {
@@ -2565,6 +2629,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAutomationEmitTestRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/ai/chat/ncc': {
+      id: '/api/public/ai/chat/ncc'
+      path: '/api/public/ai/chat/ncc'
+      fullPath: '/api/public/ai/chat/ncc'
+      preLoaderRoute: typeof ApiPublicAiChatNccRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/ai/chat/client': {
+      id: '/api/public/ai/chat/client'
+      path: '/api/public/ai/chat/client'
+      fullPath: '/api/public/ai/chat/client'
+      preLoaderRoute: typeof ApiPublicAiChatClientRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -2647,14 +2725,18 @@ const FrRouteChildren: FrRouteChildren = {
 const FrRouteWithChildren = FrRoute._addFileChildren(FrRouteChildren)
 
 interface NccAiRouteChildren {
+  NccAiApprovalsRoute: typeof NccAiApprovalsRoute
   NccAiContentRoute: typeof NccAiContentRoute
+  NccAiCopilotRoute: typeof NccAiCopilotRoute
   NccAiKnowledgeRoute: typeof NccAiKnowledgeRoute
   NccAiSeoRoute: typeof NccAiSeoRoute
   NccAiIndexRoute: typeof NccAiIndexRoute
 }
 
 const NccAiRouteChildren: NccAiRouteChildren = {
+  NccAiApprovalsRoute: NccAiApprovalsRoute,
   NccAiContentRoute: NccAiContentRoute,
+  NccAiCopilotRoute: NccAiCopilotRoute,
   NccAiKnowledgeRoute: NccAiKnowledgeRoute,
   NccAiSeoRoute: NccAiSeoRoute,
   NccAiIndexRoute: NccAiIndexRoute,
@@ -2871,6 +2953,8 @@ const rootRouteChildren: RootRouteChildren = {
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
   LovableEmailTransactionalSendRoute: LovableEmailTransactionalSendRoute,
+  ApiPublicAiChatClientRoute: ApiPublicAiChatClientRoute,
+  ApiPublicAiChatNccRoute: ApiPublicAiChatNccRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
