@@ -8,7 +8,7 @@ import { buildNccSystemPrompt } from "@/lib/ai-chat/system-prompts.server";
 import { buildNccTools, type ToolContext } from "@/lib/ai-chat/tools.server";
 import { requireAdminFromRequest } from "@/lib/ai-chat/server-auth.server";
 
-export const Route = createFileRoute("/api/ai/chat/ncc")({
+export const Route = createFileRoute("/api/public/ai/chat/ncc")({
   server: {
     handlers: {
       POST: async ({ request }) => {
