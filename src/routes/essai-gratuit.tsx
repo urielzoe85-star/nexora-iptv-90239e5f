@@ -91,7 +91,14 @@ function FreeTrialPage() {
   const [sent, setSent] = useState(false);
 
   const m = useMutation({
-    mutationFn: (input: Parameters<typeof submit>[0]["data"]) => submit({ data: input }),
+    mutationFn: (input: {
+      email: string;
+      contact: string;
+      channel: "whatsapp" | "telegram" | "email";
+      device: string;
+      country: string;
+      website: string;
+    }) => submit({ data: input }),
     onSuccess: () => {
       setSent(true);
       toast.success("Demande reçue ! Vos accès arrivent dans quelques minutes.");
