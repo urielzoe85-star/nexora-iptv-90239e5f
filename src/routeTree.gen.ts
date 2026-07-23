@@ -20,6 +20,7 @@ import { Route as McpRouteImport } from './routes/mcp'
 import { Route as LegalGuideRouteImport } from './routes/legal-guide'
 import { Route as GalerieRouteImport } from './routes/galerie'
 import { Route as FrRouteImport } from './routes/fr'
+import { Route as EssaiGratuitRouteImport } from './routes/essai-gratuit'
 import { Route as EspaceClientRouteImport } from './routes/espace-client'
 import { Route as EnRouteImport } from './routes/en'
 import { Route as DeRouteImport } from './routes/de'
@@ -200,6 +201,11 @@ const GalerieRoute = GalerieRouteImport.update({
 const FrRoute = FrRouteImport.update({
   id: '/fr',
   path: '/fr',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EssaiGratuitRoute = EssaiGratuitRouteImport.update({
+  id: '/essai-gratuit',
+  path: '/essai-gratuit',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EspaceClientRoute = EspaceClientRouteImport.update({
@@ -863,6 +869,7 @@ export interface FileRoutesByFullPath {
   '/de': typeof DeRoute
   '/en': typeof EnRouteWithChildren
   '/espace-client': typeof EspaceClientRouteWithChildren
+  '/essai-gratuit': typeof EssaiGratuitRoute
   '/fr': typeof FrRouteWithChildren
   '/galerie': typeof GalerieRoute
   '/legal-guide': typeof LegalGuideRoute
@@ -999,6 +1006,7 @@ export interface FileRoutesByTo {
   '/checkout': typeof CheckoutRoute
   '/dashboard': typeof DashboardRoute
   '/de': typeof DeRoute
+  '/essai-gratuit': typeof EssaiGratuitRoute
   '/galerie': typeof GalerieRoute
   '/legal-guide': typeof LegalGuideRoute
   '/mcp': typeof McpRoute
@@ -1134,6 +1142,7 @@ export interface FileRoutesById {
   '/de': typeof DeRoute
   '/en': typeof EnRouteWithChildren
   '/espace-client': typeof EspaceClientRouteWithChildren
+  '/essai-gratuit': typeof EssaiGratuitRoute
   '/fr': typeof FrRouteWithChildren
   '/galerie': typeof GalerieRoute
   '/legal-guide': typeof LegalGuideRoute
@@ -1275,6 +1284,7 @@ export interface FileRouteTypes {
     | '/de'
     | '/en'
     | '/espace-client'
+    | '/essai-gratuit'
     | '/fr'
     | '/galerie'
     | '/legal-guide'
@@ -1411,6 +1421,7 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/dashboard'
     | '/de'
+    | '/essai-gratuit'
     | '/galerie'
     | '/legal-guide'
     | '/mcp'
@@ -1545,6 +1556,7 @@ export interface FileRouteTypes {
     | '/de'
     | '/en'
     | '/espace-client'
+    | '/essai-gratuit'
     | '/fr'
     | '/galerie'
     | '/legal-guide'
@@ -1685,6 +1697,7 @@ export interface RootRouteChildren {
   DeRoute: typeof DeRoute
   EnRoute: typeof EnRouteWithChildren
   EspaceClientRoute: typeof EspaceClientRouteWithChildren
+  EssaiGratuitRoute: typeof EssaiGratuitRoute
   FrRoute: typeof FrRouteWithChildren
   GalerieRoute: typeof GalerieRoute
   LegalGuideRoute: typeof LegalGuideRoute
@@ -1817,6 +1830,13 @@ declare module '@tanstack/react-router' {
       path: '/fr'
       fullPath: '/fr'
       preLoaderRoute: typeof FrRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/essai-gratuit': {
+      id: '/essai-gratuit'
+      path: '/essai-gratuit'
+      fullPath: '/essai-gratuit'
+      preLoaderRoute: typeof EssaiGratuitRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/espace-client': {
@@ -2986,6 +3006,7 @@ const rootRouteChildren: RootRouteChildren = {
   DeRoute: DeRoute,
   EnRoute: EnRouteWithChildren,
   EspaceClientRoute: EspaceClientRouteWithChildren,
+  EssaiGratuitRoute: EssaiGratuitRoute,
   FrRoute: FrRouteWithChildren,
   GalerieRoute: GalerieRoute,
   LegalGuideRoute: LegalGuideRoute,
