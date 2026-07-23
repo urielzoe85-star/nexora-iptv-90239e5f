@@ -55,8 +55,8 @@ export const MESSAGES: Record<Locale, Dict> = {
     "hero.point.4": "Multi-appareils",
 
     "features.kicker": "Pourquoi Nexora",
-    "features.title.a": "Pourquoi choisir ",
-    "features.title.b": "Nexora IPTV",
+    "features.title.a": "Pourquoi choisir un abonnement IPTV ",
+    "features.title.b": "Nexora",
     "features.1.title": "Bibliothèque immense",
     "features.1.desc": "Des milliers de chaînes en direct du monde entier en qualité cristalline.",
     "features.2.title": "Films & séries",
@@ -71,7 +71,7 @@ export const MESSAGES: Record<Locale, Dict> = {
     "features.6.desc": "De vraies personnes, disponibles 24/7 sur WhatsApp, Telegram et email.",
 
     "devices.kicker": "Compatibilité",
-    "devices.title.a": "Regardez ",
+    "devices.title.a": "Regardez votre abonnement IPTV ",
     "devices.title.b": "partout",
     "devices.sub": "Un compte. Tous les écrans. Reprenez où vous vous êtes arrêté sur n'importe quel appareil.",
     "devices.smartTv": "Smart TV",
@@ -84,7 +84,7 @@ export const MESSAGES: Record<Locale, Dict> = {
 
     "pricing.kicker": "Tarifs",
     "pricing.title.a": "Choisissez votre ",
-    "pricing.title.b": "abonnement",
+    "pricing.title.b": "abonnement IPTV",
     "pricing.sub": "Tarifs transparents. Annulez à tout moment. Aucun frais caché.",
     "pricing.month": "1 Mois",
     "pricing.3months": "3 Mois",
