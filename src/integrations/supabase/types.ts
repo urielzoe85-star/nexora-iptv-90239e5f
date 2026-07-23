@@ -125,6 +125,7 @@ export type Database = {
           id: string
           parts: Json | null
           role: string
+          sender: string
           thread_id: string
         }
         Insert: {
@@ -133,6 +134,7 @@ export type Database = {
           id?: string
           parts?: Json | null
           role: string
+          sender?: string
           thread_id: string
         }
         Update: {
@@ -141,6 +143,7 @@ export type Database = {
           id?: string
           parts?: Json | null
           role?: string
+          sender?: string
           thread_id?: string
         }
         Relationships: [
@@ -156,30 +159,54 @@ export type Database = {
       ai_chat_threads: {
         Row: {
           archived: boolean
+          assigned_admin_id: string | null
           created_at: string
+          handoff_closed_at: string | null
+          handoff_requested_at: string | null
+          handoff_started_at: string | null
+          handoff_status: string
           id: string
+          last_message_at: string | null
           owner_user_id: string | null
           scope: string
+          session_id: string | null
           title: string
           updated_at: string
+          visitor_meta: Json
         }
         Insert: {
           archived?: boolean
+          assigned_admin_id?: string | null
           created_at?: string
+          handoff_closed_at?: string | null
+          handoff_requested_at?: string | null
+          handoff_started_at?: string | null
+          handoff_status?: string
           id?: string
+          last_message_at?: string | null
           owner_user_id?: string | null
           scope?: string
+          session_id?: string | null
           title?: string
           updated_at?: string
+          visitor_meta?: Json
         }
         Update: {
           archived?: boolean
+          assigned_admin_id?: string | null
           created_at?: string
+          handoff_closed_at?: string | null
+          handoff_requested_at?: string | null
+          handoff_started_at?: string | null
+          handoff_status?: string
           id?: string
+          last_message_at?: string | null
           owner_user_id?: string | null
           scope?: string
+          session_id?: string | null
           title?: string
           updated_at?: string
+          visitor_meta?: Json
         }
         Relationships: []
       }

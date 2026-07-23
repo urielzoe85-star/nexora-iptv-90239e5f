@@ -38,6 +38,7 @@ export const NCC_MODULES: NccModule[] = [
   { id: "ai-center", label: "NEXORA AI Center", description: "Directeur marketing IA : dashboard, SEO, contenu, mémoire.", icon: Sparkles, to: "/ncc/ai", group: "intelligence", status: "ready" },
   { id: "ai-copilot", label: "Copilote IA", description: "Chat IA privé avec accès en lecture au business + demandes d'action.", icon: MessagesSquare, to: "/ncc/ai/copilot", group: "intelligence", status: "ready" },
   { id: "ai-approvals", label: "Approbations IA", description: "Valide les actions proposées par l'IA (client & copilote).", icon: ShieldCheck, to: "/ncc/ai/approvals", group: "intelligence", status: "ready" },
+  { id: "ai-inbox", label: "Inbox visiteurs", description: "Conversations en direct avec les visiteurs — prends la main quand l'IA passe le relais.", icon: MessagesSquare, to: "/ncc/ai/inbox", group: "intelligence", status: "ready" },
   { id: "ai-seo", label: "SEO Intelligence", description: "Audit de page et recherche de mots-clés assistés par IA.", icon: Search, to: "/ncc/ai/seo", group: "intelligence", status: "ready" },
   { id: "ai-content", label: "Content Creator", description: "Génération d'articles prêts à relire et publier.", icon: PenSquare, to: "/ncc/ai/content", group: "intelligence", status: "ready" },
   { id: "ai-knowledge", label: "Knowledge Base", description: "Mémoire Nexora utilisée par toutes les IA.", icon: BookOpen, to: "/ncc/ai/knowledge", group: "intelligence", status: "ready" },
