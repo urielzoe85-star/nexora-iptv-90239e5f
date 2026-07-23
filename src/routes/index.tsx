@@ -365,6 +365,10 @@ function Pricing() {
           <p className="text-sm uppercase tracking-[0.2em] text-[color:var(--gold)] mb-3">{t("pricing.kicker")}</p>
           <h2 className="text-4xl md:text-5xl font-bold">{t("pricing.title.a")}<span className="text-gradient-gold">{t("pricing.title.b")}</span></h2>
           <p className="text-muted-foreground mt-4">{t("pricing.sub")}</p>
+          <p className="text-sm text-muted-foreground mt-3">
+            Pas encore décidé ? Profitez d'un{" "}
+            <Link to="/essai-gratuit" className="text-[color:var(--gold)] underline underline-offset-4 hover:opacity-80">essai gratuit 24h de l'abonnement IPTV</Link>.
+          </p>
         </div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {plans.map(p => (
