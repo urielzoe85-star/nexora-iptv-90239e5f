@@ -144,7 +144,7 @@ function CopilotChat({
 }: { threadId: string; token: string; initialMessages: UIMessage[] }) {
   const transport = useMemo(
     () => new DefaultChatTransport({
-      api: "/api/ai/chat/ncc",
+      api: "/api/public/ai/chat/ncc",
       headers: () => ({ Authorization: `Bearer ${token}` }),
       body: () => ({ threadId }),
     }),
