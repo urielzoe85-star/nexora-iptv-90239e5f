@@ -112,6 +112,7 @@ import { Route as NccAiSeoRouteImport } from './routes/ncc.ai.seo'
 import { Route as NccAiKnowledgeRouteImport } from './routes/ncc.ai.knowledge'
 import { Route as NccAiCopilotRouteImport } from './routes/ncc.ai.copilot'
 import { Route as NccAiContentRouteImport } from './routes/ncc.ai.content'
+import { Route as NccAiApprovalsRouteImport } from './routes/ncc.ai.approvals'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as EspaceClientSuccessRefRouteImport } from './routes/espace-client.success.$ref'
 import { Route as EspaceClientPayRefRouteImport } from './routes/espace-client.pay.$ref'
@@ -662,6 +663,11 @@ const NccAiContentRoute = NccAiContentRouteImport.update({
   path: '/content',
   getParentRoute: () => NccAiRoute,
 } as any)
+const NccAiApprovalsRoute = NccAiApprovalsRouteImport.update({
+  id: '/approvals',
+  path: '/approvals',
+  getParentRoute: () => NccAiRoute,
+} as any)
 const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
   id: '/lovable/email/suppression',
   path: '/lovable/email/suppression',
@@ -913,6 +919,7 @@ export interface FileRoutesByFullPath {
   '/espace-client/pay/$ref': typeof EspaceClientPayRefRoute
   '/espace-client/success/$ref': typeof EspaceClientSuccessRefRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/ncc/ai/approvals': typeof NccAiApprovalsRoute
   '/ncc/ai/content': typeof NccAiContentRoute
   '/ncc/ai/copilot': typeof NccAiCopilotRoute
   '/ncc/ai/knowledge': typeof NccAiKnowledgeRoute
@@ -1040,6 +1047,7 @@ export interface FileRoutesByTo {
   '/espace-client/pay/$ref': typeof EspaceClientPayRefRoute
   '/espace-client/success/$ref': typeof EspaceClientSuccessRefRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/ncc/ai/approvals': typeof NccAiApprovalsRoute
   '/ncc/ai/content': typeof NccAiContentRoute
   '/ncc/ai/copilot': typeof NccAiCopilotRoute
   '/ncc/ai/knowledge': typeof NccAiKnowledgeRoute
@@ -1176,6 +1184,7 @@ export interface FileRoutesById {
   '/espace-client/pay/$ref': typeof EspaceClientPayRefRoute
   '/espace-client/success/$ref': typeof EspaceClientSuccessRefRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/ncc/ai/approvals': typeof NccAiApprovalsRoute
   '/ncc/ai/content': typeof NccAiContentRoute
   '/ncc/ai/copilot': typeof NccAiCopilotRoute
   '/ncc/ai/knowledge': typeof NccAiKnowledgeRoute
@@ -1313,6 +1322,7 @@ export interface FileRouteTypes {
     | '/espace-client/pay/$ref'
     | '/espace-client/success/$ref'
     | '/lovable/email/suppression'
+    | '/ncc/ai/approvals'
     | '/ncc/ai/content'
     | '/ncc/ai/copilot'
     | '/ncc/ai/knowledge'
@@ -1440,6 +1450,7 @@ export interface FileRouteTypes {
     | '/espace-client/pay/$ref'
     | '/espace-client/success/$ref'
     | '/lovable/email/suppression'
+    | '/ncc/ai/approvals'
     | '/ncc/ai/content'
     | '/ncc/ai/copilot'
     | '/ncc/ai/knowledge'
@@ -1575,6 +1586,7 @@ export interface FileRouteTypes {
     | '/espace-client/pay/$ref'
     | '/espace-client/success/$ref'
     | '/lovable/email/suppression'
+    | '/ncc/ai/approvals'
     | '/ncc/ai/content'
     | '/ncc/ai/copilot'
     | '/ncc/ai/knowledge'
@@ -2414,6 +2426,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof NccAiContentRouteImport
       parentRoute: typeof NccAiRoute
     }
+    '/ncc/ai/approvals': {
+      id: '/ncc/ai/approvals'
+      path: '/approvals'
+      fullPath: '/ncc/ai/approvals'
+      preLoaderRoute: typeof NccAiApprovalsRouteImport
+      parentRoute: typeof NccAiRoute
+    }
     '/lovable/email/suppression': {
       id: '/lovable/email/suppression'
       path: '/lovable/email/suppression'
@@ -2706,6 +2725,7 @@ const FrRouteChildren: FrRouteChildren = {
 const FrRouteWithChildren = FrRoute._addFileChildren(FrRouteChildren)
 
 interface NccAiRouteChildren {
+  NccAiApprovalsRoute: typeof NccAiApprovalsRoute
   NccAiContentRoute: typeof NccAiContentRoute
   NccAiCopilotRoute: typeof NccAiCopilotRoute
   NccAiKnowledgeRoute: typeof NccAiKnowledgeRoute
@@ -2714,6 +2734,7 @@ interface NccAiRouteChildren {
 }
 
 const NccAiRouteChildren: NccAiRouteChildren = {
+  NccAiApprovalsRoute: NccAiApprovalsRoute,
   NccAiContentRoute: NccAiContentRoute,
   NccAiCopilotRoute: NccAiCopilotRoute,
   NccAiKnowledgeRoute: NccAiKnowledgeRoute,
