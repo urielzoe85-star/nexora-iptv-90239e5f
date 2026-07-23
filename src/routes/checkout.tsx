@@ -808,6 +808,7 @@ function BinanceManualPanel({
         </div>
         <Link
           to="/track"
+          search={{ ref: pending.orderRef }}
           className="inline-flex items-center gap-2 px-6 py-3 rounded-full glass hover:border-[color:var(--gold)]/40 transition text-sm font-medium"
         >
           Suivre ma commande
