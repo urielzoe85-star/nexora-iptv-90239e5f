@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
-import { Sparkles, X } from "lucide-react";
+import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { aiAssistant } from "@/lib/ai-assistant";
+import nexoraAiLogo from "@/assets/nexora-ai-logo.png";
 import {
   Conversation, ConversationContent, ConversationEmptyState, ConversationScrollButton,
 } from "@/components/ai-elements/conversation";
@@ -19,7 +21,12 @@ function newSessionId() {
 }
 
 export function NexoraAssistantWidget() {
-  const [open, setOpen] = useState(false);
+  const open = useSyncExternalStore(
+    aiAssistant.subscribe,
+    aiAssistant.isOpen,
+    () => false,
+  );
+  const setOpen = (v: boolean) => aiAssistant.set(v);
   const sessionRef = useRef<string>(typeof window !== "undefined" ? sessionStorage.getItem("nxa-sid") ?? newSessionId() : "");
   useEffect(() => {
     if (typeof window !== "undefined" && sessionRef.current) sessionStorage.setItem("nxa-sid", sessionRef.current);
@@ -38,29 +45,15 @@ export function NexoraAssistantWidget() {
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        aria-label="Nexora Assistant"
-        className={cn(
-          "fixed bottom-24 right-4 z-40 h-14 w-14 rounded-full shadow-2xl",
-          "bg-gradient-to-br from-primary to-primary/70 text-primary-foreground",
-          "grid place-items-center transition-transform hover:scale-105",
-        )}
-      >
-        {open ? <X className="h-6 w-6" /> : <Sparkles className="h-6 w-6" />}
-        {!open && (
-          <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-emerald-500 ring-2 ring-background" />
-        )}
-      </button>
-
       {open && (
-        <div className="fixed bottom-40 right-4 z-40 w-[92vw] max-w-sm h-[70vh] max-h-[560px] rounded-2xl border border-border bg-background shadow-2xl flex flex-col overflow-hidden">
+        <div className="fixed bottom-28 right-4 z-[70] w-[92vw] max-w-sm h-[70vh] max-h-[560px] rounded-2xl border border-border bg-background shadow-2xl flex flex-col overflow-hidden">
           <div className="px-4 py-3 border-b border-border/60 flex items-center justify-between bg-gradient-to-r from-primary/10 to-transparent">
             <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-full bg-primary/20 grid place-items-center">
-                <Sparkles className="h-4 w-4 text-primary" />
-              </div>
+              <img
+                src={nexoraAiLogo}
+                alt="Nexora AI"
+                className="h-8 w-8 rounded-full object-contain bg-primary/10 p-0.5"
+              />
               <div>
                 <div className="text-sm font-semibold">Nexora Assistant</div>
                 <div className="text-[10px] text-muted-foreground">IA officielle — en ligne</div>
