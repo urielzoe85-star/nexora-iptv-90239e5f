@@ -1,7 +1,13 @@
 // Public streaming chat endpoint for the floating Nexora Assistant widget.
 // No auth: available to any site visitor. Uses Lovable AI Gateway.
 import { createFileRoute } from "@tanstack/react-router";
-import { convertToModelMessages, streamText, type UIMessage } from "ai";
+import {
+  convertToModelMessages,
+  createUIMessageStream,
+  createUIMessageStreamResponse,
+  streamText,
+  type UIMessage,
+} from "ai";
 import { createNexoraAiProvider, NEXORA_DEFAULT_CHAT_MODEL } from "@/lib/ai-chat/gateway.server";
 import { buildClientSystemPrompt } from "@/lib/ai-chat/system-prompts.server";
 import { buildClientTools, type ToolContext } from "@/lib/ai-chat/tools.server";
@@ -46,14 +52,17 @@ export const Route = createFileRoute("/api/public/ai/chat/visitor")({
                 threadId: thread.id, userParts: lastUser.parts, userText: text,
               });
             }
-            // Empty UI-message stream so the SDK closes cleanly on the client.
-            const empty = streamText({
-              model: createNexoraAiProvider(key)(NEXORA_DEFAULT_CHAT_MODEL),
-              system: "Return an empty response.",
-              messages: [{ role: "user", content: "" } as any],
-              maxOutputTokens: 1,
+            // No model call while a human is handling the thread.
+            // Return a well-formed empty UI-message stream so the SDK
+            // closes cleanly; admin replies arrive via the polling bootstrap.
+            const emptyStream = createUIMessageStream({
+              execute: () => {},
+              originalMessages: body.messages,
             });
-            return empty.toUIMessageStreamResponse({ originalMessages: body.messages, headers: corsHeaders });
+            return createUIMessageStreamResponse({
+              stream: emptyStream,
+              headers: corsHeaders,
+            });
           }
 
           const gateway = createNexoraAiProvider(key);
@@ -78,19 +87,29 @@ export const Route = createFileRoute("/api/public/ai/chat/visitor")({
             headers: corsHeaders,
             onFinish: async ({ messages }) => {
               try {
-                const last = messages[messages.length - 1];
-                const prev = messages[messages.length - 2];
                 const textOf = (m: any) => (m?.parts ?? []).filter((p: any) => p.type === "text").map((p: any) => p.text).join("\n");
-                if (prev?.role === "user" && last?.role === "assistant") {
+                // Find the last user message and (optionally) the last assistant message
+                // with non-empty text. Persist whatever is present so tool-only turns
+                // still record the user's message.
+                let lastUserMsg: any = null;
+                let lastAssistantWithText: any = null;
+                for (let i = messages.length - 1; i >= 0; i--) {
+                  const m: any = messages[i];
+                  if (!lastAssistantWithText && m.role === "assistant" && textOf(m).trim()) {
+                    lastAssistantWithText = m;
+                  }
+                  if (!lastUserMsg && m.role === "user") {
+                    lastUserMsg = m;
+                  }
+                  if (lastUserMsg && lastAssistantWithText) break;
+                }
+                if (lastUserMsg || lastAssistantWithText) {
                   await persistVisitorTurn({
                     threadId: thread.id,
-                    userParts: prev.parts, userText: textOf(prev),
-                    assistantParts: last.parts, assistantText: textOf(last),
-                  });
-                } else if (last?.role === "user") {
-                  await persistVisitorTurn({
-                    threadId: thread.id,
-                    userParts: last.parts, userText: textOf(last),
+                    userParts: lastUserMsg?.parts,
+                    userText: lastUserMsg ? textOf(lastUserMsg) : undefined,
+                    assistantParts: lastAssistantWithText?.parts,
+                    assistantText: lastAssistantWithText ? textOf(lastAssistantWithText) : undefined,
                   });
                 }
               } catch (e) { console.warn("[visitor chat] persist failed:", e); }
