@@ -110,6 +110,7 @@ import { Route as NccBlogCategoriesRouteImport } from './routes/ncc.blog.categor
 import { Route as NccBlogIdRouteImport } from './routes/ncc.blog.$id'
 import { Route as NccAiSeoRouteImport } from './routes/ncc.ai.seo'
 import { Route as NccAiKnowledgeRouteImport } from './routes/ncc.ai.knowledge'
+import { Route as NccAiCopilotRouteImport } from './routes/ncc.ai.copilot'
 import { Route as NccAiContentRouteImport } from './routes/ncc.ai.content'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as EspaceClientSuccessRefRouteImport } from './routes/espace-client.success.$ref'
@@ -651,6 +652,11 @@ const NccAiKnowledgeRoute = NccAiKnowledgeRouteImport.update({
   path: '/knowledge',
   getParentRoute: () => NccAiRoute,
 } as any)
+const NccAiCopilotRoute = NccAiCopilotRouteImport.update({
+  id: '/copilot',
+  path: '/copilot',
+  getParentRoute: () => NccAiRoute,
+} as any)
 const NccAiContentRoute = NccAiContentRouteImport.update({
   id: '/content',
   path: '/content',
@@ -908,6 +914,7 @@ export interface FileRoutesByFullPath {
   '/espace-client/success/$ref': typeof EspaceClientSuccessRefRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/ncc/ai/content': typeof NccAiContentRoute
+  '/ncc/ai/copilot': typeof NccAiCopilotRoute
   '/ncc/ai/knowledge': typeof NccAiKnowledgeRoute
   '/ncc/ai/seo': typeof NccAiSeoRoute
   '/ncc/blog/$id': typeof NccBlogIdRoute
@@ -1034,6 +1041,7 @@ export interface FileRoutesByTo {
   '/espace-client/success/$ref': typeof EspaceClientSuccessRefRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/ncc/ai/content': typeof NccAiContentRoute
+  '/ncc/ai/copilot': typeof NccAiCopilotRoute
   '/ncc/ai/knowledge': typeof NccAiKnowledgeRoute
   '/ncc/ai/seo': typeof NccAiSeoRoute
   '/ncc/blog/$id': typeof NccBlogIdRoute
@@ -1169,6 +1177,7 @@ export interface FileRoutesById {
   '/espace-client/success/$ref': typeof EspaceClientSuccessRefRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/ncc/ai/content': typeof NccAiContentRoute
+  '/ncc/ai/copilot': typeof NccAiCopilotRoute
   '/ncc/ai/knowledge': typeof NccAiKnowledgeRoute
   '/ncc/ai/seo': typeof NccAiSeoRoute
   '/ncc/blog/$id': typeof NccBlogIdRoute
@@ -1305,6 +1314,7 @@ export interface FileRouteTypes {
     | '/espace-client/success/$ref'
     | '/lovable/email/suppression'
     | '/ncc/ai/content'
+    | '/ncc/ai/copilot'
     | '/ncc/ai/knowledge'
     | '/ncc/ai/seo'
     | '/ncc/blog/$id'
@@ -1431,6 +1441,7 @@ export interface FileRouteTypes {
     | '/espace-client/success/$ref'
     | '/lovable/email/suppression'
     | '/ncc/ai/content'
+    | '/ncc/ai/copilot'
     | '/ncc/ai/knowledge'
     | '/ncc/ai/seo'
     | '/ncc/blog/$id'
@@ -1565,6 +1576,7 @@ export interface FileRouteTypes {
     | '/espace-client/success/$ref'
     | '/lovable/email/suppression'
     | '/ncc/ai/content'
+    | '/ncc/ai/copilot'
     | '/ncc/ai/knowledge'
     | '/ncc/ai/seo'
     | '/ncc/blog/$id'
@@ -2388,6 +2400,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof NccAiKnowledgeRouteImport
       parentRoute: typeof NccAiRoute
     }
+    '/ncc/ai/copilot': {
+      id: '/ncc/ai/copilot'
+      path: '/copilot'
+      fullPath: '/ncc/ai/copilot'
+      preLoaderRoute: typeof NccAiCopilotRouteImport
+      parentRoute: typeof NccAiRoute
+    }
     '/ncc/ai/content': {
       id: '/ncc/ai/content'
       path: '/content'
@@ -2688,6 +2707,7 @@ const FrRouteWithChildren = FrRoute._addFileChildren(FrRouteChildren)
 
 interface NccAiRouteChildren {
   NccAiContentRoute: typeof NccAiContentRoute
+  NccAiCopilotRoute: typeof NccAiCopilotRoute
   NccAiKnowledgeRoute: typeof NccAiKnowledgeRoute
   NccAiSeoRoute: typeof NccAiSeoRoute
   NccAiIndexRoute: typeof NccAiIndexRoute
@@ -2695,6 +2715,7 @@ interface NccAiRouteChildren {
 
 const NccAiRouteChildren: NccAiRouteChildren = {
   NccAiContentRoute: NccAiContentRoute,
+  NccAiCopilotRoute: NccAiCopilotRoute,
   NccAiKnowledgeRoute: NccAiKnowledgeRoute,
   NccAiSeoRoute: NccAiSeoRoute,
   NccAiIndexRoute: NccAiIndexRoute,
