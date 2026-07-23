@@ -1,20 +1,19 @@
-## Objectif
-Faire répondre l'IA Nexora (widget visiteur + copilote NCC) dans la langue du message reçu (FR/EN, et autres langues courantes).
+# Plan : Supprimer les raccourcis WhatsApp/Messenger flottants
 
-## Changement
-Un seul fichier à modifier : `src/lib/ai-chat/system-prompts.server.ts`.
+## Contexte
+Le chat IA Nexora est maintenant opérationnel et multilingue. L'utilisateur souhaite retirer les anciens boutons flottants WhatsApp et Messenger de l'interface publique pour ne conserver que le lanceur de l'assistant IA.
 
-Renforcer la directive de langue dans `BASE_IDENTITY` et `buildClientSystemPrompt` / `buildNccSystemPrompt` :
+## Fichier concerné
+- `src/components/FloatingWhatsApp.tsx` : contient actuellement la pile IA → WhatsApp → Messenger.
 
-- Remplacer « Toujours répondre dans la langue du visiteur (français par défaut) » par une règle explicite et prioritaire :
-  - Détecter la langue du **dernier message utilisateur**.
-  - Répondre **strictement** dans cette langue (FR, EN, ES, PT, IT, DE, AR…).
-  - Si la langue change en cours de conversation, basculer immédiatement.
-  - Français uniquement si le message est en français ou ambigu/très court.
-  - Les liens internes (/pricing, /faq…) et noms de produits restent inchangés.
-  - Les messages de handoff (« Je préviens un conseiller… ») doivent aussi être traduits dans la langue détectée — fournir les variantes FR/EN dans le prompt.
+## Modifications prévues
+1. **Supprimer les boutons WhatsApp et Messenger** dans `src/components/FloatingWhatsApp.tsx`.
+2. **Ne conserver que le bouton Nexora AI** (logo personnalisé, halo doré, statut en ligne) avec le même comportement `aiAssistant.toggle()`.
+3. **Nettoyer les imports** : retirer `buildWhatsAppLink` et toute référence aux liens WhatsApp/Messenger si le fichier ne les réutilise plus ailleurs.
+4. **Renommer le composant** (optionnel mais recommandé) de `FloatingWhatsApp` vers `FloatingAiAssistant` pour refléter sa nouvelle responsabilité unique. Mettre à jour l'import dans `src/routes/__root.tsx` si renommé.
+5. **Vérifier le build** : lancer la vérification TypeScript pour s'assurer qu'aucun import mort ne reste et que le layout du bouton unique reste correct (pas de flex vide inutile).
 
-## Hors périmètre
-- Pas de changement UI, pas de i18n du widget lui-même (placeholders, bannières).
-- Pas de modification des outils, de la base, ni des routes API.
-- Pas de détection côté serveur : on laisse le modèle (Gemini 3.6 Flash) gérer la détection, qu'il fait nativement de façon fiable.
+## Résultat attendu
+- Un seul bouton flottant en bas à droite : le lanceur Nexora AI.
+- Les anciens canaux WhatsApp/Messenger restent accessibles via les pages de contact / téléchargement / footer, mais ne sont plus en overlay fixe.
+- Aucune régression sur l'ouverture du widget IA.

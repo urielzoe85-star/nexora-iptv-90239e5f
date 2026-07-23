@@ -12,7 +12,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { I18nProvider, useT } from "../i18n/context";
-import { FloatingWhatsApp } from "../components/FloatingWhatsApp";
+import { FloatingAiAssistant } from "../components/FloatingAiAssistant";
 import { PwaManager } from "../components/pwa/PwaManager";
 import { BackButton } from "../components/BackButton";
 import { NexoraAssistantWidget } from "../components/ai-chat/NexoraAssistantWidget";
@@ -184,7 +184,7 @@ function RootComponent() {
       <I18nProvider>
         {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
         <Outlet />
-        <FloatingWhatsApp />
+        <FloatingAiAssistant />
         <BackButton />
         <PwaManager />
         <NexoraAssistantWidget />
