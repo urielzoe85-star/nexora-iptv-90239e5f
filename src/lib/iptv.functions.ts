@@ -354,13 +354,32 @@ export const importAccountsCsv = createServerFn({ method: "POST" })
 
     let inserted = 0, updated = 0;
     if (toUpsert.length) {
-      // Upsert on (provider_id, lower(username)) — index guarantees no duplicates.
-      const { data: ret, error } = await sb.from("iptv_accounts")
-        .upsert(toUpsert, { onConflict: "provider_id,username", ignoreDuplicates: false })
-        .select("id,created_at,updated_at");
-      if (error) throw new Error(error.message);
-      for (const row of ret ?? []) {
-        if (row.created_at === row.updated_at) inserted++; else updated++;
+      // Anti-doublon: split insert vs update based on existing (provider_id, lower(username)).
+      const usernamesLower = toUpsert.map((r) => r.username.toLowerCase());
+      const existQuery = sb.from("iptv_accounts").select("id,username").in("username", toUpsert.map((r) => r.username));
+      const withProvider = provider_id ? existQuery.eq("provider_id", provider_id) : existQuery.is("provider_id", null);
+      const { data: existing, error: eErr } = await withProvider;
+      if (eErr) throw new Error(eErr.message);
+      const existingMap = new Map<string, string>();
+      for (const e of existing ?? []) existingMap.set((e.username as string).toLowerCase(), e.id as string);
+      void usernamesLower;
+
+      const toInsert: any[] = [];
+      for (const row of toUpsert) {
+        const id = existingMap.get(row.username.toLowerCase());
+        if (id) {
+          const { imported_at: _ia, status: _st, ...patch } = row;
+          const { error: uErr } = await sb.from("iptv_accounts").update(patch).eq("id", id);
+          if (uErr) { errors.push(`${row.username}: ${uErr.message}`); continue; }
+          updated++;
+        } else {
+          toInsert.push(row);
+        }
+      }
+      if (toInsert.length) {
+        const { data: ins, error: iErr } = await sb.from("iptv_accounts").insert(toInsert).select("id");
+        if (iErr) throw new Error(iErr.message);
+        inserted = ins?.length ?? 0;
       }
     }
 
