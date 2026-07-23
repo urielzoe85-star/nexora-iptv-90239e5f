@@ -51,16 +51,17 @@ import { PostCard } from "@/components/blog/PostCard";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Nexora IPTV — Premium IPTV Subscription, Instant Activation" },
-      { name: "description", content: "Premium IPTV with thousands of channels, movies & series in HD/FHD/4K. Instant activation, multi-device, 24/7 support." },
-      { property: "og:title", content: "Nexora IPTV — Premium IPTV Subscription" },
-      { property: "og:description", content: "Thousands of live channels & VOD. Instant access. Multi-device." },
+      { title: "Abonnement IPTV Premium Francophone 4K | Nexora IPTV" },
+      { name: "description", content: "Profitez de milliers de chaînes TV, films et séries en 4K avec Nexora IPTV. Activation instantanée, essai gratuit 24h et support 24/7." },
+      { property: "og:title", content: "Abonnement IPTV Premium Francophone 4K | Nexora IPTV" },
+      { property: "og:description", content: "Milliers de chaînes TV, films et séries en 4K. Activation instantanée, essai gratuit 24h et support 24/7." },
       { property: "og:url", content: "https://nexora-iptv.com/" },
       { property: "og:type", content: "website" },
+      { property: "og:locale", content: "fr_FR" },
       { property: "og:image", content: "https://nexora-iptv.com/__l5e/assets-v1/a913768d-af44-4e4b-a0cd-79192a6fcc3c/nexora-og.jpg" },
       { property: "og:image:width", content: "1200" },
       { property: "og:image:height", content: "630" },
-      { property: "og:image:alt", content: "Nexora IPTV — Premium Streaming" },
+      { property: "og:image:alt", content: "Nexora IPTV — Abonnement IPTV Premium 4K" },
       { name: "twitter:image", content: "https://nexora-iptv.com/__l5e/assets-v1/a913768d-af44-4e4b-a0cd-79192a6fcc3c/nexora-og.jpg" },
     ],
     links: [
@@ -215,6 +216,12 @@ function Hero() {
             {t("hero.title.a")}<span className="text-gradient-gold">{t("hero.title.b")}</span>{t("hero.title.c")}
           </h1>
           <p className="text-lg text-muted-foreground max-w-xl mb-8">{t("hero.subtitle")}</p>
+          <p className="text-sm text-muted-foreground max-w-xl mb-6">
+            Testez sans engagement avec notre{" "}
+            <Link to="/essai-gratuit" className="text-[color:var(--gold)] underline underline-offset-4 hover:opacity-80">essai gratuit 24h</Link>
+            {" "}ou rejoignez notre{" "}
+            <Link to="/reseller" className="text-[color:var(--gold)] underline underline-offset-4 hover:opacity-80">programme revendeur IPTV</Link>.
+          </p>
           <div className="flex flex-wrap gap-4 mb-10">
             <a href="#pricing" className="btn-gold btn-gold-hover px-7 py-3.5 rounded-full font-semibold">{t("hero.cta.start")}</a>
             <a href="#pricing" className="glass px-7 py-3.5 rounded-full font-semibold hover:border-[color:var(--gold)]/40 transition">{t("hero.cta.plans")}</a>
