@@ -33,6 +33,7 @@ export default defineConfig({
             /^\/robots\.txt/,
           ],
           globPatterns: ["**/*.{js,css,html,ico,png,svg,webp,woff2}"],
+          maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
           cleanupOutdatedCaches: true,
           clientsClaim: true,
           skipWaiting: false,
