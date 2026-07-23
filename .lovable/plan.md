@@ -1,42 +1,36 @@
-## Objectif
+## Corrections SEO page d'accueil (FR)
 
-Ajouter dans **NCC → NEXORA AI → Content Creator** un bouton **"Générer 3 sujets automatiquement"** qui produit 3 brouillons d'articles complets, prêts à publier après ton accord, avec image OG et URL canonique.
+Cible : score SEO 72 → 90+, focus mot-clé « abonnement IPTV » pour le marché francophone.
 
-## Fonctionnement
+### 1. Métadonnées FR (src/routes/index.tsx `head()`)
+Remplacer les balises actuelles en anglais par :
+- **Title** : `Abonnement IPTV Premium Francophone 4K | Nexora IPTV`
+- **Description** : `Profitez de milliers de chaînes TV, films et séries en 4K avec Nexora IPTV. Activation instantanée, essai gratuit 24h et support 24/7.`
+- **og:title / og:description / twitter** : versions FR alignées, sans entités HTML brutes (pas de `&amp;` ni `&#x27;` — utiliser `et`, `&`, apostrophes typographiques `'`).
+- `og:locale` = `fr_FR`.
 
-1. Tu cliques sur **"Suggérer 3 sujets"** (aucun champ à remplir).
-2. L'IA analyse en parallèle :
-   - la **Knowledge Base Nexora** (offres, positionnement, ton),
-   - les **mots-clés à fort potentiel** via Semrush (volume, difficulté, tendance) autour de l'IPTV, du streaming, du smart home et des thématiques déjà performantes,
-   - les **requêtes réelles** remontées par Google Search Console (impressions, CTR, position — pages à booster),
-   - une **recherche web fraîche** (Firecrawl search) pour capter l'actualité / angles récents et éviter les doublons avec le blog existant.
-3. Elle propose **3 sujets différenciés** (ex : 1 guide long, 1 comparatif, 1 actualité/tendance), chacun avec :
-   - titre, angle, mot-clé principal + secondaires, intention de recherche, difficulté estimée.
-4. Pour les sujets que tu valides (checkbox), l'IA génère en tâche de fond, pour chacun :
-   - article HTML complet (H2/H3, listes, FAQ + JSON-LD),
-   - meta title / meta description,
-   - **slug + URL canonique** (`https://nexora-iptv.com/blog/<slug>`),
-   - **image OG** générée via Lovable AI Gateway (`google/gemini-3.1-flash-image`, 1200×630, charte Nexora), uploadée sur le bucket `blog-media`, URL stockée dans `og_image_url`,
-   - liens internes vers `/produits`, `/pricing`, `/reseller`, articles connexes,
-   - statut **`draft`** → visible dans `/ncc/blog`, publiable en 1 clic (rien n'est mis en ligne sans ton accord).
-5. Un panneau **"Suggestions IA"** liste les 3 propositions avec aperçu (titre, extrait, image OG, score SEO estimé) et boutons **Publier / Modifier / Rejeter**.
+### 2. Nettoyage entités HTML
+Auditer `src/i18n/messages.ts` (bloc FR) et titres/descriptions du `head()` pour supprimer toute occurrence brute `&amp;`, `&#x27;`, `&quot;`. Remplacer par `&`, `'`, `"` directs (React échappe automatiquement).
 
-## Livrables techniques
+### 3. H2 sémantiques (mot-clé « abonnement IPTV »)
+Dans `src/i18n/messages.ts` (locale FR uniquement), enrichir :
+- `features.title` → « Pourquoi choisir un **abonnement IPTV Nexora** »
+- `pricing.title` → « Choisissez votre **abonnement IPTV** »
+- `devices.title` → « Regardez votre **abonnement IPTV** partout »
+- `how.title` → conserver mais viser « Activer son abonnement IPTV en 3 étapes »
 
-- **Nouveau server function** `suggestBlogTopics` (`src/lib/ai-center/content.functions.ts`) : agrège KB + Semrush (`keyword_research` + `competitive_analysis` sur nexora-iptv.com) + GSC (via connecteur déjà lié) + Firecrawl search, appelle `openai/gpt-5.4` en JSON strict pour retourner 3 sujets structurés.
-- **Nouveau server function** `generateBlogDraftsBatch` : boucle sur les sujets approuvés, réutilise `generateBlogDraft` existant, puis appelle un nouvel helper `generateOgImage` (Lovable AI Gateway `/v1/images/generations`, upload Supabase Storage `blog-media/og/<slug>.png`, retour URL publique signée longue durée), écrit `og_image_url` + `canonical_url` sur la ligne `blog_posts`.
-- **Nouvelle table légère** `ai_blog_suggestions` (id, topic_json, status: pending/approved/rejected/generated, created_by, created_at) + RLS admin seulement + GRANT authenticated/service_role.
-- **UI** : nouvelle section "Suggestions automatiques" en haut de `src/routes/ncc.ai.content.tsx` (bouton principal + liste des 3 cartes avec checkbox groupée et actions), zéro changement sur le formulaire manuel existant.
-- **Logs** : chaque étape écrite dans `ai_actions_log` (kind: `content_suggest`, `content_batch_generate`, `og_image_generate`).
+Les autres langues restent inchangées.
 
-## Sécurité & garde-fous
+### 4. Maillage interne contextuel
+Ajouter dans le hero (ou juste sous le sous-titre) une phrase courte avec 2 liens TanStack `<Link>` :
+- vers `/essai-gratuit` (ancre « essai gratuit 24h »)
+- vers `/reseller` (ancre « programme revendeur IPTV »)
 
-- Endpoint protégé par `requireAdmin` (déjà en place sur `content.functions.ts`).
-- Aucune publication automatique : tout reste en `draft`, publication manuelle via `/ncc/blog/$id`.
-- Si Semrush/GSC/Firecrawl indisponibles, dégradation propre (l'IA utilise les sources restantes + KB).
-- Coût contrôlé : image OG en `gemini-3.1-flash-image` (rapide/économique), texte en `gpt-5.4`.
+Ajouter aussi un lien contextuel « essai gratuit » dans la section pricing et un lien « devenir revendeur » dans le footer/CTA final si absent. Utiliser des ancres descriptives (pas « cliquez ici »).
 
-## Hors périmètre
+### 5. Vérification
+- Rebuild + inspection DOM pour confirmer titre/description FR, absence d'entités brutes, présence des liens internes.
+- Marquer les findings SEO comme fixed via `seo_chat--update_findings` après vérif.
 
-- Pas de publication programmée automatique (déjà couvert par la planification existante si tu veux la brancher plus tard).
-- Pas de modification du workflow de publication ni du RSS / sitemap (déjà auto-régénérés à chaque changement de post).
+### Hors périmètre
+Aucun changement business logic, aucun changement sur `/en`, `/fr`, ou routes autres que l'accueil `/`.
