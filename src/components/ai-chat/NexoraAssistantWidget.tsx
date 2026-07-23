@@ -27,7 +27,7 @@ export function NexoraAssistantWidget() {
 
   const transport = useRef(
     new DefaultChatTransport({
-      api: "/api/public/ai/chat/client",
+      api: "/api/public/ai/chat/visitor",
       body: () => ({ sessionId: sessionRef.current }),
     }),
   ).current;
