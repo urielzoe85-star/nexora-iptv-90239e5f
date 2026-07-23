@@ -291,49 +291,111 @@ export const transitionAccount = createServerFn({ method: "POST" })
     return row;
   });
 
-// CSV import / export
-function parseCsv(text: string): Record<string, string>[] {
-  const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
-  if (lines.length === 0) return [];
-  const header = lines[0].split(",").map((h) => h.trim().toLowerCase());
-  return lines.slice(1).map((line) => {
-    const cols = line.split(",");
-    const row: Record<string, string> = {};
-    header.forEach((h, i) => { row[h] = (cols[i] ?? "").trim(); });
-    return row;
-  });
-}
-
+// MegaOTT-format import (CSV `sep=;` or XLSX/XLS as base64).
 export const importAccountsCsv = createServerFn({ method: "POST" })
   .middleware([requireNccUnlock])
   .inputValidator((d: unknown) => z.object({
-    csv: z.string().min(1).max(2_000_000),
-    account_type: z.enum(ACC_TYPE).default("trial"),
+    // Either raw text (CSV) or base64 payload for xlsx/xls
+    content: z.string().min(1).max(10_000_000),
+    kind: z.enum(["csv", "xlsx"]).default("csv"),
+    account_type: z.enum(ACC_TYPE).default("premium"),
+    package: z.enum(ACC_PACKAGE),
     provider_id: z.string().uuid().optional(),
   }).parse(d))
   .handler(async ({ data, context }) => {
     const sb = await admin(context.userId);
     const provider_id = await ensureProvider(sb, data.provider_id ?? null);
-    const rows = parseCsv(data.csv);
-    if (rows.length === 0) return { inserted: 0, errors: ["CSV vide"] };
-    const payload = rows.map((r) => ({
-      provider_id,
-      account_type: data.account_type,
-      username: r.username ?? r.user ?? "",
-      password: r.password ?? r.pass ?? null,
-      bouquet: r.bouquet ?? null,
-      expires_at: r.expires_at ? new Date(r.expires_at).toISOString() : null,
-      notes: r.notes ?? null,
-      status: "available",
-    })).filter((r) => r.username.length > 0);
+    const { parseMegaottFile } = await import("@/lib/iptv-megaott-parser.server");
+    const rows = await parseMegaottFile(data.content, data.kind);
+    if (rows.length === 0) return { inserted: 0, updated: 0, skipped: 0, errors: ["Fichier vide"] as string[] };
 
-    const { data: ins, error } = await sb.from("iptv_accounts").insert(payload).select("id");
-    if (error) throw new Error(error.message);
+    const errors: string[] = [];
+    const toUpsert: any[] = [];
+    for (const [idx, r] of rows.entries()) {
+      const username = (r["username"] ?? "").trim();
+      if (!username) { errors.push(`Ligne ${idx + 2}: username manquant`); continue; }
+      const pkg = (r["package"] ?? "").trim();
+      if (pkg && pkg !== data.package) {
+        errors.push(`Ligne ${idx + 2} (${username}): package "${pkg}" ≠ "${data.package}" attendu`);
+        continue;
+      }
+      const parseBool = (v?: string) => v ? /^(yes|true|1|oui)$/i.test(v.trim()) : null;
+      const parseDate = (v?: string) => {
+        if (!v) return null;
+        const s = v.trim().replace(" ", "T");
+        const d = new Date(s);
+        return isNaN(d.getTime()) ? null : d.toISOString();
+      };
+      const maxConn = parseInt((r["max connections"] ?? r["max_connections"] ?? "").trim(), 10);
+      toUpsert.push({
+        provider_id,
+        account_type: data.account_type,
+        package: data.package,
+        username,
+        password: (r["password"] ?? "").trim() || null,
+        mac: (r["mac"] ?? "").trim() || null,
+        code: (r["code"] ?? "").trim() || null,
+        owner: (r["owner"] ?? "").trim() || null,
+        dns_link: (r["dns"] ?? "").trim() || null,
+        portal_link: (r["portal"] ?? "").trim() || null,
+        paid: parseBool(r["paid"]),
+        enabled: parseBool(r["enabled"]),
+        admin_enabled: parseBool(r["admin enabled"] ?? r["admin_enabled"]),
+        max_connections: Number.isFinite(maxConn) ? maxConn : null,
+        expires_at: parseDate(r["expiration date"] ?? r["expires_at"]),
+        last_login: parseDate(r["last login"] ?? r["last_login"]),
+        source_created_at: parseDate(r["created at"] ?? r["created_at"]),
+        admin_notes: (r["admin notes"] ?? "").trim() || null,
+        reseller_notes: (r["reseller notes"] ?? "").trim() || null,
+        status: "available",
+        imported_at: new Date().toISOString(),
+      });
+    }
+
+    let inserted = 0, updated = 0;
+    if (toUpsert.length) {
+      // Upsert on (provider_id, lower(username)) — index guarantees no duplicates.
+      const { data: ret, error } = await sb.from("iptv_accounts")
+        .upsert(toUpsert, { onConflict: "provider_id,username", ignoreDuplicates: false })
+        .select("id,created_at,updated_at");
+      if (error) throw new Error(error.message);
+      for (const row of ret ?? []) {
+        if (row.created_at === row.updated_at) inserted++; else updated++;
+      }
+    }
+
     await audit(sb, context.userId, "pool.imported", {
-      provider_id, message: `${ins?.length ?? 0} comptes`,
-      payload: { account_type: data.account_type, count: ins?.length ?? 0 },
+      provider_id,
+      message: `${inserted} nouveaux, ${updated} mis à jour, ${errors.length} rejetés (${data.package})`,
+      payload: { account_type: data.account_type, package: data.package, inserted, updated, skipped: errors.length },
     });
-    return { inserted: ins?.length ?? 0, errors: [] as string[] };
+    return { inserted, updated, skipped: errors.length, errors };
+  });
+
+// ─── ACTIVE CLIENTS (assigned/active accounts with customer) ────────────
+export const listActiveClients = createServerFn({ method: "POST" })
+  .middleware([requireNccUnlock])
+  .inputValidator((d: unknown) => z.object({
+    search: z.string().trim().max(200).optional(),
+    package: z.enum(ACC_PACKAGE).optional(),
+    limit: z.number().int().min(1).max(500).default(200),
+  }).parse(d ?? {}))
+  .handler(async ({ data, context }) => {
+    const sb = await admin(context.userId);
+    let q = sb.from("iptv_accounts")
+      .select("*, iptv_providers(name), customers(email,full_name,phone)")
+      .in("status", ["assigned", "active", "delivered", "reserved"])
+      .not("customer_id", "is", null)
+      .order("expires_at", { ascending: true, nullsFirst: false })
+      .limit(data.limit);
+    if (data.package) q = q.eq("package", data.package);
+    if (data.search) {
+      const s = `%${data.search}%`;
+      q = q.or(`username.ilike.${s},owner.ilike.${s}`);
+    }
+    const { data: rows, error } = await q;
+    if (error) throw new Error(error.message);
+    return rows ?? [];
   });
 
 export const exportAccountsCsv = createServerFn({ method: "POST" })
