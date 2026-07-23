@@ -73,6 +73,7 @@ import { Route as EspaceClientOrdersRouteImport } from './routes/espace-client.o
 import { Route as EspaceClientDownloadsRouteImport } from './routes/espace-client.downloads'
 import { Route as EspaceClientDashboardRouteImport } from './routes/espace-client.dashboard'
 import { Route as EspaceClientAnnouncementsRouteImport } from './routes/espace-client.announcements'
+import { Route as EnResellerRouteImport } from './routes/en.reseller'
 import { Route as EnGuideIptvRouteImport } from './routes/en.guide-iptv'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as BlogBestIptv2026RouteImport } from './routes/blog.best-iptv-2026'
@@ -470,6 +471,11 @@ const EspaceClientAnnouncementsRoute =
     path: '/announcements',
     getParentRoute: () => EspaceClientRoute,
   } as any)
+const EnResellerRoute = EnResellerRouteImport.update({
+  id: '/reseller',
+  path: '/reseller',
+  getParentRoute: () => EnRoute,
+} as any)
 const EnGuideIptvRoute = EnGuideIptvRouteImport.update({
   id: '/guide-iptv',
   path: '/guide-iptv',
@@ -893,6 +899,7 @@ export interface FileRoutesByFullPath {
   '/blog/best-iptv-2026': typeof BlogBestIptv2026Route
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/en/guide-iptv': typeof EnGuideIptvRoute
+  '/en/reseller': typeof EnResellerRoute
   '/espace-client/announcements': typeof EspaceClientAnnouncementsRoute
   '/espace-client/dashboard': typeof EspaceClientDashboardRoute
   '/espace-client/downloads': typeof EspaceClientDownloadsRoute
@@ -1028,6 +1035,7 @@ export interface FileRoutesByTo {
   '/blog/best-iptv-2026': typeof BlogBestIptv2026Route
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/en/guide-iptv': typeof EnGuideIptvRoute
+  '/en/reseller': typeof EnResellerRoute
   '/espace-client/announcements': typeof EspaceClientAnnouncementsRoute
   '/espace-client/dashboard': typeof EspaceClientDashboardRoute
   '/espace-client/downloads': typeof EspaceClientDownloadsRoute
@@ -1166,6 +1174,7 @@ export interface FileRoutesById {
   '/blog/best-iptv-2026': typeof BlogBestIptv2026Route
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/en/guide-iptv': typeof EnGuideIptvRoute
+  '/en/reseller': typeof EnResellerRoute
   '/espace-client/announcements': typeof EspaceClientAnnouncementsRoute
   '/espace-client/dashboard': typeof EspaceClientDashboardRoute
   '/espace-client/downloads': typeof EspaceClientDownloadsRoute
@@ -1308,6 +1317,7 @@ export interface FileRouteTypes {
     | '/blog/best-iptv-2026'
     | '/email/unsubscribe'
     | '/en/guide-iptv'
+    | '/en/reseller'
     | '/espace-client/announcements'
     | '/espace-client/dashboard'
     | '/espace-client/downloads'
@@ -1443,6 +1453,7 @@ export interface FileRouteTypes {
     | '/blog/best-iptv-2026'
     | '/email/unsubscribe'
     | '/en/guide-iptv'
+    | '/en/reseller'
     | '/espace-client/announcements'
     | '/espace-client/dashboard'
     | '/espace-client/downloads'
@@ -1580,6 +1591,7 @@ export interface FileRouteTypes {
     | '/blog/best-iptv-2026'
     | '/email/unsubscribe'
     | '/en/guide-iptv'
+    | '/en/reseller'
     | '/espace-client/announcements'
     | '/espace-client/dashboard'
     | '/espace-client/downloads'
@@ -2203,6 +2215,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EspaceClientAnnouncementsRouteImport
       parentRoute: typeof EspaceClientRoute
     }
+    '/en/reseller': {
+      id: '/en/reseller'
+      path: '/reseller'
+      fullPath: '/en/reseller'
+      preLoaderRoute: typeof EnResellerRouteImport
+      parentRoute: typeof EnRoute
+    }
     '/en/guide-iptv': {
       id: '/en/guide-iptv'
       path: '/guide-iptv'
@@ -2748,11 +2767,13 @@ const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 interface EnRouteChildren {
   EnGuideIptvRoute: typeof EnGuideIptvRoute
+  EnResellerRoute: typeof EnResellerRoute
   EnIndexRoute: typeof EnIndexRoute
 }
 
 const EnRouteChildren: EnRouteChildren = {
   EnGuideIptvRoute: EnGuideIptvRoute,
+  EnResellerRoute: EnResellerRoute,
   EnIndexRoute: EnIndexRoute,
 }
 
