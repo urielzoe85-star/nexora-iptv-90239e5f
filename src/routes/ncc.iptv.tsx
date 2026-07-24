@@ -6,18 +6,15 @@ export const Route = createFileRoute("/ncc/iptv")({ component: IptvLayout });
 
 const TABS = [
   { to: "/ncc/iptv",               label: "Dashboard",     exact: true },
-  { to: "/ncc/iptv/import",        label: "Import" },
-  { to: "/ncc/iptv/inventory",     label: "Inventaire" },
-  { to: "/ncc/iptv/accounts",      label: "Comptes IPTV" },
-  { to: "/ncc/iptv/trials",        label: "Essais gratuits" },
-  { to: "/ncc/iptv/premium",       label: "Premium" },
+  { to: "/ncc/iptv/essai",         label: "Essai gratuit" },
+  { to: "/ncc/iptv/premium-1m",    label: "Premium 1 Mois" },
+  { to: "/ncc/iptv/premium-3m",    label: "Premium 3 Mois" },
+  { to: "/ncc/iptv/premium-6m",    label: "Premium 6 Mois" },
+  { to: "/ncc/iptv/premium-12m",   label: "Premium 12 Mois" },
+  { to: "/ncc/iptv/clients",       label: "Clients actifs" },
   { to: "/ncc/iptv/renewals",      label: "Renouvellements" },
-  { to: "/ncc/iptv/suspended",     label: "Suspendus" },
-  { to: "/ncc/iptv/expired",       label: "Expirés" },
-  { to: "/ncc/iptv/subscriptions", label: "Abonnements" },
   { to: "/ncc/iptv/providers",     label: "Fournisseurs" },
   { to: "/ncc/iptv/history",       label: "Historique imports" },
-  { to: "/ncc/iptv/debug",         label: "API Debug" },
 ];
 
 function IptvLayout() {

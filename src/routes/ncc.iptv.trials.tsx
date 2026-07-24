@@ -1,6 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { AccountsView } from "@/components/ncc/iptv/AccountsView";
+// Ancien onglet — redirige vers /ncc/iptv/essai.
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/ncc/iptv/trials")({
-  component: () => <AccountsView title="Réserve d'essais gratuits" defaultType="trial" filter={{ account_type: "trial" }} />,
+  beforeLoad: () => { throw redirect({ to: "/ncc/iptv/essai" }); },
 });
