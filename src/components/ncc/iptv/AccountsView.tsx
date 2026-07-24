@@ -104,6 +104,7 @@ export function AccountsView({
                   username: String(f.get("username") ?? ""),
                   password: String(f.get("password") ?? "") || undefined,
                   account_type: String(f.get("account_type") ?? defaultType),
+                  package: filter.package,
                   bouquet: String(f.get("bouquet") ?? "") || undefined,
                   provider_id: String(f.get("provider_id") ?? "") || undefined,
                   expires_at: ex ? new Date(ex).toISOString() : undefined,
