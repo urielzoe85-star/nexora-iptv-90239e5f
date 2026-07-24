@@ -95,17 +95,15 @@ import { Route as NccSettingsSectionRouteImport } from './routes/ncc.settings.$s
 import { Route as NccPaymentsBinanceRouteImport } from './routes/ncc.payments.binance'
 import { Route as NccOrdersIdRouteImport } from './routes/ncc.orders.$id'
 import { Route as NccIptvTrialsRouteImport } from './routes/ncc.iptv.trials'
-import { Route as NccIptvSuspendedRouteImport } from './routes/ncc.iptv.suspended'
-import { Route as NccIptvSubscriptionsRouteImport } from './routes/ncc.iptv.subscriptions'
 import { Route as NccIptvRenewalsRouteImport } from './routes/ncc.iptv.renewals'
 import { Route as NccIptvProvidersRouteImport } from './routes/ncc.iptv.providers'
-import { Route as NccIptvPremiumRouteImport } from './routes/ncc.iptv.premium'
-import { Route as NccIptvInventoryRouteImport } from './routes/ncc.iptv.inventory'
-import { Route as NccIptvImportRouteImport } from './routes/ncc.iptv.import'
+import { Route as NccIptvPremium6mRouteImport } from './routes/ncc.iptv.premium-6m'
+import { Route as NccIptvPremium3mRouteImport } from './routes/ncc.iptv.premium-3m'
+import { Route as NccIptvPremium1mRouteImport } from './routes/ncc.iptv.premium-1m'
+import { Route as NccIptvPremium12mRouteImport } from './routes/ncc.iptv.premium-12m'
 import { Route as NccIptvHistoryRouteImport } from './routes/ncc.iptv.history'
-import { Route as NccIptvExpiredRouteImport } from './routes/ncc.iptv.expired'
-import { Route as NccIptvDebugRouteImport } from './routes/ncc.iptv.debug'
-import { Route as NccIptvAccountsRouteImport } from './routes/ncc.iptv.accounts'
+import { Route as NccIptvEssaiRouteImport } from './routes/ncc.iptv.essai'
+import { Route as NccIptvClientsRouteImport } from './routes/ncc.iptv.clients'
 import { Route as NccClientsIdRouteImport } from './routes/ncc.clients.$id'
 import { Route as NccBlogTagsRouteImport } from './routes/ncc.blog.tags'
 import { Route as NccBlogNewRouteImport } from './routes/ncc.blog.new'
@@ -584,16 +582,6 @@ const NccIptvTrialsRoute = NccIptvTrialsRouteImport.update({
   path: '/trials',
   getParentRoute: () => NccIptvRoute,
 } as any)
-const NccIptvSuspendedRoute = NccIptvSuspendedRouteImport.update({
-  id: '/suspended',
-  path: '/suspended',
-  getParentRoute: () => NccIptvRoute,
-} as any)
-const NccIptvSubscriptionsRoute = NccIptvSubscriptionsRouteImport.update({
-  id: '/subscriptions',
-  path: '/subscriptions',
-  getParentRoute: () => NccIptvRoute,
-} as any)
 const NccIptvRenewalsRoute = NccIptvRenewalsRouteImport.update({
   id: '/renewals',
   path: '/renewals',
@@ -604,19 +592,24 @@ const NccIptvProvidersRoute = NccIptvProvidersRouteImport.update({
   path: '/providers',
   getParentRoute: () => NccIptvRoute,
 } as any)
-const NccIptvPremiumRoute = NccIptvPremiumRouteImport.update({
-  id: '/premium',
-  path: '/premium',
+const NccIptvPremium6mRoute = NccIptvPremium6mRouteImport.update({
+  id: '/premium-6m',
+  path: '/premium-6m',
   getParentRoute: () => NccIptvRoute,
 } as any)
-const NccIptvInventoryRoute = NccIptvInventoryRouteImport.update({
-  id: '/inventory',
-  path: '/inventory',
+const NccIptvPremium3mRoute = NccIptvPremium3mRouteImport.update({
+  id: '/premium-3m',
+  path: '/premium-3m',
   getParentRoute: () => NccIptvRoute,
 } as any)
-const NccIptvImportRoute = NccIptvImportRouteImport.update({
-  id: '/import',
-  path: '/import',
+const NccIptvPremium1mRoute = NccIptvPremium1mRouteImport.update({
+  id: '/premium-1m',
+  path: '/premium-1m',
+  getParentRoute: () => NccIptvRoute,
+} as any)
+const NccIptvPremium12mRoute = NccIptvPremium12mRouteImport.update({
+  id: '/premium-12m',
+  path: '/premium-12m',
   getParentRoute: () => NccIptvRoute,
 } as any)
 const NccIptvHistoryRoute = NccIptvHistoryRouteImport.update({
@@ -624,19 +617,14 @@ const NccIptvHistoryRoute = NccIptvHistoryRouteImport.update({
   path: '/history',
   getParentRoute: () => NccIptvRoute,
 } as any)
-const NccIptvExpiredRoute = NccIptvExpiredRouteImport.update({
-  id: '/expired',
-  path: '/expired',
+const NccIptvEssaiRoute = NccIptvEssaiRouteImport.update({
+  id: '/essai',
+  path: '/essai',
   getParentRoute: () => NccIptvRoute,
 } as any)
-const NccIptvDebugRoute = NccIptvDebugRouteImport.update({
-  id: '/debug',
-  path: '/debug',
-  getParentRoute: () => NccIptvRoute,
-} as any)
-const NccIptvAccountsRoute = NccIptvAccountsRouteImport.update({
-  id: '/accounts',
-  path: '/accounts',
+const NccIptvClientsRoute = NccIptvClientsRouteImport.update({
+  id: '/clients',
+  path: '/clients',
   getParentRoute: () => NccIptvRoute,
 } as any)
 const NccClientsIdRoute = NccClientsIdRouteImport.update({
@@ -970,17 +958,15 @@ export interface FileRoutesByFullPath {
   '/ncc/blog/new': typeof NccBlogNewRoute
   '/ncc/blog/tags': typeof NccBlogTagsRoute
   '/ncc/clients/$id': typeof NccClientsIdRoute
-  '/ncc/iptv/accounts': typeof NccIptvAccountsRoute
-  '/ncc/iptv/debug': typeof NccIptvDebugRoute
-  '/ncc/iptv/expired': typeof NccIptvExpiredRoute
+  '/ncc/iptv/clients': typeof NccIptvClientsRoute
+  '/ncc/iptv/essai': typeof NccIptvEssaiRoute
   '/ncc/iptv/history': typeof NccIptvHistoryRoute
-  '/ncc/iptv/import': typeof NccIptvImportRoute
-  '/ncc/iptv/inventory': typeof NccIptvInventoryRoute
-  '/ncc/iptv/premium': typeof NccIptvPremiumRoute
+  '/ncc/iptv/premium-12m': typeof NccIptvPremium12mRoute
+  '/ncc/iptv/premium-1m': typeof NccIptvPremium1mRoute
+  '/ncc/iptv/premium-3m': typeof NccIptvPremium3mRoute
+  '/ncc/iptv/premium-6m': typeof NccIptvPremium6mRoute
   '/ncc/iptv/providers': typeof NccIptvProvidersRoute
   '/ncc/iptv/renewals': typeof NccIptvRenewalsRoute
-  '/ncc/iptv/subscriptions': typeof NccIptvSubscriptionsRoute
-  '/ncc/iptv/suspended': typeof NccIptvSuspendedRoute
   '/ncc/iptv/trials': typeof NccIptvTrialsRoute
   '/ncc/orders/$id': typeof NccOrdersIdRoute
   '/ncc/payments/binance': typeof NccPaymentsBinanceRoute
@@ -1104,17 +1090,15 @@ export interface FileRoutesByTo {
   '/ncc/blog/new': typeof NccBlogNewRoute
   '/ncc/blog/tags': typeof NccBlogTagsRoute
   '/ncc/clients/$id': typeof NccClientsIdRoute
-  '/ncc/iptv/accounts': typeof NccIptvAccountsRoute
-  '/ncc/iptv/debug': typeof NccIptvDebugRoute
-  '/ncc/iptv/expired': typeof NccIptvExpiredRoute
+  '/ncc/iptv/clients': typeof NccIptvClientsRoute
+  '/ncc/iptv/essai': typeof NccIptvEssaiRoute
   '/ncc/iptv/history': typeof NccIptvHistoryRoute
-  '/ncc/iptv/import': typeof NccIptvImportRoute
-  '/ncc/iptv/inventory': typeof NccIptvInventoryRoute
-  '/ncc/iptv/premium': typeof NccIptvPremiumRoute
+  '/ncc/iptv/premium-12m': typeof NccIptvPremium12mRoute
+  '/ncc/iptv/premium-1m': typeof NccIptvPremium1mRoute
+  '/ncc/iptv/premium-3m': typeof NccIptvPremium3mRoute
+  '/ncc/iptv/premium-6m': typeof NccIptvPremium6mRoute
   '/ncc/iptv/providers': typeof NccIptvProvidersRoute
   '/ncc/iptv/renewals': typeof NccIptvRenewalsRoute
-  '/ncc/iptv/subscriptions': typeof NccIptvSubscriptionsRoute
-  '/ncc/iptv/suspended': typeof NccIptvSuspendedRoute
   '/ncc/iptv/trials': typeof NccIptvTrialsRoute
   '/ncc/orders/$id': typeof NccOrdersIdRoute
   '/ncc/payments/binance': typeof NccPaymentsBinanceRoute
@@ -1247,17 +1231,15 @@ export interface FileRoutesById {
   '/ncc/blog/new': typeof NccBlogNewRoute
   '/ncc/blog/tags': typeof NccBlogTagsRoute
   '/ncc/clients/$id': typeof NccClientsIdRoute
-  '/ncc/iptv/accounts': typeof NccIptvAccountsRoute
-  '/ncc/iptv/debug': typeof NccIptvDebugRoute
-  '/ncc/iptv/expired': typeof NccIptvExpiredRoute
+  '/ncc/iptv/clients': typeof NccIptvClientsRoute
+  '/ncc/iptv/essai': typeof NccIptvEssaiRoute
   '/ncc/iptv/history': typeof NccIptvHistoryRoute
-  '/ncc/iptv/import': typeof NccIptvImportRoute
-  '/ncc/iptv/inventory': typeof NccIptvInventoryRoute
-  '/ncc/iptv/premium': typeof NccIptvPremiumRoute
+  '/ncc/iptv/premium-12m': typeof NccIptvPremium12mRoute
+  '/ncc/iptv/premium-1m': typeof NccIptvPremium1mRoute
+  '/ncc/iptv/premium-3m': typeof NccIptvPremium3mRoute
+  '/ncc/iptv/premium-6m': typeof NccIptvPremium6mRoute
   '/ncc/iptv/providers': typeof NccIptvProvidersRoute
   '/ncc/iptv/renewals': typeof NccIptvRenewalsRoute
-  '/ncc/iptv/subscriptions': typeof NccIptvSubscriptionsRoute
-  '/ncc/iptv/suspended': typeof NccIptvSuspendedRoute
   '/ncc/iptv/trials': typeof NccIptvTrialsRoute
   '/ncc/orders/$id': typeof NccOrdersIdRoute
   '/ncc/payments/binance': typeof NccPaymentsBinanceRoute
@@ -1391,17 +1373,15 @@ export interface FileRouteTypes {
     | '/ncc/blog/new'
     | '/ncc/blog/tags'
     | '/ncc/clients/$id'
-    | '/ncc/iptv/accounts'
-    | '/ncc/iptv/debug'
-    | '/ncc/iptv/expired'
+    | '/ncc/iptv/clients'
+    | '/ncc/iptv/essai'
     | '/ncc/iptv/history'
-    | '/ncc/iptv/import'
-    | '/ncc/iptv/inventory'
-    | '/ncc/iptv/premium'
+    | '/ncc/iptv/premium-12m'
+    | '/ncc/iptv/premium-1m'
+    | '/ncc/iptv/premium-3m'
+    | '/ncc/iptv/premium-6m'
     | '/ncc/iptv/providers'
     | '/ncc/iptv/renewals'
-    | '/ncc/iptv/subscriptions'
-    | '/ncc/iptv/suspended'
     | '/ncc/iptv/trials'
     | '/ncc/orders/$id'
     | '/ncc/payments/binance'
@@ -1525,17 +1505,15 @@ export interface FileRouteTypes {
     | '/ncc/blog/new'
     | '/ncc/blog/tags'
     | '/ncc/clients/$id'
-    | '/ncc/iptv/accounts'
-    | '/ncc/iptv/debug'
-    | '/ncc/iptv/expired'
+    | '/ncc/iptv/clients'
+    | '/ncc/iptv/essai'
     | '/ncc/iptv/history'
-    | '/ncc/iptv/import'
-    | '/ncc/iptv/inventory'
-    | '/ncc/iptv/premium'
+    | '/ncc/iptv/premium-12m'
+    | '/ncc/iptv/premium-1m'
+    | '/ncc/iptv/premium-3m'
+    | '/ncc/iptv/premium-6m'
     | '/ncc/iptv/providers'
     | '/ncc/iptv/renewals'
-    | '/ncc/iptv/subscriptions'
-    | '/ncc/iptv/suspended'
     | '/ncc/iptv/trials'
     | '/ncc/orders/$id'
     | '/ncc/payments/binance'
@@ -1667,17 +1645,15 @@ export interface FileRouteTypes {
     | '/ncc/blog/new'
     | '/ncc/blog/tags'
     | '/ncc/clients/$id'
-    | '/ncc/iptv/accounts'
-    | '/ncc/iptv/debug'
-    | '/ncc/iptv/expired'
+    | '/ncc/iptv/clients'
+    | '/ncc/iptv/essai'
     | '/ncc/iptv/history'
-    | '/ncc/iptv/import'
-    | '/ncc/iptv/inventory'
-    | '/ncc/iptv/premium'
+    | '/ncc/iptv/premium-12m'
+    | '/ncc/iptv/premium-1m'
+    | '/ncc/iptv/premium-3m'
+    | '/ncc/iptv/premium-6m'
     | '/ncc/iptv/providers'
     | '/ncc/iptv/renewals'
-    | '/ncc/iptv/subscriptions'
-    | '/ncc/iptv/suspended'
     | '/ncc/iptv/trials'
     | '/ncc/orders/$id'
     | '/ncc/payments/binance'
@@ -2381,20 +2357,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof NccIptvTrialsRouteImport
       parentRoute: typeof NccIptvRoute
     }
-    '/ncc/iptv/suspended': {
-      id: '/ncc/iptv/suspended'
-      path: '/suspended'
-      fullPath: '/ncc/iptv/suspended'
-      preLoaderRoute: typeof NccIptvSuspendedRouteImport
-      parentRoute: typeof NccIptvRoute
-    }
-    '/ncc/iptv/subscriptions': {
-      id: '/ncc/iptv/subscriptions'
-      path: '/subscriptions'
-      fullPath: '/ncc/iptv/subscriptions'
-      preLoaderRoute: typeof NccIptvSubscriptionsRouteImport
-      parentRoute: typeof NccIptvRoute
-    }
     '/ncc/iptv/renewals': {
       id: '/ncc/iptv/renewals'
       path: '/renewals'
@@ -2409,25 +2371,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof NccIptvProvidersRouteImport
       parentRoute: typeof NccIptvRoute
     }
-    '/ncc/iptv/premium': {
-      id: '/ncc/iptv/premium'
-      path: '/premium'
-      fullPath: '/ncc/iptv/premium'
-      preLoaderRoute: typeof NccIptvPremiumRouteImport
+    '/ncc/iptv/premium-6m': {
+      id: '/ncc/iptv/premium-6m'
+      path: '/premium-6m'
+      fullPath: '/ncc/iptv/premium-6m'
+      preLoaderRoute: typeof NccIptvPremium6mRouteImport
       parentRoute: typeof NccIptvRoute
     }
-    '/ncc/iptv/inventory': {
-      id: '/ncc/iptv/inventory'
-      path: '/inventory'
-      fullPath: '/ncc/iptv/inventory'
-      preLoaderRoute: typeof NccIptvInventoryRouteImport
+    '/ncc/iptv/premium-3m': {
+      id: '/ncc/iptv/premium-3m'
+      path: '/premium-3m'
+      fullPath: '/ncc/iptv/premium-3m'
+      preLoaderRoute: typeof NccIptvPremium3mRouteImport
       parentRoute: typeof NccIptvRoute
     }
-    '/ncc/iptv/import': {
-      id: '/ncc/iptv/import'
-      path: '/import'
-      fullPath: '/ncc/iptv/import'
-      preLoaderRoute: typeof NccIptvImportRouteImport
+    '/ncc/iptv/premium-1m': {
+      id: '/ncc/iptv/premium-1m'
+      path: '/premium-1m'
+      fullPath: '/ncc/iptv/premium-1m'
+      preLoaderRoute: typeof NccIptvPremium1mRouteImport
+      parentRoute: typeof NccIptvRoute
+    }
+    '/ncc/iptv/premium-12m': {
+      id: '/ncc/iptv/premium-12m'
+      path: '/premium-12m'
+      fullPath: '/ncc/iptv/premium-12m'
+      preLoaderRoute: typeof NccIptvPremium12mRouteImport
       parentRoute: typeof NccIptvRoute
     }
     '/ncc/iptv/history': {
@@ -2437,25 +2406,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof NccIptvHistoryRouteImport
       parentRoute: typeof NccIptvRoute
     }
-    '/ncc/iptv/expired': {
-      id: '/ncc/iptv/expired'
-      path: '/expired'
-      fullPath: '/ncc/iptv/expired'
-      preLoaderRoute: typeof NccIptvExpiredRouteImport
+    '/ncc/iptv/essai': {
+      id: '/ncc/iptv/essai'
+      path: '/essai'
+      fullPath: '/ncc/iptv/essai'
+      preLoaderRoute: typeof NccIptvEssaiRouteImport
       parentRoute: typeof NccIptvRoute
     }
-    '/ncc/iptv/debug': {
-      id: '/ncc/iptv/debug'
-      path: '/debug'
-      fullPath: '/ncc/iptv/debug'
-      preLoaderRoute: typeof NccIptvDebugRouteImport
-      parentRoute: typeof NccIptvRoute
-    }
-    '/ncc/iptv/accounts': {
-      id: '/ncc/iptv/accounts'
-      path: '/accounts'
-      fullPath: '/ncc/iptv/accounts'
-      preLoaderRoute: typeof NccIptvAccountsRouteImport
+    '/ncc/iptv/clients': {
+      id: '/ncc/iptv/clients'
+      path: '/clients'
+      fullPath: '/ncc/iptv/clients'
+      preLoaderRoute: typeof NccIptvClientsRouteImport
       parentRoute: typeof NccIptvRoute
     }
     '/ncc/clients/$id': {
@@ -2891,33 +2853,29 @@ const NccClientsRouteWithChildren = NccClientsRoute._addFileChildren(
 )
 
 interface NccIptvRouteChildren {
-  NccIptvAccountsRoute: typeof NccIptvAccountsRoute
-  NccIptvDebugRoute: typeof NccIptvDebugRoute
-  NccIptvExpiredRoute: typeof NccIptvExpiredRoute
+  NccIptvClientsRoute: typeof NccIptvClientsRoute
+  NccIptvEssaiRoute: typeof NccIptvEssaiRoute
   NccIptvHistoryRoute: typeof NccIptvHistoryRoute
-  NccIptvImportRoute: typeof NccIptvImportRoute
-  NccIptvInventoryRoute: typeof NccIptvInventoryRoute
-  NccIptvPremiumRoute: typeof NccIptvPremiumRoute
+  NccIptvPremium12mRoute: typeof NccIptvPremium12mRoute
+  NccIptvPremium1mRoute: typeof NccIptvPremium1mRoute
+  NccIptvPremium3mRoute: typeof NccIptvPremium3mRoute
+  NccIptvPremium6mRoute: typeof NccIptvPremium6mRoute
   NccIptvProvidersRoute: typeof NccIptvProvidersRoute
   NccIptvRenewalsRoute: typeof NccIptvRenewalsRoute
-  NccIptvSubscriptionsRoute: typeof NccIptvSubscriptionsRoute
-  NccIptvSuspendedRoute: typeof NccIptvSuspendedRoute
   NccIptvTrialsRoute: typeof NccIptvTrialsRoute
   NccIptvIndexRoute: typeof NccIptvIndexRoute
 }
 
 const NccIptvRouteChildren: NccIptvRouteChildren = {
-  NccIptvAccountsRoute: NccIptvAccountsRoute,
-  NccIptvDebugRoute: NccIptvDebugRoute,
-  NccIptvExpiredRoute: NccIptvExpiredRoute,
+  NccIptvClientsRoute: NccIptvClientsRoute,
+  NccIptvEssaiRoute: NccIptvEssaiRoute,
   NccIptvHistoryRoute: NccIptvHistoryRoute,
-  NccIptvImportRoute: NccIptvImportRoute,
-  NccIptvInventoryRoute: NccIptvInventoryRoute,
-  NccIptvPremiumRoute: NccIptvPremiumRoute,
+  NccIptvPremium12mRoute: NccIptvPremium12mRoute,
+  NccIptvPremium1mRoute: NccIptvPremium1mRoute,
+  NccIptvPremium3mRoute: NccIptvPremium3mRoute,
+  NccIptvPremium6mRoute: NccIptvPremium6mRoute,
   NccIptvProvidersRoute: NccIptvProvidersRoute,
   NccIptvRenewalsRoute: NccIptvRenewalsRoute,
-  NccIptvSubscriptionsRoute: NccIptvSubscriptionsRoute,
-  NccIptvSuspendedRoute: NccIptvSuspendedRoute,
   NccIptvTrialsRoute: NccIptvTrialsRoute,
   NccIptvIndexRoute: NccIptvIndexRoute,
 }

@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Plus, Upload, Download, Trash2 } from "lucide-react";
+import { Plus, Download, Trash2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,30 +14,36 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { StatusBadge, fmtDate } from "@/components/ncc/ncc-ui";
 import {
   listAccounts, createAccount, deleteAccount, transitionAccount,
-  importAccountsCsv, exportAccountsCsv, listProviders,
+  exportAccountsCsv, listProviders,
 } from "@/lib/iptv.functions";
+import { MegaottImportCard } from "./MegaottImportCard";
 
 type Filter = {
   account_type?: "trial" | "premium";
   status?: "available" | "assigned" | "active" | "expired" | "suspended";
   expiring_within_days?: number;
+  package?: "24 Hours" | "1 Month" | "3 Months" | "6 Months" | "1 Year";
 };
 
 export function AccountsView({
-  filter = {}, defaultType = "premium", title,
-}: { filter?: Filter; defaultType?: "trial" | "premium"; title?: string }) {
+  filter = {}, defaultType = "premium", title, showImport = false, importLabel,
+}: {
+  filter?: Filter;
+  defaultType?: "trial" | "premium";
+  title?: string;
+  showImport?: boolean;
+  importLabel?: string;
+}) {
   const list   = useServerFn(listAccounts);
   const create = useServerFn(createAccount);
   const del    = useServerFn(deleteAccount);
   const trans  = useServerFn(transitionAccount);
-  const imp    = useServerFn(importAccountsCsv);
   const exp    = useServerFn(exportAccountsCsv);
   const provs  = useServerFn(listProviders);
   const qc = useQueryClient();
 
   const [search, setSearch] = useState("");
   const [openCreate, setOpenCreate] = useState(false);
-  const [openImport, setOpenImport] = useState(false);
 
   const key = useMemo(() => ["iptv", "accounts", filter, search] as const, [filter, search]);
   const q = useQuery({ queryKey: key, queryFn: () => list({ data: { ...filter, search: search || undefined } }) });
@@ -60,11 +66,6 @@ export function AccountsView({
     onSuccess: () => invalidate(),
     onError: (e) => toast.error((e as Error).message),
   });
-  const mImport = useMutation({
-    mutationFn: (v: { csv: string; account_type: "trial" | "premium" }) => imp({ data: v }),
-    onSuccess: (r) => { toast.success(`${r.inserted} comptes importés`); setOpenImport(false); invalidate(); },
-    onError: (e) => toast.error((e as Error).message),
-  });
 
   const onExport = async () => {
     const r = await exp({ data: { account_type: filter.account_type, status: filter.status } });
@@ -77,6 +78,13 @@ export function AccountsView({
 
   return (
     <div className="space-y-4">
+      {showImport && filter.package && (
+        <MegaottImportCard
+          account_type={filter.account_type ?? defaultType}
+          pkg={filter.package}
+          label={importLabel ?? filter.package}
+        />
+      )}
       <div className="flex flex-wrap items-center gap-2 justify-between">
         <div className="flex items-center gap-2">
           {title && <h2 className="text-lg font-medium">{title}</h2>}
@@ -84,36 +92,6 @@ export function AccountsView({
         </div>
         <div className="flex gap-2">
           <Button size="sm" variant="outline" onClick={onExport}><Download className="h-4 w-4 mr-1" /> Export CSV</Button>
-          <Dialog open={openImport} onOpenChange={setOpenImport}>
-            <DialogTrigger asChild><Button size="sm" variant="outline"><Upload className="h-4 w-4 mr-1" /> Import CSV</Button></DialogTrigger>
-            <DialogContent>
-              <DialogHeader><DialogTitle>Importer des comptes</DialogTitle></DialogHeader>
-              <form className="space-y-3" onSubmit={(e) => {
-                e.preventDefault();
-                const f = new FormData(e.currentTarget);
-                mImport.mutate({
-                  csv: String(f.get("csv") ?? ""),
-                  account_type: (String(f.get("account_type")) as "trial" | "premium") || defaultType,
-                });
-              }}>
-                <div>
-                  <Label>Type</Label>
-                  <Select name="account_type" defaultValue={defaultType}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="trial">Essai gratuit</SelectItem>
-                      <SelectItem value="premium">Premium</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>CSV (username,password,bouquet,expires_at,notes)</Label>
-                  <Textarea name="csv" rows={10} required placeholder="username,password,bouquet,expires_at,notes" />
-                </div>
-                <DialogFooter><Button type="submit" disabled={mImport.isPending}>Importer</Button></DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
           <Dialog open={openCreate} onOpenChange={setOpenCreate}>
             <DialogTrigger asChild><Button size="sm"><Plus className="h-4 w-4 mr-1" /> Nouveau compte</Button></DialogTrigger>
             <DialogContent>
@@ -126,6 +104,7 @@ export function AccountsView({
                   username: String(f.get("username") ?? ""),
                   password: String(f.get("password") ?? "") || undefined,
                   account_type: String(f.get("account_type") ?? defaultType),
+                  package: filter.package,
                   bouquet: String(f.get("bouquet") ?? "") || undefined,
                   provider_id: String(f.get("provider_id") ?? "") || undefined,
                   expires_at: ex ? new Date(ex).toISOString() : undefined,
