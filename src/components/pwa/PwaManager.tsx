@@ -3,6 +3,7 @@ import type { Workbox } from "workbox-window";
 import { Button } from "@/components/ui/button";
 import { Download, RefreshCw, X } from "lucide-react";
 import { registerPwa } from "@/pwa/register";
+import { isCapacitorNative } from "@/lib/runtime-env";
 
 type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>;
@@ -13,8 +14,13 @@ export function PwaManager() {
   const [installEvt, setInstallEvt] = useState<BeforeInstallPromptEvent | null>(null);
   const [updateWb, setUpdateWb] = useState<Workbox | null>(null);
   const [installDismissed, setInstallDismissed] = useState(false);
+  const [isNative, setIsNative] = useState(false);
 
   useEffect(() => {
+    if (isCapacitorNative()) {
+      setIsNative(true);
+      return;
+    }
     registerPwa((wb) => setUpdateWb(wb));
     const onBeforeInstall = (e: Event) => {
       e.preventDefault();
@@ -33,6 +39,8 @@ export function PwaManager() {
       window.removeEventListener("appinstalled", onInstalled);
     };
   }, []);
+
+  if (isNative) return null;
 
   const acceptUpdate = () => {
     if (!updateWb) return;
