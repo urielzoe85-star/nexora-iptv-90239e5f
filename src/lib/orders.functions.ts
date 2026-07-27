@@ -1,6 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { createHmac, timingSafeEqual } from "crypto";
 import { convertUsdToLocal } from "@/lib/countries";
 import { LEGAL_VERSION } from "@/lib/legal-version";
 
@@ -54,17 +53,23 @@ function cancelSecret(): string {
   if (!s) throw new Error("Server misconfigured: missing signing secret");
   return s;
 }
-function makeCancelToken(orderRef: string): string {
-  return createHmac("sha256", cancelSecret()).update(`cancel:${orderRef}`).digest("hex");
+async function makeCancelToken(orderRef: string): Promise<string> {
+  const key = await globalThis.crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(cancelSecret()),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const signature = await globalThis.crypto.subtle.sign("HMAC", key, new TextEncoder().encode(`cancel:${orderRef}`));
+  return Array.from(new Uint8Array(signature), (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
-function verifyCancelToken(orderRef: string, token: string): boolean {
-  try {
-    const expected = Buffer.from(makeCancelToken(orderRef), "hex");
-    const got = Buffer.from(token, "hex");
-    return expected.length === got.length && timingSafeEqual(expected, got);
-  } catch {
-    return false;
-  }
+async function verifyCancelToken(orderRef: string, token: string): Promise<boolean> {
+  const expected = await makeCancelToken(orderRef);
+  if (expected.length !== token.length) return false;
+  let difference = 0;
+  for (let index = 0; index < expected.length; index += 1) difference |= expected.charCodeAt(index) ^ token.charCodeAt(index);
+  return difference === 0;
 }
 
 export const createOrder = createServerFn({ method: "POST" })
@@ -145,7 +150,7 @@ export const createOrder = createServerFn({ method: "POST" })
     } catch (e: any) {
       console.error("[orders] order.created emit failed", String(e?.message ?? e));
     }
-    return { ...row, cancel_token: makeCancelToken(row.order_ref) };
+    return { ...row, cancel_token: await makeCancelToken(row.order_ref) };
   });
 
 export const getOrderByRef = createServerFn({ method: "GET" })
@@ -282,7 +287,7 @@ export const markOrderFailed = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ data }) => {
-    if (!verifyCancelToken(data.ref, data.token)) {
+    if (!(await verifyCancelToken(data.ref, data.token))) {
       throw new Error("Invalid cancellation token");
     }
     const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
