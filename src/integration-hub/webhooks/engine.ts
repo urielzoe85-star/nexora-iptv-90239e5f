@@ -70,7 +70,7 @@ class WebhookEngine {
     }
 
     const signature = headers.get(reg.signatureHeader) ?? headers.get(reg.signatureHeader.toLowerCase()) ?? "";
-    if (!signature || !verifyHmac(secret, rawBody, signature)) {
+    if (!signature || !(await verifyHmac(secret, rawBody, signature))) {
       this.push({ ...baseEntry, status: "signature_invalid", errorKind: "signature" });
       logger.warn("webhook signature invalid", { connectorId });
       return err(integrationError("signature", "Invalid webhook signature", { connectorId }));
