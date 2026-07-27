@@ -1,34 +1,35 @@
-# Plan : vérification et activation Git sync GitHub pour Nexora
+# Plan : vérification post-connexion Git sync GitHub
 
 ## État actuel (vérifié)
-La synchronisation GitHub n'est **pas encore établie**. Les remotes Git configurés dans le projet pointent uniquement vers :
-- `origin` : stockage interne Lovable (`git.private.lovable-gcp.code.storage`)
-- `secondary` : backup S3 Lovable (`s3://lovable-repositories/...`)
+- Le lien fourni retourne un **404 public** : `https://github.com/urielzoe85-star/nexora-iptv-90239e5f`
+- Les remotes Git locaux pointent toujours vers le stockage interne Lovable et S3 ; aucun remote GitHub n'est visible.
 
-Aucun remote `github.com/...` n'est présent. Le plan initial reste donc d'actualité.
+Cela signifie soit que le dépôt est **privé** et non accessible publiquement, soit que la connexion/synchronisation n'a pas encore été finalisée côté Lovable.
 
-## Étapes utilisateur (à réaliser dans l'éditeur Lovable)
+## Étapes de vérification / résolution
 
-1. Ouvrir le projet **Nexora** dans l'éditeur Lovable.
-2. Cliquer sur le menu **Plus (+)** en bas à gauche du champ de chat.
-3. Sélectionner **GitHub → Connect project**.
-4. Autoriser l'application **Lovable GitHub App** sur le compte GitHub souhaité.
-5. Choisir le compte ou l'organisation GitHub où créer le dépôt.
-6. Cliquer sur **Create Repository** pour générer le dépôt avec le code actuel du projet.
+1. **Confirmer l'accès utilisateur au dépôt**
+   - Vérifier dans l'éditeur Lovable que GitHub affiche bien "Connecté" / "Sync active".
+   - Confirmer que vous voyez le dépôt dans votre compte GitHub à l'adresse donnée.
 
-## Vérifications post-connexion (agent)
+2. **Lever le blocage d'accès public (si nécessaire)**
+   - Option A : Rendre le dépôt temporairement public le temps de la vérification, puis le repasser privé.
+   - Option B : Partager un token d'accès ou un lien d'invitation pour permettre la vérification sans rendre le dépôt public.
+   - Option C : Vérifier à la place que vous voyez bien les fichiers `.github/workflows/`, `src/routes/__root.tsx` et les derniers commits dans l'interface GitHub, et me le confirmer ici.
 
-Une fois le dépôt créé :
+3. **Vérifier le contenu poussé (une fois l'accès possible)**
+   - Présence du dossier `.github/workflows/` avec les workflows Sprint 3.
+   - Présence de `src/routes/__root.tsx` et des routes principales.
+   - Présence des derniers commits locaux (ex. `Fixed crypto import in build`, `Aucun remote GitHub ajouté`).
 
-1. Vérifier l'existence du dossier `.github/workflows/` dans le repo distant (workflows Sprint 3).
-2. Confirmer que `src/routes/__root.tsx` et les routes principales sont bien poussées.
-3. Vérifier que la synchronisation bidirectionnelle est active (modification test côté Lovable reflétée dans GitHub, et inversement).
-4. Ajouter une mémoire projet indiquant que le repo GitHub est connecté et sa branche par défaut.
+4. **Tester la synchronisation bidirectionnelle**
+   - Effectuer une petite modification de test dans Lovable et vérifier qu'elle apparaît dans GitHub.
+   - (Ou inversement, modifier un fichier README dans GitHub et vérifier que Lovable reflète le changement.)
 
-## Prérequis
-- Être propriétaire ou éditeur du workspace Lovable.
-- Disposer des droits d'administration sur le compte/organisation GitHub cible pour autoriser l'application Lovable.
+5. **Mettre à jour la mémoire projet**
+   - Ajouter une entrée indiquant que le dépôt GitHub est connecté, son URL et la branche par défaut.
 
 ## Livrables
-- Dépôt GitHub créé et synchronisé avec le projet Nexora.
-- Code source du projet disponible en externe (clone, ZIP, pull requests).
+- Détermination claire : connexion active / en attente / à refaire.
+- Confirmation visuelle que le code Nexora est bien présent sur GitHub.
+- Mémoire projet à jour avec l'URL du repo.
