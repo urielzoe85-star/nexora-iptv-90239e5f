@@ -13,7 +13,7 @@ export const Route = createFileRoute("/api/public/iptv/playlist")({
         const token = url.searchParams.get("t") ?? "";
         const kind = (url.searchParams.get("k") ?? "m3u") as "m3u" | "enigma";
         const { verifyPlaylistToken, buildM3uUrl, buildEnigmaUrl } = await import("@/lib/iptv-delivery.builder.server");
-        const parsed = verifyPlaylistToken(token);
+        const parsed = await verifyPlaylistToken(token);
         if (!parsed) return new Response("Invalid or expired token", { status: 403 });
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

@@ -6,11 +6,6 @@
 // client par email / WhatsApp / Telegram.
 // ────────────────────────────────────────────────────────────────────────────
 
-// SERVER-ONLY. This module uses `node:crypto` and is blocked from client
-// bundles by the `.server.ts` naming convention. All callers must import
-// it dynamically from server-side execution contexts (server functions,
-// server route handlers, workflow actions).
-import { createHmac, timingSafeEqual } from "node:crypto";
 import { buildWhatsAppLink } from "./whatsapp-contact";
 
 export type IptvDeliveryChannel = "email" | "whatsapp" | "telegram";
@@ -85,29 +80,52 @@ function hmacSecret(): string {
   );
 }
 
-export function signPlaylistToken(accountId: string, ttlDays = 90): string {
+async function hmacSha256Hex(value: string): Promise<string> {
+  const key = await globalThis.crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(hmacSecret()),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const signature = await globalThis.crypto.subtle.sign(
+    "HMAC",
+    key,
+    new TextEncoder().encode(value),
+  );
+  return Array.from(new Uint8Array(signature), (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+function constantTimeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let difference = 0;
+  for (let index = 0; index < a.length; index += 1) {
+    difference |= a.charCodeAt(index) ^ b.charCodeAt(index);
+  }
+  return difference === 0;
+}
+
+export async function signPlaylistToken(accountId: string, ttlDays = 90): Promise<string> {
   const exp = Math.floor(Date.now() / 1000) + ttlDays * 86_400;
   const payload = `${accountId}.${exp}`;
-  const sig = createHmac("sha256", hmacSecret()).update(payload).digest("hex").slice(0, 32);
+  const sig = (await hmacSha256Hex(payload)).slice(0, 32);
   // base64url-safe: we keep dots as separators — a.b.c
   return `${accountId}.${exp}.${sig}`;
 }
 
-export function verifyPlaylistToken(token: string): { accountId: string } | null {
+export async function verifyPlaylistToken(token: string): Promise<{ accountId: string } | null> {
   const parts = token.split(".");
   if (parts.length !== 3) return null;
   const [accountId, expStr, sig] = parts;
   const exp = Number(expStr);
   if (!Number.isFinite(exp) || exp * 1000 < Date.now()) return null;
-  const expected = createHmac("sha256", hmacSecret()).update(`${accountId}.${exp}`).digest("hex").slice(0, 32);
-  const a = Buffer.from(sig);
-  const b = Buffer.from(expected);
-  if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
+  const expected = (await hmacSha256Hex(`${accountId}.${exp}`)).slice(0, 32);
+  if (!constantTimeEqual(sig, expected)) return null;
   return { accountId };
 }
 
-export function buildPlaylistDownloadUrl(accountId: string, kind: "m3u" | "enigma"): string {
-  const t = signPlaylistToken(accountId);
+export async function buildPlaylistDownloadUrl(accountId: string, kind: "m3u" | "enigma"): Promise<string> {
+  const t = await signPlaylistToken(accountId);
   return `${siteOrigin()}/api/public/iptv/playlist?t=${t}&k=${kind}`;
 }
 
@@ -116,12 +134,12 @@ export function buildPlaylistDownloadUrl(accountId: string, kind: "m3u" | "enigm
  * Ne fait AUCUN accès réseau/DB — pur : les callers passent les lignes déjà
  * lues. `previous` permet de préserver channels_sent en cas de retry.
  */
-export function buildDeliveryFromAccount(input: {
+export async function buildDeliveryFromAccount(input: {
   account: any;
   order?: any;
   providerName?: string | null;
   previous?: Partial<IptvDelivery> | null;
-}): IptvDelivery {
+}): Promise<IptvDelivery> {
   const acc = input.account ?? {};
   const meta = (acc.metadata ?? {}) as Record<string, any>;
   const orderMeta = (input.order?.metadata ?? {}) as Record<string, any>;
@@ -156,8 +174,8 @@ export function buildDeliveryFromAccount(input: {
     m3u_url: m3u,
     m3u_with_options_url: m3uPlus,
     enigma_url: enigma,
-    playlist_download_url: acc.id ? buildPlaylistDownloadUrl(acc.id, "m3u") : null,
-    enigma_download_url: acc.id && enigma ? buildPlaylistDownloadUrl(acc.id, "enigma") : null,
+    playlist_download_url: acc.id ? await buildPlaylistDownloadUrl(acc.id, "m3u") : null,
+    enigma_download_url: acc.id && enigma ? await buildPlaylistDownloadUrl(acc.id, "enigma") : null,
     note: acc.notes ?? meta.note ?? null,
     delivery_status: (prev.delivery_status as any) ?? "ready_to_send",
     channels_sent: (prev.channels_sent ?? {}) as IptvDelivery["channels_sent"],
