@@ -89,7 +89,7 @@ export const Route = createFileRoute("/api/public/sebpay/webhook")({
           });
           return new Response("Missing signature", { status: 401 });
         }
-        const signatureValid = verifyHmac(secret, raw, signatureHeader);
+        const signatureValid = await verifyHmac(secret, raw, signatureHeader);
         if (!signatureValid) {
           console.warn("[sebpay-webhook] invalid signature", {
             providedLength: signatureHeader.trim().length,
