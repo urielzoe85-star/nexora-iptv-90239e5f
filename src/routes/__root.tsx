@@ -194,7 +194,9 @@ function RootComponent() {
         <Outlet />
         <FloatingAiAssistant />
         <BackButton />
-        <PwaManager />
+        <ClientOnly>
+          <PwaManager />
+        </ClientOnly>
         <NexoraAssistantWidget />
       </I18nProvider>
     </QueryClientProvider>
