@@ -5,6 +5,7 @@
 // installation from a previous build can't keep serving cached HTML.
 
 import type { Workbox } from "workbox-window";
+import { isCapacitorNative } from "@/lib/runtime-env";
 
 const PREVIEW_HOST_PREFIXES = ["id-preview--", "preview--"];
 const PREVIEW_HOST_SUFFIXES = [
@@ -16,6 +17,7 @@ const PREVIEW_HOST_SUFFIXES = [
 function isRefusedContext(): boolean {
   if (typeof window === "undefined") return true;
   if (!import.meta.env.PROD) return true;
+  if (isCapacitorNative()) return true;
   try {
     if (window.self !== window.top) return true;
   } catch {
