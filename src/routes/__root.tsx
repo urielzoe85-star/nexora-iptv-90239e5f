@@ -7,7 +7,7 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -16,6 +16,14 @@ import { FloatingAiAssistant } from "../components/FloatingAiAssistant";
 import { PwaManager } from "../components/pwa/PwaManager";
 import { BackButton } from "../components/BackButton";
 import { NexoraAssistantWidget } from "../components/ai-chat/NexoraAssistantWidget";
+
+// ClientOnly ensures PWA install logic only runs after hydration, preventing
+// any SSR mismatch and keeping Capacitor-native detection accurate.
+function ClientOnly({ children }: { children: ReactNode }) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  return mounted ? children : null;
+}
 
 function NotFoundComponent() {
   const t = useT();
@@ -186,7 +194,9 @@ function RootComponent() {
         <Outlet />
         <FloatingAiAssistant />
         <BackButton />
-        <PwaManager />
+        <ClientOnly>
+          <PwaManager />
+        </ClientOnly>
         <NexoraAssistantWidget />
       </I18nProvider>
     </QueryClientProvider>
