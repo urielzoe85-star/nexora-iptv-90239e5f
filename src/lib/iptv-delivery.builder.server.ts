@@ -6,33 +6,12 @@
 // client par email / WhatsApp / Telegram.
 // ────────────────────────────────────────────────────────────────────────────
 
+// SERVER-ONLY. This module uses `node:crypto` and is blocked from client
+// bundles by the `.server.ts` naming convention. All callers must import
+// it dynamically from server-side execution contexts (server functions,
+// server route handlers, workflow actions).
+import { createHmac, timingSafeEqual } from "node:crypto";
 import { buildWhatsAppLink } from "./whatsapp-contact";
-
-// Node's `crypto` is loaded lazily so this module stays safe when it
-// transits through the client bundle graph via `.functions.ts` barrels.
-// A static `import { createHmac } from "crypto"` would make Vite
-// externalize the module to a browser stub and fail the production build
-// with: "createHmac" is not exported by "__vite-browser-external".
-type NodeCrypto = typeof import("node:crypto");
-let _cryptoPromise: Promise<NodeCrypto> | null = null;
-function loadNodeCrypto(): Promise<NodeCrypto> {
-  if (!_cryptoPromise) _cryptoPromise = import("node:crypto");
-  return _cryptoPromise;
-}
-function hmacHexSync(secret: string, payload: string): string {
-  // Synchronous fallback used only at server runtime after the module
-  // has been evaluated on the server. We use `require` via
-  // `createRequire` when available; otherwise fall through to `eval`
-  // guarded require to avoid Vite static analysis.
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const nodeCrypto = (eval("require") as NodeRequire)("node:crypto") as NodeCrypto;
-  return nodeCrypto.createHmac("sha256", secret).update(payload).digest("hex");
-}
-function timingSafeEqualSync(a: Buffer, b: Buffer): boolean {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const nodeCrypto = (eval("require") as NodeRequire)("node:crypto") as NodeCrypto;
-  return nodeCrypto.timingSafeEqual(a, b);
-}
 
 export type IptvDeliveryChannel = "email" | "whatsapp" | "telegram";
 
