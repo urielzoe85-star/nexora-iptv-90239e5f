@@ -12,7 +12,7 @@ export const Route = createFileRoute("/api/public/iptv/playlist")({
         const url = new URL(request.url);
         const token = url.searchParams.get("t") ?? "";
         const kind = (url.searchParams.get("k") ?? "m3u") as "m3u" | "enigma";
-        const { verifyPlaylistToken, buildM3uUrl, buildEnigmaUrl } = await import("@/lib/iptv-delivery.builder");
+        const { verifyPlaylistToken, buildM3uUrl, buildEnigmaUrl } = await import("@/lib/iptv-delivery.builder.server");
         const parsed = verifyPlaylistToken(token);
         if (!parsed) return new Response("Invalid or expired token", { status: 403 });
 

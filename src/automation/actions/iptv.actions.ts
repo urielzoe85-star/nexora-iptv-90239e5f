@@ -237,14 +237,14 @@ export async function composeIptvDelivery(input: {
   if (!account?.id) throw new Error(`composeIptvDelivery: iptv_account ${input.accountId} introuvable`);
 
   const meta = (order.metadata ?? {}) as Record<string, unknown>;
-  const { buildDeliveryFromAccount } = await import("@/lib/iptv-delivery.builder");
+  const { buildDeliveryFromAccount } = await import("@/lib/iptv-delivery.builder.server");
   const previous = (meta as any).iptv_delivery ?? null;
   const delivery = buildDeliveryFromAccount({ account, order: { ...order, metadata: meta }, previous });
   const nextMeta = { ...meta, iptv_delivery: delivery };
   const { error: upErr } = await sb.from("orders").update({ metadata: nextMeta }).eq("id", order.id);
   if (upErr) throw new Error(`orders.metadata update failed: ${upErr.message}`);
 
-  const { buildPlainTextDeliveryMessage } = await import("@/lib/iptv-delivery.builder");
+  const { buildPlainTextDeliveryMessage } = await import("@/lib/iptv-delivery.builder.server");
   const content = buildPlainTextDeliveryMessage(delivery, { orderRef: input.orderRef });
 
   const { error: dlErr } = await sb.from("delivery_logs").insert({

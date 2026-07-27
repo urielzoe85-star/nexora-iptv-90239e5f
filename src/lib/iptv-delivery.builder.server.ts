@@ -6,7 +6,11 @@
 // client par email / WhatsApp / Telegram.
 // ────────────────────────────────────────────────────────────────────────────
 
-import { createHmac, timingSafeEqual } from "crypto";
+// SERVER-ONLY. This module uses `node:crypto` and is blocked from client
+// bundles by the `.server.ts` naming convention. All callers must import
+// it dynamically from server-side execution contexts (server functions,
+// server route handlers, workflow actions).
+import { createHmac, timingSafeEqual } from "node:crypto";
 import { buildWhatsAppLink } from "./whatsapp-contact";
 
 export type IptvDeliveryChannel = "email" | "whatsapp" | "telegram";

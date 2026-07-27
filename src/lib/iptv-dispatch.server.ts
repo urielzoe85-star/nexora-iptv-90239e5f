@@ -6,7 +6,7 @@
 // Idempotent : chaque canal est retenté indépendamment via channels_sent.
 // ────────────────────────────────────────────────────────────────────────────
 
-import { buildPlainTextDeliveryMessage, type IptvDelivery, type IptvDeliveryChannel } from "./iptv-delivery.builder";
+import { buildPlainTextDeliveryMessage, type IptvDelivery, type IptvDeliveryChannel } from "./iptv-delivery.builder.server";
 
 async function admin() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
