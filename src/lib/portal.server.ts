@@ -2,7 +2,6 @@
 // Cookie-based session, no Supabase Auth user required. Customers identified
 // via `customers` table.
 
-import { createHash, randomBytes, randomInt, scryptSync, timingSafeEqual } from "crypto";
 import { PORTAL_BASE_URL } from "@/lib/portal-url";
 
 export const PORTAL_COOKIE = "nx_portal_session";
