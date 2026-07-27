@@ -29,7 +29,6 @@ export const Route = createFileRoute("/sitemap.xml")({
   server: {
     handlers: {
       GET: async ({ request }) => {
-        const buildDate = new Date().toISOString().slice(0, 10);
         // Fetch published blog posts + categories via server publishable client.
         let blogUrls: { loc: string; lastmod?: string }[] = [];
         let productUrls: { loc: string; lastmod?: string }[] = [];
