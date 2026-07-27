@@ -2,34 +2,28 @@
 // its own inline verification today and stays unchanged — these helpers
 // are for future connectors so we don't reinvent timing-safe compare.
 //
-// Node's `crypto` module is loaded lazily via dynamic import so this
-// file stays safe when it transits through the client bundle graph
-// (e.g. via `@/integration-hub` barrel imports in `.functions.ts`
-// modules). Vite would otherwise externalize `crypto` to a browser
-// stub and fail the production build with:
-//   "createHmac" is not exported by "__vite-browser-external".
-
-type NodeCrypto = typeof import("node:crypto");
-let _cryptoPromise: Promise<NodeCrypto> | null = null;
-function loadNodeCrypto(): Promise<NodeCrypto> {
-  if (!_cryptoPromise) _cryptoPromise = import("node:crypto");
-  return _cryptoPromise;
-}
+// Web Crypto keeps this shared helper isomorphic when the integration-hub
+// barrel is reachable from both server functions and browser modules.
 
 export async function hmacHex(secret: string, body: string): Promise<string> {
-  const { createHmac } = await loadNodeCrypto();
-  return createHmac("sha256", secret).update(body).digest("hex");
+  const key = await globalThis.crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const signature = await globalThis.crypto.subtle.sign("HMAC", key, new TextEncoder().encode(body));
+  return Array.from(new Uint8Array(signature), (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
 export async function verifyHmac(secret: string, body: string, signatureHex: string): Promise<boolean> {
-  const { timingSafeEqual } = await loadNodeCrypto();
   const expected = (await hmacHex(secret, body)).toLowerCase();
   const provided = signatureHex.trim().toLowerCase();
-  try {
-    const a = Buffer.from(provided, "utf8");
-    const b = Buffer.from(expected, "utf8");
-    return a.length === b.length && timingSafeEqual(a, b);
-  } catch {
-    return false;
+  if (provided.length !== expected.length) return false;
+  let difference = 0;
+  for (let index = 0; index < provided.length; index += 1) {
+    difference |= provided.charCodeAt(index) ^ expected.charCodeAt(index);
   }
+  return difference === 0;
 }
