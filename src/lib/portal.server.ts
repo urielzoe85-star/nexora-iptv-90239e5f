@@ -245,6 +245,39 @@ export interface PortalSession {
   fullName: string | null;
 }
 
+export async function portalAdmin() {
+  const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
+  return supabaseAdmin as any;
+}
+
+export async function currentPortalSession(): Promise<PortalSession | null> {
+  const { getRequestHeader } = await import("@tanstack/react-start/server");
+  return requirePortalSessionFromCookie(getRequestHeader("cookie") ?? null);
+}
+
+export async function requirePortalSession(): Promise<PortalSession> {
+  const session = await currentPortalSession();
+  if (!session) throw new Error("Vous devez être connecté à votre Espace Client.");
+  return session;
+}
+
+export async function openPortalSession(
+  sb: any,
+  customer: { id: string; email: string },
+): Promise<void> {
+  const { getRequestHeader, setResponseHeader } = await import("@tanstack/react-start/server");
+  const token = generateSessionToken();
+  await sb.from("client_portal_sessions").insert({
+    token_hash: hashToken(token),
+    customer_id: customer.id,
+    email: customer.email.toLowerCase(),
+    expires_at: new Date(Date.now() + SESSION_TTL_MS).toISOString(),
+    user_agent: getRequestHeader("user-agent") ?? null,
+    ip: getRequestHeader("x-forwarded-for") ?? null,
+  });
+  setResponseHeader("set-cookie", buildSessionCookie(token));
+}
+
 export async function requirePortalSessionFromCookie(cookieHeader: string | null): Promise<PortalSession | null> {
   const raw = readCookie(cookieHeader, PORTAL_COOKIE);
   if (!raw) return null;
