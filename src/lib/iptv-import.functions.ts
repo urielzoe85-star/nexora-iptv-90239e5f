@@ -423,7 +423,7 @@ export const assignIptvAccountToOrder = createServerFn({ method: "POST" })
     }).eq("id", data.account_id);
     if (uErr) throw new Error(uErr.message);
 
-    const { buildDeliveryFromAccount } = await import("@/lib/iptv-delivery.builder.server");
+    const { buildDeliveryFromAccount } = await import("@/lib/iptv-delivery.builder");
     const delivery = await buildDeliveryFromAccount({ account: acc, order, previous: existingDelivery });
     const nextMeta = { ...meta, iptv_delivery: delivery };
     await sb.from("orders").update({ metadata: nextMeta }).eq("id", data.order_id);
