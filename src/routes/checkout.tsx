@@ -608,13 +608,13 @@ function PaymentStep(props: {
         />
         <span className="text-muted-foreground leading-relaxed">
           J'ai lu et j'accepte les{" "}
-          <a href="/legal/terms" target="_blank" rel="noopener noreferrer" className="text-[color:var(--gold)] hover:underline">CGU</a>,{" "}
+          <Link to="/legal/terms" className="text-[color:var(--gold)] hover:underline">CGU</Link>,{" "}
           les{" "}
-          <a href="/legal/sales" target="_blank" rel="noopener noreferrer" className="text-[color:var(--gold)] hover:underline">CGV</a>,{" "}
+          <Link to="/legal/sales" className="text-[color:var(--gold)] hover:underline">CGV</Link>,{" "}
           la{" "}
-          <a href="/legal/privacy" target="_blank" rel="noopener noreferrer" className="text-[color:var(--gold)] hover:underline">politique de confidentialité</a>{" "}
+          <Link to="/legal/privacy" className="text-[color:var(--gold)] hover:underline">politique de confidentialité</Link>{" "}
           et la{" "}
-          <a href="/legal/refund" target="_blank" rel="noopener noreferrer" className="text-[color:var(--gold)] hover:underline">politique de remboursement</a>.
+          <Link to="/legal/refund" className="text-[color:var(--gold)] hover:underline">politique de remboursement</Link>.
           Je demande la livraison immédiate du service et renonce, à ce titre, à mon droit de rétractation dès l'activation des identifiants.
         </span>
       </label>
