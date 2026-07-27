@@ -15,7 +15,7 @@ export const outboundWebhookConnector: WebhookConnector = {
   async dispatch(input) {
     const body = JSON.stringify({ event: input.event, payload: input.payload, sentAt: new Date().toISOString() });
     const headers: Record<string, string> = { "Content-Type": "application/json" };
-    if (input.signingSecret) headers["X-Nexora-Signature"] = hmacHex(input.signingSecret, body);
+    if (input.signingSecret) headers["X-Nexora-Signature"] = await hmacHex(input.signingSecret, body);
     const r = await apiGateway.request({
       connectorId: this.id, url: input.url, method: "POST",
       headers, body, apiVersion: "v1", maxAttempts: 4,
