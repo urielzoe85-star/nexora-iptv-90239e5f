@@ -245,18 +245,18 @@ export interface PortalSession {
   fullName: string | null;
 }
 
-export async function portalAdmin() {
+export async function admin() {
   const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
   return supabaseAdmin as any;
 }
 
-export async function currentPortalSession(): Promise<PortalSession | null> {
+export async function currentSession(): Promise<PortalSession | null> {
   const { getRequestHeader } = await import("@tanstack/react-start/server");
   return requirePortalSessionFromCookie(getRequestHeader("cookie") ?? null);
 }
 
-export async function requirePortalSession(): Promise<PortalSession> {
-  const session = await currentPortalSession();
+export async function requireSession(): Promise<PortalSession> {
+  const session = await currentSession();
   if (!session) throw new Error("Vous devez être connecté à votre Espace Client.");
   return session;
 }

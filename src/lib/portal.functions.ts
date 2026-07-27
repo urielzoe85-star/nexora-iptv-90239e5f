@@ -1,47 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeader, setResponseHeader } from "@tanstack/react-start/server";
 import { z } from "zod";
-import {
-  PORTAL_COOKIE,
-  OTP_TTL_MS,
-  SESSION_TTL_MS,
-  PASSWORD_RESET_TTL_MS,
-  buildSessionCookie,
-  buildPasswordResetUrl,
-  clearSessionCookie,
-  findCustomerByIdentifier,
-  generateOtpCode,
-  generateSessionToken,
-  generateResetToken,
-  hashPassword,
-  hashToken,
-  maskEmail,
-  readCookie,
-  requirePortalSessionFromCookie,
-  safeEqualHex,
-  sendOtpEmail,
-  sendPasswordResetEmail,
-  sendRenewalConfirmationEmail,
-  validatePasswordStrength,
-  verifyPassword,
-  type PortalSession,
-} from "@/lib/portal.server";
+import type { PortalSession } from "@/lib/portal.server";
 
-async function admin() {
-  const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
-  return supabaseAdmin as any;
-}
-
-async function currentSession(): Promise<PortalSession | null> {
-  const cookie = getRequestHeader("cookie");
-  return requirePortalSessionFromCookie(cookie ?? null);
-}
-
-async function requireSession(): Promise<PortalSession> {
-  const s = await currentSession();
-  if (!s) throw new Error("Vous devez être connecté à votre Espace Client.");
-  return s;
-}
+const loadPortalServer = () => import("@/lib/portal.server");
 
 // ---------------------------------------------------------------------------
 // Auth : OTP + session
