@@ -1,10 +1,22 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { createHmac, timingSafeEqual } from "crypto";
 
 function safeEqual(a: string, b: string) {
-  const A = Buffer.from(a);
-  const B = Buffer.from(b);
-  return A.length === B.length && timingSafeEqual(A, B);
+  if (a.length !== b.length) return false;
+  let difference = 0;
+  for (let index = 0; index < a.length; index += 1) difference |= a.charCodeAt(index) ^ b.charCodeAt(index);
+  return difference === 0;
+}
+
+async function hmacHex(secret: string, body: string): Promise<string> {
+  const key = await globalThis.crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const signature = await globalThis.crypto.subtle.sign("HMAC", key, new TextEncoder().encode(body));
+  return Array.from(new Uint8Array(signature), (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
 async function handleInbound(update: any) {
@@ -159,7 +171,7 @@ export const Route = createFileRoute("/api/public/whatsapp/webhook")({
         const rawBody = await request.text();
         const header = request.headers.get("x-hub-signature-256") ?? "";
         const provided = header.startsWith("sha256=") ? header.slice(7) : header;
-        const expected = createHmac("sha256", appSecret).update(rawBody).digest("hex");
+        const expected = await hmacHex(appSecret, rawBody);
 
         if (!provided || !safeEqual(provided.toLowerCase(), expected.toLowerCase())) {
           return new Response("Unauthorized", { status: 401 });

@@ -2,24 +2,28 @@
 // Cookie-based session, no Supabase Auth user required. Customers identified
 // via `customers` table.
 
-import { createHash, randomBytes, randomInt, scryptSync, timingSafeEqual } from "crypto";
 import { PORTAL_BASE_URL } from "@/lib/portal-url";
 
 export const PORTAL_COOKIE = "nx_portal_session";
 export const OTP_TTL_MS = 10 * 60 * 1000;       // 10 minutes
 export const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 
-export function hashToken(raw: string): string {
-  return createHash("sha256").update(raw).digest("hex");
+export async function hashToken(raw: string): Promise<string> {
+  const digest = await globalThis.crypto.subtle.digest("SHA-256", new TextEncoder().encode(raw));
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
 export function generateOtpCode(): string {
   // 6-digit code, zero-padded.
-  return String(randomInt(0, 1_000_000)).padStart(6, "0");
+  const value = new Uint32Array(1);
+  globalThis.crypto.getRandomValues(value);
+  return String(value[0] % 1_000_000).padStart(6, "0");
 }
 
 export function generateSessionToken(): string {
-  return randomBytes(32).toString("hex");
+  const value = new Uint8Array(32);
+  globalThis.crypto.getRandomValues(value);
+  return Array.from(value, (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
 // -------- Passwords (scrypt, medium security) --------
@@ -28,7 +32,8 @@ const SCRYPT_R = 8;
 const SCRYPT_P = 1;
 const SCRYPT_KEYLEN = 64;
 
-export function hashPassword(password: string): string {
+export async function hashPassword(password: string): Promise<string> {
+  const { randomBytes, scryptSync } = await import("node:crypto");
   const salt = randomBytes(16);
   const derived = scryptSync(password.normalize("NFKC"), salt, SCRYPT_KEYLEN, {
     N: SCRYPT_N, r: SCRYPT_R, p: SCRYPT_P,
@@ -36,7 +41,7 @@ export function hashPassword(password: string): string {
   return `scrypt$${SCRYPT_N}$${SCRYPT_R}$${SCRYPT_P}$${salt.toString("hex")}$${derived.toString("hex")}`;
 }
 
-export function verifyPassword(password: string, stored: string | null | undefined): boolean {
+export async function verifyPassword(password: string, stored: string | null | undefined): Promise<boolean> {
   if (!stored) return false;
   const parts = stored.split("$");
   if (parts.length !== 6 || parts[0] !== "scrypt") return false;
@@ -46,6 +51,7 @@ export function verifyPassword(password: string, stored: string | null | undefin
   const salt = Buffer.from(parts[4], "hex");
   const expected = Buffer.from(parts[5], "hex");
   if (!salt.length || !expected.length) return false;
+  const { scryptSync, timingSafeEqual } = await import("node:crypto");
   const derived = scryptSync(password.normalize("NFKC"), salt, expected.length, { N, r, p });
   if (derived.length !== expected.length) return false;
   return timingSafeEqual(derived, expected);
@@ -63,7 +69,7 @@ export function validatePasswordStrength(password: string): string | null {
 }
 
 export function generateResetToken(): string {
-  return randomBytes(32).toString("hex");
+  return generateSessionToken();
 }
 
 export const PASSWORD_RESET_TTL_MS = 30 * 60 * 1000;
@@ -110,14 +116,10 @@ export function buildPasswordResetUrl(token: string): string {
 }
 
 export function safeEqualHex(a: string, b: string): boolean {
-  try {
-    const ab = Buffer.from(a, "hex");
-    const bb = Buffer.from(b, "hex");
-    if (ab.length !== bb.length) return false;
-    return timingSafeEqual(ab, bb);
-  } catch {
-    return false;
-  }
+  if (a.length !== b.length) return false;
+  let difference = 0;
+  for (let index = 0; index < a.length; index += 1) difference |= a.charCodeAt(index) ^ b.charCodeAt(index);
+  return difference === 0;
 }
 
 export function readCookie(cookieHeader: string | null | undefined, name: string): string | null {
@@ -250,7 +252,7 @@ export async function requirePortalSessionFromCookie(cookieHeader: string | null
   if (!raw) return null;
   const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
   const sb = supabaseAdmin as any;
-  const tokenHash = hashToken(raw);
+  const tokenHash = await hashToken(raw);
   const { data } = await sb
     .from("client_portal_sessions")
     .select("id, customer_id, email, expires_at, revoked_at, customers ( id, email, full_name )")

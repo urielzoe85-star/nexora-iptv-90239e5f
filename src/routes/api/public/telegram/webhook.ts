@@ -1,5 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { createHash, timingSafeEqual } from "crypto";
 
 const HELP_TEXT = [
   "🤖 *Nexora IPTV Bot*",
@@ -13,14 +12,20 @@ const HELP_TEXT = [
   "Site : https://nexora-iptv.com",
 ].join("\n");
 
-function deriveSecret(apiKey: string) {
-  return createHash("sha256").update(`telegram-webhook:${apiKey}`).digest("base64url");
+async function deriveSecret(apiKey: string) {
+  const digest = await globalThis.crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(`telegram-webhook:${apiKey}`),
+  );
+  const bytes = String.fromCharCode(...new Uint8Array(digest));
+  return btoa(bytes).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
 function safeEqual(a: string, b: string) {
-  const A = Buffer.from(a);
-  const B = Buffer.from(b);
-  return A.length === B.length && timingSafeEqual(A, B);
+  if (a.length !== b.length) return false;
+  let difference = 0;
+  for (let index = 0; index < a.length; index += 1) difference |= a.charCodeAt(index) ^ b.charCodeAt(index);
+  return difference === 0;
 }
 
 async function tgSend(chatId: number | string, text: string) {
@@ -42,7 +47,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
         if (!TELEGRAM_BOT_TOKEN) return new Response("Not configured", { status: 503 });
 
-        const expected = deriveSecret(TELEGRAM_BOT_TOKEN);
+        const expected = await deriveSecret(TELEGRAM_BOT_TOKEN);
         const provided = request.headers.get("X-Telegram-Bot-Api-Secret-Token") ?? "";
         if (!safeEqual(provided, expected)) return new Response("Unauthorized", { status: 401 });
 

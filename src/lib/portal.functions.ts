@@ -21,7 +21,6 @@ import {
   safeEqualHex,
   sendOtpEmail,
   sendPasswordResetEmail,
-  sendRenewalConfirmationEmail,
   validatePasswordStrength,
   verifyPassword,
   type PortalSession,
@@ -73,7 +72,7 @@ export const requestPortalOtp = createServerFn({ method: "POST" })
     const ip = getRequestHeader("x-forwarded-for") ?? null;
     await sb.from("client_portal_otps").insert({
       email: customer.email.toLowerCase(),
-      code_hash: hashToken(code),
+      code_hash: await hashToken(code),
       expires_at: expiresAt,
       ip,
     });
@@ -95,7 +94,7 @@ export const verifyPortalOtp = createServerFn({ method: "POST" })
     if (!customer) throw new Error("Code invalide ou expiré.");
 
     const sb = await admin();
-    const codeHash = hashToken(data.code);
+    const codeHash = await hashToken(data.code);
     const { data: otp } = await sb
       .from("client_portal_otps")
       .select("id, code_hash, expires_at, used_at, attempts")
@@ -118,7 +117,7 @@ export const verifyPortalOtp = createServerFn({ method: "POST" })
     await sb.from("client_portal_otps").update({ used_at: new Date().toISOString() }).eq("id", otp.id);
 
     const token = generateSessionToken();
-    const tokenHash = hashToken(token);
+    const tokenHash = await hashToken(token);
     const ua = getRequestHeader("user-agent") ?? null;
     const ip = getRequestHeader("x-forwarded-for") ?? null;
     await sb.from("client_portal_sessions").insert({
@@ -147,7 +146,7 @@ export const signOutPortal = createServerFn({ method: "POST" }).handler(async ()
     await sb
       .from("client_portal_sessions")
       .update({ revoked_at: new Date().toISOString() })
-      .eq("token_hash", hashToken(raw));
+      .eq("token_hash", await hashToken(raw));
   }
   setResponseHeader("set-cookie", clearSessionCookie());
   return { ok: true as const };
@@ -159,7 +158,7 @@ export const signOutPortal = createServerFn({ method: "POST" }).handler(async ()
 
 async function openPortalSession(sb: any, customer: { id: string; email: string }) {
   const token = generateSessionToken();
-  const tokenHash = hashToken(token);
+  const tokenHash = await hashToken(token);
   const ua = getRequestHeader("user-agent") ?? null;
   const ip = getRequestHeader("x-forwarded-for") ?? null;
   await sb.from("client_portal_sessions").insert({
@@ -208,7 +207,7 @@ export const registerPortalAccount = createServerFn({ method: "POST" })
       );
     }
 
-    const hash = hashPassword(data.password);
+    const hash = await hashPassword(data.password);
     const { error } = await sb
       .from("customers")
       .update({ password_hash: hash, password_updated_at: new Date().toISOString() })
@@ -252,10 +251,10 @@ export const loginPortalPassword = createServerFn({ method: "POST" })
         .select("password_hash")
         .eq("id", customer.id)
         .maybeSingle();
-      ok = verifyPassword(data.password, row?.password_hash ?? null);
+      ok = await verifyPassword(data.password, row?.password_hash ?? null);
     } else {
       // Faux calcul pour égaliser le timing (approx)
-      verifyPassword(data.password, "scrypt$16384$8$1$00$00");
+      await verifyPassword(data.password, "scrypt$16384$8$1$00$00");
     }
 
     await sb.from("client_portal_login_attempts").insert({
@@ -295,7 +294,7 @@ export const requestPortalPasswordReset = createServerFn({ method: "POST" })
     await sb.from("client_portal_password_resets").insert({
       customer_id: customer.id,
       email: customer.email.toLowerCase(),
-      token_hash: hashToken(raw),
+      token_hash: await hashToken(raw),
       expires_at: new Date(Date.now() + PASSWORD_RESET_TTL_MS).toISOString(),
       ip,
     });
@@ -317,7 +316,7 @@ export const resetPortalPassword = createServerFn({ method: "POST" })
     if (strengthErr) throw new Error(strengthErr);
 
     const sb = await admin();
-    const tokenHash = hashToken(data.token);
+    const tokenHash = await hashToken(data.token);
     const { data: row } = await sb
       .from("client_portal_password_resets")
       .select("id, customer_id, email, expires_at, used_at")
@@ -329,7 +328,7 @@ export const resetPortalPassword = createServerFn({ method: "POST" })
       throw new Error("Ce lien a expiré. Redemandez-en un.");
     }
 
-    const hash = hashPassword(data.password);
+    const hash = await hashPassword(data.password);
     const { error } = await sb
       .from("customers")
       .update({ password_hash: hash, password_updated_at: new Date().toISOString() })
@@ -375,12 +374,12 @@ export const changePortalPassword = createServerFn({ method: "POST" })
 
     // Si un mot de passe existe déjà, il faut fournir l'actuel.
     if (row?.password_hash) {
-      if (!data.currentPassword || !verifyPassword(data.currentPassword, row.password_hash)) {
+      if (!data.currentPassword || !(await verifyPassword(data.currentPassword, row.password_hash))) {
         throw new Error("Mot de passe actuel incorrect.");
       }
     }
 
-    const hash = hashPassword(data.newPassword);
+    const hash = await hashPassword(data.newPassword);
     const { error } = await sb
       .from("customers")
       .update({ password_hash: hash, password_updated_at: new Date().toISOString() })
