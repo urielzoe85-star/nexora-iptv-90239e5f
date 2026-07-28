@@ -120,10 +120,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     ],
     scripts: [
       {
-        // Neutralise le PWA install côté WebView Capacitor AVANT toute
-        // hydratation React. Sans ça, Chrome intercepte le manifest et
-        // relance l'URL courante dans un onglet externe lorsque
-        // `beforeinstallprompt.prompt()` est déclenché.
+        // Couche PWA désactivée (voir src/pwa/config.ts). Ce script sert
+        // uniquement à : marquer le contexte natif Capacitor avant toute
+        // hydratation React, et désenregistrer défensivement tout Service
+        // Worker résiduel d'une version précédente de l'app.
         children: `
           (function(){
             try {
@@ -131,52 +131,24 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
                 (window.Capacitor && typeof window.Capacitor.isNativePlatform==="function" && window.Capacitor.isNativePlatform()) ||
                 /NexoraApp/i.test(navigator.userAgent||"")
               );
-              if (isNative) {
-                window.__NEXORA_NATIVE__ = true;
-                // 1) Bloque beforeinstallprompt en phase capture, avant tout listener React.
-                window.addEventListener("beforeinstallprompt", function(e){
-                  e.preventDefault();
-                  e.stopImmediatePropagation();
-                  return false;
-                }, true);
-                window.addEventListener("appinstalled", function(e){
-                  e.stopImmediatePropagation();
-                }, true);
-                // 2) Retire immédiatement toute balise <link rel="manifest"> (le script s'exécute
-                //    dans <head> juste après HeadContent, donc la balise est déjà présente).
-                var strip = function(){
-                  document.querySelectorAll('link[rel="manifest"]').forEach(function(l){ l.parentNode && l.parentNode.removeChild(l); });
-                };
-                strip();
-                if (document.readyState === "loading") {
-                  document.addEventListener("DOMContentLoaded", strip, { once: true });
+              if (isNative) { window.__NEXORA_NATIVE__ = true; }
+              // Aucune PWA n'est enregistrée : on bloque toute tentative et on
+              // nettoie les enregistrements hérités (web comme natif).
+              try {
+                if (navigator.serviceWorker) {
+                  var noop = function(){ return Promise.reject(new Error("pwa disabled")); };
+                  try { Object.defineProperty(navigator.serviceWorker, "register", { value: noop, configurable: true }); } catch(_){}
+                  navigator.serviceWorker.getRegistrations && navigator.serviceWorker.getRegistrations().then(function(regs){
+                    regs.forEach(function(r){ try { r.unregister(); } catch(_){} });
+                  }).catch(function(){});
                 }
-                // Observe le DOM au cas où un composant tenterait de réinjecter le manifest.
-                try {
-                  var mo = new MutationObserver(function(muts){
-                    for (var i=0;i<muts.length;i++){
-                      var added = muts[i].addedNodes;
-                      for (var j=0;j<added.length;j++){
-                        var n = added[j];
-                        if (n && n.tagName === "LINK" && (n.getAttribute("rel")||"").toLowerCase() === "manifest") {
-                          n.parentNode && n.parentNode.removeChild(n);
-                        }
-                      }
-                    }
-                  });
-                  mo.observe(document.documentElement, { childList: true, subtree: true });
-                } catch(_){}
-                // 3) Neutralise tout enregistrement de Service Worker en contexte natif.
-                try {
-                  if (navigator.serviceWorker) {
-                    var noop = function(){ return Promise.reject(new Error("sw disabled in native")); };
-                    try { Object.defineProperty(navigator.serviceWorker, "register", { value: noop, configurable: true }); } catch(_){}
-                    navigator.serviceWorker.getRegistrations && navigator.serviceWorker.getRegistrations().then(function(regs){
-                      regs.forEach(function(r){ try { r.unregister(); } catch(_){} });
-                    }).catch(function(){});
-                  }
-                } catch(_){}
-              }
+              } catch(_){}
+              // Empêche toute bannière d'installation résiduelle.
+              window.addEventListener("beforeinstallprompt", function(e){
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                return false;
+              }, true);
             } catch(_){}
           })();
         `,
