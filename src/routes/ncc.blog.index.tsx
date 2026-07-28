@@ -106,7 +106,7 @@ function BlogListRoute() {
                   <td className="p-3 text-right">
                     <div className="inline-flex gap-1">
                       {p.status === "published" && (
-                        <Link to={`/blog/${p.slug}`}>
+                        <Link to="/blog/$slug" params={{ slug: p.slug }} target="_blank" rel="noreferrer">
                           <Button size="sm" variant="ghost"><Eye className="h-4 w-4" /></Button>
                         </Link>
                       )}
