@@ -1,47 +1,81 @@
-## Diagnostic confirmé
+## Cause confirmée
 
-La PWA n’est plus la cause : elle est désactivée (`PWA_ENABLED = false`), le plugin ne génère plus de Service Worker et la bannière ne peut plus s’afficher.
-
-Le point déterminant est l’URL de démarrage Android :
+Vérification faite à l'instant :
 
 ```text
-https://app.nexora-iptv.com
-        ↓ HTTP 302
-https://nexora-iptv.com/
+curl -I https://app.nexora-iptv.com/
+HTTP/2 302
+location: https://nexora-iptv.com/
 ```
 
-Cette redirection se produit avant le chargement du JavaScript. La garde `NativeNavigationGuard` ne peut donc pas l’intercepter. Si le wrapper autorise seulement `app.nexora-iptv.com`, Capacitor considère le passage vers `nexora-iptv.com` comme une navigation externe, la délègue à Android/Chrome et laisse la WebView blanche.
+Ton `capacitor.config.json` démarre sur `https://app.nexora-iptv.com` et ne déclare aucun `allowNavigation`. Au démarrage, Android charge cette URL, reçoit la redirection 302 vers un **autre hôte**, considère cette navigation comme externe, la délègue à Chrome et laisse la WebView vide. Cela se produit avant tout code React, donc aucune protection côté site ne peut l'empêcher.
 
-Le dépôt actuel ne contient ni `capacitor.config.*`, ni dossier `android/`, ni `AndroidManifest.xml` : le correctif principal doit être appliqué au dépôt du wrapper Android.
+## Correctif (fichiers du wrapper Android)
 
-## Plan de correction
+### 1. `capacitor.config.json`
 
-1. **Aligner l’URL native sur l’hôte final**
-   - Remplacer `server.url: "https://app.nexora-iptv.com"` par `server.url: "https://nexora-iptv.com"`.
-   - Éviter ainsi toute redirection de domaine pendant le démarrage.
+```json
+{
+  "appId": "com.nexora.app",
+  "appName": "Nexora",
+  "server": {
+    "url": "https://nexora-iptv.com",
+    "cleartext": false,
+    "androidScheme": "https",
+    "allowNavigation": [
+      "nexora-iptv.com",
+      "*.nexora-iptv.com"
+    ]
+  }
+}
+```
 
-2. **Autoriser explicitement tous les domaines Nexora dans la WebView**
-   - Ajouter à `server.allowNavigation` :
-     - `nexora-iptv.com`
-     - `www.nexora-iptv.com`
-     - `app.nexora-iptv.com`
-     - `account.nexora-iptv.com`
-   - Conserver les liens externes réellement voulus dans le navigateur système uniquement après une action utilisateur.
+### 2. `capacitor.config.ts` (même contenu, source de vérité)
 
-3. **Durcir le wrapper Android**
-   - Vérifier `MainActivity` et `AndroidManifest.xml`.
-   - Supprimer tout lancement automatique via `Intent.ACTION_VIEW`, `Browser.open`, `appUrlOpen` ou gestionnaire de redirection au démarrage.
-   - Faire suivre les navigations Nexora au `BridgeWebView`, y compris les redirections HTTP 301/302.
+```ts
+import type { CapacitorConfig } from '@capacitor/cli';
 
-4. **Nettoyer le démarrage web sans modifier le métier**
-   - Conserver la PWA désactivée pendant le test.
-   - Maintenir la garde native uniquement comme protection secondaire pour les clics et `window.open`; ne plus lui faire porter la responsabilité de la navigation initiale.
+const config: CapacitorConfig = {
+  appId: 'com.nexora.app',
+  appName: 'Nexora',
+  server: {
+    url: 'https://nexora-iptv.com',
+    cleartext: false,
+    androidScheme: 'https',
+    allowNavigation: ['nexora-iptv.com', '*.nexora-iptv.com'],
+  },
+};
 
-5. **Reconstruire et vérifier sur l’appareil réel**
-   - Exécuter la synchronisation Capacitor puis reconstruire l’APK.
-   - Désinstaller l’ancienne application ou effacer ses données avant installation.
-   - Valider : splash → page d’accueil dans la WebView, aucune ouverture de Chrome, navigation Nexora interne stable et absence de bannière PWA.
+export default config;
+```
 
-## Prérequis d’implémentation
+Deux changements essentiels : démarrer directement sur l'hôte final (plus de 302 au boot) et autoriser explicitement tous les sous-domaines Nexora (`www`, `app`, `account`) pour que les redirections internes, le checkout et l'espace client restent dans la WebView.
 
-Le dépôt Android contenant `capacitor.config.*` et `android/` doit être ajouté ou connecté à ce projet. Sans ces fichiers, aucune modification supplémentaire du site web ne peut empêcher la redirection initiale, car elle intervient avant l’exécution du code React.
+### 3. `MainActivity.java` et `build.gradle`
+
+Aucune modification nécessaire : `MainActivity` est le `BridgeActivity` standard sans intercepteur d'URL, et le `build.gradle` est le fichier généré par Capacitor. Ils ne sont pas en cause.
+
+## Procédure de déploiement
+
+1. Appliquer les deux fichiers de config ci-dessus dans le dépôt du wrapper.
+2. Exécuter `npx cap sync android`.
+3. Reconstruire l'APK/AAB.
+4. **Désinstaller l'ancienne app** sur la tablette (ou effacer ses données) avant d'installer la nouvelle : les anciens caches WebView et l'ancienne URL de démarrage survivent sinon à la mise à jour.
+
+## Vérification attendue après correctif
+
+- Splash Nexora → page d'accueil affichée dans la WebView, pas d'écran blanc.
+- Chrome ne s'ouvre plus automatiquement.
+- Navigation interne (blog, checkout, espace client) reste dans l'app.
+- Les liens réellement externes (réseaux sociaux, etc.) restent gérés par la garde native déjà en place côté site, uniquement après action utilisateur.
+
+## Côté projet web (ce que je peux faire ici)
+
+Deux options possibles selon ton choix :
+
+- **Option A (recommandée)** — Ne rien changer sur le site. Le correctif natif suffit.
+- **Option B** — Si tu tiens à conserver `app.nexora-iptv.com` comme URL de démarrage, il faut supprimer la redirection 302 de cet hôte au niveau des domaines du projet et faire de `app.nexora-iptv.com` un domaine servant directement l'app. C'est un réglage de domaines, pas de code.
+
+## Détails techniques
+
+La règle Capacitor appliquée est `WebViewLocalServer` / `shouldOverrideUrlLoading` : toute URL dont l'hôte n'est pas `server.url` ni listé dans `server.allowNavigation` déclenche un `Intent.ACTION_VIEW` → navigateur système. Le passage `app.nexora-iptv.com` → `nexora-iptv.com` tombait exactement dans ce cas.
