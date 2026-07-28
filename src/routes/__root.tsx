@@ -123,6 +123,32 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     ],
     scripts: [
       {
+        // Neutralise le PWA install côté WebView Capacitor AVANT toute
+        // hydratation React. Sans ça, Chrome intercepte le manifest et
+        // relance l'URL courante dans un onglet externe lorsque
+        // `beforeinstallprompt.prompt()` est déclenché.
+        children: `
+          (function(){
+            try {
+              var isNative = (typeof window!=="undefined") && (
+                (window.Capacitor && typeof window.Capacitor.isNativePlatform==="function" && window.Capacitor.isNativePlatform()) ||
+                /NexoraApp/i.test(navigator.userAgent||"")
+              );
+              if (isNative) {
+                window.__NEXORA_NATIVE__ = true;
+                window.addEventListener("beforeinstallprompt", function(e){ e.preventDefault(); }, true);
+                var strip = function(){
+                  document.querySelectorAll('link[rel="manifest"]').forEach(function(l){ l.parentNode && l.parentNode.removeChild(l); });
+                };
+                if (document.readyState === "loading") {
+                  document.addEventListener("DOMContentLoaded", strip, { once: true });
+                } else { strip(); }
+              }
+            } catch(_){}
+          })();
+        `,
+      },
+      {
         type: "application/ld+json",
         children: JSON.stringify({
           "@context": "https://schema.org",
