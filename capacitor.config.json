@@ -1,0 +1,13 @@
+{
+  "appId": "com.nexora.app",
+  "appName": "Nexora",
+  "server": {
+    "url": "https://nexora-iptv.com",
+    "cleartext": false,
+    "androidScheme": "https",
+    "allowNavigation": [
+      "nexora-iptv.com",
+      "*.nexora-iptv.com"
+    ]
+  }
+}
