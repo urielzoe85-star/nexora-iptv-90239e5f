@@ -1,38 +1,47 @@
 ## Diagnostic confirmé
 
-La couche PWA est déjà neutralisée (`PWA_ENABLED = false`, plugin PWA désactivé, aucun manifest chargé). Elle n’explique donc plus l’ouverture actuelle de Chrome.
+La PWA n’est plus la cause : elle est désactivée (`PWA_ENABLED = false`), le plugin ne génère plus de Service Worker et la bannière ne peut plus s’afficher.
 
-Le dépôt actuel ne contient ni `capacitor.config.*`, ni dossier `android/`, ni `MainActivity` : le wrapper Android se trouve dans un autre dépôt. La correction native définitive devra y être appliquée.
+Le point déterminant est l’URL de démarrage Android :
 
-## Plan d’action
+```text
+https://app.nexora-iptv.com
+        ↓ HTTP 302
+https://nexora-iptv.com/
+```
 
-1. **Instrumenter temporairement la version web**
-   - Ajouter un diagnostic actif uniquement dans le contexte `NexoraApp`/Capacitor.
-   - Capturer avant exécution les appels à `window.open`, `location.assign`, `location.replace`, les clics sur liens externes/`target="_blank"` et les redirections visibles.
-   - Conserver localement l’URL, la méthode et la page source afin d’identifier exactement le déclencheur sans exposer de données sensibles.
-   - Afficher une petite erreur de diagnostic dans la WebView au lieu de laisser celle-ci devenir blanche pendant le test.
+Cette redirection se produit avant le chargement du JavaScript. La garde `NativeNavigationGuard` ne peut donc pas l’intercepter. Si le wrapper autorise seulement `app.nexora-iptv.com`, Capacitor considère le passage vers `nexora-iptv.com` comme une navigation externe, la délègue à Android/Chrome et laisse la WebView blanche.
 
-2. **Neutraliser les sorties automatiques au démarrage**
-   - En contexte Capacitor uniquement, bloquer toute ouverture externe qui ne résulte pas d’une action explicite de l’utilisateur.
-   - Garder les liens et routes Nexora (`nexora-iptv.com`, `www`, `app`, `account`) dans la même WebView.
-   - Ne pas modifier les parcours métier du site web normal, les paiements ou OAuth hors application native.
+Le dépôt actuel ne contient ni `capacitor.config.*`, ni dossier `android/`, ni `AndroidManifest.xml` : le correctif principal doit être appliqué au dépôt du wrapper Android.
 
-3. **Auditer le dépôt Android dès qu’il est disponible**
-   - Contrôler `capacitor.config.*`, `AndroidManifest.xml` et `MainActivity`.
-   - Vérifier l’URL de démarrage, `allowNavigation`, les intent filters, `WebViewClient.shouldOverrideUrlLoading`, `WebChromeClient.onCreateWindow` et les éventuels appels `ACTION_VIEW`.
-   - Identifier avec une référence fichier/ligne l’appel natif exact qui délègue actuellement l’URL à Chrome.
+## Plan de correction
 
-4. **Corriger définitivement le wrapper**
-   - Garder tous les domaines Nexora autorisés dans la WebView.
-   - Réserver Chrome aux liens externes explicitement activés par l’utilisateur.
-   - Gérer `target="_blank"` sans créer une activité Chrome involontaire.
-   - Restaurer une page interne valide si une navigation est refusée, afin d’éviter l’écran blanc.
+1. **Aligner l’URL native sur l’hôte final**
+   - Remplacer `server.url: "https://app.nexora-iptv.com"` par `server.url: "https://nexora-iptv.com"`.
+   - Éviter ainsi toute redirection de domaine pendant le démarrage.
 
-5. **Valider sur Android réel**
-   - Tester démarrage à froid, retour arrière, liens internes, espace client, téléchargement, OAuth et paiement.
-   - Confirmer : splash → accueil dans la WebView, aucune ouverture automatique de Chrome, aucune page blanche et navigation Nexora entièrement interne.
-   - Retirer ensuite l’instrumentation temporaire en conservant uniquement les protections natives définitives.
+2. **Autoriser explicitement tous les domaines Nexora dans la WebView**
+   - Ajouter à `server.allowNavigation` :
+     - `nexora-iptv.com`
+     - `www.nexora-iptv.com`
+     - `app.nexora-iptv.com`
+     - `account.nexora-iptv.com`
+   - Conserver les liens externes réellement voulus dans le navigateur système uniquement après une action utilisateur.
 
-## Élément nécessaire
+3. **Durcir le wrapper Android**
+   - Vérifier `MainActivity` et `AndroidManifest.xml`.
+   - Supprimer tout lancement automatique via `Intent.ACTION_VIEW`, `Browser.open`, `appUrlOpen` ou gestionnaire de redirection au démarrage.
+   - Faire suivre les navigations Nexora au `BridgeWebView`, y compris les redirections HTTP 301/302.
 
-Après l’instrumentation web, il faudra fournir ou connecter le dépôt contenant le wrapper Android (`capacitor.config`, dossier `android`) pour terminer les étapes 3 à 5.
+4. **Nettoyer le démarrage web sans modifier le métier**
+   - Conserver la PWA désactivée pendant le test.
+   - Maintenir la garde native uniquement comme protection secondaire pour les clics et `window.open`; ne plus lui faire porter la responsabilité de la navigation initiale.
+
+5. **Reconstruire et vérifier sur l’appareil réel**
+   - Exécuter la synchronisation Capacitor puis reconstruire l’APK.
+   - Désinstaller l’ancienne application ou effacer ses données avant installation.
+   - Valider : splash → page d’accueil dans la WebView, aucune ouverture de Chrome, navigation Nexora interne stable et absence de bannière PWA.
+
+## Prérequis d’implémentation
+
+Le dépôt Android contenant `capacitor.config.*` et `android/` doit être ajouté ou connecté à ce projet. Sans ces fichiers, aucune modification supplémentaire du site web ne peut empêcher la redirection initiale, car elle intervient avant l’exécution du code React.
