@@ -54,6 +54,10 @@ export function NativeNavigationGuard() {
   useEffect(() => {
     if (!isCapacitorNative()) return;
 
+    let lastExplicitInteraction = 0;
+    const markExplicitInteraction = () => {
+      lastExplicitInteraction = Date.now();
+    };
     const originalOpen = window.open.bind(window);
     window.open = ((url?: string | URL, target?: string, features?: string) => {
       const rawTarget = url?.toString() ?? "";
@@ -73,7 +77,7 @@ export function NativeNavigationGuard() {
         return window;
       }
 
-      if (!navigator.userActivation?.isActive) {
+      if (Date.now() - lastExplicitInteraction > 1_000) {
         const diagnostic = saveDiagnostic("window.open:automatic", parsed.href);
         setBlocked(diagnostic);
         return null;
@@ -102,7 +106,7 @@ export function NativeNavigationGuard() {
         return;
       }
 
-      if (anchor.target === "_blank" && !navigator.userActivation?.isActive) {
+      if (anchor.target === "_blank" && Date.now() - lastExplicitInteraction > 1_000) {
         event.preventDefault();
         event.stopImmediatePropagation();
         const diagnostic = saveDiagnostic("anchor:automatic", url.href);
@@ -110,9 +114,13 @@ export function NativeNavigationGuard() {
       }
     };
 
+    document.addEventListener("pointerdown", markExplicitInteraction, true);
+    document.addEventListener("keydown", markExplicitInteraction, true);
     document.addEventListener("click", onDocumentClick, true);
     return () => {
       window.open = originalOpen;
+      document.removeEventListener("pointerdown", markExplicitInteraction, true);
+      document.removeEventListener("keydown", markExplicitInteraction, true);
       document.removeEventListener("click", onDocumentClick, true);
     };
   }, []);
