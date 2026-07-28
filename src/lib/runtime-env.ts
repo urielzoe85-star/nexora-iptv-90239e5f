@@ -30,13 +30,5 @@ export function isCapacitorNative(): boolean {
   } catch {
     /* noop */
   }
-  console.info(
-    "[capacitor-detect] isNativePlatform=",
-    window.Capacitor?.isNativePlatform?.(),
-    "userAgent=",
-    typeof navigator !== "undefined" ? navigator.userAgent : "n/a",
-    "result=",
-    nativeFlag,
-  );
   return nativeFlag;
 }
