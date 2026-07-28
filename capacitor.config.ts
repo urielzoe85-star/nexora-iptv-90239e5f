@@ -1,4 +1,4 @@
-import type { CapacitorConfig } from '@capacitor/cli';
+import type { CapacitorConfig } from "@capacitor/cli";
 
 // Source de vérité de la configuration du wrapper Capacitor Android.
 // IMPORTANT : `server.url` doit pointer sur l'hôte FINAL (nexora-iptv.com).
@@ -8,13 +8,13 @@ import type { CapacitorConfig } from '@capacitor/cli';
 // `allowNavigation` autorise tous les sous-domaines Nexora (www, app, account)
 // afin que checkout, espace client et redirections internes restent dans l'app.
 const config: CapacitorConfig = {
-  appId: 'com.nexora.app',
-  appName: 'Nexora',
+  appId: "com.nexora.app",
+  appName: "Nexora",
   server: {
-    url: 'https://nexora-iptv.com',
+    url: "https://nexora-iptv.com",
     cleartext: false,
-    androidScheme: 'https',
-    allowNavigation: ['nexora-iptv.com', '*.nexora-iptv.com'],
+    androidScheme: "https",
+    allowNavigation: ["nexora-iptv.com", "*.nexora-iptv.com"],
   },
 };
 

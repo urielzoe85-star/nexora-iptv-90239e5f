@@ -1,81 +1,99 @@
-## Cause confirmée
+# Plan d'audit global Nexora IPTV
 
-Vérification faite à l'instant :
+## Objectif
+Vérifier que les modifications récentes (désactivation temporaire de la PWA, correctif Capacitor, garde native) n'ont pas dégradé les fonctionnalités métier critiques : site web, checkout, paiements, emails, WhatsApp, Telegram, blog, SEO, espace client et sécurité.
 
-```text
-curl -I https://app.nexora-iptv.com/
-HTTP/2 302
-location: https://nexora-iptv.com/
-```
+## Périmètre
+- **Build & runtime** : typecheck, lint, build production, bundle.
+- **PWA / Capacitor** : état de la couche PWA, comportement natif, absence de fuite vers Chrome.
+- **Site web** : homepage, routes marketing, catalogue, galerie, blog, pages légales, SEO.
+- **Espace client** : authentification, portail, commandes, téléchargements.
+- **Communications** : email (Lovable Emails), WhatsApp (wa.me), Telegram, AI chat.
+- **Paiements** : checkout, SebPay, CamerPay, Binance Pay, cartes/PayPal.
+- **Admin NCC** : dashboard, IPTV Manager, bulk messaging, blog CMS, AI Center.
+- **Sécurité** : headers, CSP, RLS, politiques Realtime, secrets.
 
-Ton `capacitor.config.json` démarre sur `https://app.nexora-iptv.com` et ne déclare aucun `allowNavigation`. Au démarrage, Android charge cette URL, reçoit la redirection 302 vers un **autre hôte**, considère cette navigation comme externe, la délègue à Chrome et laisse la WebView vide. Cela se produit avant tout code React, donc aucune protection côté site ne peut l'empêcher.
+## Méthodologie
+1. **Tests statiques & build** : `bun run build`, `tsgo`, `eslint`.
+2. **Inspection de code** : vérifier les fichiers modifiés et leurs dépendances.
+3. **Tests en preview** : Playwright sur les parcours critiques (homepage → checkout → confirmation, blog, espace client).
+4. **Vérifications backend** : état des tables, queues email, RLS, policies Realtime.
+5. **Tests de communication** : envoi de test email, Telegram, WhatsApp via NCC.
+6. **Rapport** : liste des problèmes trouvés, sévérité, actions correctives proposées.
 
-## Correctif (fichiers du wrapper Android)
+## Phases détaillées
 
-### 1. `capacitor.config.json`
+### Phase 1 — Build & architecture (≈ 15 min)
+- Vérifier `vite.config.ts` : plugin `VitePWA` correctement commenté, `mcpPlugin` présent.
+- Vérifier `src/pwa/config.ts`, `src/pwa/register.ts`, `src/components/pwa/PwaManager.tsx` : `PWA_ENABLED = false` proprement géré, nettoyage des SW/caches, pas d'appel `installEvt.prompt()` en mode natif.
+- Vérifier `capacitor.config.ts` et `capacitor.config.json` : `server.url` sur `nexora-iptv.com`, `allowNavigation` incluant `*.nexora-iptv.com`.
+- Vérifier `src/components/native/NativeNavigationGuard.tsx` : interception `window.open` et liens `NEXORA_HOSTS`, blocage des ouvertures automatiques.
+- Lancer `bun run build` et `tsgo` pour s'assurer qu'aucune erreur n'est introduite.
 
-```json
-{
-  "appId": "com.nexora.app",
-  "appName": "Nexora",
-  "server": {
-    "url": "https://nexora-iptv.com",
-    "cleartext": false,
-    "androidScheme": "https",
-    "allowNavigation": [
-      "nexora-iptv.com",
-      "*.nexora-iptv.com"
-    ]
-  }
-}
-```
+### Phase 2 — PWA / Capacitor (≈ 10 min)
+- Confirmer que `<link rel="manifest">` n'est plus injecté dans `src/routes/__root.tsx`.
+- Confirmer que `beforeinstallprompt` est neutralisé en amont (capture phase + `stopImmediatePropagation`).
+- Confirmer que `navigator.serviceWorker.register` est override dans le script inline.
+- Vérifier que `PwaManager` retourne `null` quand `PWA_ENABLED` est `false` ou en mode natif.
+- Vérifier que le site reste responsive et fonctionnel sans SW.
 
-### 2. `capacitor.config.ts` (même contenu, source de vérité)
+### Phase 3 — Site web & SEO (≈ 20 min)
+- Homepage : chargement, navigation, sections (hero, devices, pricing, testimonials, FAQ, blog, payments, support).
+- Vérifier les liens internes (`/essai-gratuit`, `/reseller`, `/catalog`, `/galerie`, `/blog`, `/guide-iptv`).
+- Vérifier les balises SEO : title, description, canonical, og:image, hreflang, JSON-LD.
+- Blog : liste des articles, page article, RSS, sitemap, redirections 301.
+- Vérifier que les pages ne retournent pas de 404 inattendues.
 
-```ts
-import type { CapacitorConfig } from '@capacitor/cli';
+### Phase 4 — Espace client & auth (≈ 15 min)
+- Vérifier `src/lib/portal-url.ts` et `src/start.ts` : middleware `accountSubdomainMiddleware` redirige correctement `account.nexora-iptv.com/` vers `/espace-client` et renvoie les routes marketing vers `www.nexora-iptv.com`.
+- Vérifier que les routes `/auth/*`, `/checkout`, `/api/*`, `/lovable/*` sont autorisées sur le sous-domaine `account`.
+- Tester la connexion / inscription (OTP/mot de passe) si possible.
+- Vérifier les pages de téléchargement (M-IBO Player, etc.).
 
-const config: CapacitorConfig = {
-  appId: 'com.nexora.app',
-  appName: 'Nexora',
-  server: {
-    url: 'https://nexora-iptv.com',
-    cleartext: false,
-    androidScheme: 'https',
-    allowNavigation: ['nexora-iptv.com', '*.nexora-iptv.com'],
-  },
-};
+### Phase 5 — Communications (≈ 20 min)
+- **Email** : vérifier `email_domain--check_email_domain_status`, l'état des queues `auth_emails` / `transactional_emails`, la table `email_send_log`, les templates.
+- **WhatsApp** : vérifier `src/lib/whatsapp-contact.ts` (numéro, format `wa.me`), les liens dans la homepage et le checkout.
+- **Telegram** : vérifier le lien `https://t.me/NexoraIPTVBot` et les envois via NCC/services admin.
+- **AI chat** : vérifier que les threads/messages sont isolés par session (pas d'exposition cross-visitor), multi-langue, et que le mode natif ne le casse pas.
+- Tester un envoi de chaque canal si le backend est sain.
 
-export default config;
-```
+### Phase 6 — Paiements (≈ 20 min)
+- Vérifier `src/routes/checkout.tsx` : création de commande, `initCheckout`, redirection `window.location.assign` vers provider.
+- Vérifier les workflows `payment-confirmed`, `payment-failed`, `order-created`.
+- Vérifier que les provider-links SebPay / CamerPay / Binance Pay sont générés.
+- Vérifier les webhooks et les routes de confirmation (`/payment/success`, `/payment/failed`).
+- Vérifier que le fallback CamerPay → SebPay est toujours actif.
 
-Deux changements essentiels : démarrer directement sur l'hôte final (plus de 302 au boot) et autoriser explicitement tous les sous-domaines Nexora (`www`, `app`, `account`) pour que les redirections internes, le checkout et l'espace client restent dans la WebView.
+### Phase 7 — Sécurité (≈ 15 min)
+- Vérifier les headers dans `src/start.ts` : CSP, HSTS, X-Frame-Options, Permissions-Policy.
+- Vérifier que CSP est en `Report-Only` (sauf si `CSP_ENFORCE=1`).
+- Vérifier RLS sur les tables publiques (plans, blog, galerie, commandes, chat).
+- Vérifier les policies Realtime sur `ai_chat_threads` et `ai_chat_messages`.
+- Vérifier que les anciens findings corrigés ne sont pas réapparus.
 
-### 3. `MainActivity.java` et `build.gradle`
+### Phase 8 — Tests E2E / Smoke (≈ 25 min)
+- Exécuter un parcours Playwright : homepage → choix d'un plan → checkout → paiement mocké → confirmation.
+- Exécuter un parcours blog : publication admin → apparition sur `/blog` → clic article → contenu affiché.
+- Exécuter un parcours espace client : connexion → commandes → téléchargement.
+- Vérifier les logs console et réseau pendant les tests.
+- Vérifier que la garde native ne bloque pas les clics utilisateur légitimes.
 
-Aucune modification nécessaire : `MainActivity` est le `BridgeActivity` standard sans intercepteur d'URL, et le `build.gradle` est le fichier généré par Capacitor. Ils ne sont pas en cause.
+## Livrables
+- **Rapport d'audit** listant chaque zone, son statut (OK / Attention / Critique) et les preuves.
+- **Liste des bugs/régressions** classés par sévérité, avec le fichier/ligne concerné.
+- **Plan de correction** si des problèmes sont trouvés.
+- **Go/No-go** pour la réactivation éventuelle de la PWA ou le rebuild de l'APK.
 
-## Procédure de déploiement
+## Critères de succès
+- Build passe sans erreur ni warning critique.
+- Aucune régression sur homepage, checkout, blog, espace client.
+- Emails, WhatsApp, Telegram restent fonctionnels.
+- Paiements génèrent correctement les liens providers.
+- Aucune ouverture automatique de Chrome en mode natif simulé.
+- Aucun nouveau finding de sécurité critique.
 
-1. Appliquer les deux fichiers de config ci-dessus dans le dépôt du wrapper.
-2. Exécuter `npx cap sync android`.
-3. Reconstruire l'APK/AAB.
-4. **Désinstaller l'ancienne app** sur la tablette (ou effacer ses données) avant d'installer la nouvelle : les anciens caches WebView et l'ancienne URL de démarrage survivent sinon à la mise à jour.
+## Estimation
+Environ **2 à 3 heures** selon le nombre de problèmes détectés.
 
-## Vérification attendue après correctif
-
-- Splash Nexora → page d'accueil affichée dans la WebView, pas d'écran blanc.
-- Chrome ne s'ouvre plus automatiquement.
-- Navigation interne (blog, checkout, espace client) reste dans l'app.
-- Les liens réellement externes (réseaux sociaux, etc.) restent gérés par la garde native déjà en place côté site, uniquement après action utilisateur.
-
-## Côté projet web (ce que je peux faire ici)
-
-Deux options possibles selon ton choix :
-
-- **Option A (recommandée)** — Ne rien changer sur le site. Le correctif natif suffit.
-- **Option B** — Si tu tiens à conserver `app.nexora-iptv.com` comme URL de démarrage, il faut supprimer la redirection 302 de cet hôte au niveau des domaines du projet et faire de `app.nexora-iptv.com` un domaine servant directement l'app. C'est un réglage de domaines, pas de code.
-
-## Détails techniques
-
-La règle Capacitor appliquée est `WebViewLocalServer` / `shouldOverrideUrlLoading` : toute URL dont l'hôte n'est pas `server.url` ni listé dans `server.allowNavigation` déclenche un `Intent.ACTION_VIEW` → navigateur système. Le passage `app.nexora-iptv.com` → `nexora-iptv.com` tombait exactement dans ce cas.
+## Prochaine étape après validation
+Si l'audit révèle des problèmes : je corrige d'abord ceux de sévérité critique, puis moyenne, puis faible, avant tout rebuild APK ou réactivation PWA.
