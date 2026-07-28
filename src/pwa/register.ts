@@ -6,6 +6,7 @@
 
 import type { Workbox } from "workbox-window";
 import { isCapacitorNative } from "@/lib/runtime-env";
+import { PWA_ENABLED } from "./config";
 
 const PREVIEW_HOST_PREFIXES = ["id-preview--", "preview--"];
 const PREVIEW_HOST_SUFFIXES = [
@@ -16,6 +17,7 @@ const PREVIEW_HOST_SUFFIXES = [
 
 function isRefusedContext(): boolean {
   if (typeof window === "undefined") return true;
+  if (!PWA_ENABLED) return true;
   if (!import.meta.env.PROD) return true;
   if (isCapacitorNative()) return true;
   try {
@@ -44,6 +46,19 @@ async function unregisterExisting(): Promise<void> {
         const url = r.active?.scriptURL || r.installing?.scriptURL || r.waiting?.scriptURL || "";
         if (url.endsWith("/sw.js")) await r.unregister();
       }),
+    );
+  } catch {
+    /* noop */
+  }
+  // Purge des caches Workbox laissés par une installation précédente,
+  // sinon un ancien SW peut continuer à servir du HTML périmé.
+  try {
+    if (typeof caches === "undefined") return;
+    const names = await caches.keys();
+    await Promise.all(
+      names
+        .filter((n) => /^(nexora-|workbox-|google-fonts)/.test(n) || /precache-v\d+-|(^|-)runtime-/.test(n))
+        .map((n) => caches.delete(n)),
     );
   } catch {
     /* noop */
