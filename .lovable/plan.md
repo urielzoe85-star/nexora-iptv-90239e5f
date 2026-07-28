@@ -1,43 +1,38 @@
-# Plan : vérifier que `isNativePlatform()` retourne bien true dans le wrapper Capacitor
-
-## Contexte
-La détection native est déjà implémentée dans `src/lib/runtime-env.ts` avec deux mécanismes :
-1. `window.Capacitor?.isNativePlatform?.()` — retourne `true` si le bridge Capacitor est injecté.
-2. Fallback sur `navigator.userAgent` contenant `NexoraApp` (ajouté par `capacitor.config.ts` avec `appendUserAgent: " NexoraApp"`).
-
 ## Objectif
-Ajouter un log temporaire pour confirmer que la détection est effective dans le contexte réel du wrapper Android/iOS.
 
-## Étapes
+Neutraliser complètement la couche PWA (service worker, enregistrement, manifest) pour tous les contextes — web et Capacitor — afin de vérifier si la WebView Android fonctionne normalement sans elle. Aucune fonctionnalité métier n'est touchée, le site reste responsive et identique visuellement.
 
-### 1. Ajouter un log temporaire dans `src/lib/runtime-env.ts`
-Loguer dans la console les valeurs observées au moment de l'appel :
-- `window.Capacitor?.isNativePlatform?.()`
-- `navigator.userAgent`
-- Résultat final de `isCapacitorNative()`
+Tout est fait de façon réversible : un seul interrupteur central `PWA_ENABLED = false` permet de tout réactiver plus tard.
 
-Utiliser un `console.info` clairement préfixé pour pouvoir le retrouver dans les logs.
+## Modifications prévues
 
-### 2. Vérification build
-Lancer `bun run build` pour s'assurer que l'ajout du log ne casse rien.
+**1. `src/pwa/config.ts` (nouveau)**
+Un unique drapeau `export const PWA_ENABLED = false;` avec un commentaire expliquant que c'est un test temporaire Capacitor.
 
-### 3. Test dans le navigateur avec simulation Capacitor
-Depuis l'aperçu Lovable, simuler un environnement Capacitor en modifiant temporairement le user-agent ou en injectant `window.Capacitor` via la console, et vérifier que le log affiche `true`.
+**2. `vite.config.ts`**
+Retirer le plugin `VitePWA` du tableau de plugins (mis en commentaire avec la config intacte, pour réactivation immédiate). Résultat : plus aucun `sw.js` généré ni précache Workbox dans le build.
 
-### 4. Test réel sur tablette (à faire de ton côté)
-Je ne peux pas accéder à ta tablette directement. La procédure sera :
-- Déployer la version avec le log sur `https://app.nexora-iptv.com`.
-- Ouvrir l'APK Capacitor sur la tablette.
-- Ouvrir les outils de développement Chrome/Safari connectés à la WebView.
-- Rechercher le log préfixé dans la console et noter la valeur affichée.
+**3. `src/pwa/register.ts`**
+`registerPwa()` devient un no-op quand `PWA_ENABLED` est faux : il n'enregistre rien et se contente de **désenregistrer** tout service worker `/sw.js` déjà installé et de purger les caches Workbox — indispensable pour les appareils qui ont déjà un SW actif (sinon l'ancien SW continue à servir du HTML en cache, ce qui peut expliquer la page blanche).
 
-### 5. Suppression du log après confirmation
-Une fois le résultat confirmé, retirer le log temporaire pour ne pas polluer la console en production.
+**4. `src/components/pwa/PwaManager.tsx`**
+Retourne `null` immédiatement quand la PWA est désactivée, après avoir déclenché le nettoyage du SW. Plus aucune bannière « Installer Nexora », plus aucun écouteur `beforeinstallprompt`, plus de bannière de mise à jour.
 
-## Fichiers modifiés
-- `src/lib/runtime-env.ts` (ajout d'un log temporaire, puis retrait après validation).
+**5. `src/routes/__root.tsx`**
+- Supprimer la ligne `{ rel: "manifest", href: "/manifest.webmanifest" }` des `links`.
+- Supprimer les meta `apple-mobile-web-app-capable` / `mobile-web-app-capable` (elles participent à l'heuristique d'installabilité).
+- Simplifier le script inline natif : la partie « strip manifest » et `MutationObserver` n'a plus lieu d'être puisqu'aucun manifest n'est chargé ; on conserve uniquement la détection `window.__NEXORA_NATIVE__` et le blocage défensif de `serviceWorker.register`.
+- Conserver `theme-color`, `apple-touch-icon` et les favicons (purement cosmétiques, sans effet sur l'installabilité).
 
-## Livrables
-- Build vert.
-- Log observable dans la console de la WebView.
-- Rapport du résultat observé dans l'APK réel.
+**6. `public/manifest.webmanifest`**
+Le fichier est **conservé tel quel** sur le disque, simplement plus référencé. Rien à réécrire à la réactivation.
+
+## Ce qui n'est pas touché
+
+Routes, checkout, NCC, blog, IA, paiements, notifications, i18n, styles, SEO (title/description/JSON-LD/sitemap/hreflang restent intacts).
+
+## Après application
+
+Vous devrez reconstruire l'APK (`npx cap sync android` puis rebuild) pour embarquer le bundle sans PWA. Sur un appareil ayant déjà lancé l'ancienne version, il est recommandé de vider les données de l'app une fois, car un service worker précédemment installé survit à la mise à jour du bundle.
+
+Je vous listerai les fichiers modifiés exactement à la fin de l'implémentation.

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Download, RefreshCw, X } from "lucide-react";
 import { registerPwa } from "@/pwa/register";
 import { isCapacitorNative } from "@/lib/runtime-env";
+import { PWA_ENABLED } from "@/pwa/config";
 
 type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>;
@@ -17,6 +18,11 @@ export function PwaManager() {
   const [isNative, setIsNative] = useState(false);
 
   useEffect(() => {
+    if (!PWA_ENABLED) {
+      // PWA désactivée : on nettoie tout SW/caches résiduels puis on sort.
+      void registerPwa();
+      return;
+    }
     if (isCapacitorNative()) {
       setIsNative(true);
       return;
@@ -40,7 +46,7 @@ export function PwaManager() {
     };
   }, []);
 
-  if (isNative) return null;
+  if (!PWA_ENABLED || isNative) return null;
 
   const acceptUpdate = () => {
     if (!updateWb) return;
