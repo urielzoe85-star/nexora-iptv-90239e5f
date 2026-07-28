@@ -12,6 +12,7 @@ type CapacitorGlobal = {
 declare global {
   interface Window {
     Capacitor?: CapacitorGlobal;
+    __NEXORA_NATIVE__?: boolean;
   }
 }
 
@@ -19,7 +20,12 @@ export function isCapacitorNative(): boolean {
   if (typeof window === "undefined") return false;
   let nativeFlag = false;
   try {
-    if (window.Capacitor?.isNativePlatform?.() === true) nativeFlag = true;
+    if (window.__NEXORA_NATIVE__ === true) nativeFlag = true;
+  } catch {
+    /* noop */
+  }
+  try {
+    if (!nativeFlag && window.Capacitor?.isNativePlatform?.() === true) nativeFlag = true;
   } catch {
     /* noop */
   }
