@@ -16,6 +16,7 @@ import { FloatingAiAssistant } from "../components/FloatingAiAssistant";
 import { PwaManager } from "../components/pwa/PwaManager";
 import { BackButton } from "../components/BackButton";
 import { NexoraAssistantWidget } from "../components/ai-chat/NexoraAssistantWidget";
+import { NativeNavigationGuard } from "../components/native/NativeNavigationGuard";
 
 // ClientOnly ensures PWA install logic only runs after hydration, preventing
 // any SSR mismatch and keeping Capacitor-native detection accurate.
@@ -120,10 +121,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     ],
     scripts: [
       {
-        // Couche PWA désactivée (voir src/pwa/config.ts). Ce script sert
-        // uniquement à : marquer le contexte natif Capacitor avant toute
-        // hydratation React, et désenregistrer défensivement tout Service
-        // Worker résiduel d'une version précédente de l'app.
+        // Bootstrap natif pré-hydratation : neutralise la PWA et conserve une
+        // trace minimale de l'URL de démarrage pour diagnostiquer une sortie de
+        // WebView sans enregistrer les paramètres potentiellement sensibles.
         children: `
           (function(){
             try {
@@ -131,7 +131,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
                 (window.Capacitor && typeof window.Capacitor.isNativePlatform==="function" && window.Capacitor.isNativePlatform()) ||
                 /NexoraApp/i.test(navigator.userAgent||"")
               );
-              if (isNative) { window.__NEXORA_NATIVE__ = true; }
+              if (isNative) {
+                window.__NEXORA_NATIVE__ = true;
+                try {
+                  sessionStorage.setItem("nexora.native.navigation.boot", JSON.stringify({
+                    origin: location.origin,
+                    pathname: location.pathname,
+                    timestamp: new Date().toISOString()
+                  }));
+                } catch(_) {}
+              }
               // Aucune PWA n'est enregistrée : on bloque toute tentative et on
               // nettoie les enregistrements hérités (web comme natif).
               try {
@@ -149,6 +158,28 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
                 e.stopImmediatePropagation();
                 return false;
               }, true);
+              if (isNative) {
+                window.addEventListener("error", function(e){
+                  try {
+                    sessionStorage.setItem("nexora.native.navigation.error", JSON.stringify({
+                      type: "error",
+                      message: String(e.message || "unknown").slice(0, 240),
+                      pathname: location.pathname,
+                      timestamp: new Date().toISOString()
+                    }));
+                  } catch(_) {}
+                }, true);
+                window.addEventListener("unhandledrejection", function(e){
+                  try {
+                    sessionStorage.setItem("nexora.native.navigation.error", JSON.stringify({
+                      type: "unhandledrejection",
+                      message: String(e.reason && e.reason.message || e.reason || "unknown").slice(0, 240),
+                      pathname: location.pathname,
+                      timestamp: new Date().toISOString()
+                    }));
+                  } catch(_) {}
+                });
+              }
             } catch(_){}
           })();
         `,
@@ -227,6 +258,7 @@ function RootComponent() {
         <BackButton />
         <ClientOnly>
           <PwaManager />
+          <NativeNavigationGuard />
         </ClientOnly>
         <NexoraAssistantWidget />
       </I18nProvider>
