@@ -24,6 +24,8 @@ function slugifyClient(s: string) {
     .replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "").slice(0, 120);
 }
 
+type PostStatus = "draft" | "scheduled" | "published" | "archived";
+
 export function BlogEditor({ postId }: { postId?: string }) {
   const navigate = useNavigate();
   const qc = useQueryClient();
@@ -53,7 +55,7 @@ export function BlogEditor({ postId }: { postId?: string }) {
   const [tagIds, setTagIds] = useState<string[]>([]);
   const [newTag, setNewTag] = useState("");
   const [authorName, setAuthorName] = useState("Nexora");
-  const [status, setStatus] = useState<"draft"|"scheduled"|"published"|"archived">("draft");
+  const [status, setStatus] = useState<PostStatus>("draft");
   const [scheduledAt, setScheduledAt] = useState("");
   const [seoTitle, setSeoTitle] = useState("");
   const [seoDesc, setSeoDesc] = useState("");
