@@ -22,13 +22,13 @@ export const Route = createFileRoute("/blog/$slug")({
     if (!loaderData) {
       return { meta: [{ title: "Article introuvable" }, { name: "robots", content: "noindex" }] };
     }
-    const p: any = loaderData.post;
+    const p = loaderData.post;
     const url = `https://nexora-iptv.com/blog/${params.slug}`;
     const canonical = p.canonical_url || url;
     const title = p.seo_title || p.title;
     const desc = p.seo_description || p.excerpt || "";
     const img = p.og_image_url || p.cover_image_url;
-    const tagNames: string[] = Array.isArray(p.tags) ? p.tags.map((t: any) => t?.name).filter(Boolean) : [];
+    const tagNames: string[] = Array.isArray(p.tags) ? p.tags.map((t) => t?.name).filter(Boolean) : [];
     const keywords = tagNames.length ? tagNames.join(", ") : (p.seo_keywords || undefined);
     const wordCount = typeof p.content === "string"
       ? p.content.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().split(" ").filter(Boolean).length
@@ -121,9 +121,9 @@ function PostPage() {
     queryKey: ["blog","related", post.id],
     queryFn: () => related({ data: { post_id: post.id, limit: 3 } }),
   });
-  const shareUrl = `https://nexora-iptv.com/blog/${(post as any).slug}`;
-  const shareTitle = (post as any).title as string;
-  const shareExcerpt = ((post as any).excerpt as string) || undefined;
+  const shareUrl = `https://nexora-iptv.com/blog/${post.slug}`;
+  const shareTitle = post.title;
+  const shareExcerpt = post.excerpt || undefined;
 
   return (
     <article className="min-h-screen bg-background">
@@ -158,7 +158,7 @@ function PostPage() {
 
         {post.tags?.length > 0 && (
           <div className="mt-10 flex flex-wrap gap-2">
-            {post.tags.map((t: any) => (
+            {post.tags.map((t) => (
               <span key={t.id} className="text-xs px-3 py-1 rounded-full bg-muted">#{t.name}</span>
             ))}
           </div>
@@ -178,7 +178,7 @@ function PostPage() {
           <section className="mt-16">
             <h2 className="text-2xl font-semibold mb-6">Articles similaires</h2>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-              {relatedPosts.map((r: any) => <PostCard key={r.id} post={r} />)}
+              {relatedPosts.map((r) => <PostCard key={r.id} post={r} />)}
             </div>
           </section>
         )}
