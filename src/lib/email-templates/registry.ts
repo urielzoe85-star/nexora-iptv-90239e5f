@@ -2,6 +2,7 @@ import type { ComponentType } from 'react'
 import { template as iptvDeliveryTemplate } from './iptv-delivery'
 import { template as iptvRenewalReminderTemplate } from './iptv-renewal-reminder'
 import { template as paymentFailedTemplate } from './payment-failed'
+import { template as nccNotificationTemplate } from './ncc-notification'
 
 export interface TemplateEntry {
   component: ComponentType<any>
@@ -24,4 +25,5 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'iptv-delivery': iptvDeliveryTemplate,
   'iptv-renewal-reminder': iptvRenewalReminderTemplate,
   'payment-failed': paymentFailedTemplate,
+  'ncc-notification': nccNotificationTemplate,
 }
