@@ -29,9 +29,9 @@ export const Route = createFileRoute("/blog/$slug")({
     const desc = p.seo_description || p.excerpt || "";
     const img = p.og_image_url || p.cover_image_url;
     const tagNames: string[] = Array.isArray(p.tags) ? p.tags.map((t) => t?.name).filter(Boolean) : [];
-    const keywords = tagNames.length ? tagNames.join(", ") : (p.seo_keywords || undefined);
-    const wordCount = typeof p.content === "string"
-      ? p.content.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().split(" ").filter(Boolean).length
+    const keywords = tagNames.length ? tagNames.join(", ") : undefined;
+    const wordCount = typeof p.content_html === "string"
+      ? p.content_html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().split(" ").filter(Boolean).length
       : undefined;
     const catName: string | undefined = p.category?.name;
     const catSlug: string | undefined = p.category?.slug;
@@ -46,7 +46,7 @@ export const Route = createFileRoute("/blog/$slug")({
       datePublished: p.published_at,
       dateModified: p.updated_at,
       author: p.author_name
-        ? { "@type": "Person", name: p.author_name, ...(p.author_url ? { url: p.author_url } : {}) }
+        ? { "@type": "Person", name: p.author_name }
         : undefined,
       publisher: {
         "@type": "Organization",
