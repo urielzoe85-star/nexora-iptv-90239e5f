@@ -11,6 +11,7 @@ import { PORTAL_HOST, PORTAL_BASE_URL, MARKETING_BASE_URL, isAccountAllowedPath 
 const accountSubdomainMiddleware = createMiddleware().server(async ({ next, request }) => {
   if (request.method !== "GET" && request.method !== "HEAD") return next();
   const url = new URL(request.url);
+  if (url.pathname.startsWith("/lovable/")) return next();
   if (url.hostname !== PORTAL_HOST) return next();
   const p = url.pathname;
   if (p === "/" || p === "") {
