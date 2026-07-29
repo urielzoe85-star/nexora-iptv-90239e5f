@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/select";
 import { useState } from "react";
 import { toast } from "sonner";
+import { errorMessage } from "@/lib/error-message";
 
 export const Route = createFileRoute("/ncc/blog/")({ component: BlogListRoute });
 
@@ -42,7 +43,7 @@ function BlogListRoute() {
       list({
         data: {
           search: search || undefined,
-          status: status === "all" ? undefined : (status as any),
+          status: status === "all" ? undefined : (status as "draft" | "scheduled" | "published" | "archived"),
           category_id: category === "all" ? undefined : category,
           page: 1,
           page_size: 50,
@@ -56,8 +57,8 @@ function BlogListRoute() {
       await del({ data: { id } });
       toast.success("Article supprimé");
       qc.invalidateQueries({ queryKey: ["ncc", "blog", "posts"] });
-    } catch (e: any) {
-      toast.error(e?.message ?? "Erreur");
+    } catch (e) {
+      toast.error(errorMessage(e));
     }
   }
   async function onPublish(id: string) {
@@ -65,8 +66,8 @@ function BlogListRoute() {
       await change({ data: { id, status: "published" } });
       toast.success("Publié");
       qc.invalidateQueries({ queryKey: ["ncc", "blog", "posts"] });
-    } catch (e: any) {
-      toast.error(e?.message ?? "Erreur");
+    } catch (e) {
+      toast.error(errorMessage(e));
     }
   }
   async function onArchive(id: string) {
@@ -74,8 +75,8 @@ function BlogListRoute() {
       await change({ data: { id, status: "archived" } });
       toast.success("Archivé");
       qc.invalidateQueries({ queryKey: ["ncc", "blog", "posts"] });
-    } catch (e: any) {
-      toast.error(e?.message ?? "Erreur");
+    } catch (e) {
+      toast.error(errorMessage(e));
     }
   }
 
@@ -118,7 +119,7 @@ function BlogListRoute() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Toutes catégories</SelectItem>
-            {(cats ?? []).map((c: any) => (
+            {(cats ?? []).map((c) => (
               <SelectItem key={c.id} value={c.id}>
                 {c.name}
               </SelectItem>
@@ -145,7 +146,7 @@ function BlogListRoute() {
               </tr>
             </thead>
             <tbody>
-              {(data?.rows ?? []).map((p: any) => (
+              {(data?.rows ?? []).map((p) => (
                 <tr key={p.id} className="border-t hover:bg-muted/20">
                   <td className="p-3">
                     <Link
@@ -229,7 +230,7 @@ function BlogListRoute() {
 }
 
 function StatusBadge({ status }: { status: string }) {
-  const map: Record<string, { label: string; variant: any }> = {
+  const map: Record<string, { label: string; variant: "secondary" | "outline" | "default" }> = {
     draft: { label: "Brouillon", variant: "secondary" },
     scheduled: { label: "Planifié", variant: "outline" },
     published: { label: "Publié", variant: "default" },

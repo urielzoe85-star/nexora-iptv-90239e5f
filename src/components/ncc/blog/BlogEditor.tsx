@@ -17,6 +17,7 @@ import { TipTapEditor } from "./TipTapEditor";
 import { SeoPanel } from "./SeoPanel";
 import { Loader2, Save, X, Upload } from "lucide-react";
 import { toast } from "sonner";
+import { errorMessage } from "@/lib/error-message";
 
 function slugifyClient(s: string) {
   return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
@@ -71,7 +72,7 @@ export function BlogEditor({ postId }: { postId?: string }) {
     setCover(existing.cover_image_url ?? "");
     setCoverAlt(existing.cover_image_alt ?? "");
     setCategoryId(existing.category_id ?? "");
-    setTagIds((existing as any).tag_ids ?? []);
+    setTagIds(existing.tag_ids ?? []);
     setAuthorName(existing.author_name ?? "Nexora");
     setStatus(existing.status);
     setScheduledAt(existing.scheduled_at ? existing.scheduled_at.slice(0, 16) : "");
@@ -99,7 +100,7 @@ export function BlogEditor({ postId }: { postId?: string }) {
         const { url } = await upload({ data: { filename: f.name, content_type: f.type || "image/jpeg", data_base64: b64 } });
         setCover(url);
         toast.success("Image téléversée", { id: tId });
-      } catch (e: any) { toast.error(e?.message ?? "Erreur d'upload", { id: tId }); }
+      } catch (e) { toast.error(errorMessage(e, "Erreur d'upload"), { id: tId }); }
     };
     input.click();
   }
@@ -124,7 +125,7 @@ export function BlogEditor({ postId }: { postId?: string }) {
       if (!tagIds.includes(id)) setTagIds([...tagIds, id]);
       setNewTag("");
       qc.invalidateQueries({ queryKey: ["ncc","blog","tags"] });
-    } catch (e: any) { toast.error(e?.message ?? "Erreur"); }
+    } catch (e) { toast.error(errorMessage(e)); }
   }
 
   async function save(overrideStatus?: typeof status) {
@@ -152,7 +153,7 @@ export function BlogEditor({ postId }: { postId?: string }) {
       published_at: null,
       scheduled_at: (overrideStatus ?? status) === "scheduled" && scheduledAt ? new Date(scheduledAt).toISOString() : null,
       comments_enabled: false,
-    } as any;
+    };
     try {
       if (postId) {
         await update({ data: { ...payload, id: postId } });
@@ -163,7 +164,7 @@ export function BlogEditor({ postId }: { postId?: string }) {
         navigate({ to: "/ncc/blog/$id", params: { id } });
       }
       qc.invalidateQueries({ queryKey: ["ncc","blog","posts"] });
-    } catch (e: any) { toast.error(e?.message ?? "Erreur"); }
+    } catch (e) { toast.error(errorMessage(e)); }
     finally { setSaving(false); }
   }
 
@@ -184,7 +185,7 @@ export function BlogEditor({ postId }: { postId?: string }) {
           <CardContent className="space-y-3">
             <div className="space-y-1">
               <Label>Statut</Label>
-              <Select value={status} onValueChange={(v) => setStatus(v as any)}>
+              <Select value={status} onValueChange={(v) => setStatus(v as PostStatus)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="draft">Brouillon</SelectItem>
@@ -233,7 +234,7 @@ export function BlogEditor({ postId }: { postId?: string }) {
                 <SelectTrigger><SelectValue placeholder="Aucune" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">Aucune</SelectItem>
-                  {(cats ?? []).map((c: any) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                  {(cats ?? []).map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -241,7 +242,7 @@ export function BlogEditor({ postId }: { postId?: string }) {
               <Label>Tags</Label>
               <div className="flex flex-wrap gap-1 mb-2">
                 {tagIds.map((id) => {
-                  const t = (tags ?? []).find((x: any) => x.id === id);
+                  const t = (tags ?? []).find((x) => x.id === id);
                   return t ? (
                     <Badge key={id} variant="secondary" className="cursor-pointer" onClick={() => setTagIds(tagIds.filter((x) => x !== id))}>
                       {t.name} ×
@@ -256,7 +257,7 @@ export function BlogEditor({ postId }: { postId?: string }) {
               <Select value="" onValueChange={(id) => { if (id && !tagIds.includes(id)) setTagIds([...tagIds, id]); }}>
                 <SelectTrigger className="mt-2"><SelectValue placeholder="Ajouter un tag existant" /></SelectTrigger>
                 <SelectContent>
-                  {(tags ?? []).filter((t: any) => !tagIds.includes(t.id)).map((t: any) => (
+                  {(tags ?? []).filter((t) => !tagIds.includes(t.id)).map((t) => (
                     <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
                   ))}
                 </SelectContent>
