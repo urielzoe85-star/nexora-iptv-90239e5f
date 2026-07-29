@@ -29,7 +29,7 @@ export const Route = createFileRoute("/blog/$slug")({
     const title = p.seo_title || p.title;
     const desc = p.seo_description || p.excerpt || "";
     const img = p.og_image_url || p.cover_image_url;
-    const tagNames: string[] = Array.isArray(p.tags) ? (p.tags as BlogTagName[]).map((t) => t?.name).filter(Boolean) : [];
+    const tagNames: string[] = Array.isArray(p.tags) ? (p.tags as BlogTagName[]).map((t) => t?.name).filter((n): n is string => Boolean(n)) : [];
     const keywords = tagNames.length ? tagNames.join(", ") : undefined;
     const wordCount = typeof p.content_html === "string"
       ? p.content_html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().split(" ").filter(Boolean).length
