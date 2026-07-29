@@ -22,13 +22,14 @@ export const Route = createFileRoute("/blog/$slug")({
     if (!loaderData) {
       return { meta: [{ title: "Article introuvable" }, { name: "robots", content: "noindex" }] };
     }
+    type BlogTagName = { name?: string };
     const p = loaderData.post;
     const url = `https://nexora-iptv.com/blog/${params.slug}`;
     const canonical = p.canonical_url || url;
     const title = p.seo_title || p.title;
     const desc = p.seo_description || p.excerpt || "";
     const img = p.og_image_url || p.cover_image_url;
-    const tagNames: string[] = Array.isArray(p.tags) ? p.tags.map((t) => t?.name).filter(Boolean) : [];
+    const tagNames: string[] = Array.isArray(p.tags) ? (p.tags as BlogTagName[]).map((t) => t?.name).filter(Boolean) : [];
     const keywords = tagNames.length ? tagNames.join(", ") : undefined;
     const wordCount = typeof p.content_html === "string"
       ? p.content_html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().split(" ").filter(Boolean).length
@@ -114,6 +115,8 @@ export const Route = createFileRoute("/blog/$slug")({
   component: PostPage,
 });
 
+type BlogTag = { id: string; name: string };
+
 function PostPage() {
   const { post } = Route.useLoaderData();
   const related = useServerFn(publicRelatedPosts);
@@ -158,7 +161,7 @@ function PostPage() {
 
         {post.tags?.length > 0 && (
           <div className="mt-10 flex flex-wrap gap-2">
-            {post.tags.map((t) => (
+            {(post.tags as BlogTag[]).map((t) => (
               <span key={t.id} className="text-xs px-3 py-1 rounded-full bg-muted">#{t.name}</span>
             ))}
           </div>
