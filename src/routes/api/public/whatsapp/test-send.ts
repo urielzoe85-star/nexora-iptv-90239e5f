@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { errorMessage } from "@/lib/error-message";
 
 // Route de test one-shot — envoie un message WhatsApp brut via Meta Cloud API.
 // Protégée par le même secret que le webhook (WHATSAPP_VERIFY_TOKEN) passé en
@@ -29,8 +30,8 @@ export const Route = createFileRoute("/api/public/whatsapp/test-send")({
             },
             { status: res.ok ? 200 : 502 },
           );
-        } catch (e: any) {
-          return Response.json({ ok: false, error: e?.message ?? "unknown" }, { status: 500 });
+        } catch (e: unknown) {
+          return Response.json({ ok: false, error: errorMessage(e) ?? "unknown" }, { status: 500 });
         }
       },
     },

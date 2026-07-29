@@ -6,6 +6,7 @@ import { initSebPayCheckout, initCheckout, submitBinanceProof } from "@/lib/paym
 import { Bitcoin, ExternalLink, Loader2, Clock, CheckCircle2, CreditCard, Wallet } from "lucide-react";
 import { useEffect, useState } from "react";
 import { PaymentMethodsMarquee } from "@/components/PaymentMethodsMarquee";
+import { errorMessage } from "@/lib/error-message";
 
 export const Route = createFileRoute("/espace-client/pay/$ref")({
   component: PayPage,
@@ -61,8 +62,8 @@ function PayPage() {
       });
       setSebStarted(true);
       if (res.providerLink) window.location.href = res.providerLink;
-    } catch (e: any) {
-      setSebErr(e?.message ?? "Impossible de lancer le paiement.");
+    } catch (e: unknown) {
+      setSebErr(errorMessage(e) ?? "Impossible de lancer le paiement.");
     }
   }
 
@@ -79,8 +80,8 @@ function PayPage() {
       });
       setCardStarted(true);
       if (res.providerLink) window.location.href = res.providerLink;
-    } catch (e: any) {
-      setCardErr(e?.message ?? "Impossible de lancer le paiement.");
+    } catch (e: unknown) {
+      setCardErr(errorMessage(e) ?? "Impossible de lancer le paiement.");
     }
   }
 
@@ -97,8 +98,8 @@ function PayPage() {
         },
       });
       setSubmitted(true);
-    } catch (e: any) {
-      setErr(e?.message ?? "Impossible d'envoyer la preuve.");
+    } catch (e: unknown) {
+      setErr(errorMessage(e) ?? "Impossible d'envoyer la preuve.");
     } finally { setSubmitting(false); }
   }
 

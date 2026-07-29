@@ -1,4 +1,5 @@
 // CamerPay adapter — server-only helpers.
+import { errorMessage } from "@/lib/error-message";
 //
 // Loaded exclusively via `await import("@/lib/payments-camerpay.server")`
 // from inside `createServerFn` handler bodies, so the TanStack Vite plugin
@@ -73,13 +74,13 @@ async function camerpayFetch(
         body: init.body !== undefined ? JSON.stringify(init.body) : undefined,
         signal: ctrl.signal,
       });
-    } catch (e: any) {
+    } catch (e: unknown) {
       clearTimeout(timer);
-      const aborted = e?.name === "AbortError";
+      const aborted = (e instanceof Error && e.name === "AbortError");
       lastErr = e;
-      console.error("[camerpay] fetch failed", { url, method: init.method, aborted, attempt, message: String(e?.message ?? e) });
+      console.error("[camerpay] fetch failed", { url, method: init.method, aborted, attempt, message: String(errorMessage(e) ?? e) });
       if (init.retryOn5xx && attempt < backoffsMs.length - 1) continue;
-      throw new Error(aborted ? "CamerPay timeout" : `CamerPay network error: ${String(e?.message ?? e)}`);
+      throw new Error(aborted ? "CamerPay timeout" : `CamerPay network error: ${String(errorMessage(e) ?? e)}`);
     }
     clearTimeout(timer);
     const raw = await res.text();

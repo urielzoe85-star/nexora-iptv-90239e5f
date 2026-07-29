@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { errorMessage } from "@/lib/error-message";
 
 // Stripe channel webhook (relayed by CamerPay).
 //
@@ -19,8 +20,8 @@ export const Route = createFileRoute("/api/public/stripe/webhook")({
         );
         let secret = "";
         try { secret = camerpayWebhookSecret(); }
-        catch (e: any) {
-          console.error("[stripe-webhook] missing secret", e?.message ?? e);
+        catch (e: unknown) {
+          console.error("[stripe-webhook] missing secret", errorMessage(e) ?? e);
           return new Response("Server misconfigured", { status: 500 });
         }
         return processCamerpayFormattedWebhook({

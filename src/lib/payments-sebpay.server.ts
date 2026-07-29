@@ -1,4 +1,5 @@
 // Sprint 3 · GA-BLOCK-01 — SebPay helpers extracted from
+import { errorMessage } from "@/lib/error-message";
 // `payments.functions.ts` so no secret NAME literal (SEBPAY_SECRET_KEY /
 // SEBPAY_PUBLIC_KEY) survives in the client bundle.
 //
@@ -119,11 +120,11 @@ export async function sebpayFetch(
       body: init.body !== undefined ? JSON.stringify(init.body) : undefined,
       signal: ctrl.signal,
     });
-  } catch (e: any) {
+  } catch (e: unknown) {
     clearTimeout(timer);
-    const aborted = e?.name === "AbortError";
-    console.error("[sebpay] fetch failed", { url, method: init.method, aborted, message: String(e?.message ?? e) });
-    throw new Error(aborted ? "SebPay timeout" : `SebPay network error: ${String(e?.message ?? e)}`);
+    const aborted = (e instanceof Error && e.name === "AbortError");
+    console.error("[sebpay] fetch failed", { url, method: init.method, aborted, message: String(errorMessage(e) ?? e) });
+    throw new Error(aborted ? "SebPay timeout" : `SebPay network error: ${String(errorMessage(e) ?? e)}`);
   }
   clearTimeout(timer);
   const raw = await res.text();

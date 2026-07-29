@@ -1,3 +1,4 @@
+import { errorMessage } from "@/lib/error-message";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -112,8 +113,8 @@ function NccAccessCard() {
       setPassword("");
       await new Promise((resolve) => window.setTimeout(resolve, 150));
       navigate({ to: "/ncc", replace: true });
-    } catch (err: any) {
-      setError(err?.message ?? "Erreur de vérification.");
+    } catch (err: unknown) {
+      setError(errorMessage(err) ?? "Erreur de vérification.");
     } finally {
       setSubmitting(false);
     }

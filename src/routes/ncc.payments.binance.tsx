@@ -1,3 +1,4 @@
+import { errorMessage } from "@/lib/error-message";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -46,8 +47,8 @@ function BinancePaymentsPage() {
     try {
       await approve({ data: { ref } });
       await qc.invalidateQueries({ queryKey: ["ncc", "payments", "binance", "awaiting"] });
-    } catch (e: any) {
-      alert(`Approbation impossible : ${e?.message ?? e}`);
+    } catch (e: unknown) {
+      alert(`Approbation impossible : ${errorMessage(e) ?? e}`);
     } finally {
       setBusyRef(null);
     }
@@ -60,8 +61,8 @@ function BinancePaymentsPage() {
       await reject({ data: { ref: rejectRef, reason: rejectReason.trim() } });
       setRejectRef(null); setRejectReason("");
       await qc.invalidateQueries({ queryKey: ["ncc", "payments", "binance", "awaiting"] });
-    } catch (e: any) {
-      alert(`Refus impossible : ${e?.message ?? e}`);
+    } catch (e: unknown) {
+      alert(`Refus impossible : ${errorMessage(e) ?? e}`);
     } finally {
       setBusyRef(null);
     }
@@ -73,8 +74,8 @@ function BinancePaymentsPage() {
     try {
       const { url } = await getShot({ data: { ref } });
       setScreenshotUrl(url);
-    } catch (e: any) {
-      alert(`Impossible d'ouvrir la capture : ${e?.message ?? e}`);
+    } catch (e: unknown) {
+      alert(`Impossible d'ouvrir la capture : ${errorMessage(e) ?? e}`);
       setScreenshotFor(null);
     }
   }

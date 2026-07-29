@@ -7,6 +7,7 @@ import { integrationError, isRetryable, type IntegrationError } from "../core/er
 import { logger } from "../core/logger";
 import { metrics } from "../core/monitoring";
 import { err, ok, type Result } from "../core/result";
+import { errorMessage } from "@/lib/error-message";
 
 export interface GatewayRequest {
   connectorId: string;
@@ -67,10 +68,10 @@ async function attempt(req: GatewayRequest): Promise<{ res?: Response; raw?: str
     });
     const raw = await res.text();
     return { res, raw, durationMs: Date.now() - start };
-  } catch (e: any) {
-    const isAbort = e?.name === "AbortError";
+  } catch (e: unknown) {
+    const isAbort = (e instanceof Error && e.name === "AbortError");
     return {
-      error: integrationError(isAbort ? "timeout" : "network", isAbort ? "Request timed out" : String(e?.message ?? e), {
+      error: integrationError(isAbort ? "timeout" : "network", isAbort ? "Request timed out" : String(errorMessage(e) ?? e), {
         connectorId: req.connectorId,
         retryable: true,
       }),

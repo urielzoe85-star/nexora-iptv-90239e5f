@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { FolderTree, Trash2, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { errorMessage } from "@/lib/error-message";
 
 export const Route = createFileRoute("/ncc/blog/categories")({ component: CatPage });
 
@@ -26,12 +27,12 @@ function CatPage() {
   async function save() {
     if (!name.trim()) return;
     try { await upsert({ data: { name: name.trim(), description: desc || null, sort_order: 0 } }); setName(""); setDesc(""); toast.success("Catégorie créée"); qc.invalidateQueries({ queryKey: ["ncc","blog","cats"] }); }
-    catch (e: any) { toast.error(e?.message ?? "Erreur"); }
+    catch (e: unknown) { toast.error(errorMessage(e) ?? "Erreur"); }
   }
   async function remove(id: string) {
     if (!confirm("Supprimer cette catégorie ?")) return;
     try { await del({ data: { id } }); toast.success("Supprimée"); qc.invalidateQueries({ queryKey: ["ncc","blog","cats"] }); }
-    catch (e: any) { toast.error(e?.message ?? "Erreur"); }
+    catch (e: unknown) { toast.error(errorMessage(e) ?? "Erreur"); }
   }
 
   return (

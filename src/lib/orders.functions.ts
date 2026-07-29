@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { convertUsdToLocal } from "@/lib/countries";
 import { LEGAL_VERSION } from "@/lib/legal-version";
+import { errorMessage } from "@/lib/error-message";
 
 // Legacy export kept for any consumer importing it. SebPay charges in the
 // country's local currency now; see `convertUsdToLocal` in `@/lib/countries`.
@@ -147,8 +148,8 @@ export const createOrder = createServerFn({ method: "POST" })
         amount: row.amount,
         currency: row.currency,
       });
-    } catch (e: any) {
-      console.error("[orders] order.created emit failed", String(e?.message ?? e));
+    } catch (e: unknown) {
+      console.error("[orders] order.created emit failed", String(errorMessage(e) ?? e));
     }
     return { ...row, cancel_token: await makeCancelToken(row.order_ref) };
   });

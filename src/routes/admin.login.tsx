@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Loader2, ShieldCheck } from "lucide-react";
+import { errorMessage } from "@/lib/error-message";
 
 export const Route = createFileRoute("/admin/login")({
   ssr: false,
@@ -70,8 +71,8 @@ function AdminLoginPage() {
         throw new Error("Accès refusé.");
       }
       navigate({ to: "/admin" });
-    } catch (err: any) {
-      setError(err?.message ?? "Échec de la connexion");
+    } catch (err: unknown) {
+      setError(errorMessage(err) ?? "Échec de la connexion");
     } finally {
       setSubmitting(false);
     }

@@ -10,6 +10,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { adminUploadBlogImage, adminUploadBlogVideo } from "@/lib/blog.functions";
 import { toast } from "sonner";
 import { useEffect } from "react";
+import { errorMessage } from "@/lib/error-message";
 
 export function TipTapEditor({
   value, onChange, placeholder = "Écrivez votre article…",
@@ -67,7 +68,7 @@ export function TipTapEditor({
         const { url } = await upload({ data: { filename: file.name, content_type: file.type || "image/jpeg", data_base64: b64 } });
         editor?.chain().focus().setImage({ src: url, alt: file.name }).run();
         toast.success("Image insérée", { id: tId });
-      } catch (e: any) { toast.error(e?.message ?? "Erreur d'upload", { id: tId }); }
+      } catch (e: unknown) { toast.error(errorMessage(e) ?? "Erreur d'upload", { id: tId }); }
     };
     input.click();
   }
@@ -87,7 +88,7 @@ export function TipTapEditor({
         const html = `<p><video controls preload="metadata" style="width:100%;max-width:100%;border-radius:8px" src="${url}"></video></p>`;
         editor?.chain().focus().insertContent(html).run();
         toast.success("Vidéo insérée", { id: tId });
-      } catch (e: any) { toast.error(e?.message ?? "Erreur d'upload", { id: tId }); }
+      } catch (e: unknown) { toast.error(errorMessage(e) ?? "Erreur d'upload", { id: tId }); }
     };
     input.click();
   }

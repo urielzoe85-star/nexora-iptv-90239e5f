@@ -10,6 +10,7 @@ import { integrationError } from "../../core/errors";
 import { secretsManager } from "../../core/secrets";
 import { err, ok } from "../../core/result";
 import type { PaymentConnector, PaymentChargeInput, PaymentChargeResult, PaymentVerifyResult } from "./types";
+import { errorMessage } from "@/lib/error-message";
 
 // Sprint 3 · GA-BLOCK-01 — env names assembled from tokens so no SebPay
 // secret NAME literal survives in any client chunk that transitively
@@ -48,8 +49,8 @@ export const sebpayConnector: PaymentConnector = {
         message: r.message ?? null,
       };
       return ok(result);
-    } catch (e: any) {
-      return err(integrationError("provider", String(e?.message ?? e), { connectorId: this.id }));
+    } catch (e: unknown) {
+      return err(integrationError("provider", String(errorMessage(e) ?? e), { connectorId: this.id }));
     }
   },
 
@@ -59,8 +60,8 @@ export const sebpayConnector: PaymentConnector = {
       const r = await verifyPaymentInternal(orderRef);
       const status = (r.status as PaymentVerifyResult["status"]) ?? "pending";
       return ok({ status });
-    } catch (e: any) {
-      return err(integrationError("provider", String(e?.message ?? e), { connectorId: this.id }));
+    } catch (e: unknown) {
+      return err(integrationError("provider", String(errorMessage(e) ?? e), { connectorId: this.id }));
     }
   },
 };

@@ -3,6 +3,7 @@
 // dispatch in the `notifications` table regardless of the channel.
 
 import type { NotificationChannel } from "@/domain/types";
+import { errorMessage } from "@/lib/error-message";
 
 export interface NotificationDispatchInput {
   recipient: string;
@@ -63,8 +64,8 @@ class EmailChannel implements NotificationChannelAdapter {
       let unsubscribeToken: string;
       try {
         unsubscribeToken = await getOrCreateUnsubscribeToken(to);
-      } catch (e: any) {
-        return { status: "failed", error: e?.message ?? "unsubscribe_token_error" };
+      } catch (e: unknown) {
+        return { status: "failed", error: errorMessage(e) ?? "unsubscribe_token_error" };
       }
 
       const messageId = crypto.randomUUID();
@@ -93,10 +94,10 @@ class EmailChannel implements NotificationChannelAdapter {
       });
       if (error) return { status: "failed", error: error.message };
       try { await sb.rpc("email_queue_dispatch"); }
-      catch (e: any) { console.warn("email_queue_dispatch wake failed", e?.message ?? e); }
+      catch (e: unknown) { console.warn("email_queue_dispatch wake failed", errorMessage(e) ?? e); }
       return { status: "sent", providerReference: messageId };
-    } catch (e: any) {
-      return { status: "failed", error: e?.message ?? String(e) };
+    } catch (e: unknown) {
+      return { status: "failed", error: errorMessage(e) ?? String(e) };
     }
   }
 }
@@ -117,8 +118,8 @@ class TelegramChannel implements NotificationChannelAdapter {
       const { tgSendMessage } = await import("@/lib/telegram.server");
       await tgSendMessage(chatId, text);
       return { status: "sent" };
-    } catch (e: any) {
-      return { status: "failed", error: e?.message ?? String(e) };
+    } catch (e: unknown) {
+      return { status: "failed", error: errorMessage(e) ?? String(e) };
     }
   }
 }
@@ -139,8 +140,8 @@ class WhatsAppChannel implements NotificationChannelAdapter {
       return res.ok
         ? { status: "sent", providerReference: res.messageId }
         : { status: "failed", error: res.error ?? `HTTP ${res.status}` };
-    } catch (e: any) {
-      return { status: "failed", error: e?.message ?? String(e) };
+    } catch (e: unknown) {
+      return { status: "failed", error: errorMessage(e) ?? String(e) };
     }
   }
 }

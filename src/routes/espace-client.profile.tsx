@@ -6,6 +6,7 @@ import { PORTAL_BASE_URL } from "@/lib/portal-url";
 import { useEffect, useState } from "react";
 import { COUNTRIES } from "@/lib/countries";
 import { Loader2, CheckCircle2, Lock } from "lucide-react";
+import { errorMessage } from "@/lib/error-message";
 
 export const Route = createFileRoute("/espace-client/profile")({
   head: () => ({
@@ -52,8 +53,8 @@ function ProfilePage() {
       await update({ data: { fullName, phone, country } });
       await qc.invalidateQueries({ queryKey: ["portal-dashboard"] });
       setSaved(true);
-    } catch (e: any) {
-      setErr(e?.message ?? "Impossible de sauvegarder.");
+    } catch (e: unknown) {
+      setErr(errorMessage(e) ?? "Impossible de sauvegarder.");
     } finally { setSaving(false); }
   }
 
@@ -74,8 +75,8 @@ function ProfilePage() {
       await changePwd({ data: { currentPassword: currentPwd, newPassword: newPwd } });
       setPwdSaved(true);
       setCurrentPwd(""); setNewPwd(""); setNewPwd2("");
-    } catch (e: any) {
-      setPwdErr(e?.message ?? "Impossible de modifier le mot de passe.");
+    } catch (e: unknown) {
+      setPwdErr(errorMessage(e) ?? "Impossible de modifier le mot de passe.");
     } finally { setPwdSaving(false); }
   }
 

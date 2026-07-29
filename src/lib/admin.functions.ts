@@ -3,6 +3,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { requireAdmin } from "@/lib/require-admin";
 import { z } from "zod";
 import { toE164 } from "@/lib/countries";
+import { errorMessage } from "@/lib/error-message";
 
 // ─── NCC password gate ───────────────────────────────────────────────────
 // Vérifie un second mot de passe (env NCC_ACCESS_PASSWORD) pour autoriser
@@ -353,8 +354,8 @@ export const adminConfirmPayment = createServerFn({ method: "POST" })
       } else {
         emailError = "email-infra-not-configured";
       }
-    } catch (e: any) {
-      emailError = e?.message ?? "send-failed";
+    } catch (e: unknown) {
+      emailError = errorMessage(e) ?? "send-failed";
     }
 
     return {

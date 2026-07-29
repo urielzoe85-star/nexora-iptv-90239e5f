@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
+import { errorMessage } from "@/lib/error-message";
 
 export const Route = createFileRoute("/admin/content")({ component: ContentPage });
 
@@ -66,7 +67,7 @@ function ContentPage() {
       await upsert({ data: { key, value: values[key] ?? {} } });
       toast.success("Enregistré");
       qc.invalidateQueries({ queryKey: ["admin", "settings"] });
-    } catch (e: any) { toast.error(e?.message ?? "Erreur"); }
+    } catch (e: unknown) { toast.error(errorMessage(e) ?? "Erreur"); }
     finally { setSavingKey(null); }
   }
 

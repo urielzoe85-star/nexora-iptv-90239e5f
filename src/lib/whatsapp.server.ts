@@ -1,4 +1,5 @@
 // Serveur — client Meta WhatsApp Cloud API.
+import { errorMessage } from "@/lib/error-message";
 // Import uniquement côté serveur (server functions, routes API, actions).
 // Docs: https://developers.facebook.com/docs/whatsapp/cloud-api
 
@@ -111,7 +112,7 @@ export async function notifyAdminWhatsApp(text: string): Promise<{ sent: boolean
     if (!adminPhone) return { sent: false, reason: "WHATSAPP_ADMIN_PHONE non défini" };
     const res = await sendWhatsAppText(adminPhone, text);
     return res.ok ? { sent: true } : { sent: false, reason: res.error };
-  } catch (e: any) {
-    return { sent: false, reason: e?.message ?? "erreur inconnue" };
+  } catch (e: unknown) {
+    return { sent: false, reason: errorMessage(e) ?? "erreur inconnue" };
   }
 }

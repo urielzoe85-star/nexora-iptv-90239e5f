@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { errorMessage } from "@/lib/error-message";
 
 // PayPal channel webhook (relayed by CamerPay). Same wire format as the
 // native CamerPay webhook, signed with a dedicated secret
@@ -16,8 +17,8 @@ export const Route = createFileRoute("/api/public/paypal/webhook")({
         );
         let secret = "";
         try { secret = camerpayWebhookSecret(); }
-        catch (e: any) {
-          console.error("[paypal-webhook] missing secret", e?.message ?? e);
+        catch (e: unknown) {
+          console.error("[paypal-webhook] missing secret", errorMessage(e) ?? e);
           return new Response("Server misconfigured", { status: 500 });
         }
         return processCamerpayFormattedWebhook({

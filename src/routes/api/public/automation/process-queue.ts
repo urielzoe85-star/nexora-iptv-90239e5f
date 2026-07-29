@@ -3,6 +3,7 @@
 // supabaseAdmin (service-role) chargé dynamiquement.
 
 import { createFileRoute } from "@tanstack/react-router";
+import { errorMessage } from "@/lib/error-message";
 
 export const Route = createFileRoute("/api/public/automation/process-queue")({
   server: {
@@ -28,9 +29,9 @@ export const Route = createFileRoute("/api/public/automation/process-queue")({
           const { drainAutomationQueue } = await import("@/lib/automation-drainer.server");
           const result = await drainAutomationQueue({ batchSize: 10 });
           return Response.json({ ok: true, ...result });
-        } catch (e: any) {
-          console.error("[automation] drain failed", e?.message ?? e);
-          return new Response(`drain failed: ${e?.message ?? e}`, { status: 500 });
+        } catch (e: unknown) {
+          console.error("[automation] drain failed", errorMessage(e) ?? e);
+          return new Response(`drain failed: ${errorMessage(e) ?? e}`, { status: 500 });
         }
       },
     },

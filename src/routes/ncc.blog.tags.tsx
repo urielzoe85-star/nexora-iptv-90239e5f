@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Tags, Trash2, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { errorMessage } from "@/lib/error-message";
 
 export const Route = createFileRoute("/ncc/blog/tags")({ component: TagsPage });
 
@@ -24,12 +25,12 @@ function TagsPage() {
   async function save() {
     if (!name.trim()) return;
     try { await upsert({ data: { name: name.trim() } }); setName(""); toast.success("Tag créé"); qc.invalidateQueries({ queryKey: ["ncc","blog","tags"] }); }
-    catch (e: any) { toast.error(e?.message ?? "Erreur"); }
+    catch (e: unknown) { toast.error(errorMessage(e) ?? "Erreur"); }
   }
   async function remove(id: string) {
     if (!confirm("Supprimer ce tag ?")) return;
     try { await del({ data: { id } }); toast.success("Supprimé"); qc.invalidateQueries({ queryKey: ["ncc","blog","tags"] }); }
-    catch (e: any) { toast.error(e?.message ?? "Erreur"); }
+    catch (e: unknown) { toast.error(errorMessage(e) ?? "Erreur"); }
   }
 
   return (

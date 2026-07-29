@@ -7,6 +7,7 @@ import { logger } from "../core/logger";
 import { metrics } from "../core/monitoring";
 import { err, ok, type Result } from "../core/result";
 import { verifyHmac } from "./signatures";
+import { errorMessage } from "@/lib/error-message";
 
 export interface WebhookHandlerContext {
   connectorId: string;
@@ -88,12 +89,12 @@ class WebhookEngine {
         this.push({ ...baseEntry, status: "processed", attempts: attempt });
         metrics.record({ connectorId, operation: "webhook.deliver", status: "success", durationMs: Date.now() - start, meta: { attempt } });
         return ok(undefined);
-      } catch (e: any) {
+      } catch (e: unknown) {
         if (attempt === maxAttempts) {
           this.push({ ...baseEntry, status: "failed", attempts: attempt, errorKind: "provider" });
           metrics.record({ connectorId, operation: "webhook.deliver", status: "failure", durationMs: Date.now() - start, errorKind: "provider" });
           logger.error("webhook handler failed", { connectorId, attempts: attempt });
-          return err(integrationError("provider", String(e?.message ?? e), { connectorId, retryable: false }));
+          return err(integrationError("provider", String(errorMessage(e) ?? e), { connectorId, retryable: false }));
         }
         await new Promise((r) => setTimeout(r, backoff));
         backoff *= 2;

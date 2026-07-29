@@ -6,6 +6,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireNccUnlock } from "@/lib/require-ncc-unlock";
 import { z } from "zod";
+import { errorMessage } from "@/lib/error-message";
 
 async function adminClient(userId: string) {
   const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
@@ -140,9 +141,9 @@ export const sendTelegramAuto = createServerFn({ method: "POST" })
       errMsg = ok ? null : (body?.description ?? `HTTP ${res.status}`);
       messageId = body?.result?.message_id;
       void tgSendMessage;
-    } catch (e: any) {
+    } catch (e: unknown) {
       ok = false;
-      errMsg = e?.message ?? "telegram_error";
+      errMsg = errorMessage(e) ?? "telegram_error";
     }
     const { data: order } = await sb.from("orders").select("customer_id").eq("id", data.order_id).maybeSingle();
     await sb.from("delivery_logs").insert({
@@ -224,14 +225,14 @@ export const sendEmailAuto = createServerFn({ method: "POST" })
       const el = React.createElement(template.component as any, props);
       html = await render(el);
       text = await render(el, { plainText: true });
-    } catch (e: any) {
+    } catch (e: unknown) {
       await sb.from("delivery_logs").insert({
         order_id: data.order_id, channel: "email", status: "failed",
         template_id: data.template_id ?? "iptv-delivery", content: data.message_override ?? "",
         recipient: data.recipient, admin_id: context.userId,
-        error: `render: ${e?.message ?? e}`,
+        error: `render: ${errorMessage(e) ?? e}`,
       });
-      throw new Error(`Render échoué: ${e?.message ?? e}`);
+      throw new Error(`Render échoué: ${errorMessage(e) ?? e}`);
     }
 
     const subject = data.subject
@@ -259,14 +260,14 @@ export const sendEmailAuto = createServerFn({ method: "POST" })
     let unsubscribeToken: string;
     try {
       unsubscribeToken = await getOrCreateUnsubscribeToken(data.recipient);
-    } catch (e: any) {
+    } catch (e: unknown) {
       await sb.from("delivery_logs").insert({
         order_id: data.order_id, channel: "email", status: "failed",
         template_id: data.template_id ?? "iptv-delivery", content: data.message_override ?? subject,
         recipient: data.recipient, admin_id: context.userId,
-        error: `unsubscribe_token: ${e?.message ?? e}`,
+        error: `unsubscribe_token: ${errorMessage(e) ?? e}`,
       });
-      throw new Error(`Token désabonnement échoué: ${e?.message ?? e}`);
+      throw new Error(`Token désabonnement échoué: ${errorMessage(e) ?? e}`);
     }
 
     const { error: enqueueErr } = await sb.rpc("enqueue_email", {
