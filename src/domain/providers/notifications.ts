@@ -46,12 +46,6 @@ class EmailChannel implements NotificationChannelAdapter {
       const subject = (input.subject && input.subject.trim()) || "Notification Nexora";
       const bodyText = (input.body ?? "").trim();
       if (!bodyText) return { status: "failed", error: "empty_body" };
-      const escape = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-      const html = `<!doctype html><html><body style="font-family:system-ui,sans-serif;line-height:1.5;color:#0f172a">
-<div style="max-width:560px;margin:24px auto;padding:24px;border:1px solid #e2e8f0;border-radius:12px">
-<h2 style="margin:0 0 12px">${escape(subject)}</h2>
-<div style="white-space:pre-wrap">${escape(bodyText)}</div>
-</div></body></html>`;
 
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       const sb = supabaseAdmin as any;
@@ -69,6 +63,19 @@ class EmailChannel implements NotificationChannelAdapter {
       }
 
       const messageId = crypto.randomUUID();
+
+      // Rendu avec le gabarit de marque (en-tête navy/or + signature + désabonnement)
+      const React = (await import("react")).default;
+      const { render } = await import("react-email");
+      const { template: nccTemplate } = await import("@/lib/email-templates/ncc-notification");
+      const element = React.createElement(nccTemplate.component, {
+        subject,
+        body: bodyText,
+        unsubscribe_token: unsubscribeToken,
+      });
+      const html = await render(element);
+      const plainText = await render(element, { plainText: true });
+
       await sb.from("email_send_log").insert({
         message_id: messageId,
         template_name: "ncc-notification",
@@ -84,7 +91,7 @@ class EmailChannel implements NotificationChannelAdapter {
           sender_domain: "send.nexora-iptv.com",
           subject,
           html,
-          text: bodyText,
+          text: plainText,
           purpose: "transactional",
           label: "ncc-notification",
           idempotency_key: `ncc-notif-${messageId}`,
