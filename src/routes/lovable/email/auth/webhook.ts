@@ -32,9 +32,9 @@ const EMAIL_TEMPLATES: Record<string, React.ComponentType<any>> = {
 
 // Configuration
 const SITE_NAME = "nexora-iptv"
-const SENDER_DOMAIN = "notify.account.nexora-iptv.com"
-const ROOT_DOMAIN = "notify.account.nexora-iptv.com"
-const FROM_DOMAIN = "notify.account.nexora-iptv.com"
+const SENDER_DOMAIN = "send.nexora-iptv.com"
+const ROOT_DOMAIN = "nexora-iptv.com"
+const FROM_DOMAIN = "send.nexora-iptv.com"
 
 function redactEmail(email: string | null | undefined): string {
   if (!email) return '***'
