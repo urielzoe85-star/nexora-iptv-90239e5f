@@ -76,7 +76,7 @@ async function camerpayFetch(
       });
     } catch (e: unknown) {
       clearTimeout(timer);
-      const aborted = e?.name === "AbortError";
+      const aborted = (e instanceof Error && e.name === "AbortError");
       lastErr = e;
       console.error("[camerpay] fetch failed", { url, method: init.method, aborted, attempt, message: String(errorMessage(e) ?? e) });
       if (init.retryOn5xx && attempt < backoffsMs.length - 1) continue;

@@ -51,7 +51,7 @@ async function waCall(path: string, body: Record<string, unknown>): Promise<{
   if (!ok) await noteAuthFailure(res.status);
   const errMsg = ok
     ? undefined
-    : data?.errorMessage(error)
+    : data?.error?.message
       ? `[${data.error.code ?? res.status}${data.error.error_subcode ? "/" + data.error.error_subcode : ""}] ${data.error.message}${data.error.error_data?.details ? ` — ${data.error.error_data.details}` : ""}`
       : `HTTP ${res.status}`;
   return {

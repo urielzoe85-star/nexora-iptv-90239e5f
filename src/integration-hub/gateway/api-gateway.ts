@@ -69,7 +69,7 @@ async function attempt(req: GatewayRequest): Promise<{ res?: Response; raw?: str
     const raw = await res.text();
     return { res, raw, durationMs: Date.now() - start };
   } catch (e: unknown) {
-    const isAbort = e?.name === "AbortError";
+    const isAbort = (e instanceof Error && e.name === "AbortError");
     return {
       error: integrationError(isAbort ? "timeout" : "network", isAbort ? "Request timed out" : String(errorMessage(e) ?? e), {
         connectorId: req.connectorId,

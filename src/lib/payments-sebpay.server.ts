@@ -122,7 +122,7 @@ export async function sebpayFetch(
     });
   } catch (e: unknown) {
     clearTimeout(timer);
-    const aborted = e?.name === "AbortError";
+    const aborted = (e instanceof Error && e.name === "AbortError");
     console.error("[sebpay] fetch failed", { url, method: init.method, aborted, message: String(errorMessage(e) ?? e) });
     throw new Error(aborted ? "SebPay timeout" : `SebPay network error: ${String(errorMessage(e) ?? e)}`);
   }
