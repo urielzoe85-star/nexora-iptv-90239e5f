@@ -1,4 +1,5 @@
 // Serveur — utilitaires Telegram partagés (Bot API directe).
+import { errorMessage } from "@/lib/error-message";
 // Importer uniquement côté serveur (server functions, routes API, actions).
 
 function botToken(): string {
@@ -43,9 +44,9 @@ export async function notifyAdminTelegram(text: string): Promise<{ sent: boolean
     }
     await tgSendMessage(chatId, text);
     return { sent: true };
-  } catch (e: any) {
-    console.warn("[telegram] notifyAdmin failed:", e?.message ?? e);
-    return { sent: false, reason: e?.message ?? "erreur inconnue" };
+  } catch (e: unknown) {
+    console.warn("[telegram] notifyAdmin failed:", errorMessage(e) ?? e);
+    return { sent: false, reason: errorMessage(e) ?? "erreur inconnue" };
   }
 }
 

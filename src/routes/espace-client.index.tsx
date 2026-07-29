@@ -10,6 +10,7 @@ import {
 } from "@/lib/portal.functions";
 import { PORTAL_BASE_URL } from "@/lib/portal-url";
 import { Mail, ShieldCheck, Loader2, Lock, UserPlus, KeyRound } from "lucide-react";
+import { errorMessage } from "@/lib/error-message";
 
 export const Route = createFileRoute("/espace-client/")({
   head: () => ({
@@ -67,8 +68,8 @@ function PortalLogin() {
     try {
       await loginPwd({ data: { email: loginEmail.trim(), password: loginPassword } });
       router.navigate({ to: "/espace-client/dashboard" });
-    } catch (e: any) {
-      setErr(e?.message ?? "Connexion impossible.");
+    } catch (e: unknown) {
+      setErr(errorMessage(e) ?? "Connexion impossible.");
     } finally { setLoading(false); }
   }
 
@@ -83,8 +84,8 @@ function PortalLogin() {
     try {
       await register({ data: { email: regEmail.trim(), password: regPwd } });
       router.navigate({ to: "/espace-client/dashboard" });
-    } catch (e: any) {
-      setErr(e?.message ?? "Impossible de créer le compte.");
+    } catch (e: unknown) {
+      setErr(errorMessage(e) ?? "Impossible de créer le compte.");
     } finally { setLoading(false); }
   }
 
@@ -96,8 +97,8 @@ function PortalLogin() {
     try {
       await forgot({ data: { email } });
       setInfo("Si un compte correspond à cet e-mail, un lien de réinitialisation vient d'être envoyé.");
-    } catch (e: any) {
-      setErr(e?.message ?? "Impossible d'envoyer le lien.");
+    } catch (e: unknown) {
+      setErr(errorMessage(e) ?? "Impossible d'envoyer le lien.");
     } finally { setLoading(false); }
   }
 
@@ -113,8 +114,8 @@ function PortalLogin() {
         setEmailMasked(res.emailMasked);
         setStep("code");
       }
-    } catch (e: any) {
-      setErr(e?.message ?? "Impossible d'envoyer le code.");
+    } catch (e: unknown) {
+      setErr(errorMessage(e) ?? "Impossible d'envoyer le code.");
     } finally {
       setLoading(false);
     }
@@ -127,8 +128,8 @@ function PortalLogin() {
     try {
       await verify({ data: { identifier: identifier.trim(), code: code.trim() } });
       router.navigate({ to: "/espace-client/dashboard" });
-    } catch (e: any) {
-      setErr(e?.message ?? "Code invalide.");
+    } catch (e: unknown) {
+      setErr(errorMessage(e) ?? "Code invalide.");
     } finally {
       setLoading(false);
     }

@@ -7,6 +7,7 @@
 // ────────────────────────────────────────────────────────────────────────────
 
 import { buildPlainTextDeliveryMessage, type IptvDelivery, type IptvDeliveryChannel } from "./iptv-delivery.builder";
+import { errorMessage } from "@/lib/error-message";
 
 async function admin() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -116,13 +117,13 @@ async function sendEmailChannel(args: {
       channel: "email", status: "automatic", content: args.text, recipient, subject,
     });
     return { ok: true };
-  } catch (e: any) {
+  } catch (e: unknown) {
     await insertDeliveryLog({
       order_id: args.order.id, customer_id: args.order.customer_id ?? null,
       channel: "email", status: "failed", content: args.text, recipient,
-      error: e?.message ?? String(e),
+      error: errorMessage(e) ?? String(e),
     });
-    return { ok: false, error: e?.message ?? String(e) };
+    return { ok: false, error: errorMessage(e) ?? String(e) };
   }
 }
 
@@ -152,13 +153,13 @@ async function sendTelegramChannel(args: {
       error: ok ? null : (body?.description ?? `HTTP ${res.status}`),
     });
     return ok ? { ok: true } : { ok: false, error: body?.description ?? `HTTP ${res.status}` };
-  } catch (e: any) {
+  } catch (e: unknown) {
     await insertDeliveryLog({
       order_id: args.order.id, customer_id: args.order.customer_id ?? null,
       channel: "telegram", status: "failed", content: args.text,
-      recipient: String(chatId), error: e?.message ?? String(e),
+      recipient: String(chatId), error: errorMessage(e) ?? String(e),
     });
-    return { ok: false, error: e?.message ?? String(e) };
+    return { ok: false, error: errorMessage(e) ?? String(e) };
   }
 }
 
@@ -182,14 +183,14 @@ async function sendWhatsAppChannel(args: {
       error: res.ok ? null : (res.error ?? `HTTP ${res.status}`),
     });
     return res.ok ? { ok: true } : { ok: false, error: res.error ?? `HTTP ${res.status}` };
-  } catch (e: any) {
+  } catch (e: unknown) {
     await insertDeliveryLog({
       order_id: args.order.id, customer_id: args.order.customer_id ?? null,
       channel: "whatsapp", status: "failed",
       content: args.text, recipient: String(phone),
-      error: e?.message ?? String(e),
+      error: errorMessage(e) ?? String(e),
     });
-    return { ok: false, error: e?.message ?? String(e) };
+    return { ok: false, error: errorMessage(e) ?? String(e) };
   }
 }
 

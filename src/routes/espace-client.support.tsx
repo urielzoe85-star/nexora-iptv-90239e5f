@@ -5,6 +5,7 @@ import { createPortalSupportTicket, listPortalTickets } from "@/lib/portal.funct
 import { PORTAL_BASE_URL } from "@/lib/portal-url";
 import { useState } from "react";
 import { Loader2, MessageSquare, CheckCircle2 } from "lucide-react";
+import { errorMessage } from "@/lib/error-message";
 
 export const Route = createFileRoute("/espace-client/support")({
   head: () => ({
@@ -40,8 +41,8 @@ function SupportPage() {
       await create({ data: { subject, message, priority } });
       setSent(true); setSubject(""); setMessage(""); setPriority("normal");
       qc.invalidateQueries({ queryKey: ["portal-tickets"] });
-    } catch (e: any) {
-      setErr(e?.message ?? "Impossible d'envoyer.");
+    } catch (e: unknown) {
+      setErr(errorMessage(e) ?? "Impossible d'envoyer.");
     } finally { setSubmitting(false); }
   }
 

@@ -4,6 +4,7 @@
 
 import type { WorkflowDefinition, WorkflowContext, RunStatus, StepStatus } from "./workflow";
 import { workflowRegistry } from "./registry";
+import { errorMessage } from "@/lib/error-message";
 
 export interface RunOptions {
   payload?: Record<string, unknown>;
@@ -93,9 +94,9 @@ export async function runWorkflow(key: string, opts: RunOptions = {}): Promise<R
           output: serialize(out),
         }).eq("id", stepRow.id);
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       const finishedAt = new Date();
-      const msg = String(e?.message ?? e);
+      const msg = String(errorMessage(e) ?? e);
       if (stepRow?.id) {
         await sb.from("automation_steps").update({
           status: "failed" as StepStatus,
@@ -173,7 +174,7 @@ export async function replayRun(runId: string): Promise<RunResult> {
   const { data, error } = await sb.from("automation_runs")
     .select("workflow_key, payload, trigger_event, actor_id")
     .eq("id", runId).single();
-  if (error || !data) throw new Error(error?.message ?? "Run introuvable");
+  if (error || !data) throw new Error(errorMessage(error) ?? "Run introuvable");
   return runWorkflow(data.workflow_key, {
     payload: data.payload ?? {},
     triggerEvent: data.trigger_event,

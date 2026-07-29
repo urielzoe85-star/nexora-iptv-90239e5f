@@ -14,6 +14,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { getPublicPlans, type PublicPlan } from "@/lib/plans.functions";
 import { COUNTRIES, getCountry, convertUsdToLocal, type Operator } from "@/lib/countries";
 import { PaymentMethodsMarquee } from "@/components/PaymentMethodsMarquee";
+import { errorMessage } from "@/lib/error-message";
 
 type Plan = { id: string; slug: string; name: string; price: number; period: string; save?: string; popular?: boolean };
 
@@ -215,9 +216,9 @@ function CheckoutPage() {
           customerEmail: email.toLowerCase(),
         });
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("[checkout] payment init failed", err);
-      setErrorMsg(err?.message ?? t("co.err.generic"));
+      setErrorMsg(errorMessage(err) ?? t("co.err.generic"));
     } finally {
       setProcessing(false);
     }
@@ -781,9 +782,9 @@ function BinanceManualPanel({
         },
       });
       setPhase("submitted");
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("[checkout] binance proof submit failed", err);
-      setErrorMsg(err?.message ?? "Impossible d'envoyer la preuve. Réessayez.");
+      setErrorMsg(errorMessage(err) ?? "Impossible d'envoyer la preuve. Réessayez.");
     } finally {
       setSubmitting(false);
     }

@@ -1,4 +1,5 @@
-/** Extrait un message lisible depuis une erreur inconnue (remplace les `catch (e: any)`). */
+/** Extrait un message lisible depuis une erreur inconnue (remplace les `catch (e: unknown)`). */
+import { errorMessage } from "@/lib/error-message";
 export function errorMessage(error: unknown, fallback = "Une erreur est survenue"): string {
   if (error instanceof Error && error.message) return error.message;
   if (typeof error === "string" && error) return error;

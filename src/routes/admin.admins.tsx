@@ -19,6 +19,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { Loader2, Plus, Trash2 } from "lucide-react";
+import { errorMessage } from "@/lib/error-message";
 
 export const Route = createFileRoute("/admin/admins")({
   head: () => ({
@@ -51,7 +52,7 @@ function AdminsPage() {
       toast.success("Administrateur ajouté");
       setAdding(false); setEmail(""); setPassword("");
       qc.invalidateQueries({ queryKey: ["admin", "admins"] });
-    } catch (e: any) { toast.error(e?.message ?? "Erreur"); }
+    } catch (e: unknown) { toast.error(errorMessage(e) ?? "Erreur"); }
     finally { setSubmitting(false); }
   }
 
@@ -62,7 +63,7 @@ function AdminsPage() {
       toast.success("Administrateur retiré");
       setDeleting(null);
       qc.invalidateQueries({ queryKey: ["admin", "admins"] });
-    } catch (e: any) { toast.error(e?.message ?? "Erreur"); }
+    } catch (e: unknown) { toast.error(errorMessage(e) ?? "Erreur"); }
   }
 
   return (

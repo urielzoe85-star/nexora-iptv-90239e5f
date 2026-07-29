@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { adminListSettings, adminUpsertSetting } from "@/lib/admin.functions";
 import type { SettingCard, SettingField } from "@/lib/ncc/settings-schema";
+import { errorMessage } from "@/lib/error-message";
 
 type ValueMap = Record<string, Record<string, unknown>>;
 
@@ -75,8 +76,8 @@ export function SettingsSectionForm({ cards }: { cards: SettingCard[] }) {
       await upsert({ data: { key: card.key, value: payload } });
       toast.success("Enregistré");
       await qc.invalidateQueries({ queryKey: ["ncc", "settings"] });
-    } catch (e: any) {
-      toast.error(e?.message ?? "Erreur d'enregistrement");
+    } catch (e: unknown) {
+      toast.error(errorMessage(e) ?? "Erreur d'enregistrement");
     } finally {
       setSavingKey(null);
     }

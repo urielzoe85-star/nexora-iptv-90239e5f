@@ -21,6 +21,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { Loader2, Plus, Pencil, Trash2 } from "lucide-react";
+import { errorMessage } from "@/lib/error-message";
 
 export const Route = createFileRoute("/admin/plans")({ component: PlansPage });
 
@@ -65,7 +66,7 @@ function PlansPage() {
       toast.success("Plan enregistré");
       setEditing(null);
       qc.invalidateQueries({ queryKey: ["admin", "plans"] });
-    } catch (e: any) { toast.error(e?.message ?? "Erreur"); }
+    } catch (e: unknown) { toast.error(errorMessage(e) ?? "Erreur"); }
   }
 
   async function remove() {
@@ -75,7 +76,7 @@ function PlansPage() {
       toast.success("Plan supprimé");
       setDeleting(null);
       qc.invalidateQueries({ queryKey: ["admin", "plans"] });
-    } catch (e: any) { toast.error(e?.message ?? "Erreur"); }
+    } catch (e: unknown) { toast.error(errorMessage(e) ?? "Erreur"); }
   }
 
   return (

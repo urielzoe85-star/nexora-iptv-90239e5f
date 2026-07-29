@@ -11,6 +11,7 @@ import {
   buildDeliveryContext, renderTemplate, type DeliveryChannel,
 } from "@/domain/delivery/message-engine";
 import { BULK_TEMPLATES, getBulkTemplate, type BulkScenario } from "@/domain/delivery/builtin-templates";
+import { errorMessage } from "@/lib/error-message";
 
 async function admin(userId: string) {
   const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
@@ -144,7 +145,7 @@ async function sendEmail(sb: any, args: { subject: string; body: string; recipie
   const { getOrCreateUnsubscribeToken } = await import("@/lib/email-unsubscribe.server");
   let unsubscribeToken: string;
   try { unsubscribeToken = await getOrCreateUnsubscribeToken(args.recipient); }
-  catch (e: any) { return { ok: false, error: `unsubscribe_token: ${e?.message ?? e}` }; }
+  catch (e: unknown) { return { ok: false, error: `unsubscribe_token: ${errorMessage(e) ?? e}` }; }
   const { error } = await sb.rpc("enqueue_email", {
     queue_name: "transactional_emails",
     payload: {

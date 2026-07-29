@@ -6,6 +6,7 @@ import { PORTAL_BASE_URL } from "@/lib/portal-url";
 import { COUNTRIES, type Operator } from "@/lib/countries";
 import { useState } from "react";
 import { RefreshCcw, Bitcoin, Smartphone, Loader2, CheckCircle2 } from "lucide-react";
+import { errorMessage } from "@/lib/error-message";
 
 export const Route = createFileRoute("/espace-client/renew")({
   head: () => ({
@@ -65,8 +66,8 @@ function RenewPage() {
         },
       });
       router.navigate({ to: "/espace-client/pay/$ref", params: { ref: res.orderRef } });
-    } catch (e: any) {
-      setErr(e?.message ?? "Impossible de créer la commande.");
+    } catch (e: unknown) {
+      setErr(errorMessage(e) ?? "Impossible de créer la commande.");
     } finally {
       setSubmitting(false);
     }

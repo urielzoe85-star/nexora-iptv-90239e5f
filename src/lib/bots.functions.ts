@@ -4,6 +4,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
+import { errorMessage } from "@/lib/error-message";
 
 export const getBotsStatus = createServerFn({ method: "GET" })
   .middleware([requireAdmin])
@@ -20,8 +21,8 @@ export const getBotsStatus = createServerFn({ method: "GET" })
         const [b, w] = await Promise.all([getBotInfo(), getWebhookInfo()]);
         bot = b?.result ?? null;
         webhook = w?.result ?? null;
-      } catch (e: any) {
-        error = e?.message ?? String(e);
+      } catch (e: unknown) {
+        error = errorMessage(e) ?? String(e);
       }
     }
 
@@ -64,7 +65,7 @@ export const getWhatsAppStatus = createServerFn({ method: "GET" })
         );
         const body = await res.json().catch(() => ({} as any));
         if (!res.ok || body?.error) {
-          error = body?.error?.message
+          error = body?.errorMessage(error)
             ? `[${body.error.code ?? res.status}] ${body.error.message}`
             : `HTTP ${res.status}`;
           if (res.status === 401 || res.status === 403) {
@@ -76,8 +77,8 @@ export const getWhatsAppStatus = createServerFn({ method: "GET" })
         } else {
           phone = body;
         }
-      } catch (e: any) {
-        error = e?.message ?? String(e);
+      } catch (e: unknown) {
+        error = errorMessage(e) ?? String(e);
       }
     }
 

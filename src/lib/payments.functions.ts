@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
+import { errorMessage } from "@/lib/error-message";
 
 // Sprint 3 · GA-BLOCK-01 — All top-level SebPay helpers have been moved to
 // `src/lib/payments-sebpay.server.ts` so no SebPay secret NAME literal
@@ -419,8 +420,8 @@ export async function emitBusinessEvent(
       const { kickDrainInBackground } = await import("@/lib/automation-drainer.server");
       kickDrainInBackground({ batchSize: 5 });
     }
-  } catch (e: any) {
-    console.error("[automation] emit failed", { event, message: String(e?.message ?? e) });
+  } catch (e: unknown) {
+    console.error("[automation] emit failed", { event, message: String(errorMessage(e) ?? e) });
   }
 }
 

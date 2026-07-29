@@ -5,6 +5,7 @@ import { z } from "zod";
 import { resetPortalPassword } from "@/lib/portal.functions";
 import { PORTAL_BASE_URL } from "@/lib/portal-url";
 import { Lock, Loader2, ShieldCheck } from "lucide-react";
+import { errorMessage } from "@/lib/error-message";
 
 const search = z.object({ token: z.string().optional() });
 
@@ -40,8 +41,8 @@ function ResetPasswordPage() {
     try {
       await reset({ data: { token, password: pwd } });
       router.navigate({ to: "/espace-client/dashboard" });
-    } catch (e: any) {
-      setErr(e?.message ?? "Impossible de réinitialiser.");
+    } catch (e: unknown) {
+      setErr(errorMessage(e) ?? "Impossible de réinitialiser.");
     } finally { setLoading(false); }
   }
 

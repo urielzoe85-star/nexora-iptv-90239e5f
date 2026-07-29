@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { fmtDate, fmtMoney, StatusBadge } from "@/components/ncc/ncc-ui";
 import {
+import { errorMessage } from "@/lib/error-message";
   listBinanceAwaiting,
   approveBinancePayment,
   rejectBinancePayment,
@@ -46,8 +47,8 @@ function BinancePaymentsPage() {
     try {
       await approve({ data: { ref } });
       await qc.invalidateQueries({ queryKey: ["ncc", "payments", "binance", "awaiting"] });
-    } catch (e: any) {
-      alert(`Approbation impossible : ${e?.message ?? e}`);
+    } catch (e: unknown) {
+      alert(`Approbation impossible : ${errorMessage(e) ?? e}`);
     } finally {
       setBusyRef(null);
     }
@@ -60,8 +61,8 @@ function BinancePaymentsPage() {
       await reject({ data: { ref: rejectRef, reason: rejectReason.trim() } });
       setRejectRef(null); setRejectReason("");
       await qc.invalidateQueries({ queryKey: ["ncc", "payments", "binance", "awaiting"] });
-    } catch (e: any) {
-      alert(`Refus impossible : ${e?.message ?? e}`);
+    } catch (e: unknown) {
+      alert(`Refus impossible : ${errorMessage(e) ?? e}`);
     } finally {
       setBusyRef(null);
     }
@@ -73,8 +74,8 @@ function BinancePaymentsPage() {
     try {
       const { url } = await getShot({ data: { ref } });
       setScreenshotUrl(url);
-    } catch (e: any) {
-      alert(`Impossible d'ouvrir la capture : ${e?.message ?? e}`);
+    } catch (e: unknown) {
+      alert(`Impossible d'ouvrir la capture : ${errorMessage(e) ?? e}`);
       setScreenshotFor(null);
     }
   }

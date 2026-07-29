@@ -21,6 +21,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Loader2, Search, CheckCircle2, MessageCircle, Mail } from "lucide-react";
 import { AutomationHealthBanner } from "@/components/admin/AutomationHealthBanner";
+import { errorMessage } from "@/lib/error-message";
 
 export const Route = createFileRoute("/admin/orders")({ component: OrdersPage });
 
@@ -77,8 +78,8 @@ function OrdersPage() {
       setEditing(null);
       qc.invalidateQueries({ queryKey: ["admin", "orders"] });
       qc.invalidateQueries({ queryKey: ["admin", "stats"] });
-    } catch (e: any) {
-      toast.error(e?.message ?? "Erreur");
+    } catch (e: unknown) {
+      toast.error(errorMessage(e) ?? "Erreur");
     }
   }
 
@@ -108,9 +109,9 @@ function OrdersPage() {
       setEditing(null);
       qc.invalidateQueries({ queryKey: ["admin", "orders"] });
       qc.invalidateQueries({ queryKey: ["admin", "stats"] });
-    } catch (e: any) {
+    } catch (e: unknown) {
       whatsappWindow?.close();
-      toast.error(e?.message ?? "Erreur lors de la confirmation");
+      toast.error(errorMessage(e) ?? "Erreur lors de la confirmation");
     } finally {
       setConfirming(false);
     }

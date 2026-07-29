@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { allow, clientKey, tooManyRequests } from "@/lib/rate-limit.server";
+import { errorMessage } from "@/lib/error-message";
 
 // Persist a webhook receipt to `integration_debug_logs` so signature failures,
 // replays, and processing errors survive Worker log rotation. Best-effort —
@@ -84,8 +85,8 @@ export const Route = createFileRoute("/api/public/camerpay/webhook")({
         try {
           const { camerpayWebhookSecret } = await import("@/lib/payments-camerpay.server");
           secret = camerpayWebhookSecret();
-        } catch (e: any) {
-          console.error("[camerpay-webhook] missing secret", e?.message ?? e);
+        } catch (e: unknown) {
+          console.error("[camerpay-webhook] missing secret", errorMessage(e) ?? e);
           await logWebhook({ ok: false, status: 500, error: "missing CAMERPAY_WEBHOOK_SECRET", rawPreview: raw.slice(0, 200) });
           return new Response("Server misconfigured", { status: 500 });
         }

@@ -1,4 +1,5 @@
 // Serveur-uniquement — drainage de la file `automation_queue`.
+import { errorMessage } from "@/lib/error-message";
 //
 // Ce module extrait la logique historiquement dans
 // `src/routes/api/public/automation/process-queue.ts` pour qu'elle soit
@@ -88,7 +89,7 @@ export async function drainAutomationQueue(opts: DrainOptions = {}): Promise<Dra
           .eq("id", job.id);
         processed.push({ id: job.id, status: failed ? "failed" : "retry", error: r.error });
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       const failed = job.attempts >= job.max_attempts;
       const backoffMs = Math.min(15 * 60_000, 30_000 * Math.pow(2, Math.max(0, job.attempts - 1)));
       const nextAt = new Date(Date.now() + backoffMs).toISOString();
@@ -96,13 +97,13 @@ export async function drainAutomationQueue(opts: DrainOptions = {}): Promise<Dra
         .from("automation_queue")
         .update({
           status: failed ? "failed" : "queued",
-          last_error: String(e?.message ?? e),
+          last_error: String(errorMessage(e) ?? e),
           scheduled_at: failed ? undefined : nextAt,
           locked_at: null,
           updated_at: new Date().toISOString(),
         })
         .eq("id", job.id);
-      processed.push({ id: job.id, status: failed ? "failed" : "retry", error: String(e?.message ?? e) });
+      processed.push({ id: job.id, status: failed ? "failed" : "retry", error: String(errorMessage(e) ?? e) });
     }
   }
 

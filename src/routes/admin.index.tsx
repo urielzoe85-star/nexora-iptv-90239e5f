@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { useState } from "react";
 import {
+import { errorMessage } from "@/lib/error-message";
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 } from "recharts";
 
@@ -112,8 +113,8 @@ function NccAccessCard() {
       setPassword("");
       await new Promise((resolve) => window.setTimeout(resolve, 150));
       navigate({ to: "/ncc", replace: true });
-    } catch (err: any) {
-      setError(err?.message ?? "Erreur de vérification.");
+    } catch (err: unknown) {
+      setError(errorMessage(err) ?? "Erreur de vérification.");
     } finally {
       setSubmitting(false);
     }
