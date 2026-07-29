@@ -1,99 +1,55 @@
-# Plan d'audit global Nexora IPTV
+# En-tête et signature professionnels pour les emails clients
 
 ## Objectif
-Vérifier que les modifications récentes (désactivation temporaire de la PWA, correctif Capacitor, garde native) n'ont pas dégradé les fonctionnalités métier critiques : site web, checkout, paiements, emails, WhatsApp, Telegram, blog, SEO, espace client et sécurité.
 
-## Périmètre
-- **Build & runtime** : typecheck, lint, build production, bundle.
-- **PWA / Capacitor** : état de la couche PWA, comportement natif, absence de fuite vers Chrome.
-- **Site web** : homepage, routes marketing, catalogue, galerie, blog, pages légales, SEO.
-- **Espace client** : authentification, portail, commandes, téléchargements.
-- **Communications** : email (Lovable Emails), WhatsApp (wa.me), Telegram, AI chat.
-- **Paiements** : checkout, SebPay, CamerPay, Binance Pay, cartes/PayPal.
-- **Admin NCC** : dashboard, IPTV Manager, bulk messaging, blog CMS, AI Center.
-- **Sécurité** : headers, CSP, RLS, politiques Realtime, secrets.
+Donner une identité visuelle unique à tous les emails commerciaux/clients (livraison IPTV, rappel de renouvellement, paiement confirmé, paiement échoué, futurs modèles) : bandeau d'en-tête sombre + or avec le logo Nexora, et un pied de page signé avec les coordonnées, les liens WhatsApp / Telegram / site, et le lien de désabonnement.
 
-## Méthodologie
-1. **Tests statiques & build** : `bun run build`, `tsgo`, `eslint`.
-2. **Inspection de code** : vérifier les fichiers modifiés et leurs dépendances.
-3. **Tests en preview** : Playwright sur les parcours critiques (homepage → checkout → confirmation, blog, espace client).
-4. **Vérifications backend** : état des tables, queues email, RLS, policies Realtime.
-5. **Tests de communication** : envoi de test email, Telegram, WhatsApp via NCC.
-6. **Rapport** : liste des problèmes trouvés, sévérité, actions correctives proposées.
+Les emails d'authentification (inscription, lien magique, réinitialisation, invitation, changement d'email, réauthentification) ne sont **pas** modifiés.
 
-## Phases détaillées
+## Ce qui sera fait
 
-### Phase 1 — Build & architecture (≈ 15 min)
-- Vérifier `vite.config.ts` : plugin `VitePWA` correctement commenté, `mcpPlugin` présent.
-- Vérifier `src/pwa/config.ts`, `src/pwa/register.ts`, `src/components/pwa/PwaManager.tsx` : `PWA_ENABLED = false` proprement géré, nettoyage des SW/caches, pas d'appel `installEvt.prompt()` en mode natif.
-- Vérifier `capacitor.config.ts` et `capacitor.config.json` : `server.url` sur `nexora-iptv.com`, `allowNavigation` incluant `*.nexora-iptv.com`.
-- Vérifier `src/components/native/NativeNavigationGuard.tsx` : interception `window.open` et liens `NEXORA_HOSTS`, blocage des ouvertures automatiques.
-- Lancer `bun run build` et `tsgo` pour s'assurer qu'aucune erreur n'est introduite.
+### 1. Gabarit partagé « EmailShell »
 
-### Phase 2 — PWA / Capacitor (≈ 10 min)
-- Confirmer que `<link rel="manifest">` n'est plus injecté dans `src/routes/__root.tsx`.
-- Confirmer que `beforeinstallprompt` est neutralisé en amont (capture phase + `stopImmediatePropagation`).
-- Confirmer que `navigator.serviceWorker.register` est override dans le script inline.
-- Vérifier que `PwaManager` retourne `null` quand `PWA_ENABLED` est `false` ou en mode natif.
-- Vérifier que le site reste responsive et fonctionnel sans SW.
+Un composant unique servant de coquille à tous les emails clients :
 
-### Phase 3 — Site web & SEO (≈ 20 min)
-- Homepage : chargement, navigation, sections (hero, devices, pricing, testimonials, FAQ, blog, payments, support).
-- Vérifier les liens internes (`/essai-gratuit`, `/reseller`, `/catalog`, `/galerie`, `/blog`, `/guide-iptv`).
-- Vérifier les balises SEO : title, description, canonical, og:image, hreflang, JSON-LD.
-- Blog : liste des articles, page article, RSS, sitemap, redirections 301.
-- Vérifier que les pages ne retournent pas de 404 inattendues.
+- **En-tête** : bandeau sombre (navy `#0B1220`) avec le logo/nom Nexora IPTV en or (`#D4AF37`) et un liseré doré, plus un sous-titre « Votre abonnement IPTV premium ».
+- **Corps** : la zone de contenu propre à chaque email, inchangée.
+- **Pied de page signature** :
+  - Signature : « L'équipe Nexora IPTV — Support client »
+  - Coordonnées : email support, site nexora-iptv.com, espace client account.nexora-iptv.com
+  - Boutons/liens de contact : WhatsApp (+237 698 608 808), Telegram (@NexoraIPTVBot), Site web
+  - Mention légale courte + année dynamique
+  - Ligne de désabonnement avec lien vers la page de désinscription
 
-### Phase 4 — Espace client & auth (≈ 15 min)
-- Vérifier `src/lib/portal-url.ts` et `src/start.ts` : middleware `accountSubdomainMiddleware` redirige correctement `account.nexora-iptv.com/` vers `/espace-client` et renvoie les routes marketing vers `www.nexora-iptv.com`.
-- Vérifier que les routes `/auth/*`, `/checkout`, `/api/*`, `/lovable/*` sont autorisées sur le sous-domaine `account`.
-- Tester la connexion / inscription (OTP/mot de passe) si possible.
-- Vérifier les pages de téléchargement (M-IBO Player, etc.).
+### 2. Application aux emails clients uniquement
 
-### Phase 5 — Communications (≈ 20 min)
-- **Email** : vérifier `email_domain--check_email_domain_status`, l'état des queues `auth_emails` / `transactional_emails`, la table `email_send_log`, les templates.
-- **WhatsApp** : vérifier `src/lib/whatsapp-contact.ts` (numéro, format `wa.me`), les liens dans la homepage et le checkout.
-- **Telegram** : vérifier le lien `https://t.me/NexoraIPTVBot` et les envois via NCC/services admin.
-- **AI chat** : vérifier que les threads/messages sont isolés par session (pas d'exposition cross-visitor), multi-langue, et que le mode natif ne le casse pas.
-- Tester un envoi de chaque canal si le backend est sain.
+Les modèles suivants sont enveloppés dans le gabarit (leur contenu métier reste identique) :
 
-### Phase 6 — Paiements (≈ 20 min)
-- Vérifier `src/routes/checkout.tsx` : création de commande, `initCheckout`, redirection `window.location.assign` vers provider.
-- Vérifier les workflows `payment-confirmed`, `payment-failed`, `order-created`.
-- Vérifier que les provider-links SebPay / CamerPay / Binance Pay sont générés.
-- Vérifier les webhooks et les routes de confirmation (`/payment/success`, `/payment/failed`).
-- Vérifier que le fallback CamerPay → SebPay est toujours actif.
+- Livraison IPTV
+- Rappel de renouvellement (FR/EN, la signature suit la langue)
+- Paiement confirmé
+- Paiement échoué
 
-### Phase 7 — Sécurité (≈ 15 min)
-- Vérifier les headers dans `src/start.ts` : CSP, HSTS, X-Frame-Options, Permissions-Policy.
-- Vérifier que CSP est en `Report-Only` (sauf si `CSP_ENFORCE=1`).
-- Vérifier RLS sur les tables publiques (plans, blog, galerie, commandes, chat).
-- Vérifier les policies Realtime sur `ai_chat_threads` et `ai_chat_messages`.
-- Vérifier que les anciens findings corrigés ne sont pas réapparus.
+Les modèles d'authentification restent tels quels.
 
-### Phase 8 — Tests E2E / Smoke (≈ 25 min)
-- Exécuter un parcours Playwright : homepage → choix d'un plan → checkout → paiement mocké → confirmation.
-- Exécuter un parcours blog : publication admin → apparition sur `/blog` → clic article → contenu affiché.
-- Exécuter un parcours espace client : connexion → commandes → téléchargement.
-- Vérifier les logs console et réseau pendant les tests.
-- Vérifier que la garde native ne bloque pas les clics utilisateur légitimes.
+### 3. Lien de désabonnement fonctionnel
 
-## Livrables
-- **Rapport d'audit** listant chaque zone, son statut (OK / Attention / Critique) et les preuves.
-- **Liste des bugs/régressions** classés par sévérité, avec le fichier/ligne concerné.
-- **Plan de correction** si des problèmes sont trouvés.
-- **Go/No-go** pour la réactivation éventuelle de la PWA ou le rebuild de l'APK.
+Le lien du pied de page pointe vers la page publique de désinscription existante en y transmettant le jeton du destinataire. Le jeton, déjà généré à l'envoi, sera passé aux modèles pour construire une URL personnalisée ; en son absence, le pied de page affiche un lien de désinscription générique (aucun email cassé).
 
-## Critères de succès
-- Build passe sans erreur ni warning critique.
-- Aucune régression sur homepage, checkout, blog, espace client.
-- Emails, WhatsApp, Telegram restent fonctionnels.
-- Paiements génèrent correctement les liens providers.
-- Aucune ouverture automatique de Chrome en mode natif simulé.
-- Aucun nouveau finding de sécurité critique.
+### 4. Page de désinscription remise à la charte
 
-## Estimation
-Environ **2 à 3 heures** selon le nombre de problèmes détectés.
+La page publique de désabonnement reçoit l'en-tête Nexora (logo, navy/or), un texte clair en français, la confirmation en un clic, et un état « déjà désabonné »/« lien invalide » lisible, avec un retour vers le site.
 
-## Prochaine étape après validation
-Si l'audit révèle des problèmes : je corrige d'abord ceux de sévérité critique, puis moyenne, puis faible, avant tout rebuild APK ou réactivation PWA.
+## Détails techniques
+
+- Nouveau fichier `src/lib/email-templates/_shell.tsx` exportant `EmailShell` (props : `preview`, `locale`, `unsubscribeToken`, `children`) avec styles inline uniquement, `Body` en `#ffffff` (contrainte de délivrabilité), accents navy/or à l'intérieur.
+- Les styles réutilisables (couleurs, boutons, textes) sont centralisés dans le même fichier pour éviter la duplication actuelle dans chaque modèle.
+- `iptv-delivery.tsx`, `iptv-renewal-reminder.tsx`, `payment-confirmed.tsx`, `payment-failed.tsx` : remplacement de leur `Html/Body/Container/Heading brand/footer` par `EmailShell`, contenu métier conservé.
+- `src/routes/lovable/email/transactional/send.ts` : transmission de `unsubscribeToken` dans les `templateData` passées au rendu (le jeton est déjà résolu juste avant le rendu). Aucun changement de logique d'envoi, de file d'attente ni de suppression.
+- Les chaînes du pied de page FR/EN sont ajoutées à `src/lib/email-templates/i18n.ts`.
+- `src/routes/unsubscribe.tsx` : mise à la charte, aucune modification de l'API `/email/unsubscribe`.
+- Aucun modèle d'authentification (`signup`, `magic-link`, `recovery`, `invite`, `email-change`, `reauthentication`) n'est touché.
+
+## Point à confirmer plus tard
+
+L'adresse email de support affichée dans la signature : `support@nexora-iptv.com` sera utilisée par défaut, modifiable en un mot.
