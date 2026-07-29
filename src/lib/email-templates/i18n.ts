@@ -26,6 +26,14 @@ const dict: Dict = {
   "dunning.ref":           { fr: "Référence commande",                            en: "Order reference" },
   "dunning.cta":           { fr: "Régler mon paiement",                           en: "Pay now" },
   "dunning.suspend.warn":  { fr: "Sans règlement, votre service sera suspendu.",  en: "Without payment, your service will be suspended." },
+  "shell.tagline":         { fr: "Votre abonnement IPTV premium",                 en: "Your premium IPTV subscription" },
+  "shell.sign.team":       { fr: "L'équipe Nexora IPTV",                          en: "The Nexora IPTV team" },
+  "shell.sign.role":       { fr: "Support client · 7j/7",                         en: "Customer support · 7 days a week" },
+  "shell.portal":          { fr: "Espace client",                                  en: "Customer portal" },
+  "shell.website":         { fr: "Site web",                                       en: "Website" },
+  "shell.legal":           { fr: "Tous droits réservés.",                          en: "All rights reserved." },
+  "shell.unsub.intro":     { fr: "Vous ne souhaitez plus recevoir nos emails ?",   en: "No longer want to receive our emails?" },
+  "shell.unsub.link":      { fr: "Se désabonner",                                  en: "Unsubscribe" },
 };
 
 export function pickLocale(input?: string | null): Locale {

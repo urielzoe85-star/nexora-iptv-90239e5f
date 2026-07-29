@@ -259,8 +259,13 @@ export const Route = createFileRoute("/lovable/email/transactional/send")({
           return Response.json({ success: false, reason: 'email_suppressed' })
         }
 
-        // 4. Render React Email template to HTML and plain text
-        const element = React.createElement(template.component, templateData)
+        // 4. Render React Email template to HTML and plain text.
+        // The unsubscribe token is injected so the branded footer can build a
+        // personalised unsubscribe link.
+        const element = React.createElement(template.component, {
+          ...templateData,
+          unsubscribe_token: unsubscribeToken,
+        })
         const html = await render(element)
         const plainText = await render(element, { plainText: true })
 
