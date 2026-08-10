@@ -1,16 +1,27 @@
-# Alignement complet de l'intégration MEGAOTT sur la doc officielle
+# Commande client → abonnement MEGAOTT 100 % automatique
 
-## Réponse courte
+## Réponse : oui, c'est possible
 
-Oui, la doc `/docs/subscriptions` + `/docs/authentication` suffit pour automatiser
-le cycle de vie complet (créer / lire / prolonger / désactiver / réactiver).
-Mais le code actuel n'est **pas** aligné dessus : il appelle des chemins et des
-noms de champs qui n'existent pas dans l'API officielle. C'est pour cela que
-l'automatisation ne va pas au bout aujourd'hui.
+`POST /api/v1/subscriptions` crée l'abonnement et renvoie immédiatement
+`username`, `password`, `expiring_at`, `dns_link`, `dns_link_for_samsung_lg`,
+`portal_link`. C'est exactement ce qu'il faut pour livrer un client sans
+intervention humaine : paiement confirmé → création → livraison
+email / WhatsApp / Telegram.
 
-Seules informations absentes de la doc : la **liste des `package_id` / `template_id`**
-(aucun endpoint catalogue documenté) et **aucun webhook**. Ces deux points seront
-couverts par configuration + synchronisation périodique.
+**Mais aujourd'hui ça ne se fait pas automatiquement**, pour deux raisons
+vérifiées dans le code :
+
+1. `src/integration-hub/connectors/iptv/megaott.adapter.ts` appelle
+   `POST /api/v1/user` avec `bouquet_id` / `exp_date` — endpoint et champs qui
+   n'existent pas dans l'API officielle. Tout appel réel échoue.
+2. `src/automation/actions/iptv.actions.ts` (ligne 157) pioche **d'abord** dans
+   le stock local importé (`local_pool_first`) et ne contacte MEGAOTT que si le
+   stock est vide. Donc même une fois l'API réparée, la création distante n'est
+   quasi jamais déclenchée.
+
+Seules informations absentes de la doc : la **liste des `package_id` /
+`template_id`** (aucun endpoint catalogue) et **aucun webhook**. Couvert par
+configuration + synchronisation périodique.
 
 ## Écarts constatés (vérifiés dans le code)
 
@@ -39,10 +50,14 @@ couverts par configuration + synchronisation périodique.
 4. **Mapping plan Nexora → package MEGAOTT** : correspondance configurable
    (offre / durée → `package_id`, `template_id`, `max_connections`) pour que la
    création soit automatique après paiement, sans saisie admin.
-5. **Automatisation de bout en bout** : après `payment.confirmed`, l'action IPTV
-   crée réellement l'abonnement, enregistre `remote_user_id` + liens dans
-   `iptv_accounts.metadata`, puis déclenche la livraison (email / WhatsApp /
-   Telegram) avec les identifiants réels.
+5. **Automatisation de bout en bout** : inversion de la priorité dans
+   `createIptvSubscription` — MEGAOTT d'abord, stock local en secours si l'API
+   échoue. L'abonnement est créé avec le package correspondant au plan acheté,
+   `remote_user_id` + liens sont enregistrés dans `iptv_accounts.metadata`, puis
+   `delivery:compose` / `delivery:dispatch` livrent le client automatiquement
+   (email / WhatsApp / Telegram) avec les identifiants réels. Un échec MEGAOTT
+   sans stock local laisse la commande en « à traiter » + alerte admin, jamais
+   de livraison vide.
 6. **Synchronisation périodique** (à la place du webhook inexistant) : job qui
    interroge `GET /api/v1/subscriptions/{id}` pour rafraîchir l'expiration et
    détecter les comptes expirés.
