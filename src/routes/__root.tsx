@@ -108,6 +108,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         href: appCss,
       },
       { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
+      { rel: "manifest", href: "/manifest.webmanifest" },
       { rel: "icon", type: "image/png", sizes: "32x32", href: "/favicon-32.png" },
       { rel: "icon", type: "image/png", sizes: "16x16", href: "/favicon-16.png" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -121,9 +122,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     ],
     scripts: [
       {
-        // Bootstrap natif pré-hydratation : neutralise la PWA et conserve une
-        // trace minimale de l'URL de démarrage pour diagnostiquer une sortie de
-        // WebView sans enregistrer les paramètres potentiellement sensibles.
+        // Bootstrap pré-hydratation. En natif (Capacitor / UA NexoraApp) la
+        // couche PWA est entièrement neutralisée : manifest retiré, register
+        // no-op, SW hérités désenregistrés, beforeinstallprompt bloqué — c'est
+        // ce qui empêchait la WebView de basculer vers Chrome. Sur le web,
+        // aucun blocage : la PWA fonctionne normalement.
         children: `
           (function(){
             try {
@@ -140,25 +143,26 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
                     timestamp: new Date().toISOString()
                   }));
                 } catch(_) {}
-              }
-              // Aucune PWA n'est enregistrée : on bloque toute tentative et on
-              // nettoie les enregistrements hérités (web comme natif).
-              try {
-                if (navigator.serviceWorker) {
-                  var noop = function(){ return Promise.reject(new Error("pwa disabled")); };
-                  try { Object.defineProperty(navigator.serviceWorker, "register", { value: noop, configurable: true }); } catch(_){}
-                  navigator.serviceWorker.getRegistrations && navigator.serviceWorker.getRegistrations().then(function(regs){
-                    regs.forEach(function(r){ try { r.unregister(); } catch(_){} });
-                  }).catch(function(){});
-                }
-              } catch(_){}
-              // Empêche toute bannière d'installation résiduelle.
-              window.addEventListener("beforeinstallprompt", function(e){
-                e.preventDefault();
-                e.stopImmediatePropagation();
-                return false;
-              }, true);
-              if (isNative) {
+                // Natif uniquement : retirer le manifest pour qu'Android ne
+                // propose jamais d'installation depuis la WebView.
+                try {
+                  var mf = document.querySelector('link[rel="manifest"]');
+                  if (mf && mf.parentNode) mf.parentNode.removeChild(mf);
+                } catch(_){}
+                try {
+                  if (navigator.serviceWorker) {
+                    var noop = function(){ return Promise.reject(new Error("pwa disabled in native")); };
+                    try { Object.defineProperty(navigator.serviceWorker, "register", { value: noop, configurable: true }); } catch(_){}
+                    navigator.serviceWorker.getRegistrations && navigator.serviceWorker.getRegistrations().then(function(regs){
+                      regs.forEach(function(r){ try { r.unregister(); } catch(_){} });
+                    }).catch(function(){});
+                  }
+                } catch(_){}
+                window.addEventListener("beforeinstallprompt", function(e){
+                  e.preventDefault();
+                  e.stopImmediatePropagation();
+                  return false;
+                }, true);
                 window.addEventListener("error", function(e){
                   try {
                     sessionStorage.setItem("nexora.native.navigation.error", JSON.stringify({
