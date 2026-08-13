@@ -1,4 +1,70 @@
-# Commande client → abonnement MEGAOTT 100 % automatique
+# Réactivation de la PWA (web) sans casser le wrapper Android
+
+## État actuel (vérifié)
+
+La PWA est totalement neutralisée, mais rien n'a été supprimé — tout est
+réactivable :
+
+- `src/pwa/config.ts` : `PWA_ENABLED = false`.
+- `vite.config.ts` : le bloc `VitePWA` et son import sont commentés → aucun
+  `sw.js` n'est généré.
+- `src/routes/__root.tsx` : un script de bootstrap remplace
+  `navigator.serviceWorker.register` par un no-op, désenregistre les SW
+  existants et bloque `beforeinstallprompt` — **pour tous les visiteurs**, pas
+  seulement l'app Android.
+- Aucun `<link rel="manifest">` dans le `head`.
+- `public/manifest.webmanifest`, les icônes (`pwa-192`, `pwa-512`,
+  `pwa-maskable-512`, `apple-touch-icon`), `src/pwa/register.ts` (avec toutes
+  les gardes preview/iframe/`?sw=off`), `PwaManager.tsx`, et les dépendances
+  `vite-plugin-pwa` + `workbox-window` sont intacts.
+
+La PWA avait été coupée parce qu'elle faisait sortir la WebView Capacitor vers
+Chrome. La réactivation doit donc être **web uniquement**.
+
+## Ce qui sera fait
+
+1. `PWA_ENABLED = true` dans `src/pwa/config.ts`.
+2. Réactivation du plugin dans `vite.config.ts` avec la configuration conforme
+   aux règles PWA : `generateSW`, `registerType: "autoUpdate"`,
+   `injectRegister: null`, `filename: "sw.js"`, `manifest: false`,
+   `devOptions: { enabled: false }`, navigations en `NetworkFirst`, denylist
+   sur `/api/`, `/~oauth`, `/sitemap.xml`, `/robots.txt`, `/rss.xml`.
+3. Ajout de `<link rel="manifest" href="/manifest.webmanifest">` dans le `head`
+   de `src/routes/__root.tsx`.
+4. **Isolation du natif** : le script de bootstrap ne neutralise plus la PWA que
+   si `isNative` est vrai (Capacitor ou UA `NexoraApp`). Dans ce cas il retire
+   aussi le lien manifest du DOM et garde le blocage
+   `beforeinstallprompt` + désenregistrement des SW. Sur le web, plus aucun
+   blocage.
+5. `PwaManager` reprend son rôle normal : enregistrement du service worker via
+   `registerPwa()`, bannière « Installer Nexora » et bandeau « Nouvelle version
+   disponible ». Il continue de ne rien afficher en natif.
+6. Vérification que le build génère bien `sw.js` et que le manifest + icônes
+   sont servis.
+
+## Détails techniques
+
+- Les gardes existantes de `src/pwa/register.ts` sont conservées telles quelles :
+  aucun enregistrement en dev, en iframe, sur les hôtes de preview Lovable, en
+  natif, ni avec `?sw=off` (qui reste le coupe-circuit et purge les caches).
+- `skipWaiting: false` : la mise à jour reste déclenchée par le bouton du
+  bandeau, jamais imposée en pleine navigation.
+- Aucun changement sur `start_url`, `scope`, `id` ni `display` du manifest —
+  ces champs sont figés à l'installation ; y toucher obligerait les utilisateurs
+  déjà installés à réinstaller.
+- Le worker de notifications push (s'il est ajouté plus tard) resterait hors de
+  ce périmètre.
+- Rien d'autre n'est touché : paiements, MEGAOTT, emails, SEO, NCC inchangés.
+
+## À noter
+
+L'installation et le mode hors-ligne ne sont testables que sur le site publié
+(`nexora-iptv.com`) — jamais dans l'aperçu de l'éditeur, où le service worker
+reste volontairement refusé.
+
+---
+
+# (Plan précédent, conservé) Commande client → abonnement MEGAOTT automatique
 
 ## Réponse : oui, c'est possible
 
