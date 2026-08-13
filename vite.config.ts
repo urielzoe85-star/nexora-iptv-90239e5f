@@ -6,10 +6,11 @@
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 import { mcpPlugin } from "@lovable.dev/mcp-js/stacks/tanstack/vite";
-// PWA temporairement désactivée (test wrapper Capacitor Android).
-// Voir src/pwa/config.ts (PWA_ENABLED). Pour réactiver : décommenter
-// l'import et le bloc VitePWA ci-dessous.
-// import { VitePWA } from "vite-plugin-pwa";
+// PWA web active. Le manifest est servi statiquement depuis
+// public/manifest.webmanifest (manifest: false ci-dessous), et
+// l'enregistrement passe exclusivement par src/pwa/register.ts
+// (injectRegister: null) qui refuse dev / iframe / preview / natif / ?sw=off.
+import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig({
   tanstackStart: {
@@ -20,23 +21,42 @@ export default defineConfig({
   vite: {
     plugins: [
       mcpPlugin(),
-      // VitePWA({
-      //   strategies: "generateSW",
-      //   registerType: "autoUpdate",
-      //   injectRegister: null,
-      //   filename: "sw.js",
-      //   manifest: false,
-      //   devOptions: { enabled: false },
-      //   workbox: {
-      //     navigateFallback: "/",
-      //     navigateFallbackDenylist: [/^\/api\//, /^\/~oauth/, /^\/sitemap\.xml/, /^\/robots\.txt/],
-      //     globPatterns: ["**/*.{js,css,html,ico,png,svg,webp,woff2}"],
-      //     maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
-      //     cleanupOutdatedCaches: true,
-      //     clientsClaim: true,
-      //     skipWaiting: false,
-      //   },
-      // }),
+      VitePWA({
+        strategies: "generateSW",
+        registerType: "autoUpdate",
+        injectRegister: null,
+        filename: "sw.js",
+        manifest: false,
+        devOptions: { enabled: false },
+        workbox: {
+          navigateFallback: "/",
+          navigateFallbackDenylist: [
+            /^\/api\//,
+            /^\/~oauth/,
+            /^\/sitemap\.xml/,
+            /^\/robots\.txt/,
+            /^\/rss\.xml/,
+          ],
+          globPatterns: ["**/*.{js,css,html,ico,png,svg,webp,woff2}"],
+          maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+          cleanupOutdatedCaches: true,
+          clientsClaim: true,
+          skipWaiting: false,
+          runtimeCaching: [
+            {
+              // Les navigations HTML ne doivent jamais être servies
+              // cache-first : sinon une page périmée survit à un déploiement.
+              urlPattern: ({ request }: { request: Request }) => request.mode === "navigate",
+              handler: "NetworkFirst",
+              options: {
+                cacheName: "nexora-pages",
+                networkTimeoutSeconds: 5,
+                expiration: { maxEntries: 50, maxAgeSeconds: 60 * 60 * 24 },
+              },
+            },
+          ],
+        },
+      }),
     ],
   },
 });
