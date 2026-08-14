@@ -33,6 +33,10 @@ export default defineConfig({
         // introuvable sur /sw.js) et précache aussi les artefacts serveur.
         outDir: "dist/client",
         workbox: {
+          // Build Workbox en mode production : pas de logs internes verbeux
+          // pour les visiteurs. La journalisation de debug vient de
+          // src/pwa/debug.ts, côté page, activable par ?sw=debug.
+          mode: "production",
           navigateFallback: "/",
           navigateFallbackDenylist: [
             /^\/api\//,

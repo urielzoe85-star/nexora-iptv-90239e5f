@@ -5,6 +5,8 @@ import { Download, RefreshCw, X } from "lucide-react";
 import { registerPwa } from "@/pwa/register";
 import { isCapacitorNative } from "@/lib/runtime-env";
 import { PWA_ENABLED } from "@/pwa/config";
+import { PwaDebugPanel } from "./PwaDebugPanel";
+import { isPwaDebug, pwaLog, installPwaDebugListeners } from "@/pwa/debug";
 
 type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>;
@@ -18,6 +20,7 @@ export function PwaManager() {
   const [isNative, setIsNative] = useState(false);
 
   useEffect(() => {
+    installPwaDebugListeners();
     if (!PWA_ENABLED) {
       // PWA désactivée : on nettoie tout SW/caches résiduels puis on sort.
       void registerPwa();
@@ -25,14 +28,19 @@ export function PwaManager() {
     }
     if (isCapacitorNative()) {
       setIsNative(true);
+      pwaLog("native runtime — couche PWA neutralisée");
       return;
     }
     registerPwa((wb) => setUpdateWb(wb));
     const onBeforeInstall = (e: Event) => {
       e.preventDefault();
+      pwaLog("beforeinstallprompt capturé");
       setInstallEvt(e as BeforeInstallPromptEvent);
     };
-    const onInstalled = () => setInstallEvt(null);
+    const onInstalled = () => {
+      pwaLog("appinstalled");
+      setInstallEvt(null);
+    };
     window.addEventListener("beforeinstallprompt", onBeforeInstall);
     window.addEventListener("appinstalled", onInstalled);
     try {
@@ -46,10 +54,11 @@ export function PwaManager() {
     };
   }, []);
 
-  if (!PWA_ENABLED || isNative) return null;
+  if (!PWA_ENABLED || isNative) return isPwaDebug() ? <PwaDebugPanel /> : null;
 
   const acceptUpdate = () => {
     if (!updateWb) return;
+    pwaLog("update acceptée par l'utilisateur — skipWaiting");
     updateWb.addEventListener("controlling", () => window.location.reload());
     updateWb.messageSkipWaiting();
   };
@@ -68,6 +77,7 @@ export function PwaManager() {
 
   return (
     <>
+      <PwaDebugPanel />
       {updateWb ? (
         <div className="fixed bottom-4 left-1/2 z-[60] w-[92%] max-w-md -translate-x-1/2 rounded-lg border border-primary/40 bg-background p-4 shadow-lg">
           <div className="flex items-start gap-3">
@@ -78,7 +88,7 @@ export function PwaManager() {
             </div>
           </div>
           <div className="mt-3 flex justify-end gap-2">
-            <Button size="sm" variant="ghost" onClick={() => setUpdateWb(null)}>Plus tard</Button>
+            <Button size="sm" variant="ghost" onClick={() => { pwaLog("update reportée"); setUpdateWb(null); }}>Plus tard</Button>
             <Button size="sm" onClick={acceptUpdate}>Mettre à jour</Button>
           </div>
         </div>
