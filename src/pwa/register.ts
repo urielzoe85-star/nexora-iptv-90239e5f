@@ -7,6 +7,7 @@
 import type { Workbox } from "workbox-window";
 import { isCapacitorNative } from "@/lib/runtime-env";
 import { PWA_ENABLED } from "./config";
+import { pwaLog, pwaWarn, recordPwaError, installPwaDebugListeners, collectPwaState } from "./debug";
 
 const PREVIEW_HOST_PREFIXES = ["id-preview--", "preview--"];
 const PREVIEW_HOST_SUFFIXES = [
@@ -15,26 +16,24 @@ const PREVIEW_HOST_SUFFIXES = [
   "beta.lovable.dev",
 ];
 
-function isRefusedContext(): boolean {
-  if (typeof window === "undefined") return true;
-  if (!PWA_ENABLED) return true;
-  if (!import.meta.env.PROD) return true;
-  if (isCapacitorNative()) return true;
+/** Renvoie la raison du refus, ou null si l'enregistrement est autorisé. */
+function refusalReason(): string | null {
+  if (typeof window === "undefined") return "ssr";
+  if (!PWA_ENABLED) return "PWA_ENABLED=false";
+  if (!import.meta.env.PROD) return "dev build";
+  if (isCapacitorNative()) return "capacitor native";
   try {
-    if (window.self !== window.top) return true;
+    if (window.self !== window.top) return "iframe";
   } catch {
-    return true;
+    return "iframe (cross-origin)";
   }
   const host = window.location.hostname;
-  if (PREVIEW_HOST_PREFIXES.some((p) => host.startsWith(p))) return true;
-  if (
-    PREVIEW_HOST_SUFFIXES.some(
-      (s) => host === s || host.endsWith("." + s),
-    )
-  )
-    return true;
-  if (new URLSearchParams(window.location.search).get("sw") === "off") return true;
-  return false;
+  if (PREVIEW_HOST_PREFIXES.some((p) => host.startsWith(p))) return `preview host (${host})`;
+  if (PREVIEW_HOST_SUFFIXES.some((s) => host === s || host.endsWith("." + s))) {
+    return `preview host (${host})`;
+  }
+  if (new URLSearchParams(window.location.search).get("sw") === "off") return "?sw=off";
+  return null;
 }
 
 async function unregisterExisting(): Promise<void> {
@@ -44,7 +43,10 @@ async function unregisterExisting(): Promise<void> {
     await Promise.all(
       regs.map(async (r) => {
         const url = r.active?.scriptURL || r.installing?.scriptURL || r.waiting?.scriptURL || "";
-        if (url.endsWith("/sw.js")) await r.unregister();
+        if (url.endsWith("/sw.js")) {
+          await r.unregister();
+          pwaLog("stale registration unregistered", url);
+        }
       }),
     );
   } catch {
@@ -55,11 +57,11 @@ async function unregisterExisting(): Promise<void> {
   try {
     if (typeof caches === "undefined") return;
     const names = await caches.keys();
-    await Promise.all(
-      names
-        .filter((n) => /^(nexora-|workbox-|google-fonts)/.test(n) || /precache-v\d+-|(^|-)runtime-/.test(n))
-        .map((n) => caches.delete(n)),
+    const stale = names.filter(
+      (n) => /^(nexora-|workbox-|google-fonts)/.test(n) || /precache-v\d+-|(^|-)runtime-/.test(n),
     );
+    await Promise.all(stale.map((n) => caches.delete(n)));
+    if (stale.length) pwaLog("stale caches purged", stale);
   } catch {
     /* noop */
   }
@@ -68,17 +70,35 @@ async function unregisterExisting(): Promise<void> {
 export type PwaUpdateListener = (wb: Workbox) => void;
 
 export async function registerPwa(onUpdateAvailable?: PwaUpdateListener): Promise<void> {
-  if (isRefusedContext()) {
+  installPwaDebugListeners();
+  const refused = refusalReason();
+  if (refused) {
+    pwaWarn("registration refused", refused);
     await unregisterExisting();
     return;
   }
-  if (!("serviceWorker" in navigator)) return;
+  if (!("serviceWorker" in navigator)) {
+    pwaWarn("serviceWorker unsupported");
+    return;
+  }
   try {
     const { Workbox } = await import("workbox-window");
     const wb = new Workbox("/sw.js", { scope: "/" });
-    wb.addEventListener("waiting", () => onUpdateAvailable?.(wb));
-    await wb.register();
+    wb.addEventListener("installing", () => pwaLog("lifecycle: installing"));
+    wb.addEventListener("installed", (e) => pwaLog("lifecycle: installed", { isUpdate: e.isUpdate }));
+    wb.addEventListener("activated", (e) => pwaLog("lifecycle: activated", { isUpdate: e.isUpdate }));
+    wb.addEventListener("controlling", (e) => pwaLog("lifecycle: controlling", { isUpdate: e.isUpdate }));
+    wb.addEventListener("redundant", () => pwaWarn("lifecycle: redundant"));
+    wb.addEventListener("message", (e) => pwaLog("lifecycle: message", e.data));
+    wb.addEventListener("waiting", () => {
+      pwaLog("update available — SW en attente");
+      onUpdateAvailable?.(wb);
+    });
+    const reg = await wb.register();
+    pwaLog("registered", { scope: reg?.scope, scriptURL: reg?.active?.scriptURL ?? null });
+    void collectPwaState().then((s) => pwaLog("state", s));
   } catch (err) {
+    recordPwaError(`registration failed: ${String(err)}`);
     console.warn("[pwa] registration failed", err);
   }
 }
