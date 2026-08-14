@@ -41,7 +41,11 @@ export default defineConfig({
             /^\/robots\.txt/,
             /^\/rss\.xml/,
           ],
-          globPatterns: ["**/*.{js,css,html,ico,png,svg,webp,woff2}"],
+          // Précache limité à la coquille applicative + icônes : précacher
+          // toutes les images (galerie, visuels marketing) faisait ~19 Mo
+          // téléchargés dès la première visite sur mobile.
+          globPatterns: ["**/*.{js,css,html,ico,woff2}", "pwa-*.png", "favicon*.png", "apple-touch-icon.png"],
+          globIgnores: ["**/gallery-seed/**", "**/node_modules/**"],
           maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
           cleanupOutdatedCaches: true,
           clientsClaim: true,
@@ -56,6 +60,16 @@ export default defineConfig({
                 cacheName: "nexora-pages",
                 networkTimeoutSeconds: 5,
                 expiration: { maxEntries: 50, maxAgeSeconds: 60 * 60 * 24 },
+              },
+            },
+            {
+              // Images servies au fil de la navigation, pas au premier chargement.
+              urlPattern: ({ request, sameOrigin }: { request: Request; sameOrigin: boolean }) =>
+                sameOrigin && request.destination === "image",
+              handler: "StaleWhileRevalidate",
+              options: {
+                cacheName: "nexora-images",
+                expiration: { maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 30 },
               },
             },
           ],
