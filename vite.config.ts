@@ -48,6 +48,20 @@ export default defineConfig({
           globPatterns: ["**/*.{css,html,ico,woff2}", "pwa-*.png", "favicon*.png", "apple-touch-icon.png"],
           globIgnores: ["**/gallery-seed/**", "**/node_modules/**"],
           maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
+          // vite-plugin-pwa ajoute d'office tout le bundle au manifeste de
+          // précache (indépendamment de globPatterns). On le filtre pour ne
+          // garder que la coquille : styles, HTML, polices, icônes et le chunk
+          // d'entrée. Le reste est mis en cache à l'usage (CacheFirst).
+          manifestTransforms: [
+            (entries: Array<{ url: string }>) => ({
+              manifest: entries.filter((e) =>
+                /\.(css|html|woff2|ico)$/.test(e.url) ||
+                /^assets\/index-[^/]+\.js$/.test(e.url) ||
+                /^(pwa-|favicon|apple-touch-icon)/.test(e.url),
+              ),
+              warnings: [],
+            }),
+          ],
           cleanupOutdatedCaches: true,
           clientsClaim: true,
           skipWaiting: false,
