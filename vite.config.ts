@@ -41,12 +41,13 @@ export default defineConfig({
             /^\/robots\.txt/,
             /^\/rss\.xml/,
           ],
-          // Précache limité à la coquille applicative + icônes : précacher
-          // toutes les images (galerie, visuels marketing) faisait ~19 Mo
-          // téléchargés dès la première visite sur mobile.
-          globPatterns: ["**/*.{js,css,html,ico,woff2}", "pwa-*.png", "favicon*.png", "apple-touch-icon.png"],
+          // Précache volontairement minimal (CSS, HTML, polices, icônes) :
+          // précacher tous les chunks JS représentait ~19 Mo téléchargés dès la
+          // première visite. Les bundles hachés sont mis en cache à l'usage via
+          // runtimeCaching ci-dessous (CacheFirst, immuables par hash).
+          globPatterns: ["**/*.{css,html,ico,woff2}", "pwa-*.png", "favicon*.png", "apple-touch-icon.png"],
           globIgnores: ["**/gallery-seed/**", "**/node_modules/**"],
-          maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+          maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
           cleanupOutdatedCaches: true,
           clientsClaim: true,
           skipWaiting: false,
@@ -60,6 +61,16 @@ export default defineConfig({
                 cacheName: "nexora-pages",
                 networkTimeoutSeconds: 5,
                 expiration: { maxEntries: 50, maxAgeSeconds: 60 * 60 * 24 },
+              },
+            },
+            {
+              // Bundles hachés : immuables, donc CacheFirst sans revalidation.
+              urlPattern: ({ url, sameOrigin }: { url: URL; sameOrigin: boolean }) =>
+                sameOrigin && url.pathname.startsWith("/assets/"),
+              handler: "CacheFirst",
+              options: {
+                cacheName: "nexora-assets",
+                expiration: { maxEntries: 400, maxAgeSeconds: 60 * 60 * 24 * 30 },
               },
             },
             {
