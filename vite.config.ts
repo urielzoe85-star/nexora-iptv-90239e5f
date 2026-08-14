@@ -28,6 +28,10 @@ export default defineConfig({
         filename: "sw.js",
         manifest: false,
         devOptions: { enabled: false },
+        // Le build TanStack Start émet le bundle navigateur dans dist/client :
+        // sans cette précision le service worker atterrit dans dist/ (donc
+        // introuvable sur /sw.js) et précache aussi les artefacts serveur.
+        outDir: "dist/client",
         workbox: {
           navigateFallback: "/",
           navigateFallbackDenylist: [
