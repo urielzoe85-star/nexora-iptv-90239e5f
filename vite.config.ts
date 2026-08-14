@@ -53,7 +53,7 @@ export default defineConfig({
           // garder que la coquille : styles, HTML, polices, icônes et le chunk
           // d'entrée. Le reste est mis en cache à l'usage (CacheFirst).
           manifestTransforms: [
-            (entries: Array<{ url: string }>) => ({
+            (entries) => ({
               manifest: entries.filter((e) =>
                 /\.(css|html|woff2|ico)$/.test(e.url) ||
                 /^assets\/index-[^/]+\.js$/.test(e.url) ||
