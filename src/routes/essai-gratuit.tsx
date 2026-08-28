@@ -230,6 +230,7 @@ function FreeTrialPage() {
                 <div>
                   <label className="block text-sm font-medium mb-1.5" htmlFor="email">Email *</label>
                   <input id="email" name="email" type="email" required maxLength={255} placeholder="vous@exemple.com" className="w-full px-3 py-2.5 rounded-lg bg-black/30 border border-white/10 focus:border-[color:var(--gold)]/60 outline-none text-sm" />
+                  {errors.email && <p className="text-xs text-red-400 mt-1.5">{errors.email}</p>}
                 </div>
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div>
@@ -241,8 +242,9 @@ function FreeTrialPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-1.5" htmlFor="contact">Numéro WhatsApp / Telegram</label>
+                    <label className="block text-sm font-medium mb-1.5" htmlFor="contact">Numéro WhatsApp / Telegram *</label>
                     <input id="contact" name="contact" type="text" maxLength={60} placeholder="+33 6 12 34 56 78" className="w-full px-3 py-2.5 rounded-lg bg-black/30 border border-white/10 focus:border-[color:var(--gold)]/60 outline-none text-sm" />
+                    {errors.contact && <p className="text-xs text-red-400 mt-1.5">{errors.contact}</p>}
                   </div>
                 </div>
                 <div className="grid sm:grid-cols-2 gap-4">
@@ -260,8 +262,9 @@ function FreeTrialPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-1.5" htmlFor="country">Pays</label>
-                    <input id="country" name="country" type="text" maxLength={80} placeholder="France" className="w-full px-3 py-2.5 rounded-lg bg-black/30 border border-white/10 focus:border-[color:var(--gold)]/60 outline-none text-sm" />
+                    <label className="block text-sm font-medium mb-1.5" htmlFor="country">Pays *</label>
+                    <input id="country" name="country" type="text" required maxLength={80} placeholder="France" className="w-full px-3 py-2.5 rounded-lg bg-black/30 border border-white/10 focus:border-[color:var(--gold)]/60 outline-none text-sm" />
+                    {errors.country && <p className="text-xs text-red-400 mt-1.5">{errors.country}</p>}
                   </div>
                 </div>
                 {/* Honeypot */}
