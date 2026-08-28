@@ -6,9 +6,12 @@ const TrialInput = z.object({
   contact: z.string().trim().max(60).optional().default(""),
   channel: z.enum(["whatsapp", "telegram", "email"]).default("whatsapp"),
   device: z.string().trim().max(80).optional().default(""),
-  country: z.string().trim().max(80).optional().default(""),
+  country: z.string().trim().min(1, { message: "Le pays est obligatoire." }).max(80),
   // honeypot — must be empty
   website: z.string().max(0).optional().default(""),
+}).refine((data) => data.channel === "email" || data.contact.length > 0, {
+  message: "Le numéro est obligatoire pour WhatsApp/Telegram.",
+  path: ["contact"],
 });
 
 export const requestFreeTrial = createServerFn({ method: "POST" })

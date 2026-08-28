@@ -91,6 +91,8 @@ function FreeTrialPage() {
   const navigate = useNavigate();
   const [sent, setSent] = useState(false);
 
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
   const m = useMutation({
     mutationFn: (input: {
       email: string;
@@ -107,9 +109,27 @@ function FreeTrialPage() {
     onError: (e) => toast.error((e as Error).message || "Something went wrong."),
   });
 
+  function validate(f: FormData) {
+    const next: Record<string, string> = {};
+    const email = String(f.get("email") ?? "").trim();
+    const contact = String(f.get("contact") ?? "").trim();
+    const channel = String(f.get("channel") ?? "whatsapp") as "whatsapp" | "telegram" | "email";
+    const country = String(f.get("country") ?? "").trim();
+
+    if (!email) next.email = "Email is required.";
+    if (channel !== "email" && !contact) {
+      next.contact = "Phone number is required for WhatsApp/Telegram.";
+    }
+    if (!country) next.country = "Country is required.";
+
+    setErrors(next);
+    return Object.keys(next).length === 0;
+  }
+
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
+    if (!validate(f)) return;
     m.mutate({
       email: String(f.get("email") ?? ""),
       contact: String(f.get("contact") ?? "").trim(),
