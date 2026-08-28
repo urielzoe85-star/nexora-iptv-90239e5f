@@ -67,27 +67,46 @@ export const requestFreeTrial = createServerFn({ method: "POST" })
       },
     });
 
-    // Notify admin via Telegram (best-effort; ignore failures so the user still gets confirmation)
+    // Notify admin (best-effort on both channels; never block the customer response)
+    const adminLines = [
+      "🎁 Nouvelle demande d'essai gratuit 24h",
+      `Email : ${data.email}`,
+      data.contact ? `Contact (${data.channel}) : ${data.contact}` : `Canal : ${data.channel}`,
+      data.device ? `Appareil : ${data.device}` : "",
+      data.country ? `Pays : ${data.country}` : "",
+      "",
+      "→ NCC · Essais gratuits",
+    ].filter(Boolean);
+
+    // Telegram
     try {
       const botToken = process.env.TELEGRAM_BOT_TOKEN;
       const chatId = process.env.TELEGRAM_ADMIN_CHAT_ID;
       if (botToken && chatId) {
-        const text = [
-          "🎁 *Nouvelle demande d'essai gratuit 24h*",
-          `Email : ${data.email}`,
-          data.contact ? `Contact (${data.channel}) : ${data.contact}` : `Canal : ${data.channel}`,
-          data.device ? `Appareil : ${data.device}` : "",
-          data.country ? `Pays : ${data.country}` : "",
-          "",
-          "→ NCC · Essais gratuits",
-        ].filter(Boolean).join("\n");
+        const text = adminLines
+          .map((l, i) => (i === 0 ? `*${l}*` : l))
+          .join("\n");
         await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ chat_id: chatId, text, parse_mode: "Markdown" }),
         });
       }
-    } catch {}
+    } catch (e: unknown) {
+      const { errorMessage } = await import("@/lib/error-message");
+      console.warn("trial admin telegram alert failed", errorMessage(e) ?? e);
+    }
+
+    // WhatsApp
+    try {
+      const { notifyAdminWhatsApp } = await import("@/lib/whatsapp.server");
+      const res = await notifyAdminWhatsApp(adminLines.join("\n"));
+      if (!res.sent) console.warn("trial admin whatsapp alert not sent:", res.reason);
+    } catch (e: unknown) {
+      const { errorMessage } = await import("@/lib/error-message");
+      console.warn("trial admin whatsapp alert failed", errorMessage(e) ?? e);
+    }
+
 
     return { ok: true };
   });
