@@ -91,6 +91,8 @@ function FreeTrialPage() {
   const navigate = useNavigate();
   const [sent, setSent] = useState(false);
 
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
   const m = useMutation({
     mutationFn: (input: {
       email: string;
@@ -107,9 +109,27 @@ function FreeTrialPage() {
     onError: (e) => toast.error((e as Error).message || "Something went wrong."),
   });
 
+  function validate(f: FormData) {
+    const next: Record<string, string> = {};
+    const email = String(f.get("email") ?? "").trim();
+    const contact = String(f.get("contact") ?? "").trim();
+    const channel = String(f.get("channel") ?? "whatsapp") as "whatsapp" | "telegram" | "email";
+    const country = String(f.get("country") ?? "").trim();
+
+    if (!email) next.email = "Email is required.";
+    if (channel !== "email" && !contact) {
+      next.contact = "Phone number is required for WhatsApp/Telegram.";
+    }
+    if (!country) next.country = "Country is required.";
+
+    setErrors(next);
+    return Object.keys(next).length === 0;
+  }
+
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
+    if (!validate(f)) return;
     m.mutate({
       email: String(f.get("email") ?? ""),
       contact: String(f.get("contact") ?? "").trim(),
@@ -202,6 +222,7 @@ function FreeTrialPage() {
                 <div>
                   <label className="block text-sm font-medium mb-1.5" htmlFor="email">Email *</label>
                   <input id="email" name="email" type="email" required maxLength={255} placeholder="you@example.com" className="w-full px-3 py-2.5 rounded-lg bg-black/30 border border-white/10 focus:border-[color:var(--gold)]/60 outline-none text-sm" />
+                  {errors.email && <p className="text-xs text-red-400 mt-1.5">{errors.email}</p>}
                 </div>
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div>
@@ -213,8 +234,9 @@ function FreeTrialPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-1.5" htmlFor="contact">WhatsApp / Telegram number</label>
+                    <label className="block text-sm font-medium mb-1.5" htmlFor="contact">WhatsApp / Telegram number *</label>
                     <input id="contact" name="contact" type="text" maxLength={60} placeholder="+1 555 123 4567" className="w-full px-3 py-2.5 rounded-lg bg-black/30 border border-white/10 focus:border-[color:var(--gold)]/60 outline-none text-sm" />
+                    {errors.contact && <p className="text-xs text-red-400 mt-1.5">{errors.contact}</p>}
                   </div>
                 </div>
                 <div className="grid sm:grid-cols-2 gap-4">
@@ -232,8 +254,9 @@ function FreeTrialPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-1.5" htmlFor="country">Country</label>
-                    <input id="country" name="country" type="text" maxLength={80} placeholder="United States" className="w-full px-3 py-2.5 rounded-lg bg-black/30 border border-white/10 focus:border-[color:var(--gold)]/60 outline-none text-sm" />
+                    <label className="block text-sm font-medium mb-1.5" htmlFor="country">Country *</label>
+                    <input id="country" name="country" type="text" required maxLength={80} placeholder="United States" className="w-full px-3 py-2.5 rounded-lg bg-black/30 border border-white/10 focus:border-[color:var(--gold)]/60 outline-none text-sm" />
+                    {errors.country && <p className="text-xs text-red-400 mt-1.5">{errors.country}</p>}
                   </div>
                 </div>
                 {/* Honeypot */}
