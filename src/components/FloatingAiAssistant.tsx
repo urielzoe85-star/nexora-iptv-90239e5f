@@ -7,7 +7,7 @@ export function FloatingAiAssistant() {
   if (path.startsWith("/admin") || path.startsWith("/ncc")) return null;
 
   return (
-    <div className="fixed bottom-6 right-6 z-[60]">
+    <div className="relative z-[60]">
       <button
         type="button"
         onClick={() => aiAssistant.toggle()}
