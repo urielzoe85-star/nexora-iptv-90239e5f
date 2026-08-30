@@ -12,7 +12,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { I18nProvider, useT } from "../i18n/context";
-import { FloatingAiAssistant } from "../components/FloatingAiAssistant";
+import { FloatingActions } from "../components/FloatingActions";
 import { PwaManager } from "../components/pwa/PwaManager";
 import { BackButton } from "../components/BackButton";
 import { NexoraAssistantWidget } from "../components/ai-chat/NexoraAssistantWidget";
