@@ -2,7 +2,7 @@ import { createFileRoute, useRouter, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { getPortalOrderStatus } from "@/lib/portal.functions";
-import { initSebPayCheckout, initCheckout, submitBinanceProof } from "@/lib/payments.functions";
+import { initCheckout, submitBinanceProof } from "@/lib/payments.functions";
 import { Bitcoin, ExternalLink, Loader2, Clock, CheckCircle2, CreditCard, Wallet } from "lucide-react";
 import { useEffect, useState } from "react";
 import { PaymentMethodsMarquee } from "@/components/PaymentMethodsMarquee";
@@ -18,8 +18,7 @@ function PayPage() {
   const { ref } = Route.useParams();
   const router = useRouter();
   const status = useServerFn(getPortalOrderStatus);
-  const initSeb = useServerFn(initSebPayCheckout);
-  const initCamer = useServerFn(initCheckout);
+  const initPay = useServerFn(initCheckout);
   const submitProof = useServerFn(submitBinanceProof);
 
   const q = useQuery({
