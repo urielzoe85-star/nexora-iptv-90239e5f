@@ -51,7 +51,7 @@ function PayPage() {
     setSebErr("");
     try {
       const origin = window.location.origin;
-      const res = await initSeb({
+      const res = await initPay({
         data: {
           ref,
           successUrl: `${origin}/espace-client/success/${ref}`,
@@ -69,7 +69,7 @@ function PayPage() {
     setCardErr("");
     try {
       const origin = window.location.origin;
-      const res = await initCamer({
+      const res = await initPay({
         data: {
           ref,
           successUrl: `${origin}/espace-client/success/${ref}`,
