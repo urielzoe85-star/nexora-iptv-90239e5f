@@ -263,27 +263,11 @@ export const initCheckout = createServerFn({ method: "POST" })
       : pickPaymentProvider(momoCountry, data.providerOverride ?? undefined);
 
     if (provider === "camerpay") {
-      try {
-        const res = await initCamerPayCheckout({ data });
-        return { provider: "camerpay" as const, ...res };
-      } catch (error) {
-        // CamerPay is occasionally unavailable at its edge (HTTP 520). For
-        // Mobile Money, transparently continue through SebPay instead of
-        // leaving the customer with a pending, unusable order.
-        if (orderMethod !== "momo") throw error;
-        console.warn("[payments] CamerPay unavailable; falling back to SebPay", {
-          ref: data.ref,
-          country: momoCountry,
-          reason: error instanceof Error ? error.message : String(error),
-        });
-        const fallback = await initSebPayCheckout({ data });
-        return {
-          provider: "sebpay" as const,
-          ...fallback,
-          message:
-            fallback.message ?? "Paiement Mobile Money redirigé vers notre passerelle de secours.",
-        };
-      }
+      // CamerPay est strict : aucun fallback SebPay automatique. Le Cameroun
+      // (CM) n'est pas couvert par SebPay, et un basculement silencieux
+      // masquerait la vraie erreur CamerPay. L'erreur remonte telle quelle.
+      const res = await initCamerPayCheckout({ data });
+      return { provider: "camerpay" as const, ...res };
     }
     const res = await initSebPayCheckout({ data });
     return { provider: "sebpay" as const, ...res };
