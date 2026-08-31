@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- webhook and Supabase payloads are runtime JSON. */
 import { createFileRoute } from "@tanstack/react-router";
 import { allow, clientKey, tooManyRequests } from "@/lib/rate-limit.server";
 
@@ -27,9 +28,10 @@ async function logWebhook(row: {
       request_body: row.payloadPreview
         ? { ref: row.ref, event_id: row.eventId, payload: row.payloadPreview }
         : { ref: row.ref ?? null, event_id: row.eventId ?? null, raw: row.rawPreview ?? null },
-      response_body: row.signatureValid === undefined
-        ? { error: row.error ?? null }
-        : { signature_valid: row.signatureValid, error: row.error ?? null },
+      response_body:
+        row.signatureValid === undefined
+          ? { error: row.error ?? null }
+          : { signature_valid: row.signatureValid, error: row.error ?? null },
       error: row.error ?? null,
     });
   } catch (e) {
@@ -86,28 +88,48 @@ export const Route = createFileRoute("/api/public/camerpay/webhook")({
           secret = camerpayWebhookSecret();
         } catch (e: any) {
           console.error("[camerpay-webhook] missing secret", e?.message ?? e);
-          await logWebhook({ ok: false, status: 500, error: "missing CAMERPAY_WEBHOOK_SECRET", rawPreview: raw.slice(0, 200) });
+          await logWebhook({
+            ok: false,
+            status: 500,
+            error: "missing CAMERPAY_WEBHOOK_SECRET",
+            rawPreview: raw.slice(0, 200),
+          });
           return new Response("Server misconfigured", { status: 500 });
         }
 
         if (!signature) {
-          await logWebhook({ ok: false, status: 401, error: "missing signature", rawPreview: raw.slice(0, 200) });
+          await logWebhook({
+            ok: false,
+            status: 401,
+            error: "missing signature",
+            rawPreview: raw.slice(0, 200),
+          });
           return new Response("Missing signature", { status: 401 });
         }
 
         const { verifyCamerpaySignature } = await import("@/lib/payments-camerpay.server");
         const signatureValid = await verifyCamerpaySignature({
-          uuid, invoiceId, status, amount, signature, secret,
+          uuid,
+          invoiceId,
+          status,
+          amount,
+          signature,
+          secret,
         });
         if (!signatureValid) {
           console.warn("[camerpay-webhook] invalid signature", { uuid, invoiceId, status });
           await logWebhook({
-            ok: false, status: 401, signatureValid: false,
-            error: "invalid signature", rawPreview: raw.slice(0, 200),
-            ref: invoiceId, eventId,
+            ok: false,
+            status: 401,
+            signatureValid: false,
+            error: "invalid signature",
+            rawPreview: raw.slice(0, 200),
+            ref: invoiceId,
+            eventId,
           });
           try {
-            const { recordSecurityEvent, extractRequestMeta } = await import("@/lib/security-events.server");
+            const { recordSecurityEvent, extractRequestMeta } =
+              await import("@/lib/security-events.server");
             const meta = extractRequestMeta(request);
             await recordSecurityEvent({
               event_type: "webhook.camerpay.signature_invalid",
@@ -119,12 +141,38 @@ export const Route = createFileRoute("/api/public/camerpay/webhook")({
               message: "CamerPay webhook rejected: HMAC signature mismatch",
               payload: { invoice_id: invoiceId, provided_length: signature.length },
             });
-          } catch { /* best effort */ }
+          } catch {
+            /* best effort */
+          }
           return new Response("Invalid signature", { status: 401 });
         }
 
+        let paymentEnvironment: "sandbox" | "production";
+        try {
+          const { assertCamerpayWebhookEnvironment } =
+            await import("@/lib/payments-camerpay.server");
+          paymentEnvironment = assertCamerpayWebhookEnvironment(isSandbox);
+        } catch {
+          await logWebhook({
+            ok: false,
+            status: 400,
+            signatureValid: true,
+            error: "payment environment mismatch",
+            ref: invoiceId,
+            eventId,
+            payloadPreview: { isSandbox },
+          });
+          return new Response("Payment environment mismatch", { status: 400 });
+        }
+
         if (!invoiceId || !uuid || !status) {
-          await logWebhook({ ok: false, status: 400, signatureValid: true, error: "missing required field", payloadPreview: { uuid, invoiceId, status } });
+          await logWebhook({
+            ok: false,
+            status: 400,
+            signatureValid: true,
+            error: "missing required field",
+            payloadPreview: { uuid, invoiceId, status },
+          });
           return new Response("Missing fields", { status: 400 });
         }
 
@@ -139,24 +187,63 @@ export const Route = createFileRoute("/api/public/camerpay/webhook")({
           .maybeSingle();
 
         if (!order) {
-          await logWebhook({ ok: false, status: 200, signatureValid: true, error: "order not found", ref: invoiceId, eventId, payloadPreview: { uuid, status } });
+          await logWebhook({
+            ok: false,
+            status: 200,
+            signatureValid: true,
+            error: "order not found",
+            ref: invoiceId,
+            eventId,
+            payloadPreview: { uuid, status },
+          });
           // ACK anyway so CamerPay doesn't consider it a network failure.
           return Response.json({ ok: true, ignored: "order not found" });
         }
 
+        const receivedAmount = Number(amount);
+        const expectedAmount = Number(order.amount);
+        if (
+          !Number.isFinite(receivedAmount) ||
+          !Number.isFinite(expectedAmount) ||
+          Math.abs(receivedAmount - expectedAmount) > 0.01
+        ) {
+          await logWebhook({
+            ok: false,
+            status: 400,
+            signatureValid: true,
+            error: "amount mismatch",
+            ref: invoiceId,
+            eventId,
+            payloadPreview: { isSandbox, amount_valid: false },
+          });
+          return new Response("Amount mismatch", { status: 400 });
+        }
+
         // Idempotency: if event_id already applied, skip.
         const meta = (order.metadata as Record<string, any>) ?? {};
-        const seenEvents: string[] = Array.isArray(meta.camerpay_events) ? meta.camerpay_events : [];
+        const seenEvents: string[] = Array.isArray(meta.camerpay_events)
+          ? meta.camerpay_events
+          : [];
         if (eventId && seenEvents.includes(eventId)) {
-          await logWebhook({ ok: true, status: 200, signatureValid: true, ref: invoiceId, eventId, payloadPreview: { status, duplicate: true } });
+          await logWebhook({
+            ok: true,
+            status: 200,
+            signatureValid: true,
+            ref: invoiceId,
+            eventId,
+            payloadPreview: { status, duplicate: true },
+          });
           return Response.json({ ok: true, duplicate: true });
         }
 
         const mapped: "paid" | "failed" | "cancelled" | "pending" =
-          status === "completed" || status === "refunded" ? "paid"
-          : status === "failed" ? "failed"
-          : status === "cancelled" || status === "canceled" ? "cancelled"
-          : "pending";
+          status === "completed" || status === "refunded"
+            ? "paid"
+            : status === "failed"
+              ? "failed"
+              : status === "cancelled" || status === "canceled"
+                ? "cancelled"
+                : "pending";
 
         // Already terminal → just log & ACK.
         if (["paid", "failed", "cancelled"].includes(order.status)) {
@@ -165,13 +252,27 @@ export const Route = createFileRoute("/api/public/camerpay/webhook")({
             camerpay_events: eventId ? [...seenEvents, eventId].slice(-50) : seenEvents,
           };
           await supabaseAdmin.from("orders").update({ metadata: nextMeta }).eq("id", order.id);
-          await logWebhook({ ok: true, status: 200, signatureValid: true, ref: invoiceId, eventId, payloadPreview: { status, alreadyTerminal: order.status } });
+          await logWebhook({
+            ok: true,
+            status: 200,
+            signatureValid: true,
+            ref: invoiceId,
+            eventId,
+            payloadPreview: { status, alreadyTerminal: order.status },
+          });
           return Response.json({ ok: true, status: order.status });
         }
 
         // Still pending/processing but mapped is still pending — nothing to do.
         if (mapped === "pending") {
-          await logWebhook({ ok: true, status: 200, signatureValid: true, ref: invoiceId, eventId, payloadPreview: { status } });
+          await logWebhook({
+            ok: true,
+            status: 200,
+            signatureValid: true,
+            ref: invoiceId,
+            eventId,
+            payloadPreview: { status },
+          });
           return Response.json({ ok: true, status: "pending" });
         }
 
@@ -179,9 +280,13 @@ export const Route = createFileRoute("/api/public/camerpay/webhook")({
           ...meta,
           payment_provider: "camerpay",
           provider_reference: uuid,
+          payment_environment: paymentEnvironment,
           camerpay_events: eventId ? [...seenEvents, eventId].slice(-50) : seenEvents,
           camerpay_last_webhook: {
-            uuid, invoice_id: invoiceId, status, amount,
+            uuid,
+            invoice_id: invoiceId,
+            status,
+            amount,
             failure_reason: failureReason ?? null,
             failure_code: failureCode ?? null,
             is_sandbox: isSandbox,
@@ -195,7 +300,9 @@ export const Route = createFileRoute("/api/public/camerpay/webhook")({
         const { data: updatedRows, error: upErr } = await supabaseAdmin
           .from("orders")
           .update({
-            status: mapped,
+            // Keep sandbox confirmations out of paid/revenue aggregates while
+            // still emitting one tagged event for local workflow tests.
+            status: paymentEnvironment === "sandbox" ? order.status : mapped,
             payment_provider: "camerpay",
             provider_reference: uuid,
             metadata: nextMeta,
@@ -206,7 +313,14 @@ export const Route = createFileRoute("/api/public/camerpay/webhook")({
 
         if (upErr) {
           console.error("[camerpay-webhook] update failed", upErr);
-          await logWebhook({ ok: false, status: 200, signatureValid: true, ref: invoiceId, eventId, error: upErr.message });
+          await logWebhook({
+            ok: false,
+            status: 200,
+            signatureValid: true,
+            ref: invoiceId,
+            eventId,
+            error: upErr.message,
+          });
           return Response.json({ ok: true, warn: "update-failed" });
         }
 
@@ -224,7 +338,11 @@ export const Route = createFileRoute("/api/public/camerpay/webhook")({
           try {
             const { emitBusinessEvent } = await import("@/lib/payments.functions");
             await emitBusinessEvent(
-              mapped === "paid" ? "payment.confirmed" : mapped === "failed" ? "payment.failed" : null,
+              mapped === "paid"
+                ? "payment.confirmed"
+                : mapped === "failed"
+                  ? "payment.failed"
+                  : null,
               {
                 orderId: row.order_ref,
                 orderRef: row.order_ref,
@@ -234,6 +352,7 @@ export const Route = createFileRoute("/api/public/camerpay/webhook")({
                 currency: row.currency,
                 provider: "camerpay",
                 providerStatus: status,
+                paymentEnvironment,
                 failureReason: failureReason ?? null,
                 failureCode: failureCode ?? null,
               },
@@ -244,8 +363,12 @@ export const Route = createFileRoute("/api/public/camerpay/webhook")({
         }
 
         await logWebhook({
-          ok: true, status: 200, signatureValid: true, ref: invoiceId, eventId,
-          payloadPreview: { status, mapped, transitioned },
+          ok: true,
+          status: 200,
+          signatureValid: true,
+          ref: invoiceId,
+          eventId,
+          payloadPreview: { status, mapped, transitioned, paymentEnvironment },
         });
         return Response.json({ ok: true, status: mapped });
       },

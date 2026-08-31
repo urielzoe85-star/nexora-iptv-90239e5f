@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- provider responses are normalized at runtime. */
 // CamerPay adapter — server-only helpers.
 //
 // Loaded exclusively via `await import("@/lib/payments-camerpay.server")`
@@ -10,6 +11,36 @@
 //   Webhooks: form-urlencoded, HMAC-SHA256 over "uuid|invoice_id|status|amount"
 
 const DEFAULT_BASE_URL = "https://camerpay.biz";
+
+export type CamerpayMode = "sandbox" | "production";
+
+/**
+ * Explicit environment fence. CamerPay uses distinct keys for sandbox/live,
+ * but the API host is shared, so Nexora must carry the environment separately.
+ * Fail closed to production when unset; sandbox tests must opt in explicitly.
+ */
+export function camerpayMode(): CamerpayMode {
+  return String(process.env.CAMERPAY_MODE ?? "production")
+    .trim()
+    .toLowerCase() === "sandbox"
+    ? "sandbox"
+    : "production";
+}
+
+export function assertCamerpayWebhookEnvironment(isSandbox: boolean): CamerpayMode {
+  const mode = camerpayMode();
+  if (mode === "sandbox" && !isSandbox) {
+    throw new Error(
+      "CamerPay webhook environment mismatch: sandbox mode requires is_sandbox=true.",
+    );
+  }
+  if (mode === "production" && isSandbox) {
+    throw new Error(
+      "CamerPay webhook environment mismatch: sandbox webhook rejected in production mode.",
+    );
+  }
+  return mode;
+}
 
 export function camerpayBaseUrl(): string {
   const raw = (process.env.CAMERPAY_BASE_URL ?? "").trim().replace(/\/+$/, "");
@@ -36,7 +67,13 @@ export function camerpayWebhookSecret(): string {
   return s;
 }
 
-export type CamerPayStatus = "pending" | "processing" | "completed" | "failed" | "cancelled" | "refunded";
+export type CamerPayStatus =
+  | "pending"
+  | "processing"
+  | "completed"
+  | "failed"
+  | "cancelled"
+  | "refunded";
 
 export function mapCamerpayStatus(s: unknown): "paid" | "failed" | "cancelled" | "pending" {
   const v = String(s ?? "").toLowerCase();
@@ -77,20 +114,34 @@ async function camerpayFetch(
       clearTimeout(timer);
       const aborted = e?.name === "AbortError";
       lastErr = e;
-      console.error("[camerpay] fetch failed", { url, method: init.method, aborted, attempt, message: String(e?.message ?? e) });
+      console.error("[camerpay] fetch failed", {
+        url,
+        method: init.method,
+        aborted,
+        attempt,
+        message: String(e?.message ?? e),
+      });
       if (init.retryOn5xx && attempt < backoffsMs.length - 1) continue;
-      throw new Error(aborted ? "CamerPay timeout" : `CamerPay network error: ${String(e?.message ?? e)}`);
+      throw new Error(
+        aborted ? "CamerPay timeout" : `CamerPay network error: ${String(e?.message ?? e)}`,
+      );
     }
     clearTimeout(timer);
     const raw = await res.text();
     let json: any = null;
-    try { json = raw ? JSON.parse(raw) : null; } catch { /* non-JSON */ }
+    try {
+      json = raw ? JSON.parse(raw) : null;
+    } catch {
+      /* non-JSON */
+    }
     console.log("[camerpay] ←", res.status, url, "attempt", attempt, raw.slice(0, 500));
     const shouldRetry = init.retryOn5xx && (res.status >= 500 || res.status === 429);
     if (shouldRetry && attempt < backoffsMs.length - 1) continue;
     return { status: res.status, raw, json };
   }
-  throw new Error(`CamerPay unreachable: ${String((lastErr as any)?.message ?? lastErr ?? "unknown")}`);
+  throw new Error(
+    `CamerPay unreachable: ${String((lastErr as any)?.message ?? lastErr ?? "unknown")}`,
+  );
 }
 
 export type CamerpayInitiateInput = {
@@ -113,7 +164,9 @@ export type CamerpayInitiateResult = {
   raw: any;
 };
 
-export async function camerpayInitiate(input: CamerpayInitiateInput): Promise<CamerpayInitiateResult> {
+export async function camerpayInitiate(
+  input: CamerpayInitiateInput,
+): Promise<CamerpayInitiateResult> {
   const payload: Record<string, unknown> = {
     amount: input.amount,
     currency: "XAF",
@@ -128,7 +181,11 @@ export async function camerpayInitiate(input: CamerpayInitiateInput): Promise<Ca
   if (input.customerPhone) payload.customer_phone = input.customerPhone.replace(/\D/g, "");
   if (input.paymentMethod) payload.payment_method = input.paymentMethod;
 
-  const { status, raw, json } = await camerpayFetch("/api/payment/initiate", { method: "POST", body: payload, retryOn5xx: true });
+  const { status, raw, json } = await camerpayFetch("/api/payment/initiate", {
+    method: "POST",
+    body: payload,
+    retryOn5xx: true,
+  });
   if (status < 200 || status >= 300 || !json?.transaction_uuid) {
     const detail = (json && (json.message || json.error)) || raw.slice(0, 400) || "(empty)";
     console.error("[camerpay] initiate failed", { status, detail, invoiceId: input.invoiceId });
@@ -147,7 +204,9 @@ export async function camerpayInitiate(input: CamerpayInitiateInput): Promise<Ca
         ok: false,
         error: typeof detail === "string" ? detail : JSON.stringify(detail).slice(0, 400),
       });
-    } catch { /* logging must never break checkout */ }
+    } catch {
+      /* logging must never break checkout */
+    }
     if (status >= 500 || status === 429 || status === 0) {
       throw new Error(
         `Notre passerelle de paiement est temporairement indisponible. Réessayez dans un instant, ou contactez-nous sur WhatsApp avec la référence ${input.invoiceId}.`,

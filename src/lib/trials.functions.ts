@@ -15,7 +15,7 @@ export const requestFreeTrial = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => TrialInput.parse(data))
   .handler(async ({ data }) => {
     if (data.website) return { ok: true }; // silent honeypot
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
 
     // Rate-limit: 1 trial request per email / 24h
     const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
@@ -80,14 +80,18 @@ export const requestFreeTrial = createServerFn({ method: "POST" })
           data.country ? `Pays : ${data.country}` : "",
           "",
           "→ NCC · Essais gratuits",
-        ].filter(Boolean).join("\n");
+        ]
+          .filter(Boolean)
+          .join("\n");
         await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ chat_id: chatId, text, parse_mode: "Markdown" }),
         });
       }
-    } catch {}
+    } catch {
+      // Best-effort notification; failures must not fail trial creation.
+    }
 
     return { ok: true };
   });

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- channel adapters accept JSON payloads. */
 // ────────────────────────────────────────────────────────────────────────────
 // Dispatch multi-canal de la fiche de livraison IPTV.
 // Appelé par le workflow payment-confirmed ET par le bouton "Envoyer
@@ -6,10 +7,14 @@
 // Idempotent : chaque canal est retenté indépendamment via channels_sent.
 // ────────────────────────────────────────────────────────────────────────────
 
-import { buildPlainTextDeliveryMessage, type IptvDelivery, type IptvDeliveryChannel } from "./iptv-delivery.builder";
+import {
+  buildPlainTextDeliveryMessage,
+  type IptvDelivery,
+  type IptvDeliveryChannel,
+} from "./iptv-delivery.builder";
 
 async function admin() {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
   return supabaseAdmin as any;
 }
 
@@ -65,7 +70,10 @@ async function sendEmailChannel(args: {
   if (!recipient) return { ok: false, skipped: true, reason: "email_missing" };
   const sb = await admin();
   const { data: suppressed } = await sb
-    .from("suppressed_emails").select("id").eq("email", recipient.toLowerCase()).maybeSingle();
+    .from("suppressed_emails")
+    .select("id")
+    .eq("email", recipient.toLowerCase())
+    .maybeSingle();
   if (suppressed) return { ok: false, skipped: true, reason: "suppressed" };
 
   try {
@@ -85,8 +93,10 @@ async function sendEmailChannel(args: {
 
     const messageId = crypto.randomUUID();
     await sb.from("email_send_log").insert({
-      message_id: messageId, template_name: "iptv-delivery",
-      recipient_email: recipient, status: "pending",
+      message_id: messageId,
+      template_name: "iptv-delivery",
+      recipient_email: recipient,
+      status: "pending",
     });
     const { getOrCreateUnsubscribeToken } = await import("@/lib/email-unsubscribe.server");
     const unsubscribeToken = await getOrCreateUnsubscribeToken(recipient);
@@ -97,7 +107,9 @@ async function sendEmailChannel(args: {
         to: recipient,
         from: `Nexora IPTV <noreply@notify.account.nexora-iptv.com>`,
         sender_domain: "notify.account.nexora-iptv.com",
-        subject, html, text,
+        subject,
+        html,
+        text,
         purpose: "transactional",
         label: "iptv-delivery",
         idempotency_key: `iptv-delivery-auto-${args.order.id}`,
@@ -112,14 +124,23 @@ async function sendEmailChannel(args: {
       console.warn("email_queue_dispatch wake failed", (wakeError as any)?.message ?? wakeError);
     }
     await insertDeliveryLog({
-      order_id: args.order.id, customer_id: args.order.customer_id ?? null,
-      channel: "email", status: "automatic", content: args.text, recipient, subject,
+      order_id: args.order.id,
+      customer_id: args.order.customer_id ?? null,
+      channel: "email",
+      status: "automatic",
+      content: args.text,
+      recipient,
+      subject,
     });
     return { ok: true };
   } catch (e: any) {
     await insertDeliveryLog({
-      order_id: args.order.id, customer_id: args.order.customer_id ?? null,
-      channel: "email", status: "failed", content: args.text, recipient,
+      order_id: args.order.id,
+      customer_id: args.order.customer_id ?? null,
+      channel: "email",
+      status: "failed",
+      content: args.text,
+      recipient,
       error: e?.message ?? String(e),
     });
     return { ok: false, error: e?.message ?? String(e) };
@@ -146,17 +167,24 @@ async function sendTelegramChannel(args: {
     const body = await res.json().catch(() => ({}));
     const ok = res.ok && body?.ok !== false;
     await insertDeliveryLog({
-      order_id: args.order.id, customer_id: args.order.customer_id ?? null,
-      channel: "telegram", status: ok ? "automatic" : "failed",
-      content: args.text, recipient: String(chatId),
+      order_id: args.order.id,
+      customer_id: args.order.customer_id ?? null,
+      channel: "telegram",
+      status: ok ? "automatic" : "failed",
+      content: args.text,
+      recipient: String(chatId),
       error: ok ? null : (body?.description ?? `HTTP ${res.status}`),
     });
     return ok ? { ok: true } : { ok: false, error: body?.description ?? `HTTP ${res.status}` };
   } catch (e: any) {
     await insertDeliveryLog({
-      order_id: args.order.id, customer_id: args.order.customer_id ?? null,
-      channel: "telegram", status: "failed", content: args.text,
-      recipient: String(chatId), error: e?.message ?? String(e),
+      order_id: args.order.id,
+      customer_id: args.order.customer_id ?? null,
+      channel: "telegram",
+      status: "failed",
+      content: args.text,
+      recipient: String(chatId),
+      error: e?.message ?? String(e),
     });
     return { ok: false, error: e?.message ?? String(e) };
   }
@@ -167,7 +195,8 @@ async function sendWhatsAppChannel(args: {
   customer: any;
   text: string;
 }): Promise<Outcome> {
-  const phone = args.customer?.phone ?? args.order.phone ?? args.order?.metadata?.momo?.phone ?? null;
+  const phone =
+    args.customer?.phone ?? args.order.phone ?? args.order?.metadata?.momo?.phone ?? null;
   if (!phone) return { ok: false, skipped: true, reason: "whatsapp_phone_missing" };
   if (!process.env.WHATSAPP_PHONE_NUMBER_ID || !process.env.WHATSAPP_ACCESS_TOKEN) {
     return { ok: false, skipped: true, reason: "whatsapp_not_configured" };
@@ -176,29 +205,41 @@ async function sendWhatsAppChannel(args: {
     const { sendWhatsAppText, normalizeWaNumber } = await import("@/lib/whatsapp.server");
     const res = await sendWhatsAppText(phone, args.text);
     await insertDeliveryLog({
-      order_id: args.order.id, customer_id: args.order.customer_id ?? null,
-      channel: "whatsapp", status: res.ok ? "automatic" : "failed",
-      content: args.text, recipient: normalizeWaNumber(phone),
+      order_id: args.order.id,
+      customer_id: args.order.customer_id ?? null,
+      channel: "whatsapp",
+      status: res.ok ? "automatic" : "failed",
+      content: args.text,
+      recipient: normalizeWaNumber(phone),
       error: res.ok ? null : (res.error ?? `HTTP ${res.status}`),
     });
     return res.ok ? { ok: true } : { ok: false, error: res.error ?? `HTTP ${res.status}` };
   } catch (e: any) {
     await insertDeliveryLog({
-      order_id: args.order.id, customer_id: args.order.customer_id ?? null,
-      channel: "whatsapp", status: "failed",
-      content: args.text, recipient: String(phone),
+      order_id: args.order.id,
+      customer_id: args.order.customer_id ?? null,
+      channel: "whatsapp",
+      status: "failed",
+      content: args.text,
+      recipient: String(phone),
       error: e?.message ?? String(e),
     });
     return { ok: false, error: e?.message ?? String(e) };
   }
 }
 
-export async function dispatchIptvDeliveryFor(orderIdent: string, opts?: {
-  channels?: IptvDeliveryChannel[];
-  force?: boolean;
-}): Promise<{
+export async function dispatchIptvDeliveryFor(
+  orderIdent: string,
+  opts?: {
+    channels?: IptvDeliveryChannel[];
+    force?: boolean;
+  },
+): Promise<{
   orderId: string;
-  channels: Record<IptvDeliveryChannel, Outcome | { ok: true; skipped: true; reason: "already_sent" }>;
+  channels: Record<
+    IptvDeliveryChannel,
+    Outcome | { ok: true; skipped: true; reason: "already_sent" }
+  >;
   status: "sent" | "failed" | "partial";
 }> {
   const order = await loadOrder(orderIdent);
@@ -211,9 +252,12 @@ export async function dispatchIptvDeliveryFor(orderIdent: string, opts?: {
 
   const sb = await admin();
   // Mark sending
-  await sb.from("orders").update({
-    metadata: { ...meta, iptv_delivery: { ...delivery, delivery_status: "sending" } },
-  }).eq("id", order.id);
+  await sb
+    .from("orders")
+    .update({
+      metadata: { ...meta, iptv_delivery: { ...delivery, delivery_status: "sending" } },
+    })
+    .eq("id", order.id);
 
   const customer = await loadCustomer(order.customer_id ?? null);
   const text = buildPlainTextDeliveryMessage(delivery, { orderRef: order.order_ref });
@@ -234,7 +278,7 @@ export async function dispatchIptvDeliveryFor(orderIdent: string, opts?: {
     nextChannelsSent[ch] = {
       at: new Date().toISOString(),
       ok: out.ok,
-      error: out.error ?? (out.skipped ? out.reason ?? null : null),
+      error: out.error ?? (out.skipped ? (out.reason ?? null) : null),
     };
   }
 
@@ -253,10 +297,13 @@ export async function dispatchIptvDeliveryFor(orderIdent: string, opts?: {
     sent_at: anyOk ? new Date().toISOString() : delivery.sent_at,
     sent_channel: lastOkChannel ?? delivery.sent_channel,
   };
-  await sb.from("orders").update({
-    metadata: { ...meta, iptv_delivery: nextDelivery },
-    ...(anyOk ? { status: "completed" } : {}),
-  }).eq("id", order.id);
+  await sb
+    .from("orders")
+    .update({
+      metadata: { ...meta, iptv_delivery: nextDelivery },
+      ...(anyOk ? { status: "completed" } : {}),
+    })
+    .eq("id", order.id);
 
   return { orderId: order.id, channels: results as any, status };
 }

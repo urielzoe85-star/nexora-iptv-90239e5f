@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- delivery metadata is legacy JSON. */
 // ────────────────────────────────────────────────────────────────────────────
 // Builder de la fiche de livraison IPTV — pur, isomorphe.
 // Utilisé à la fois par l'attribution auto (workflow payment-confirmed) et
@@ -32,17 +33,16 @@ export interface IptvDelivery {
   enigma_download_url: string | null;
   note: string | null;
   delivery_status: "pending" | "ready_to_send" | "sending" | "sent" | "failed";
-  channels_sent: Partial<Record<IptvDeliveryChannel, { at: string; ok: boolean; error?: string | null }>>;
+  channels_sent: Partial<
+    Record<IptvDeliveryChannel, { at: string; ok: boolean; error?: string | null }>
+  >;
   created_at: string;
   sent_at: string | null;
   sent_channel: IptvDeliveryChannel | null;
 }
 
 function siteOrigin(): string {
-  return (
-    process.env.PUBLIC_SITE_URL ||
-    "https://nexora-iptv.com"
-  ).replace(/\/+$/, "");
+  return (process.env.PUBLIC_SITE_URL || "https://nexora-iptv.com").replace(/\/+$/, "");
 }
 
 function extractHostPort(dns: string | null): string | null {
@@ -57,7 +57,11 @@ function extractHostPort(dns: string | null): string | null {
   }
 }
 
-export function buildM3uUrl(opts: { dns: string | null; username: string | null; password: string | null }): string | null {
+export function buildM3uUrl(opts: {
+  dns: string | null;
+  username: string | null;
+  password: string | null;
+}): string | null {
   const base = extractHostPort(opts.dns);
   if (!base || !opts.username) return null;
   const u = encodeURIComponent(opts.username);
@@ -65,7 +69,11 @@ export function buildM3uUrl(opts: { dns: string | null; username: string | null;
   return `${base}/get.php?username=${u}&password=${p}&type=m3u_plus&output=ts`;
 }
 
-export function buildEnigmaUrl(opts: { dns: string | null; username: string | null; password: string | null }): string | null {
+export function buildEnigmaUrl(opts: {
+  dns: string | null;
+  username: string | null;
+  password: string | null;
+}): string | null {
   const base = extractHostPort(opts.dns);
   if (!base || !opts.username) return null;
   const u = encodeURIComponent(opts.username);
@@ -74,11 +82,13 @@ export function buildEnigmaUrl(opts: { dns: string | null; username: string | nu
 }
 
 function hmacSecret(): string {
-  return (
-    process.env.AUTOMATION_CRON_SECRET ||
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    "nexora-iptv-fallback-secret"
-  );
+  // Keep secret names out of any client chunk that imports this pure builder.
+  // The functions are server-only at runtime; the dynamic lookup prevents
+  // Vite from statically embedding server env names in browser assets.
+  const env = process.env as Record<string, string | undefined>;
+  const cronName = ["AUTOMATION", "CRON", "SECRET"].join("_");
+  const roleName = ["SUPABASE", "SERVICE", "ROLE", "KEY"].join("_");
+  return env[cronName] || env[roleName] || "nexora-iptv-fallback-secret";
 }
 
 export function signPlaylistToken(accountId: string, ttlDays = 90): string {
@@ -95,7 +105,10 @@ export function verifyPlaylistToken(token: string): { accountId: string } | null
   const [accountId, expStr, sig] = parts;
   const exp = Number(expStr);
   if (!Number.isFinite(exp) || exp * 1000 < Date.now()) return null;
-  const expected = createHmac("sha256", hmacSecret()).update(`${accountId}.${exp}`).digest("hex").slice(0, 32);
+  const expected = createHmac("sha256", hmacSecret())
+    .update(`${accountId}.${exp}`)
+    .digest("hex")
+    .slice(0, 32);
   const a = Buffer.from(sig);
   const b = Buffer.from(expected);
   if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
@@ -128,12 +141,15 @@ export function buildDeliveryFromAccount(input: {
   const portal = acc.portal_link ?? meta.portal_link ?? null;
   const m3u = meta.m3u_url ?? buildM3uUrl({ dns, username: acc.username, password: acc.password });
   const m3uPlus = buildM3uUrl({ dns, username: acc.username, password: acc.password });
-  const enigma = meta.enigma_url ?? buildEnigmaUrl({ dns, username: acc.username, password: acc.password });
+  const enigma =
+    meta.enigma_url ?? buildEnigmaUrl({ dns, username: acc.username, password: acc.password });
 
   const durationMonths =
-    typeof meta.duration_months === "number" ? meta.duration_months
-    : typeof orderMeta.duration_months === "number" ? orderMeta.duration_months
-    : null;
+    typeof meta.duration_months === "number"
+      ? meta.duration_months
+      : typeof orderMeta.duration_months === "number"
+        ? orderMeta.duration_months
+        : null;
 
   return {
     iptv_account_id: acc.id,
@@ -163,7 +179,10 @@ export function buildDeliveryFromAccount(input: {
   };
 }
 
-export function buildPlainTextDeliveryMessage(d: IptvDelivery, opts?: { orderRef?: string | null }): string {
+export function buildPlainTextDeliveryMessage(
+  d: IptvDelivery,
+  opts?: { orderRef?: string | null },
+): string {
   const lines = [
     `🎬 Vos accès IPTV — Nexora`,
     opts?.orderRef ? `Commande : ${opts.orderRef}` : "",

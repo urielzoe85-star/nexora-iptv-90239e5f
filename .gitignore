@@ -16,6 +16,11 @@ dist-ssr
 .nitro
 *.local
 
+# Runtime secrets (keep the committed .env.example as documentation only)
+.env.*
+!.env.example
+.env
+
 # Wrangler / Cloudflare
 .wrangler/
 .dev.vars

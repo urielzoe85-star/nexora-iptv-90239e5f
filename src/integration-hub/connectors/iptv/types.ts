@@ -12,9 +12,13 @@ export interface IPTVCreateUserInput {
 export interface IPTVUser {
   providerUserId: string;
   username: string;
+  password?: string | null;
   status: "active" | "suspended" | "expired";
   expiresAt?: string | null;
   m3uUrl?: string | null;
+  dnsLink?: string | null;
+  portalLink?: string | null;
+  packageId?: string | null;
 }
 
 export interface IPTVConnector extends Connector {

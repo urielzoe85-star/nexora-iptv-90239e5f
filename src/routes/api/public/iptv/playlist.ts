@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Supabase row shape is legacy JSON. */
 // Téléchargement signé d'une playlist M3U ou Enigma.
 // Le token contient l'iptv_account_id + expiration + HMAC. Un client
 // qui ouvre le lien reçu par email est redirigé vers le M3U/Enigma
@@ -12,24 +13,35 @@ export const Route = createFileRoute("/api/public/iptv/playlist")({
         const url = new URL(request.url);
         const token = url.searchParams.get("t") ?? "";
         const kind = (url.searchParams.get("k") ?? "m3u") as "m3u" | "enigma";
-        const { verifyPlaylistToken, buildM3uUrl, buildEnigmaUrl } = await import("@/lib/iptv-delivery.builder");
+        const { verifyPlaylistToken, buildM3uUrl, buildEnigmaUrl } =
+          await import("@/lib/iptv-delivery.builder");
         const parsed = verifyPlaylistToken(token);
         if (!parsed) return new Response("Invalid or expired token", { status: 403 });
 
-        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
         const { data: acc } = await supabaseAdmin
           .from("iptv_accounts")
           .select("username, password, dns_link, metadata, status")
           .eq("id", parsed.accountId)
-          .maybeSingle<{ username: string; password: string | null; dns_link: string | null; metadata: any; status: string }>();
+          .maybeSingle<{
+            username: string;
+            password: string | null;
+            dns_link: string | null;
+            metadata: any;
+            status: string;
+          }>();
         if (!acc) return new Response("Not found", { status: 404 });
 
         const dns = acc.dns_link ?? (acc.metadata as any)?.dns_link ?? null;
-        const target = kind === "enigma"
-          ? buildEnigmaUrl({ dns, username: acc.username, password: acc.password })
-          : buildM3uUrl({ dns, username: acc.username, password: acc.password });
+        const target =
+          kind === "enigma"
+            ? buildEnigmaUrl({ dns, username: acc.username, password: acc.password })
+            : buildM3uUrl({ dns, username: acc.username, password: acc.password });
         if (!target) return new Response("Playlist unavailable", { status: 404 });
-        return new Response(null, { status: 302, headers: { Location: target, "Cache-Control": "no-store" } });
+        return new Response(null, {
+          status: 302,
+          headers: { Location: target, "Cache-Control": "no-store" },
+        });
       },
     },
   },

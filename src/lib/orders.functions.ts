@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- legacy order JSON fields are incrementally typed. */
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { createHmac, timingSafeEqual } from "crypto";
@@ -8,30 +9,31 @@ import { LEGAL_VERSION } from "@/lib/legal-version";
 // country's local currency now; see `convertUsdToLocal` in `@/lib/countries`.
 export const USD_TO_XOF = 600;
 
-const CreateOrderSchema = z.object({
-  email: z.string().trim().email().max(255),
-  fullName: z.string().trim().min(2).max(120),
-  planId: z.string().trim().min(1).max(40),
-  planName: z.string().trim().min(1).max(80),
-  amount: z.number().positive().max(100000),
-  currency: z.string().trim().length(3).default("USD"),
-  method: z.enum(["momo", "crypto", "card", "paypal"]),
-  // Mobile Money fields — required only when method === "momo".
-  phone: z.string().trim().min(6).max(20).optional(),
-  operator: z.string().trim().min(2).max(40).optional(),
-  country: z.string().trim().length(2).toUpperCase().optional(),
-  // Crypto fields — the selected Binance Pay currency (BTC / ETH / USDT).
-  crypto_currency: z.enum(["USDT", "BTC", "ETH"]).optional(),
-  // Sprint 3 · Bloc C — the checkout form MUST tick a box accepting the
-  // CGU / CGV / privacy / refund policy before it can call this fn.
-  termsAccepted: z.literal(true, {
-    message: "Vous devez accepter les CGU et CGV.",
-  }),
-  termsVersion: z.string().trim().min(4).max(32).optional(),
-}).refine(
-  (v) => v.method !== "momo" || (!!v.phone && !!v.operator && !!v.country),
-  { message: "Mobile Money order requires phone, operator and country" },
-);
+const CreateOrderSchema = z
+  .object({
+    email: z.string().trim().email().max(255),
+    fullName: z.string().trim().min(2).max(120),
+    planId: z.string().trim().min(1).max(40),
+    planName: z.string().trim().min(1).max(80),
+    amount: z.number().positive().max(100000),
+    currency: z.string().trim().length(3).default("USD"),
+    method: z.enum(["momo", "crypto", "card", "paypal"]),
+    // Mobile Money fields — required only when method === "momo".
+    phone: z.string().trim().min(6).max(20).optional(),
+    operator: z.string().trim().min(2).max(40).optional(),
+    country: z.string().trim().length(2).toUpperCase().optional(),
+    // Crypto fields — the selected Binance Pay currency (BTC / ETH / USDT).
+    crypto_currency: z.enum(["USDT", "BTC", "ETH"]).optional(),
+    // Sprint 3 · Bloc C — the checkout form MUST tick a box accepting the
+    // CGU / CGV / privacy / refund policy before it can call this fn.
+    termsAccepted: z.literal(true, {
+      message: "Vous devez accepter les CGU et CGV.",
+    }),
+    termsVersion: z.string().trim().min(4).max(32).optional(),
+  })
+  .refine((v) => v.method !== "momo" || (!!v.phone && !!v.operator && !!v.country), {
+    message: "Mobile Money order requires phone, operator and country",
+  });
 
 function genOrderRef() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -158,7 +160,9 @@ export const getOrderByRef = createServerFn({ method: "GET" })
       // deliberately omit PII (raw email, full_name) and surface only a
       // masked email plus non-sensitive delivery/failure fields. Full
       // credentials require the double-check ref+email via getOrderDelivery.
-      .select("order_ref, email, plan_name, amount, currency, method, status, sebpay_reference, metadata, created_at, updated_at")
+      .select(
+        "order_ref, email, plan_name, amount, currency, method, status, sebpay_reference, metadata, created_at, updated_at",
+      )
       .eq("order_ref", data.ref)
       .maybeSingle();
     if (error) throw new Error(error.message);
@@ -169,9 +173,11 @@ export const getOrderByRef = createServerFn({ method: "GET" })
     // que la page /track puisse honorer le timeline (étape « identifiants
     // envoyés »). On ne sort JAMAIS username / password / dns / portal_link
     // depuis un endpoint public — seul le statut et l'horodatage.
-    const rawDelivery = (meta.iptv_delivery ?? null) as
-      | { delivery_status?: string; sent_channel?: string | null; sent_at?: string | null }
-      | null;
+    const rawDelivery = (meta.iptv_delivery ?? null) as {
+      delivery_status?: string;
+      sent_channel?: string | null;
+      sent_at?: string | null;
+    } | null;
     const delivery = rawDelivery
       ? {
           status:
@@ -260,10 +266,26 @@ export const getOrderDelivery = createServerFn({ method: "POST" })
     if (!delivery || delivery.delivery_status === "pending") {
       return { ok: false as const, reason: "not_ready" as const };
     }
-    // On expose la fiche complète (username / password / DNS / M3U / Enigma
-    // / liens signés / expiration / package). C'est la contrepartie de la
-    // double vérification ref + email.
-    return { ok: true as const, delivery, order_ref: row.order_ref };
+    // Projection stricte : même après la double vérification ref + email,
+    // l'endpoint client ne renvoie que les éléments nécessaires à la lecture
+    // IPTV. Les IDs internes, package fournisseur, provider, notes et état
+    // d'envoi restent côté serveur/NCC.
+    const publicDelivery = {
+      username: delivery.username ?? null,
+      password: delivery.password ?? null,
+      dns_link: delivery.dns_link ?? null,
+      dns_link_samsung_lg: delivery.dns_link_samsung_lg ?? null,
+      portal_link: delivery.portal_link ?? null,
+      expires_at: delivery.expires_at ?? null,
+      max_connections: delivery.max_connections ?? null,
+      m3u_url: delivery.m3u_url ?? null,
+      m3u_with_options_url: delivery.m3u_with_options_url ?? null,
+      enigma_url: delivery.enigma_url ?? null,
+      playlist_download_url: delivery.playlist_download_url ?? null,
+      enigma_download_url: delivery.enigma_download_url ?? null,
+      delivery_status: delivery.delivery_status ?? "ready_to_send",
+    };
+    return { ok: true as const, delivery: publicDelivery, order_ref: row.order_ref };
   });
 
 // Client-callable status update. CRITICAL: the client can ONLY signal a

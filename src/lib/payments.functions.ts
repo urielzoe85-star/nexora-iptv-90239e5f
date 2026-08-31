@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- payment provider payloads are runtime-validated. */
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
@@ -82,7 +83,9 @@ export const initSebPayCheckout = createServerFn({ method: "POST" })
       const fieldErrors =
         json && json.errors ? ` — fields: ${JSON.stringify(json.errors).slice(0, 400)}` : "";
       console.error("[sebpay] create collection failed", { status, endpoint, detail, fieldErrors });
-      throw new Error("Le paiement n'a pas pu être initialisé. Veuillez réessayer ou contacter le support.");
+      throw new Error(
+        "Le paiement n'a pas pu être initialisé. Veuillez réessayer ou contacter le support.",
+      );
     }
 
     const d = json.data ?? json;
@@ -158,9 +161,7 @@ export const initCamerPayCheckout = createServerFn({ method: "POST" })
       throw new Error(`Order is already ${order.status}; cannot start a new checkout.`);
     }
     if (String(order.currency).toUpperCase() !== "XAF") {
-      throw new Error(
-        "CamerPay accepte uniquement des paiements en XAF pour le moment.",
-      );
+      throw new Error("CamerPay accepte uniquement des paiements en XAF pour le moment.");
     }
 
     const momo = (order.metadata as any)?.momo as
@@ -279,7 +280,8 @@ export const initCheckout = createServerFn({ method: "POST" })
         return {
           provider: "sebpay" as const,
           ...fallback,
-          message: fallback.message ?? "Paiement Mobile Money redirigé vers notre passerelle de secours.",
+          message:
+            fallback.message ?? "Paiement Mobile Money redirigé vers notre passerelle de secours.",
         };
       }
     }
@@ -329,10 +331,11 @@ export async function verifyPaymentInternal(ref: string): Promise<{ status: stri
     } = await import("@/lib/payments-sebpay.server");
     const sebRef = order.sebpay_reference ?? order.provider_reference;
     if (!sebRef) return { status: order.status };
-    const { status: httpStatus, raw, json } = await sebpayFetch(
-      `${PATH}/${encodeURIComponent(sebRef)}`,
-      { method: "GET" },
-    );
+    const {
+      status: httpStatus,
+      raw,
+      json,
+    } = await sebpayFetch(`${PATH}/${encodeURIComponent(sebRef)}`, { method: "GET" });
     if (httpStatus < 200 || httpStatus >= 300 || !json) {
       console.error("[sebpay] verify failed", { ref, httpStatus, raw: raw.slice(0, 300) });
       return { status: order.status };
@@ -367,7 +370,10 @@ export async function verifyPaymentInternal(ref: string): Promise<{ status: stri
       try {
         const { reactivateAccountsForOrder } = await import("@/lib/billing.server");
         const { data: internal } = await supabaseAdmin
-          .from("orders").select("id").eq("order_ref", ref).maybeSingle();
+          .from("orders")
+          .select("id")
+          .eq("order_ref", ref)
+          .maybeSingle();
         if (internal?.id) {
           await reactivateAccountsForOrder(internal.id, { source: `payment.verify.${provider}` });
         }
@@ -409,6 +415,40 @@ export async function emitBusinessEvent(
     const ref = String((payload as any).orderRef ?? (payload as any).orderId ?? "");
     const idempotencyKey = ref ? `${event}:${ref}` : null;
     await automationApi.emit(event, payload, { sync: false, idempotencyKey });
+    if (event === "payment.confirmed" && ref) {
+      // Durable provisioning state starts at pending before the worker claims
+      // the queue job. The workflow advances it to processing/provisioned.
+      const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
+      const { data: order } = await supabaseAdmin
+        .from("orders")
+        .select("id, metadata")
+        .eq("order_ref", ref)
+        .maybeSingle();
+      if (order?.id) {
+        const meta = (order.metadata ?? {}) as Record<string, any>;
+        const previous = (meta.iptv_provisioning ?? {}) as Record<string, any>;
+        await supabaseAdmin
+          .from("orders")
+          .update({
+            metadata: {
+              ...meta,
+              iptv_provisioning: {
+                ...previous,
+                state: "pending",
+                attempts: Number(previous.attempts ?? 0),
+                correlation_id:
+                  previous.correlation_id ??
+                  globalThis.crypto?.randomUUID?.() ??
+                  `${Date.now()}-${Math.random()}`,
+                updated_at: new Date().toISOString(),
+                error: null,
+                last_error: null,
+              },
+            },
+          })
+          .eq("id", order.id);
+      }
+    }
     // Chemin chaud : dès qu'un événement métier significatif est enfilé,
     // on déclenche un drain immédiat en arrière-plan. Cela évite d'attendre
     // le tick pg_cron (~1 min) et rend l'attribution IPTV quasi-instantanée
@@ -440,7 +480,13 @@ export async function emitBusinessEvent(
 const BinanceProofSchema = z.object({
   ref: z.string().trim().min(4).max(40),
   accountName: z.string().trim().min(2).max(120),
-  binanceUid: z.string().trim().max(40).optional().or(z.literal("")).transform((v) => (v ? v : undefined)),
+  binanceUid: z
+    .string()
+    .trim()
+    .max(40)
+    .optional()
+    .or(z.literal(""))
+    .transform((v) => (v ? v : undefined)),
   transactionId: z.string().trim().min(4).max(120),
   // Screenshot facultatif encodé en data-URL (image/png|jpeg|webp, ≤ 3 MB).
   screenshotDataUrl: z.string().max(4_500_000).optional(),
@@ -486,14 +532,17 @@ export const submitBinanceProof = createServerFn({ method: "POST" })
       if (!parsed) {
         throw new Error("Capture d'écran invalide (formats acceptés : PNG, JPEG, WEBP ≤ 3 Mo).");
       }
-      const ext = parsed.mime === "image/jpeg" ? "jpg" : parsed.mime === "image/webp" ? "webp" : "png";
+      const ext =
+        parsed.mime === "image/jpeg" ? "jpg" : parsed.mime === "image/webp" ? "webp" : "png";
       const path = `${order.order_ref}/${Date.now()}.${ext}`;
       const { error: upErr } = await (supabaseAdmin as any).storage
         .from("binance-proofs")
         .upload(path, parsed.buffer, { contentType: parsed.mime, upsert: false });
       if (upErr) {
         console.error("[binance-proof] upload failed", upErr);
-        throw new Error("Le téléversement de la capture a échoué. Réessayez sans image ou avec un fichier plus léger.");
+        throw new Error(
+          "Le téléversement de la capture a échoué. Réessayez sans image ou avec un fichier plus léger.",
+        );
       }
       screenshotPath = path;
     }
@@ -531,10 +580,12 @@ export const submitBinanceProof = createServerFn({ method: "POST" })
 export const approveBinancePayment = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
   .inputValidator((data: unknown) =>
-    z.object({
-      ref: z.string().trim().min(4).max(40),
-      notes: z.string().trim().max(500).optional(),
-    }).parse(data),
+    z
+      .object({
+        ref: z.string().trim().min(4).max(40),
+        notes: z.string().trim().max(500).optional(),
+      })
+      .parse(data),
   )
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
@@ -594,10 +645,12 @@ export const approveBinancePayment = createServerFn({ method: "POST" })
 export const rejectBinancePayment = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
   .inputValidator((data: unknown) =>
-    z.object({
-      ref: z.string().trim().min(4).max(40),
-      reason: z.string().trim().min(2).max(500),
-    }).parse(data),
+    z
+      .object({
+        ref: z.string().trim().min(4).max(40),
+        reason: z.string().trim().min(2).max(500),
+      })
+      .parse(data),
   )
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
@@ -653,7 +706,9 @@ export const listBinanceAwaiting = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
     const { data, error } = await supabaseAdmin
       .from("orders")
-      .select("order_ref, email, full_name, plan_name, amount, currency, status, metadata, created_at, updated_at")
+      .select(
+        "order_ref, email, full_name, plan_name, amount, currency, status, metadata, created_at, updated_at",
+      )
       .eq("method", "crypto")
       .in("status", ["awaiting_verification", "pending"])
       .order("updated_at", { ascending: false })
@@ -684,7 +739,9 @@ export const listBinanceAwaiting = createServerFn({ method: "GET" })
 /** Admin — URL signée temporaire vers la capture d'écran d'une preuve Binance. */
 export const getBinanceProofScreenshotUrl = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
-  .inputValidator((data: unknown) => z.object({ ref: z.string().trim().min(4).max(40) }).parse(data))
+  .inputValidator((data: unknown) =>
+    z.object({ ref: z.string().trim().min(4).max(40) }).parse(data),
+  )
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
     const { data: order, error } = await supabaseAdmin
@@ -693,7 +750,10 @@ export const getBinanceProofScreenshotUrl = createServerFn({ method: "POST" })
       .eq("order_ref", data.ref)
       .maybeSingle();
     if (error) throw new Error(error.message);
-    const path = (order?.metadata as any)?.binance_manual?.screenshot_path as string | null | undefined;
+    const path = (order?.metadata as any)?.binance_manual?.screenshot_path as
+      | string
+      | null
+      | undefined;
     if (!path) return { url: null };
     const { data: signed, error: sErr } = await (supabaseAdmin as any).storage
       .from("binance-proofs")

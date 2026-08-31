@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 
 interface Delivery {
-  iptv_account_id: string;
+  iptv_account_id?: string;
   username: string;
   password?: string | null;
   package?: string | null;
@@ -28,8 +28,12 @@ interface Delivery {
 }
 
 async function copyText(text: string): Promise<boolean> {
-  try { await navigator.clipboard.writeText(text); return true; }
-  catch { return false; }
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export function DeliveryPreview({
@@ -52,7 +56,9 @@ export function DeliveryPreview({
     (delivery.dns_link_samsung_lg ? `Samsung/LG: ${delivery.dns_link_samsung_lg}\n` : "") +
     (delivery.m3u_url ? `M3U: ${delivery.m3u_url}\n` : "") +
     (delivery.package ? `Package: ${delivery.package}\n` : "") +
-    (delivery.expires_at ? `Expiration: ${new Date(delivery.expires_at).toLocaleDateString()}\n` : "");
+    (delivery.expires_at
+      ? `Expiration: ${new Date(delivery.expires_at).toLocaleDateString()}\n`
+      : "");
 
   async function copyAndFlash(text: string, label: string) {
     const ok = await copyText(text);
@@ -80,13 +86,18 @@ export function DeliveryPreview({
             </p>
           </div>
           {delivery.delivery_status === "sent" && (
-            <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/40">Envoyée</Badge>
+            <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/40">
+              Envoyée
+            </Badge>
           )}
           {delivery.delivery_status === "failed" && (
             <Badge className="bg-red-500/20 text-red-300 border-red-500/40">Échec</Badge>
           )}
-          {(delivery.delivery_status === "ready_to_send" || delivery.delivery_status === "pending") && (
-            <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/40">Prête à envoyer</Badge>
+          {(delivery.delivery_status === "ready_to_send" ||
+            delivery.delivery_status === "pending") && (
+            <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/40">
+              Prête à envoyer
+            </Badge>
           )}
         </div>
 
@@ -107,7 +118,9 @@ export function DeliveryPreview({
                 {delivery.m3u_url}
               </div>
               <Button
-                type="button" size="icon" variant="outline"
+                type="button"
+                size="icon"
+                variant="outline"
                 className="border-slate-700 bg-slate-900 hover:bg-slate-800"
                 onClick={() => copyAndFlash(delivery.m3u_url ?? "", "Lien M3U")}
                 aria-label="Copier le lien M3U"
@@ -120,21 +133,49 @@ export function DeliveryPreview({
 
         {/* Connection Details */}
         <div>
-          <div className="text-xs uppercase tracking-wider text-slate-400 mb-1.5">Connection Details</div>
+          <div className="text-xs uppercase tracking-wider text-slate-400 mb-1.5">
+            Connection Details
+          </div>
           <div className="bg-slate-900 border border-slate-800 rounded-md p-3 text-sm font-mono space-y-1">
-            <div>👤 Username: <span className="text-slate-100">{delivery.username}</span></div>
-            <div>🔑 Password: <span className="text-slate-100">{delivery.password ?? "—"}</span></div>
-            {delivery.dns_link && <div>🔗 DNS: <span className="text-slate-300 break-all">{delivery.dns_link}</span></div>}
-            {delivery.dns_link_samsung_lg && (
-              <div>📺 Samsung & LG DNS: <span className="text-slate-300 break-all">{delivery.dns_link_samsung_lg}</span></div>
+            <div>
+              👤 Username: <span className="text-slate-100">{delivery.username}</span>
+            </div>
+            <div>
+              🔑 Password: <span className="text-slate-100">{delivery.password ?? "—"}</span>
+            </div>
+            {delivery.dns_link && (
+              <div>
+                🔗 DNS: <span className="text-slate-300 break-all">{delivery.dns_link}</span>
+              </div>
             )}
-            {delivery.enigma_url && <div>📡 Enigma: <span className="text-slate-300 break-all">{delivery.enigma_url}</span></div>}
-            {delivery.package && <div>📦 Package: <span className="text-slate-100">{delivery.package}</span></div>}
+            {delivery.dns_link_samsung_lg && (
+              <div>
+                📺 Samsung & LG DNS:{" "}
+                <span className="text-slate-300 break-all">{delivery.dns_link_samsung_lg}</span>
+              </div>
+            )}
+            {delivery.enigma_url && (
+              <div>
+                📡 Enigma: <span className="text-slate-300 break-all">{delivery.enigma_url}</span>
+              </div>
+            )}
+            {delivery.package && (
+              <div>
+                📦 Package: <span className="text-slate-100">{delivery.package}</span>
+              </div>
+            )}
             {typeof delivery.max_connections === "number" && (
-              <div>👥 Connexions: <span className="text-slate-100">{delivery.max_connections}</span></div>
+              <div>
+                👥 Connexions: <span className="text-slate-100">{delivery.max_connections}</span>
+              </div>
             )}
             {delivery.expires_at && (
-              <div>⏳ Expire le: <span className="text-slate-100">{new Date(delivery.expires_at).toLocaleDateString()}</span></div>
+              <div>
+                ⏳ Expire le:{" "}
+                <span className="text-slate-100">
+                  {new Date(delivery.expires_at).toLocaleDateString()}
+                </span>
+              </div>
             )}
           </div>
         </div>
@@ -142,7 +183,8 @@ export function DeliveryPreview({
         {/* Actions */}
         <div className="grid grid-cols-2 gap-2">
           <Button
-            type="button" variant="outline"
+            type="button"
+            variant="outline"
             className="border-slate-700 bg-slate-900 hover:bg-slate-800 text-slate-100"
             onClick={() => copyAndFlash(credentialsSnippet, "Identifiants")}
           >
@@ -150,7 +192,8 @@ export function DeliveryPreview({
             {copiedField === "Identifiants" ? "Copié ✓" : "Copier les identifiants"}
           </Button>
           <Button
-            type="button" variant="outline"
+            type="button"
+            variant="outline"
             className="border-slate-700 bg-slate-900 hover:bg-slate-800 text-slate-100"
             disabled={!delivery.m3u_url}
             onClick={() => copyAndFlash(delivery.m3u_url ?? "", "Lien M3U")}
@@ -158,14 +201,22 @@ export function DeliveryPreview({
             <Copy className="h-3.5 w-3.5 mr-2" /> Copier le lien M3U
           </Button>
           {delivery.playlist_download_url && (
-            <Button asChild variant="outline" className="border-slate-700 bg-slate-900 hover:bg-slate-800 text-slate-100">
+            <Button
+              asChild
+              variant="outline"
+              className="border-slate-700 bg-slate-900 hover:bg-slate-800 text-slate-100"
+            >
               <a href={delivery.playlist_download_url} target="_blank" rel="noopener">
                 <Download className="h-3.5 w-3.5 mr-2" /> Télécharger la playlist M3U
               </a>
             </Button>
           )}
           {delivery.enigma_download_url && (
-            <Button asChild variant="outline" className="border-slate-700 bg-slate-900 hover:bg-slate-800 text-slate-100">
+            <Button
+              asChild
+              variant="outline"
+              className="border-slate-700 bg-slate-900 hover:bg-slate-800 text-slate-100"
+            >
               <a href={delivery.enigma_download_url} target="_blank" rel="noopener">
                 <Download className="h-3.5 w-3.5 mr-2" /> Télécharger Enigma
               </a>
@@ -179,7 +230,9 @@ export function DeliveryPreview({
             <div className="text-xs uppercase tracking-wider text-slate-400">Envoi automatique</div>
             <div className="grid grid-cols-3 gap-2">
               <Button
-                type="button" size="sm" variant="outline"
+                type="button"
+                size="sm"
+                variant="outline"
                 className="border-slate-700 bg-slate-900 hover:bg-slate-800 text-slate-100"
                 disabled={dispatching}
                 onClick={() => onDispatch(["email"])}
@@ -188,7 +241,9 @@ export function DeliveryPreview({
                 {chSent.email?.ok && <span className="ml-1 text-emerald-400">✓</span>}
               </Button>
               <Button
-                type="button" size="sm" variant="outline"
+                type="button"
+                size="sm"
+                variant="outline"
                 className="border-slate-700 bg-slate-900 hover:bg-slate-800 text-slate-100"
                 disabled={dispatching}
                 onClick={() => onDispatch(["whatsapp"])}
@@ -197,7 +252,9 @@ export function DeliveryPreview({
                 {chSent.whatsapp?.ok && <span className="ml-1 text-emerald-400">✓</span>}
               </Button>
               <Button
-                type="button" size="sm" variant="outline"
+                type="button"
+                size="sm"
+                variant="outline"
                 className="border-slate-700 bg-slate-900 hover:bg-slate-800 text-slate-100"
                 disabled={dispatching}
                 onClick={() => onDispatch(["telegram"])}
@@ -207,7 +264,8 @@ export function DeliveryPreview({
               </Button>
             </div>
             <Button
-              type="button" className="w-full bg-primary hover:bg-primary/90"
+              type="button"
+              className="w-full bg-primary hover:bg-primary/90"
               disabled={dispatching}
               onClick={() => onDispatch()}
             >
@@ -219,9 +277,13 @@ export function DeliveryPreview({
                 {Object.entries(chSent).map(([ch, st]) => (
                   <li key={ch} className="flex items-center gap-1.5">
                     <span className="capitalize w-16">{ch}</span>
-                    {st.ok
-                      ? <span className="text-emerald-400">✓ envoyé {new Date(st.at).toLocaleString()}</span>
-                      : <span className="text-amber-400">⚠ {st.error ?? "non envoyé"}</span>}
+                    {st.ok ? (
+                      <span className="text-emerald-400">
+                        ✓ envoyé {new Date(st.at).toLocaleString()}
+                      </span>
+                    ) : (
+                      <span className="text-amber-400">⚠ {st.error ?? "non envoyé"}</span>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -231,7 +293,9 @@ export function DeliveryPreview({
 
         {/* Instructions */}
         <div className="border-t border-slate-800 pt-4">
-          <div className="text-xs uppercase tracking-wider text-slate-400 mb-2">Instructions d'installation</div>
+          <div className="text-xs uppercase tracking-wider text-slate-400 mb-2">
+            Instructions d'installation
+          </div>
           <ol className="text-xs text-slate-300 space-y-1 list-decimal list-inside">
             <li>Ouvrez votre application IPTV (IPTV Smarters, TiviMate, GSE Smart IPTV…).</li>
             <li>Collez le lien M3U ou saisissez les identifiants (Username / Password / DNS).</li>

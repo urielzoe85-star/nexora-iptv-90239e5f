@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- provider webhook payload is untrusted JSON. */
 import { createFileRoute } from "@tanstack/react-router";
 import { createHmac, timingSafeEqual } from "crypto";
 
@@ -11,7 +12,7 @@ async function handleInbound(update: any) {
   // Meta payload : entry[].changes[].value.{messages,statuses,contacts}
   const entries = Array.isArray(update?.entry) ? update.entry : [];
   if (!entries.length) return;
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
   const sb = supabaseAdmin as any;
 
   for (const entry of entries) {
@@ -85,7 +86,8 @@ async function handleInbound(update: any) {
             if (error) throw error;
             ticketId = created.id;
           } else {
-            await sb.from("support_tickets")
+            await sb
+              .from("support_tickets")
               .update({ last_message_at: new Date().toISOString(), status: "open" })
               .eq("id", ticketId);
           }
@@ -116,16 +118,24 @@ async function handleInbound(update: any) {
 function extractText(msg: any): string {
   if (!msg) return "";
   switch (msg.type) {
-    case "text":         return msg.text?.body ?? "";
-    case "button":       return msg.button?.text ?? "";
-    case "interactive":  return msg.interactive?.button_reply?.title
-                            ?? msg.interactive?.list_reply?.title ?? "";
-    case "image":        return msg.image?.caption ?? "[image]";
-    case "video":        return msg.video?.caption ?? "[vidéo]";
-    case "audio":        return "[audio]";
-    case "document":     return msg.document?.filename ?? "[document]";
-    case "location":     return `[localisation ${msg.location?.latitude},${msg.location?.longitude}]`;
-    default:             return `[${msg.type ?? "message"}]`;
+    case "text":
+      return msg.text?.body ?? "";
+    case "button":
+      return msg.button?.text ?? "";
+    case "interactive":
+      return msg.interactive?.button_reply?.title ?? msg.interactive?.list_reply?.title ?? "";
+    case "image":
+      return msg.image?.caption ?? "[image]";
+    case "video":
+      return msg.video?.caption ?? "[vidéo]";
+    case "audio":
+      return "[audio]";
+    case "document":
+      return msg.document?.filename ?? "[document]";
+    case "location":
+      return `[localisation ${msg.location?.latitude},${msg.location?.longitude}]`;
+    default:
+      return `[${msg.type ?? "message"}]`;
   }
 }
 

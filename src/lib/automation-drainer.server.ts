@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- queue payloads are persisted JSON. */
 // Serveur-uniquement — drainage de la file `automation_queue`.
 //
 // Ce module extrait la logique historiquement dans
@@ -18,6 +19,46 @@ export interface DrainOptions {
 export interface DrainResult {
   reclaimed: number;
   processed: Array<{ id: string; status: string; error?: string | null }>;
+}
+
+async function markProvisioningQueueState(
+  sb: any,
+  job: { workflow_key: string; payload: any },
+  state: "retrying" | "failed",
+  error: unknown,
+) {
+  if (job.workflow_key !== "payment-confirmed") return;
+  const ref = String(job.payload?.orderRef ?? job.payload?.orderId ?? "");
+  if (!ref) return;
+  const lookup = /^[0-9a-f-]{36}$/i.test(ref)
+    ? sb.from("orders").select("id, metadata").eq("id", ref)
+    : sb.from("orders").select("id, metadata").eq("order_ref", ref);
+  const { data: order } = await lookup.maybeSingle();
+  if (!order?.id) return;
+  const meta = (order.metadata ?? {}) as Record<string, any>;
+  const safe = String(error ?? "workflow failed")
+    .replace(/Bearer\s+[^\s]+/gi, "Bearer ***")
+    .slice(0, 500);
+  const previous = (meta.iptv_provisioning ?? {}) as Record<string, any>;
+  await sb
+    .from("orders")
+    .update({
+      metadata: {
+        ...meta,
+        iptv_provisioning: {
+          ...previous,
+          state,
+          error: safe,
+          last_error: safe,
+          correlation_id:
+            previous.correlation_id ??
+            globalThis.crypto?.randomUUID?.() ??
+            `${Date.now()}-${Math.random()}`,
+          updated_at: new Date().toISOString(),
+        },
+      },
+    })
+    .eq("id", order.id);
 }
 
 /**
@@ -74,7 +115,10 @@ export async function drainAutomationQueue(opts: DrainOptions = {}): Promise<Dra
         processed.push({ id: job.id, status: "done" });
       } else {
         const failed = job.attempts >= job.max_attempts;
-        const backoffMs = Math.min(15 * 60_000, 30_000 * Math.pow(2, Math.max(0, job.attempts - 1)));
+        const backoffMs = Math.min(
+          15 * 60_000,
+          30_000 * Math.pow(2, Math.max(0, job.attempts - 1)),
+        );
         const nextAt = new Date(Date.now() + backoffMs).toISOString();
         await sb
           .from("automation_queue")
@@ -86,6 +130,7 @@ export async function drainAutomationQueue(opts: DrainOptions = {}): Promise<Dra
             updated_at: new Date().toISOString(),
           })
           .eq("id", job.id);
+        await markProvisioningQueueState(sb, job, failed ? "failed" : "retrying", r.error);
         processed.push({ id: job.id, status: failed ? "failed" : "retry", error: r.error });
       }
     } catch (e: any) {
@@ -102,7 +147,12 @@ export async function drainAutomationQueue(opts: DrainOptions = {}): Promise<Dra
           updated_at: new Date().toISOString(),
         })
         .eq("id", job.id);
-      processed.push({ id: job.id, status: failed ? "failed" : "retry", error: String(e?.message ?? e) });
+      await markProvisioningQueueState(sb, job, failed ? "failed" : "retrying", e?.message ?? e);
+      processed.push({
+        id: job.id,
+        status: failed ? "failed" : "retry",
+        error: String(e?.message ?? e),
+      });
     }
   }
 

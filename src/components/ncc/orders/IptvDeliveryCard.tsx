@@ -1,11 +1,19 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- server-function response is a legacy union. */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Tv, CheckCircle2, PackageSearch } from "lucide-react";
+import { Tv, CheckCircle2, PackageSearch, RefreshCw } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { useState, useMemo } from "react";
 import { listInventoryAccounts, assignIptvAccountToOrder } from "@/lib/iptv-import.functions";
@@ -14,6 +22,7 @@ import { MegaottDeliveryForm } from "./MegaottDeliveryForm";
 import { DeliveryPreview } from "./DeliveryPreview";
 import { dispatchIptvDelivery } from "@/lib/delivery.functions";
 import { getOrder } from "@/lib/ncc.functions";
+import { retryMegaottProvisioning, syncMegaottOrder } from "@/lib/iptv-megaott.functions";
 
 interface Delivery {
   iptv_account_id: string;
@@ -33,8 +42,19 @@ interface Delivery {
 
 export function IptvDeliveryCard({ orderId, metadata }: { orderId: string; metadata: any }) {
   const delivery = (metadata?.iptv_delivery ?? null) as Delivery | null;
+  const provisioning = (metadata?.iptv_provisioning ?? {}) as {
+    state?: string;
+    attempts?: number;
+    last_error?: string | null;
+    manual_review_reason?: string | null;
+    correlation_id?: string | null;
+    provider_creation_possible?: boolean;
+  };
+  const ambiguousCreate = Boolean(provisioning.provider_creation_possible);
   const getOrderFn = useServerFn(getOrder);
   const dispatchFn = useServerFn(dispatchIptvDelivery);
+  const retryFn = useServerFn(retryMegaottProvisioning);
+  const syncFn = useServerFn(syncMegaottOrder);
   const qc = useQueryClient();
   const orderQ = useQuery({
     queryKey: ["ncc", "order", orderId],
@@ -57,6 +77,33 @@ export function IptvDeliveryCard({ orderId, metadata }: { orderId: string; metad
     },
     onError: (e) => toast.error((e as Error).message),
   });
+  const retryM = useMutation({
+    mutationFn: () => {
+      const confirmed =
+        !ambiguousCreate ||
+        window.confirm(
+          "MegaOTT peut déjà avoir créé cet abonnement après une réponse perdue. Synchronisez d'abord si possible. Confirmer malgré tout un nouveau retry ?",
+        );
+      if (!confirmed) throw new Error("Retry annulé");
+      return retryFn({ data: { order_id: orderId, confirm_ambiguous: confirmed } });
+    },
+    onSuccess: (res: any) => {
+      if (res.skipped) toast.info("Provisioning déjà enregistré");
+      else if (res.ok) toast.success("Retry provisioning lancé");
+      else toast.error(res.error ?? "Échec du retry provisioning");
+      qc.invalidateQueries({ queryKey: ["ncc", "order", orderId] });
+    },
+    onError: (e) => toast.error((e as Error).message),
+  });
+  const syncM = useMutation({
+    mutationFn: () => syncFn({ data: { order_id: orderId } }),
+    onSuccess: (res: any) => {
+      if (res.ok) toast.success(`MegaOTT synchronisé (${res.status})`);
+      else toast.error(res.error ?? "Échec de synchronisation MegaOTT");
+      qc.invalidateQueries({ queryKey: ["ncc", "order", orderId] });
+    },
+    onError: (e) => toast.error((e as Error).message),
+  });
 
   return (
     <Card className="mt-4 border-primary/30">
@@ -67,10 +114,72 @@ export function IptvDeliveryCard({ orderId, metadata }: { orderId: string; metad
             <h3 className="font-medium">Livraison IPTV</h3>
           </div>
           {delivery ? (
-            delivery.delivery_status === "sent"
-              ? <Badge className="bg-emerald-500/15 text-emerald-700 border-emerald-500/30"><CheckCircle2 className="h-3 w-3 mr-1" /> Envoyé · {delivery.sent_channel}</Badge>
-              : <Badge className="bg-amber-500/15 text-amber-700 border-amber-500/30">Abonnement affecté · Prêt à envoyer</Badge>
-          ) : <Badge variant="outline">Aucun abonnement</Badge>}
+            delivery.delivery_status === "sent" ? (
+              <Badge className="bg-emerald-500/15 text-emerald-700 border-emerald-500/30">
+                <CheckCircle2 className="h-3 w-3 mr-1" /> Envoyé · {delivery.sent_channel}
+              </Badge>
+            ) : (
+              <Badge className="bg-amber-500/15 text-amber-700 border-amber-500/30">
+                Abonnement affecté · Prêt à envoyer
+              </Badge>
+            )
+          ) : (
+            <Badge variant="outline">Aucun abonnement</Badge>
+          )}
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs text-muted-foreground">
+          <div>
+            Provisioning :{" "}
+            <span className="font-medium text-foreground">{provisioning.state ?? "pending"}</span>
+          </div>
+          <div>
+            Tentatives :{" "}
+            <span className="font-medium text-foreground">{provisioning.attempts ?? 0}</span>
+          </div>
+          <div>
+            Provider account :{" "}
+            <span className="font-mono text-foreground">
+              {delivery?.megaott_subscription_id ?? "—"}
+            </span>
+          </div>
+          <div>
+            Correlation :{" "}
+            <span className="font-mono text-foreground">{provisioning.correlation_id ?? "—"}</span>
+          </div>
+        </div>
+        {(provisioning.last_error || provisioning.manual_review_reason) && (
+          <div className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-800">
+            {provisioning.manual_review_reason && (
+              <div>Manual review : {provisioning.manual_review_reason}</div>
+            )}
+            {provisioning.last_error && <div>Dernière erreur : {provisioning.last_error}</div>}
+          </div>
+        )}
+
+        <div className="flex flex-wrap gap-2">
+          {(!delivery || !delivery.megaott_subscription_id) && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => retryM.mutate()}
+              disabled={retryM.isPending}
+            >
+              <RefreshCw className={`h-3 w-3 mr-1 ${retryM.isPending ? "animate-spin" : ""}`} />{" "}
+              Retry provisioning
+            </Button>
+          )}
+          {delivery?.megaott_subscription_id && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => syncM.mutate()}
+              disabled={syncM.isPending}
+            >
+              <RefreshCw className={`h-3 w-3 mr-1 ${syncM.isPending ? "animate-spin" : ""}`} />{" "}
+              Synchroniser avec MegaOTT
+            </Button>
+          )}
         </div>
 
         {!delivery && (
@@ -87,9 +196,9 @@ export function IptvDeliveryCard({ orderId, metadata }: { orderId: string; metad
               />
             </div>
             <p className="text-xs text-muted-foreground">
-              Soit vous affectez un abonnement déjà importé dans l'inventaire,
-              soit vous saisissez manuellement les infos renvoyées par le panel
-              MEGAOTT (fallback si l'automatisation a échoué).
+              Soit vous affectez un abonnement déjà importé dans l'inventaire, soit vous saisissez
+              manuellement les infos renvoyées par le panel MEGAOTT (fallback si l'automatisation a
+              échoué).
             </p>
           </div>
         )}
@@ -111,7 +220,10 @@ export function IptvDeliveryCard({ orderId, metadata }: { orderId: string; metad
               />
             )}
             {delivery.delivery_status === "sent" && delivery.sent_at && (
-              <p className="text-xs text-muted-foreground">Dernier envoi : {new Date(delivery.sent_at).toLocaleString()} ({delivery.sent_channel})</p>
+              <p className="text-xs text-muted-foreground">
+                Dernier envoi : {new Date(delivery.sent_at).toLocaleString()} (
+                {delivery.sent_channel})
+              </p>
             )}
           </>
         )}
@@ -120,7 +232,15 @@ export function IptvDeliveryCard({ orderId, metadata }: { orderId: string; metad
   );
 }
 
-function Field({ label, children, className }: { label: string; children: React.ReactNode; className?: string }) {
+function Field({
+  label,
+  children,
+  className,
+}: {
+  label: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
   return (
     <div className={className}>
       <div className="text-xs uppercase tracking-wider text-muted-foreground">{label}</div>
@@ -137,7 +257,8 @@ function AssignFromInventory({ orderId }: { orderId: string }) {
   const qc = useQueryClient();
   const q = useQuery({
     queryKey: ["iptv", "inventory", "available", search],
-    queryFn: () => listFn({ data: { only_available: true, search: search || undefined, limit: 100 } }),
+    queryFn: () =>
+      listFn({ data: { only_available: true, search: search || undefined, limit: 100 } }),
     enabled: open,
   });
   const m = useMutation({
@@ -163,25 +284,39 @@ function AssignFromInventory({ orderId }: { orderId: string }) {
           <DialogTitle>Affecter un abonnement depuis le stock</DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
-          <Input placeholder="Rechercher un username…" value={search} onChange={(e) => setSearch(e.target.value)} />
+          <Input
+            placeholder="Rechercher un username…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
           <div className="border rounded-lg max-h-[400px] overflow-auto divide-y">
             {q.isLoading && <div className="p-4 text-sm text-muted-foreground">Chargement…</div>}
-            {!q.isLoading && rows.length === 0 && <div className="p-4 text-sm text-muted-foreground">Aucun abonnement disponible.</div>}
+            {!q.isLoading && rows.length === 0 && (
+              <div className="p-4 text-sm text-muted-foreground">Aucun abonnement disponible.</div>
+            )}
             {rows.map((a: any) => (
-              <div key={a.id} className="p-3 flex items-center justify-between gap-3 hover:bg-muted/30">
+              <div
+                key={a.id}
+                className="p-3 flex items-center justify-between gap-3 hover:bg-muted/30"
+              >
                 <div className="min-w-0 flex-1">
                   <div className="font-mono text-sm truncate">{a.username}</div>
                   <div className="text-xs text-muted-foreground">
-                    {(a.package ?? a.bouquet ?? "—")} · {a.account_type} · expire {a.expires_at ? new Date(a.expires_at).toLocaleDateString() : "—"}
+                    {a.package ?? a.bouquet ?? "—"} · {a.account_type} · expire{" "}
+                    {a.expires_at ? new Date(a.expires_at).toLocaleDateString() : "—"}
                   </div>
                 </div>
-                <Button size="sm" disabled={m.isPending} onClick={() => m.mutate(a.id)}>Affecter</Button>
+                <Button size="sm" disabled={m.isPending} onClick={() => m.mutate(a.id)}>
+                  Affecter
+                </Button>
               </div>
             ))}
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>Annuler</Button>
+          <Button variant="outline" onClick={() => setOpen(false)}>
+            Annuler
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

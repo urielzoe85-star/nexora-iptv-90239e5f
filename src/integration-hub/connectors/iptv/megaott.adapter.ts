@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- official API response is normalized at runtime. */
 // MEGAOTT — first official IPTV connector (NEXORA Phase 1.5).
 //
 // ALL outbound calls go through the Integration Hub's apiGateway, so we
@@ -23,6 +24,66 @@ const CONNECTOR_ID = "iptv.megaott";
 // does not appear as a literal in any client bundle chunk that references
 // this adapter transitively.
 const TOKEN_SECRET = ["MEGAOTT", "BEARER", "TOKEN"].join("_");
+
+function mockModeEnabled() {
+  return String(process.env.MEGAOTT_MOCK_MODE ?? "").toLowerCase() === "true";
+}
+
+/** Real provider provisioning is an explicit production operation. */
+export function megaottRealProvisioningEnabled() {
+  return (
+    mockModeEnabled() ||
+    String(process.env.MEGAOTT_REAL_PROVISIONING_ENABLED ?? "").toLowerCase() === "true"
+  );
+}
+
+function realProvisioningDisabled(): Result<never, IntegrationError> {
+  return err(
+    integrationError("configuration", "MEGAOTT real provisioning is disabled", {
+      connectorId: CONNECTOR_ID,
+    }),
+  );
+}
+
+function safeProviderError(message: unknown): string {
+  return String(message ?? "")
+    .replace(/Bearer\s+[^\s]+/gi, "Bearer ***")
+    .replace(/(?:token|password|secret)[=:]\s*[^\s,}]+/gi, "$1=***")
+    .slice(0, 500);
+}
+
+function mockResponse(path: string, body?: unknown) {
+  const form = typeof body === "string" ? new URLSearchParams(body) : null;
+  const pathId = path.match(/subscriptions\/(\d+)/)?.[1];
+  const username = form?.get("username") ?? (pathId ? `mock_${pathId}` : "mock_user");
+  const hash = [...username].reduce((n, ch) => (n * 31 + ch.charCodeAt(0)) % 900000, 0) + 100000;
+  const id = pathId ?? String(hash);
+  if (path.endsWith("/extend")) {
+    return {
+      status: true,
+      message: "Subscription extended successfully",
+      new_expiration_date: new Date(Date.now() + 30 * 86_400_000).toISOString(),
+    };
+  }
+  if (path.endsWith("/activate") || path.endsWith("/deactivate")) {
+    return {
+      status: true,
+      message: path.endsWith("/activate")
+        ? "Subscription activated successfully"
+        : "Subscription deactivated successfully",
+    };
+  }
+  return {
+    id: Number(id),
+    username,
+    password: "mock_password",
+    package: { id: Number(form?.get("package_id") ?? 4), name: "Mock 1 Month" },
+    max_connections: Number(form?.get("max_connections") ?? 1),
+    expiring_at: new Date(Date.now() + 30 * 86_400_000).toISOString(),
+    dns_link: "https://mock.megaott.invalid/dns",
+    portal_link: "https://mock.megaott.invalid/portal",
+  };
+}
 
 export interface MegaottProviderConfig {
   apiUrl: string;
@@ -53,9 +114,18 @@ function joinUrl(base: string, path: string): string {
   let overlap = 0;
   const max = Math.min(baseSegs.length, pathSegs.length);
   for (let k = max; k > 0; k--) {
-    const tail = baseSegs.slice(-k).map((s) => s.toLowerCase()).join("/");
-    const head = pathSegs.slice(0, k).map((s) => s.toLowerCase()).join("/");
-    if (tail === head) { overlap = k; break; }
+    const tail = baseSegs
+      .slice(-k)
+      .map((s) => s.toLowerCase())
+      .join("/");
+    const head = pathSegs
+      .slice(0, k)
+      .map((s) => s.toLowerCase())
+      .join("/");
+    if (tail === head) {
+      overlap = k;
+      break;
+    }
   }
   const finalPath = pathSegs.slice(overlap).join("/");
   return `${b}/${finalPath}`;
@@ -70,12 +140,15 @@ function authHeaders(): Result<Record<string, string>, IntegrationError> {
   });
 }
 
-function mapStatus(s: unknown): IPTVUser["status"] {
+function mapStatus(s: unknown, expiresAt?: unknown): IPTVUser["status"] {
   // Conservative default: when the upstream response has no status field
   // (some MEGAOTT endpoints omit it), assume the user is still active —
   // defaulting to "expired" would wrongly flip live accounts to expired on
   // a sync.
-  if (s === null || s === undefined || s === "") return "active";
+  if (s === null || s === undefined || s === "") {
+    const expiry = expiresAt ? new Date(String(expiresAt)).getTime() : NaN;
+    return Number.isFinite(expiry) && expiry <= Date.now() ? "expired" : "active";
+  }
   const v = String(s).toLowerCase();
   if (v === "active" || v === "1" || v === "enabled" || v === "true") return "active";
   if (v === "suspended" || v === "disabled" || v === "banned") return "suspended";
@@ -86,34 +159,63 @@ function mapStatus(s: unknown): IPTVUser["status"] {
 
 function parseUser(json: any, fallbackUsername?: string): IPTVUser {
   const r = json?.data ?? json?.user ?? json ?? {};
+  const expiresAt =
+    r.expiring_at ?? r.exp_date ?? r.expires_at ?? r.expiration ?? r.expire_at ?? null;
   return {
-    providerUserId: String(r.id ?? r.user_id ?? r.uuid ?? r.username ?? fallbackUsername ?? ""),
+    providerUserId: String(
+      r.id ?? r.subscription_id ?? r.user_id ?? r.uuid ?? r.username ?? fallbackUsername ?? "",
+    ),
     username: String(r.username ?? r.user ?? fallbackUsername ?? ""),
-    status: mapStatus(r.status ?? r.is_active ?? r.enabled),
-    expiresAt: r.exp_date ?? r.expires_at ?? r.expiration ?? r.expire_at ?? null,
-    m3uUrl: r.m3u_url ?? r.m3u ?? r.url ?? null,
+    password: r.password ?? null,
+    status: mapStatus(r.status ?? r.is_active ?? r.enabled, expiresAt),
+    expiresAt,
+    // MegaOTT exposes the playlist/DNS/portal links with these exact names.
+    m3uUrl: r.m3u_url ?? r.m3u ?? r.url ?? r.dns_link ?? null,
+    dnsLink: r.dns_link ?? null,
+    portalLink: r.portal_link ?? null,
+    packageId:
+      r.package?.id != null
+        ? String(r.package.id)
+        : r.package_id != null
+          ? String(r.package_id)
+          : null,
   };
 }
 
 /** Resolve the configured MEGAOTT provider row (singleton). */
-export async function resolveMegaottConfig(): Promise<Result<MegaottProviderConfig, IntegrationError>> {
+export async function resolveMegaottConfig(): Promise<
+  Result<MegaottProviderConfig, IntegrationError>
+> {
+  if (mockModeEnabled()) {
+    return ok({
+      apiUrl: "https://mock.megaott.invalid",
+      defaultPackageId: process.env.MEGAOTT_DEFAULT_PACKAGE_ID ?? "mock-package",
+    });
+  }
   const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
   const { data, error } = await supabaseAdmin
     .from("iptv_providers")
     .select("api_url, metadata, status")
     .or("metadata->>kind.eq.megaott,name.ilike.%megaott%")
+    .eq("status", "active")
     .order("is_default", { ascending: false })
     .limit(1)
     .maybeSingle();
-  if (error) return err(integrationError("configuration", error.message, { connectorId: CONNECTOR_ID }));
+  if (error) {
+    return err(integrationError("configuration", error.message, { connectorId: CONNECTOR_ID }));
+  }
   if (!data?.api_url) {
-    return err(integrationError("configuration", "MEGAOTT provider is not configured (missing api_url)", { connectorId: CONNECTOR_ID }));
+    return err(
+      integrationError("configuration", "MEGAOTT provider is not configured (missing api_url)", {
+        connectorId: CONNECTOR_ID,
+      }),
+    );
   }
   const meta = (data.metadata ?? {}) as any;
   return ok({
     apiUrl: data.api_url,
     endpoints: meta.endpoints ?? {},
-    defaultPackageId: meta.default_package_id ?? null,
+    defaultPackageId: meta.default_package_id ?? process.env.MEGAOTT_DEFAULT_PACKAGE_ID ?? null,
   });
 }
 
@@ -125,13 +227,18 @@ async function call<T>(
 ): Promise<Result<{ json: any }, IntegrationError>> {
   const cfg = override ? ok(override) : await resolveMegaottConfig();
   if (!cfg.ok) return cfg;
+  if (mockModeEnabled()) return ok({ json: mockResponse(path, body) });
   const headers = authHeaders();
   if (!headers.ok) return headers;
+  const requestHeaders =
+    typeof body === "string"
+      ? { ...headers.value, "Content-Type": "application/x-www-form-urlencoded" }
+      : headers.value;
   const res = await apiGateway.request({
     connectorId: CONNECTOR_ID,
     url: joinUrl(cfg.value.apiUrl, path),
     method,
-    headers: headers.value,
+    headers: requestHeaders,
     body,
     apiVersion: "v1",
     timeoutMs: 20_000,
@@ -167,31 +274,60 @@ export async function megaottRawCall(opts: {
   override?: MegaottProviderConfig;
 }): Promise<MegaottRawTrace> {
   const cfg = opts.override ? ok(opts.override) : await resolveMegaottConfig();
+  if (mockModeEnabled() && cfg.ok) {
+    return {
+      url: joinUrl(cfg.value.apiUrl, opts.path),
+      method: opts.method,
+      requestHeaders: { Accept: "application/json", Authorization: "Bearer ***" },
+      requestBody: opts.body ?? null,
+      status: 200,
+      responseBody: mockResponse(opts.path, opts.body),
+      responseRaw: null,
+      durationMs: 0,
+      attempts: 1,
+      ok: true,
+      error: null,
+      errorKind: null,
+    };
+  }
   const headers = authHeaders();
-  const safeHeaders = headers.ok
-    ? { ...headers.value, Authorization: "Bearer ***" }
-    : {};
+  const safeHeaders = headers.ok ? { ...headers.value, Authorization: "Bearer ***" } : {};
   if (!cfg.ok || !headers.ok) {
     const e = !cfg.ok ? cfg.error : (headers as any).error;
     return {
-      url: "", method: opts.method, requestHeaders: safeHeaders, requestBody: opts.body ?? null,
-      status: null, responseBody: null, responseRaw: null, durationMs: 0, attempts: 0,
-      ok: false, error: e.message, errorKind: e.kind,
+      url: "",
+      method: opts.method,
+      requestHeaders: safeHeaders,
+      requestBody: opts.body ?? null,
+      status: null,
+      responseBody: null,
+      responseRaw: null,
+      durationMs: 0,
+      attempts: 0,
+      ok: false,
+      error: safeProviderError(e.message),
+      errorKind: e.kind,
     };
   }
   const url = joinUrl(cfg.value.apiUrl, opts.path);
   // Pre-send debug line — visible in server-function-logs. Lets you
   // confirm the exact URL hit MEGAOTT before the network call.
   logger.info("megaott → outbound", {
-    url, method: opts.method,
+    url,
+    method: opts.method,
     baseApiUrl: cfg.value.apiUrl,
     path: opts.path,
     hasBody: opts.body !== undefined,
   });
+  const rawHeaders =
+    typeof opts.body === "string"
+      ? { ...headers.value, "Content-Type": "application/x-www-form-urlencoded" }
+      : headers.value;
   const res = await apiGateway.request({
     connectorId: CONNECTOR_ID,
-    url, method: opts.method,
-    headers: headers.value,
+    url,
+    method: opts.method,
+    headers: rawHeaders,
     body: opts.body,
     apiVersion: "v1",
     timeoutMs: 20_000,
@@ -200,17 +336,33 @@ export async function megaottRawCall(opts: {
   });
   if (res.ok) {
     return {
-      url, method: opts.method, requestHeaders: safeHeaders, requestBody: opts.body ?? null,
-      status: res.value.status, responseBody: res.value.json, responseRaw: res.value.raw,
-      durationMs: res.value.durationMs, attempts: res.value.attempts,
-      ok: true, error: null, errorKind: null,
+      url,
+      method: opts.method,
+      requestHeaders: safeHeaders,
+      requestBody: opts.body ?? null,
+      status: res.value.status,
+      responseBody: res.value.json,
+      responseRaw: res.value.raw,
+      durationMs: res.value.durationMs,
+      attempts: res.value.attempts,
+      ok: true,
+      error: null,
+      errorKind: null,
     };
   }
   return {
-    url, method: opts.method, requestHeaders: safeHeaders, requestBody: opts.body ?? null,
-    status: res.error.status ?? null, responseBody: null, responseRaw: null,
-    durationMs: 0, attempts: 1,
-    ok: false, error: res.error.message, errorKind: res.error.kind,
+    url,
+    method: opts.method,
+    requestHeaders: safeHeaders,
+    requestBody: opts.body ?? null,
+    status: res.error.status ?? null,
+    responseBody: null,
+    responseRaw: null,
+    durationMs: 0,
+    attempts: 1,
+    ok: false,
+    error: safeProviderError(res.error.message),
+    errorKind: res.error.kind,
   };
 }
 
@@ -221,24 +373,41 @@ export const megaottConnector: IPTVConnector = {
   status: "enabled",
 
   isReady() {
-    return secretsManager.has(TOKEN_SECRET);
+    return mockModeEnabled() || secretsManager.has(TOKEN_SECRET);
   },
 
   async createUser(input: IPTVCreateUserInput) {
-    if (!input.username) return err(integrationError("validation", "username is required", { connectorId: CONNECTOR_ID }));
+    if (!megaottRealProvisioningEnabled()) return realProvisioningDisabled();
+    if (!input.username)
+      return err(
+        integrationError("validation", "username is required", { connectorId: CONNECTOR_ID }),
+      );
     const cfg = await resolveMegaottConfig();
     if (!cfg.ok) return cfg;
-    const path = cfg.value.endpoints?.createUser ?? "/api/v1/user";
+    const path = cfg.value.endpoints?.createUser ?? "/api/v1/subscriptions";
     const packageId = input.packageId || cfg.value.defaultPackageId || "";
-    const body: Record<string, unknown> = {
-      username: input.username,
-      password: input.password,
-      package_id: packageId || undefined,
-      bouquet_id: packageId || undefined,
-      exp_date: input.expiresAt ?? undefined,
-      ...(input.metadata ?? {}),
-    };
-    const r = await call<unknown>(path, "POST", body, cfg.value);
+    if (!packageId)
+      return err(
+        integrationError("configuration", "MEGAOTT package_id is not configured", {
+          connectorId: CONNECTOR_ID,
+        }),
+      );
+    const metadata = input.metadata ?? {};
+    const form = new URLSearchParams();
+    form.set("type", "M3U");
+    form.set("username", input.username);
+    form.set("package_id", packageId);
+    form.set("max_connections", String(metadata.max_connections ?? metadata.maxConnections ?? 1));
+    form.set("forced_country", String(metadata.forced_country ?? "ALL"));
+    form.set("adult", metadata.adult ? "1" : "0");
+    form.set("enable_vpn", metadata.enable_vpn ? "1" : "0");
+    // payment.confirmed is the only provisioning trigger, so the upstream
+    // subscription is marked paid at creation time.
+    form.set("paid", "1");
+    if (metadata.whatsapp_telegram)
+      form.set("whatsapp_telegram", String(metadata.whatsapp_telegram));
+    if (metadata.note) form.set("note", String(metadata.note));
+    const r = await call<unknown>(path, "POST", form.toString(), cfg.value);
     if (!r.ok) {
       logger.warn("megaott.createUser failed", { kind: r.error.kind, status: r.error.status });
       return r;
@@ -249,34 +418,61 @@ export const megaottConnector: IPTVConnector = {
   async suspendUser(providerUserId) {
     const cfg = await resolveMegaottConfig();
     if (!cfg.ok) return cfg;
-    const path = (cfg.value.endpoints?.suspendUser ?? "/api/v1/user/{id}/suspend").replace("{id}", encodeURIComponent(providerUserId));
-    const r = await call(path, "POST", { status: "suspended" }, cfg.value);
+    const path = (
+      cfg.value.endpoints?.suspendUser ?? "/api/v1/subscriptions/{id}/deactivate"
+    ).replace("{id}", encodeURIComponent(providerUserId));
+    const r = await call(path, "POST", undefined, cfg.value);
     if (!r.ok) return r;
-    return ok(parseUser(r.value.json));
+    return ok(parseUser(r.value.json, providerUserId));
   },
 
   async reactivateUser(providerUserId) {
     const cfg = await resolveMegaottConfig();
     if (!cfg.ok) return cfg;
-    const path = (cfg.value.endpoints?.reactivateUser ?? "/api/v1/user/{id}/activate").replace("{id}", encodeURIComponent(providerUserId));
-    const r = await call(path, "POST", { status: "active" }, cfg.value);
+    const path = (
+      cfg.value.endpoints?.reactivateUser ?? "/api/v1/subscriptions/{id}/activate"
+    ).replace("{id}", encodeURIComponent(providerUserId));
+    const r = await call(path, "POST", undefined, cfg.value);
     if (!r.ok) return r;
-    return ok(parseUser(r.value.json));
+    return ok(parseUser(r.value.json, providerUserId));
   },
 
   async extend(providerUserId, expiresAt) {
+    if (!megaottRealProvisioningEnabled()) return realProvisioningDisabled();
     const cfg = await resolveMegaottConfig();
     if (!cfg.ok) return cfg;
-    const path = (cfg.value.endpoints?.extendUser ?? "/api/v1/user/{id}").replace("{id}", encodeURIComponent(providerUserId));
-    const r = await call(path, "PUT", { exp_date: expiresAt }, cfg.value);
+    const path = (cfg.value.endpoints?.extendUser ?? "/api/v1/subscriptions/{id}/extend").replace(
+      "{id}",
+      encodeURIComponent(providerUserId),
+    );
+    if (!cfg.value.defaultPackageId) {
+      return err(
+        integrationError("configuration", "MEGAOTT package_id is not configured for extension", {
+          connectorId: CONNECTOR_ID,
+        }),
+      );
+    }
+    const form = new URLSearchParams({ package_id: cfg.value.defaultPackageId, paid: "1" });
+    const r = await call(path, "POST", form.toString(), cfg.value);
     if (!r.ok) return r;
-    return ok(parseUser(r.value.json));
+    const response = r.value.json ?? {};
+    const payload = (response as any).data ?? response;
+    return ok(
+      parseUser({
+        ...(typeof payload === "object" ? payload : {}),
+        id: providerUserId,
+        expiring_at: (payload as any)?.new_expiration_date ?? expiresAt,
+      }),
+    );
   },
 
   async getUser(providerUserId) {
     const cfg = await resolveMegaottConfig();
     if (!cfg.ok) return cfg;
-    const path = (cfg.value.endpoints?.getUser ?? "/api/v1/user/{id}").replace("{id}", encodeURIComponent(providerUserId));
+    const path = (cfg.value.endpoints?.getUser ?? "/api/v1/subscriptions/{id}").replace(
+      "{id}",
+      encodeURIComponent(providerUserId),
+    );
     const r = await call(path, "GET", undefined, cfg.value);
     if (!r.ok) return r;
     return ok(parseUser(r.value.json));
@@ -284,55 +480,75 @@ export const megaottConnector: IPTVConnector = {
 };
 
 /** Lightweight reachability check, used by the Providers UI. */
-export async function pingMegaott(
-  overrideUrl?: string,
-): Promise<Result<{ status: number; durationMs: number; note?: string }, IntegrationError>> {
+export async function pingMegaott(overrideUrl?: string): Promise<
+  Result<
+    {
+      status: number;
+      durationMs: number;
+      note?: string;
+      authenticated: boolean;
+      responseValid: boolean;
+      account?: { id: string; username: string; credit: number };
+    },
+    IntegrationError
+  >
+> {
+  if (mockModeEnabled()) {
+    return ok({
+      status: 200,
+      durationMs: 0,
+      authenticated: true,
+      responseValid: true,
+      account: { id: "mock-reseller", username: "mock-reseller", credit: 999 },
+    });
+  }
   const headers = authHeaders();
   if (!headers.ok) return headers;
-  // Build a list of candidate health endpoints. We accept the first one
-  // that produces ANY HTTP response (2xx OR 4xx) because reaching the
-  // server proves DNS + TLS + auth-layer are wired correctly. A 404
-  // simply means the panel does not expose that exact path — the
-  // provider is still online and usable for create/suspend/extend.
-  const candidates: string[] = [];
-  if (overrideUrl) {
-    candidates.push(overrideUrl);
-  } else {
-    const cfg = await resolveMegaottConfig();
-    if (!cfg.ok) return cfg;
-    const base = cfg.value.apiUrl;
-    if (cfg.value.endpoints?.health) candidates.push(joinUrl(base, cfg.value.endpoints.health));
-    candidates.push(joinUrl(base, "/api/v1/user"));
-    candidates.push(joinUrl(base, "/api/v1/users"));
-    candidates.push(base.replace(/\/+$/, "") + "/");
+  const cfg = await resolveMegaottConfig();
+  if (!cfg.ok && !overrideUrl) return cfg;
+  const url =
+    overrideUrl ??
+    joinUrl(
+      cfg.ok ? cfg.value.apiUrl : "",
+      cfg.ok ? (cfg.value.endpoints?.health ?? "/api/v1/user") : "/api/v1/user",
+    );
+  const res = await apiGateway.request({
+    connectorId: CONNECTOR_ID,
+    url,
+    method: "GET",
+    headers: headers.value,
+    timeoutMs: 10_000,
+    maxAttempts: 1,
+    ratePerMinute: 30,
+  });
+  if (!res.ok) return res;
+  const payload: any = res.value.json;
+  const account = payload?.data ?? payload?.user ?? payload;
+  const valid = Boolean(
+    account &&
+    account.id !== undefined &&
+    typeof account.username === "string" &&
+    account.credit !== undefined &&
+    Number.isFinite(Number(account.credit)),
+  );
+  if (!valid) {
+    return err(
+      integrationError("provider", "MEGAOTT health response is invalid", {
+        connectorId: CONNECTOR_ID,
+        status: res.value.status,
+        retryable: false,
+      }),
+    );
   }
-
-  let lastErr: IntegrationError | undefined;
-  for (const url of candidates) {
-    const res = await apiGateway.request({
-      connectorId: CONNECTOR_ID,
-      url,
-      method: "GET",
-      headers: headers.value,
-      timeoutMs: 10_000,
-      maxAttempts: 1,
-      ratePerMinute: 30,
-    });
-    if (res.ok) {
-      return ok({ status: res.value.status, durationMs: res.value.durationMs });
-    }
-    lastErr = res.error;
-    // not_found / validation = server answered but path doesn't exist:
-    // treat as reachable (auth header was accepted enough to route).
-    if (res.error.kind === "not_found" || res.error.kind === "validation") {
-      return ok({ status: res.error.status ?? 404, durationMs: 0, note: `Endpoint ${url} → ${res.error.status}` });
-    }
-    // unauthorized / forbidden → server reached but token rejected.
-    // Don't keep trying other paths, surface the real cause.
-    if (res.error.kind === "unauthorized" || res.error.kind === "forbidden") {
-      return res;
-    }
-    // network / timeout / 5xx → try the next candidate.
-  }
-  return err(lastErr ?? integrationError("unknown", "MEGAOTT ping failed", { connectorId: CONNECTOR_ID }));
+  return ok({
+    status: res.value.status,
+    durationMs: res.value.durationMs,
+    authenticated: true,
+    responseValid: true,
+    account: {
+      id: String(account.id),
+      username: String(account.username),
+      credit: Number(account.credit),
+    },
+  });
 }

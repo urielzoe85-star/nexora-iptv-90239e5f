@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Supabase error shape is untyped. */
 // Serveur — récupère ou crée un token de désabonnement pour un destinataire.
 // Le processor `process-email-queue` exige `unsubscribe_token` dans le payload,
 // faute de quoi il rejette l'envoi avec `400 missing_unsubscribe`.
@@ -9,7 +10,7 @@ function generateToken(): string {
 }
 
 export async function getOrCreateUnsubscribeToken(email: string): Promise<string> {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { supabaseAdmin } = await import("@/lib/supabase-admin.server");
   const sb = supabaseAdmin as any;
   const normalized = email.trim().toLowerCase();
 
